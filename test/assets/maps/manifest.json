@@ -1,0 +1,214 @@
+{
+  "project": "The Pixel Odyssey",
+  "asset_type": "side-scrolling map backgrounds",
+  "generated_at": "2026-11-20",
+  "canvas": {
+    "width": 960,
+    "height": 540,
+    "ground_y": 480
+  },
+  "style": "16-bit dark fantasy pixel art, flat orthographic side view, no baked text/UI/characters",
+  "count": 40,
+  "chapters": [
+    {
+      "id": "ch01",
+      "index": 1,
+      "title_ko": "종이 멈춘 밤",
+      "boss_name": "Mossy Stone Bellkeeper Golem",
+      "maps": {
+        "field": "ch01_field.png",
+        "boss": "ch01_boss.png"
+      }
+    },
+    {
+      "id": "ch02",
+      "index": 2,
+      "title_ko": "망각의 강",
+      "boss_name": "Shrine Maiden Miko",
+      "maps": {
+        "field": "ch02_field.png",
+        "boss": "ch02_boss.png"
+      }
+    },
+    {
+      "id": "ch03",
+      "index": 3,
+      "title_ko": "광대의 유희장",
+      "boss_name": "Evil Jester",
+      "maps": {
+        "field": "ch03_field.png",
+        "boss": "ch03_boss.png"
+      }
+    },
+    {
+      "id": "ch04",
+      "index": 4,
+      "title_ko": "청동 미궁",
+      "boss_name": "Bronze Bull Asterion",
+      "maps": {
+        "field": "ch04_field.png",
+        "boss": "ch04_boss.png"
+      }
+    },
+    {
+      "id": "ch05",
+      "index": 5,
+      "title_ko": "고르곤의 정원",
+      "boss_name": "Medusa Queen Stheno",
+      "maps": {
+        "field": "ch05_field.png",
+        "boss": "ch05_boss.png"
+      }
+    },
+    {
+      "id": "ch06",
+      "index": 6,
+      "title_ko": "스틱스의 나루",
+      "boss_name": "Ferryman Charon",
+      "maps": {
+        "field": "ch06_field.png",
+        "boss": "ch06_boss.png"
+      }
+    },
+    {
+      "id": "ch07",
+      "index": 7,
+      "title_ko": "지하 감옥 투기장",
+      "boss_name": "Muscular Giant Hulk",
+      "maps": {
+        "field": "ch07_field.png",
+        "boss": "ch07_boss.png"
+      }
+    },
+    {
+      "id": "ch08",
+      "index": 8,
+      "title_ko": "타르타로스의 대장간",
+      "boss_name": "Cyclops Brontes",
+      "maps": {
+        "field": "ch08_field.png",
+        "boss": "ch08_boss.png"
+      }
+    },
+    {
+      "id": "ch09",
+      "index": 9,
+      "title_ko": "거신의 무덤",
+      "boss_name": "Titan Krios",
+      "maps": {
+        "field": "ch09_field.png",
+        "boss": "ch09_boss.png"
+      }
+    },
+    {
+      "id": "ch10",
+      "index": 10,
+      "title_ko": "이름 없는 왕좌",
+      "boss_name": "Devil Anonymos",
+      "maps": {
+        "field": "ch10_field.png",
+        "boss": "ch10_boss.png"
+      }
+    },
+    {
+      "id": "ch11",
+      "index": 11,
+      "title_ko": "시계태엽 탑",
+      "boss_name": "Clockwork Golem",
+      "maps": {
+        "field": "ch11_field.png",
+        "boss": "ch11_boss.png"
+      }
+    },
+    {
+      "id": "ch12",
+      "index": 12,
+      "title_ko": "연금술사의 실험실",
+      "boss_name": "Flask Doctor Chimera",
+      "maps": {
+        "field": "ch12_field.png",
+        "boss": "ch12_boss.png"
+      }
+    },
+    {
+      "id": "ch13",
+      "index": 13,
+      "title_ko": "사막 신전",
+      "boss_name": "Anubis",
+      "maps": {
+        "field": "ch13_field.png",
+        "boss": "ch13_boss.png"
+      }
+    },
+    {
+      "id": "ch14",
+      "index": 14,
+      "title_ko": "황금 풍뎅이 묘실",
+      "boss_name": "Scarab Empress",
+      "maps": {
+        "field": "ch14_field.png",
+        "boss": "ch14_boss.png"
+      }
+    },
+    {
+      "id": "ch15",
+      "index": 15,
+      "title_ko": "유령 해적선",
+      "boss_name": "Blackbeard",
+      "maps": {
+        "field": "ch15_field.png",
+        "boss": "ch15_boss.png"
+      }
+    },
+    {
+      "id": "ch16",
+      "index": 16,
+      "title_ko": "심해 난파선",
+      "boss_name": "Giant Kraken",
+      "maps": {
+        "field": "ch16_field.png",
+        "boss": "ch16_boss.png"
+      }
+    },
+    {
+      "id": "ch17",
+      "index": 17,
+      "title_ko": "구름 위 신선봉",
+      "boss_name": "Cheong-un Taoist",
+      "maps": {
+        "field": "ch17_field.png",
+        "boss": "ch17_boss.png"
+      }
+    },
+    {
+      "id": "ch18",
+      "index": 18,
+      "title_ko": "고대 황궁 성벽",
+      "boss_name": "Bronze General",
+      "maps": {
+        "field": "ch18_field.png",
+        "boss": "ch18_boss.png"
+      }
+    },
+    {
+      "id": "ch19",
+      "index": 19,
+      "title_ko": "만년설 늑대 숲",
+      "boss_name": "Frost Witch and Wolf",
+      "maps": {
+        "field": "ch19_field.png",
+        "boss": "ch19_boss.png"
+      }
+    },
+    {
+      "id": "ch20",
+      "index": 20,
+      "title_ko": "화산 심연",
+      "boss_name": "Ignis",
+      "maps": {
+        "field": "ch20_field.png",
+        "boss": "ch20_boss.png"
+      }
+    }
+  ]
+}
