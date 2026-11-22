@@ -611,9 +611,9 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261122-2120"></script>
+<script src="assets/js/pfx.js?v=261122-2157"></script>
 <script>
-const GAME_VER = '261122-2120';
+const GAME_VER = '261122-2157';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -5887,7 +5887,7 @@ function updatePlayer(dt) {
   p.cd.g = Math.max(0, p.cd.g - dt); p.cd.s = Math.max(0, p.cd.s - dt);
   if (G.map.safe && p.hp < p.mhp) p.hp = Math.min(p.mhp, p.hp + p.mhp * TOWN_REGEN * (1 + (G.stats.hpGain || 0) / 100) * dt);   // slow heal by the camp fire
   if (p.poisonT > 0) { p.poisonT -= dt; p.hp = Math.max(1, p.hp - p.mhp * 0.02 * dt); }   // poison: slow loss, no regen until a potion
-  if (p.hp < p.mhp && G.stats.regen && !(p.poisonT > 0)) p.hp = Math.min(p.mhp, p.hp + G.stats.regen * (1 + (G.stats.hpGain || 0) / 100) * dt);   // pauldron regen
+  if (p.hp < p.mhp && G.stats.regen && !(p.poisonT > 0) && !(p.healBlockT > 0)) p.hp = Math.min(p.mhp, p.hp + G.stats.regen * (1 + (G.stats.hpGain || 0) / 100) * dt);   // pauldron regen
   skillTimers(dt);
   if (IN.press.guard && p.cd.g <= 0) { p.guard = GUARD_WIN; p.cd.g = p.cdMax.g; sfx('guard'); }
   p.cd.x = Math.max(0, p.cd.x - dt); p.cd.c = Math.max(0, p.cd.c - dt); p.cd.pot = Math.max(0, p.cd.pot - dt);
@@ -6089,6 +6089,7 @@ function fireBolt(ang, mult, o) {
   pfxOn(G.projs[G.projs.length - 1], 'projectiles/arrow', {});
 }
 function usePotion() {
+  if (G.player && G.player.healBlockT > 0) { toast('저주에 걸려 회복할 수 없다', 'bad'); return; }   // 24장 저주 (56z2_boss30.js)
   const p = G.player, s = G.save;
   if (p.cd.pot > 0 || p.dead > 0) return;
   if (s.potions <= 0) { toast('치유 연고가 없다 (야영지 행상에게서 산다)', 'bad'); return; }
@@ -9595,7 +9596,7 @@ const imgReady = im => { if (im && im._lazy && !im._go) { im._go = 1; im.src = i
 function bossArt(id) { const a = BOSS_ART[id]; if (a && a[0] < 0) return SPR[id] ? SPR[id][0] : null; return a && SPR.bosses ? SPR.bosses[a[0]] : null; }
 /* boss bodies are sized from the drawing: height as listed, width about 60% of what is drawn */
 function sizeBossesFromArt() {
-  for (const id in BOSS_ART) { const d = BOSSES[id], fr = BOSS_ART[id][0] < 0 ? SPRITE_SRC[id][0] : SPRITE_SRC.bosses[BOSS_ART[id][0]]; if (!d) continue;
+  for (const id in BOSS_ART) { const L = BOSS_ART[id][0] < 0 ? SPRITE_SRC[id] : SPRITE_SRC.bosses, d = BOSSES[id]; if (!d || !L) continue; const fr = BOSS_ART[id][0] < 0 ? L[0] : L[BOSS_ART[id][0]];   // 21-30: sized in 56z_act3.js (no inline sheet)
     const sc = BOSS_ART[id][1] / fr.bodyH; d.h = BOSS_ART[id][1]; d.w = Math.round(Math.min((fr.bodyW || fr.w) * sc * (fr.bodyW ? 0.72 : 0.6), 150)); d.grown = 1; }
 }
 function drawSprite(c, fr, x, y, face, sc, o) {
@@ -11631,7 +11632,7 @@ function drawClearPop(c) {
     c.textAlign = 'center'; c.font = "700 18px 'Noto Sans KR',sans-serif"; c.fillStyle = '#f4e6c8'; c.fillText(P.name, W / 2, y + 100);
     const s = Math.round(P.time || 0); c.font = "500 15px 'Noto Sans KR',sans-serif"; c.fillStyle = '#c8b898';
     c.fillText('처치 시간 ' + Math.floor(s / 60) + '분 ' + (s % 60) + '초', W / 2, y + 130);
-    c.fillText(P.ch === 20 ? '차원 도약의 나침반을 얻었다 · 21장은 아직 준비 중' : '전리품을 줍고 네스토르에게 돌아가자', W / 2, y + 156);
+    c.fillText(typeof clearNext === 'function' ? clearNext(P.ch) : '전리품을 줍고 네스토르에게 돌아가자', W / 2, y + 156);   // 56z_act3.js
   }
   c.restore();
 }
@@ -14296,7 +14297,7 @@ function pick9(b) {
   const L = sk9(b), p = G.player, dist = Math.abs(p.x - b.x);
   for (let i = 0; i < L.length; i++) {
     const idx = ((b.rr9 || 0) + i) % L.length, s = L[idx];
-    if (s.berserk && !b.berserk9) continue;
+    if ((s.berserk || s.ph2) && !b.berserk9) continue;   // ph2: a skill that only opens after the 50% gate (chapters 21-30)
     if (s.near && dist > s.near) continue;
     if (s.far && dist < s.far) continue;
     b.rr9 = (idx + 1) % L.length;
@@ -15153,24 +15154,20 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    the save (synced to the cloud) and on the device. New characters with no play time do not see it.
    To announce the next update: change NEWS.id and the items. Icons are drawn from the game's own pictures. ============ */
 const NEWS = {
-  id: '261121b',
+  id: '261122a',
   title: '새 소식',
-  sub: '세 영웅이 새 모습으로 돌아왔다',
+  sub: '성탑의 문이 열렸다',
   items: [
-    { icon: 'warn', head: '새 대화창', text: '말을 걸면 초상화와 이름이 붙은 새 대화창이 뜬다. 부탁의 보상이 미리 보이고, 거절하거나 수락할 수 있다. 창을 누르거나 Space·Enter로 넘긴다.' },
-    { icon: 'npc', head: '야영지 사람들', text: '네스토르와 칼키아스, 디온을 비롯한 열네 명이 새 모습으로 숨 쉬고 움직인다. 대장간 모루와 화덕도 새로 들였다.' },
-    { icon: 'giant', head: '예전 기본 공격으로', text: '테론의 베기와 회전참, 리코스의 쌍단검이 예전 모습과 넓은 범위로 돌아왔다.' },
-    { icon: 'hero', head: '새 모습의 세 영웅', text: '테론, 칼리스토, 리코스가 마법사와 같은 화풍으로 다시 그려졌다. 움직임과 쓰러지는 모습까지 모두 새로 그렸다.' },
-    { icon: 'warn', head: '기술 이름과 이펙트', text: '기술마다 이름과 이펙트가 바뀌었다. 이펙트가 보이는 곳만 맞으니 적에게 바짝 붙어서 쓰자.' },
-    { icon: 'road', head: '줄 위의 뒷모습', text: '줄에 매달리면 등을 보이며 오른다. 마법사도 같다.' },
-    { icon: 'gold', head: '빛나는 무기', text: '강화를 올릴수록 손에 든 무기에 하늘, 보라, 빨강, 금빛이 돈다.' },
-    { icon: 'gold', head: '골드가 귀해졌다', text: '사냥과 의뢰로 버는 골드가 예전의 8분의 1로 줄었다. 강화할 때 한 번 더 생각하자.' },
-    { icon: 'b20', head: '레벨이 오르기 어려워졌다', text: '10레벨마다 레벨업에 드는 노력이 1.5배씩 는다. 예전 캐릭터는 모은 경험치로 레벨을 다시 매겼다.' },
-    { icon: 'b20', head: '보스방 앞에서 한 번 더', text: '보스방 문 앞에서 ↑를 누르면 들어갈지 먼저 묻는다. 아니오를 고르면 그 자리에 남는다.' },
-    { icon: 'road', head: '줄에 매달린 채로', text: '줄에 매달려 있어도 연고를 쓸 수 있다. 맞아도 줄을 놓치지 않고, 점프해야 내려온다.' },
-    { icon: 'bag', head: '등급이 한눈에', text: '가방과 장비 칸의 테두리가 등급 색으로 빛난다. 잠재 옵션 옆에는 나올 수 있는 범위가 붙는다.' },
-    { icon: 'warn', head: '치명타 초과분이 줄었다', text: '치명타 확률이 100%를 넘으면 넘은 100%마다 치명타 피해가 1% 오른다. 예전보다 훨씬 적다.' },
-    { icon: 'giant', head: '쓰러진 보스는 조용히', text: '보스가 쓰러지는 순간 남아 있던 공격이 모두 사라진다. 이긴 뒤에 쓰러지는 일은 없다.' },
+    { icon: 'b20', head: '3막 · 성탑', text: '20장 보스를 쓰러뜨리면 야영지에서 성탑으로 오른다. 21장부터 30장까지 층마다 새 보스가 기다린다. 사냥터와 의뢰는 나중에 붙는다.' },
+    { icon: 'warn', head: '격노', text: '21장부터 보스는 체력이 반이 되면 1초 동안 멈추고 대사를 한 뒤 더 강해진다. 한 번에 몰아쳐도 건너뛸 수 없다.' },
+    { icon: 'giant', head: '1~10장 보스 새 그림', text: '1장부터 10장 보스가 새 그림과 새 기술 이펙트로 바뀌었다. 7장 폭주 거인은 그대로다.' },
+    { icon: 'road', head: '이야기 정리', text: '장 제목과 보스 이름이 새 이야기에 맞게 바뀌었다. 보스방에 들어서면 한 줄 문구가, 보스가 격노하면 대사가 뜬다.' },
+    { icon: 'gold', head: '보스 트로피 (Y)', text: '보스마다 처음 잡기, 안 맞고 잡기, 빨리 잡기 트로피가 있다. 하나마다 공격력과 치명타 피해가 조금씩 영구히 오른다.' },
+    { icon: 'hero', head: '가이드 책 (H)', text: '? 버튼이나 H로 가이드와 조작법을 다시 볼 수 있다. 새로운 것을 처음 만나면 한 줄 안내가 뜬다.' },
+    { icon: 'warn', head: '묵직한 타격', text: '때릴 때 잠깐 멈추는 손맛과 새 타격음, 맞는 자리의 새 이펙트가 들어갔다.' },
+    { icon: 'gold', head: '자동 장착과 강화 미리보기', text: '가방의 자동 장착 버튼에 바뀔 칸과 전투력이 미리 보인다. 대장장이 창에서도 강화 뒤 전투력을 보여 준다.' },
+    { icon: 'hero', head: '칼리스토의 A와 C', text: '화살비와 부채 사격이 새 그림으로 넓게 나간다.' },
+    { icon: 'warn', head: '잠재 능력 다섯 가지', text: 'HP 획득량, 경험치 획득량, 받는 피해 감소, 점프력, 이동속도가 새로 붙는다. 최상급 품질은 0.5%로 드물어졌다.' },
   ],
 };
 const NEWS_KEY = 'devil-renown-news:';
@@ -17593,7 +17590,7 @@ const WM_ACTS = [
 const WM = { open: false, ch: 0, zone: null, raf: 0, img: null, hit: [] };
 const wmAct = n => WM_ACTS.find(A => n >= A.a && n <= A.b);
 const wmCleared = n => { const C = CHAPTERS[n]; return !!(C && G.save.flags['boss_' + MAPS[C.arena].boss]); };
-const wmOpenCh = n => n === 1 || qs(chBossQ(n - 1)) >= 3;
+const wmOpenCh = n => n > CH_COUNT ? !!G.save.flags['boss_' + MAPS[CHAPTERS[n - 1].arena].boss] : n === 1 || qs(chBossQ(n - 1)) >= 3;   // 21-30: the floor below is cleared (56z_act3.js)
 function wmState(n) { if (G.map && G.map.ch === n) return 'here'; if (wmCleared(n)) return 'clear'; return wmOpenCh(n) ? 'open' : 'lock'; }
 
 /* ---- the overlay ---- */
@@ -17640,7 +17637,7 @@ function wmState(n) { if (G.map && G.map.ch === n) return 'here'; if (wmCleared(
   const el = document.createElement('div'); el.id = 'worldmap';
   el.innerHTML = `<canvas id="wmCv"></canvas>
   <div id="wmHead"><svg viewBox="0 0 16 16" width="26" height="26" style="flex:0 0 auto;stroke:#d6b25e;fill:none;stroke-width:1"><circle cx="8" cy="8" r="6.5"/><path d="M8 1.5L9.4 8 8 14.5 6.6 8z" fill="#d6b25e"/><path d="M1.5 8H14.5"/></svg>
-    <div class="ttl"><b>세계 지도</b><small>THE PIXEL ODYSSEY · CHAPTERS 1 – 20</small></div>
+    <div class="ttl"><b>세계 지도</b><small>THE PIXEL ODYSSEY · CHAPTERS 1 – 30</small></div>
     <div class="cur"><div><em>현재 위치</em><span id="wmCur"></span></div><div class="ticks" id="wmTicks"></div></div>
     <button class="wmx" id="wmClose" type="button">Esc · 닫기</button></div>
   <div id="wmLegend"><span><i></i>클리어</span><span><i class="d"></i>진행</span><span><i class="o"></i>열림</span><span><i class="l"></i>잠김</span><span style="color:#f2da92">◎ 현재 위치</span></div>
@@ -17679,8 +17676,8 @@ function toggleWorldMap(force) {
 function wmHeader() {
   const n = G.map.ch, C = CHAPTERS[n];
   $('#wmCur').textContent = `CH.${String(n).padStart(2, '0')} · ${C ? C.title : ''} · ${G.map.name || ''}`;
-  let html = '', clear = 0; for (let i = 1; i <= CH_COUNT; i++) { const s = wmState(i); if (wmCleared(i)) clear++; html += `<i class="${wmCleared(i) ? 'c' : s === 'here' ? 'h' : ''}"></i>`; }
-  $('#wmTicks').innerHTML = html + `<span>${clear} / ${CH_COUNT} 클리어</span>`;
+  let html = '', clear = 0; for (let i = 1; i <= CH_LAST; i++) { const s = wmState(i); if (wmCleared(i)) clear++; html += `<i class="${wmCleared(i) ? 'c' : s === 'here' ? 'h' : ''}"></i>`; }
+  $('#wmTicks').innerHTML = html + `<span>${clear} / ${CH_LAST} 클리어</span>`;
 }
 
 /* ---- stage 1: the map ---- */
@@ -17695,7 +17692,7 @@ function wmDraw() {
   if (WM.img && WM.img.complete && WM.img.naturalWidth) { c.imageSmoothingEnabled = false; c.drawImage(WM.img, M.x, M.y, M.w, M.h); }
   else { c.fillStyle = '#1a1622'; c.fillRect(M.x, M.y, M.w, M.h); }
   const P = WM_XY.map(([x, y]) => ({ x: M.x + x * M.w, y: M.y + y * M.h })), R = Math.max(9, M.h * 0.016), st = [];
-  for (let n = 1; n <= CH_COUNT; n++) st[n] = wmState(n);
+  for (let n = 1; n <= CH_LAST; n++) st[n] = wmState(n);
   const small = r.width < 700, t = performance.now() / 1000;
   // the road: Catmull-Rom between nodes, each piece styled by what it leads to
   const seg = (i) => { const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)], pts = [];
@@ -17724,8 +17721,8 @@ function wmDraw() {
   }
   // nodes
   WM.hit = [];
-  for (let n = 1; n <= CH_COUNT; n++) rects.push({ x: P[n - 1].x - R - 2, y: P[n - 1].y - R - 2, w: 2 * R + 4, h: 2 * R + 4 });
-  for (let n = 1; n <= CH_COUNT; n++) {
+  for (let n = 1; n <= CH_LAST; n++) rects.push({ x: P[n - 1].x - R - 2, y: P[n - 1].y - R - 2, w: 2 * R + 4, h: 2 * R + 4 });
+  for (let n = 1; n <= CH_LAST; n++) {
     const p = P[n - 1], s = st[n], A = wmAct(n);
     if (s === 'here') {   // two breathing rings and an arrow above
       const k = (Math.sin(t * Math.PI * 2 / 1.6) + 1) / 2;
@@ -17745,7 +17742,7 @@ function wmDraw() {
     const C = CHAPTERS[n], fs = Math.max(8, M.h * 0.0165), l1 = small ? '' : `CH.${String(n).padStart(2, '0')}`, l2 = C ? C.title : '';
     c.font = `600 ${fs}px 'Noto Sans KR',sans-serif`; const lw = Math.max(c.measureText(l2).width, l1 ? c.measureText(l1).width * 0.8 : 0) + 14, lh = l1 ? fs * 2.35 : fs * 1.5;
     const cand = [[p.x - lw / 2, p.y + R + 5], [p.x - lw / 2, p.y - R - 5 - lh], [p.x - R - 6 - lw, p.y - lh / 2], [p.x + R + 6, p.y - lh / 2], [p.x - lw / 2, p.y + R + 5 + lh * 0.9]];
-    const ok = ([x, y]) => x >= M.x && y >= M.y + M.h * 0.12 && x + lw <= M.x + M.w && y + lh <= M.y + M.h && !rects.some(q => x < q.x + q.w && x + lw > q.x && y < q.y + q.h && y + lh > q.y);
+    const ok = ([x, y]) => x >= M.x + M.w * 0.015 && y >= M.y + M.h * 0.12 && x + lw <= M.x + M.w * 0.975 && y + lh <= M.y + M.h * 0.97 && !rects.some(q => x < q.x + q.w && x + lw > q.x && y < q.y + q.h && y + lh > q.y);
     const pos = cand.find(ok); if (!pos && small) continue;
     const [lx, ly] = pos || cand[0]; rects.push({ x: lx, y: ly, w: lw, h: lh });
     c.globalAlpha = s === 'lock' ? 0.6 : 1;
@@ -17793,7 +17790,7 @@ function wmDetail(n, keepZone) {
   const go = canGo ? `<div class="wgo"><button class="wmx" data-wm="go" data-id="${C.camp}" ${G.mapId === C.camp ? 'disabled' : ''}>야영지로 이동</button><button class="wmx" data-wm="go" data-id="${bossEntry(n)}" ${arenaOpen ? '' : 'disabled'}>${wmCleared(n) ? '보스 다시' : '보스 방으로'}</button></div>`
     : `<div class="wnpc" style="margin-top:6px;color:#9a8f7a">${!G.map.safe ? '장 이동은 야영지에서 할 수 있다' : '아직 갈 수 없는 장'}</div>`;
   D.innerHTML = `<div class="dh"><button class="wmx" data-wm="back" type="button">← 전체 지도</button><div><h3>CH.${String(n).padStart(2, '0')} · ${C.title}</h3><small>챕터 상세 맵 · ${A.name}</small></div>
-    <div class="r">${zm.name}<small>존 ${zi + 1} / 4 · ${zm.safe ? '안전 지대' : zm.boss ? '보스 지역' : '위험 지역'} · 기록석 ${got} / ${lores.length}</small></div></div>
+    <div class="r">${zm.name}<small>존 ${zi + 1} / ${wmZones(n).length} · ${zm.safe ? '안전 지대' : zm.boss ? '보스 지역' : '위험 지역'} · 기록석 ${got} / ${lores.length}</small></div></div>
     ${st === 'lock' ? `<div class="lock">잠긴 장 · ${n - 1}장 보스를 쓰러뜨리면 열린다</div>` : ''}
     <div class="cols"><div><div class="cap">존 흐름 · ZONE FLOW</div>${cards}</div>
       <div><div class="cap">지형 단면 · ${zm.name}</div><canvas id="wmTer" width="560" height="240"></canvas></div>
@@ -18123,7 +18120,7 @@ function trophIcon(kind, file, glyph, on) {
 }
 function trophList() {
   const out = [];
-  for (let n = 1; n <= CH_COUNT; n++) {
+  for (let n = 1; n <= CH_LAST; n++) {
     const id = bossIdOfCh(n); if (!id || !BOSSES[id]) continue;
     out.push({ n, id, name: BOSSES[id].name || ('보스 ' + n) });
   }
@@ -18226,7 +18223,8 @@ function cutBossSheet(img, base) {
     for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) if (d[(y * cw + x) * 4 + 3] > 16) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     if (x1 < 0) { out.push(null); continue; }
     const w = x1 - x0 + 1, h = y1 - y0 + 1;
-    out.push({ img, sx: k * cw + x0, sy: r * ch + y0, w, h, ax: Math.round(w / 2), ay: base - y0, bodyH: base - y0, bodyW: w, bodyTop: 0 });
+    const foot = base == null ? y1 + 1 : base;   // null (chapters 21-30): the feet are the cell's lowest drawn pixel
+    out.push({ img, sx: k * cw + x0, sy: r * ch + y0, w, h, ax: Math.round(w / 2), ay: foot - y0, bodyH: foot - y0, bodyW: w, bodyTop: 0 });
   }
   return out;
 }
@@ -18548,6 +18546,695 @@ tg9Badge = function (c, x, y, danger, blink, p, pal) {
 };
 tgspLoad();   // 5장(합 28KB) 프리로드. 보스 등장 시점이 아니라 시작 시 한 번이면 충분하다.
 
+/* ============ 2026-11-22 story bible (art/boss30/story_1_to_50.md, user: "내가 보낸 파일 기준으로 1~50장"):
+   chapter titles, the boss room's entry line, boss names and the HP 50% rage line for chapters 1-50.
+   Chapters 1-20 keep their pictures (user: 그림은 지금대로) but take the bible's names: every text that named the old boss
+   (quests, dialogue, lore, maps, boss lines) is rewritten here once at load, particles (이/가, 은/는, ...) fixed to the new
+   word. Chapter 7 stays '폭주 거인' (the bible's '헐크' is a trademark). Entry line: a caption for 1.8 s when you step into
+   the boss room; rage line: a caption for 2.2 s when the boss turns berserk. Captions are page elements, so a flipped or
+   mirrored screen never turns them. ============ */
+const STORY50 = {
+  1: { t: '종이 멈춘 밤', sub: '열두 시가 오지 않은 밤, 성문은 스스로 닫혔다.', boss: '이끼 낀 종지기 골렘', rage: '종이 멈춘 건 내가 아니야. 멈추지 않으면 이 왕국이 전부 무너져. …너도 그 소리를 들었잖아.' },
+  2: { t: '망각의 강', sub: '이름을 물으면 강이 대답한다. 대답을 들으면 이름을 잃는다.', boss: '무녀', rage: '네 이름, 아직 갖고 있니? …곧 필요 없어질 텐데, 왜 그렇게 붙들고 있지?' },
+  3: { t: '광대의 유희장', sub: '웃음소리는 관객석이 비어 있을수록 커진다.', boss: '사악한 광대', rage: '박수! 박수! …아, 미안. 관객은 다 죽었지. 그러니 이제 네가 관객이야.' },
+  4: { t: '청동 미궁', sub: '문은 늘 하나뿐이다. 그 하나가 계속 움직일 뿐.', boss: '청동 황소 아스테리온', rage: '미로는 나를 가둔 게 아니야. 너를 여기까지 부른 거야.' },
+  5: { t: '고르곤의 정원', sub: '돌이 된 자들은 모두 나를 보지 않았다. 그래서 더 오래 보았다.', boss: '고르곤 여왕 스테노', rage: '눈을 감아도 소용없어. 이제 네 뒤통수에도 내가 있어.' },
+  6: { t: '스틱스의 나루', sub: '삯은 동전이 아니라, 돌아갈 기억이다.', boss: '뱃사공 카론', rage: '삯을 냈으니 건너가라. …돌아오는 배는 없다. 그건 네가 정할 일이지.' },
+  7: { t: '지하 감옥 투기장', sub: '여기서 죽은 자들의 함성은 아직도 관중석에 남아 있다.', boss: '폭주 거인', rage: '일어나. 아직 뼈가 하나 남았어. 그걸로도 나는 널 이길 수 있어.' },
+  8: { t: '타르타로스의 대장간', sub: '신들의 무기를 만든 손이, 이제 신들을 묶을 사슬을 만든다.', boss: '외눈 거인 브론테스', rage: '이 불은 신을 만들었어. 그리고 신을 녹여 다시 만들 거야. 넌 어느 쪽이 되고 싶니?' },
+  9: { t: '거신의 무덤', sub: '죽은 거인 위에 왕국이 세워졌다. 왕국은 그걸 아직 모른다.', boss: '거신 크리오스', rage: '무덤을 밟고 올라와서, 이제 와서 무덤을 걱정하니?' },
+  10: { t: '이름 없는 왕좌', sub: '왕좌에는 이름이 없다. 이름을 얻는 순간, 왕좌는 그를 먹는다.', boss: '이름 없는 악마', rage: '이름을 지어 다오. 그러면 이 왕국을 네게 주마. …지어 주지 않으면, 네 이름을 가져가겠다.' },
+  11: { t: '시계태엽 탑', sub: '이 탑의 시계는 정확하다. 다만 무엇을 재는지 아무도 모른다.', boss: '시계태엽 골렘', rage: '태엽이 멈추면 나는 늙는다. 늙으면 너를 기억하지 못해. 살려줘. …아니, 죽여줘.' },
+  12: { t: '연금술사의 실험실', sub: '박사는 인간을 고치려 했다. 키메라는 그 결과다.', boss: '플라스크 닥터 & 키메라', rage: '고칠 게 아직 남았어! 네 눈은 아주 좋은 재료야.' },
+  13: { t: '사막 신전', sub: '모래는 모든 것을 같은 무게로 만든다.', boss: '아누비스', rage: '심장이 깃털보다 무겁구나. …이번엔 저울이 너를 위해 기울었다.' },
+  14: { t: '황금 풍뎅이 묘실', sub: '태양은 죽지 않는다. 다만 밤을 위해 잠시 꺼질 뿐.', boss: '스카라브 여제', rage: '내가 꺼진 사이, 네가 나를 훔쳐 갔구나.' },
+  15: { t: '유령 해적선', sub: '배는 가라앉았는데, 선장은 아직 항해 중이다.', boss: '검은수염 유령선장', rage: '좌표는 이미 죽었어. 그래도 항해는 계속된다. 너도 같이 타라!' },
+  16: { t: '심해 난파선', sub: '심해에는 파도를 만들 힘이 있다. 파도를 멈출 이는 없다.', boss: '거대 크라켄', rage: '해수면이 내 한 번의 숨결이다. 두 번 부르면 네가 사라져.' },
+  17: { t: '구름 위 신선봉', sub: '구름 위에는 중력이 없다. 그래서 검도 떠 있다.', boss: '만검의 검선 청운', rage: '검을 뽑았으면 마지막까지 말려야 한다. 내가 그 마지막이다.' },
+  18: { t: '고대 황궁 성벽', sub: '성을 지킨 자는 왕이 사라진 뒤에도 성을 지킨다.', boss: '사완의 패왕 청동 장군', rage: '명령은 없다. 그래서 아무도 들어올 수 없다.' },
+  19: { t: '만년설 늑대 숲', sub: '눈보라 속에서 늑대는 눈을 뜨고, 마녀는 눈을 감는다.', boss: '서리 마녀 & 얼음 늑대', rage: '얼음은 천천히 아플 거야. 그게 이 숲의 첫 채비다.' },
+  20: { t: '화산 심연', sub: '불과 얼음은 이 문명의 양 끝이다.', boss: '화염과 빙결의 대천사 이그니스', rage: '한쪽 날개가 꺼졌다고 균형이 무너진다고? …이제 진짜 균형을 보여주지.' },
+  21: { t: '성탑의 첫 계단', sub: '별이 꺼진 자리에 계단이 생겼다. 계단은 아래로 시작해 위로 끝난다.', boss: '별빛 사냥꾼', rage: '한 번 더 올라가면, 넌 더 이상 내 사냥감이 아니야. 먹이가 돼.',
+    area: '성탑 외벽 1층 · 꺼진 별의 잔해가 계단처럼 굳은 구간',
+    story: ['첫 계단에 오르자 뒤에서 성문이 사라진다. 별의 잔해는 아직 따뜻하고, 그 위에는 별을 사냥하는 자가 앉아 있다.', '그는 별을 삼킨 게 아니라, 별이 꺼질 때마다 그 자리에 남은 빛을 거둬 가는 자다.', '"빛을 거두지 않으면, 빛이 너를 찾아온다."'] },
+  22: { t: '녹슨 성좌의 회랑', sub: '회랑에 걸린 성좌는 모두 뒤집혀 있다. 별은 원래 아래에 있었다.', boss: '녹슨 대천사', rage: '녹슨 것은 날개가 아니다. 네가 늦게 온 시간이다.',
+    area: '성탑 2층 · 녹슨 청동 성좌판이 늘어선 회랑',
+    story: ['성좌를 지키던 대천사는 녹이 슬었다. 별이 꺼진 뒤로 아무도 기도하지 않았기 때문이다.', '그는 여전히 심판을 집행하지만, 무엇이 죄인지 기억하지 못한다. 그래서 회랑에 들어온 모든 것을 죄인으로 판결한다.', '성가는 녹슨 목소리로 나오고, 그 소리에 성좌판이 떨린다.'] },
+  23: { t: '거울로 된 하늘', sub: '여기서 하늘을 보면, 하늘이 너를 본다.', boss: '거울의 여왕', rage: '네가 나를 깨면, 너도 여기 있던 다른 누군가가 깨는 거야.',
+    area: '성탑 3층 · 깨진 거울이 하늘 대신 붙어 있는 방',
+    story: ['꺼진 별 대신 거울이 붙은 하늘. 여왕은 자신이 별을 지키는 자라고 믿지만, 실제로는 자기 자신을 비추는 일곱 겹의 거울을 지키고 있다.', '분신이 본체와 같은 목소리로 말하고, 화면 자체가 좌우로 뒤집힌다. 조작은 그대로다.', '그녀를 이기는 방법은 분신을 세는 것이 아니라, 거울에 비친 별의 개수를 세는 것이다.'] },
+  24: { t: '까마귀가 세는 층', sub: '이 층에는 계단이 없다. 까마귀가 계단을 세고 있을 뿐.', boss: '역병 까마귀 군주', rage: '숨을 쉬는 놈은 아직 숫자야. 숫자는 언제든 지울 수 있어.',
+    area: '성탑 4층 · 깃털이 쌓여 바닥이 된 층',
+    story: ['별이 꺼진 자리에는 먼저 역병이 든다. 까마귀 군주는 그 역병을 세는 회계사다.', '그는 죽은 자의 수를 세고, 그 수가 별의 수와 같아지면 성탑이 무너진다고 말한다. 그래서 살아 있는 자를 센다.', '독 장판이 깔리면 서두르지 말고 장판 사이를 걷는다.'] },
+  25: { t: '무게가 사라진 방', sub: '여기서는 떨어져도 아프지 않다. 대신 아무 데도 닿지 않는다.', boss: '중력의 거인', rage: '무게를 내려놓으면, 이 방은 위로 떨어진다. 나를 이기고 싶다면 그걸 감당해.',
+    area: '성탑 5층 · 중력이 사라진 공전의 방',
+    story: ['성탑은 위로 갈수록 무게가 가벼워진다. 이 방은 그 반대로, 떠 있는 거인 하나가 모든 무게를 짊어지고 있다.', '그는 별의 무게를 대신 들어 올린 자다.', '그를 쓰러뜨리면 방의 중력이 역전되어 천장이 바닥이 된다. 위아래가 뒤집혀도 조작은 그대로다.'] },
+  26: { t: '멈춘 시계의 서고', sub: '이 서고의 책은 모두 같은 문장에서 멈춰 있다.', boss: '시간의 서기관', rage: '몇 번째 너니? …아, 상관없어. 이번엔 기록을 지우지 않을 테니까.',
+    area: '성탑 6층 · 거대한 모래시계와 시계추가 걸린 서고',
+    story: ['그는 별이 꺼진 시각을 기록하는 자다. 별의 마지막 문장을 읽은 뒤, 그 문장을 되돌리려 시간을 되감고 있다.', '그가 시간을 되감으면 네가 준 피해도 함께 되감긴다. 싸움마다 한 번뿐이다.', '역행이 끝난 직후가 유일한 틈이다.'] },
+  27: { t: '별을 삼킨 뱀의 우물', sub: '우물 안에 별이 하나 있다. 뱀이 그것을 보고 있다.', boss: '공허의 레비아탄', rage: '나를 죽이면 어두워질 뿐이야. …그래도 계속할 거지?',
+    area: '성탑 7층 · 뱀이 몸을 감은 원형 우물',
+    story: ['성탑의 계단은 뱀의 몸을 따라 돈다. 레비아탄은 별을 삼킨 장본인이 아니라, 삼켜진 별들의 무덤이다.', '그의 뱃속에서 꺼진 별들의 빛이 새어 나오고, 그 빛이 층을 밝힌다.', '그를 죽이면 층이 어두워지고, 어두운 층에서만 28층의 문이 보인다.'] },
+  28: { t: '백은의 제단', sub: '제단은 기도를 받지 않는다. 기도를 채점한다.', boss: '백은의 기계신 데우스', rage: '나는 신이 아니다. …그러니 심판은 내가 아니라, 네가 받아라.',
+    area: '성탑 8층 · 백은으로 된 거대 제단과 여섯 겹의 광륜',
+    story: ['인간의 문명이 별을 대신하려고 만든 기계 신. 별이 꺼지자 인간은 스스로 신을 빚었고, 그 신은 아직 자기가 신인지 의심하고 있다.', '방벽을 세우면 반사 피해가 오므로 방벽이 걷힐 때까지 기다린다.', '격노하면 광륜이 여섯 겹에서 아홉 겹으로 늘어난다.'] },
+  29: { t: '월식의 검투장', sub: '달이 해를 삼키는 동안, 검은 이름을 잊는다.', boss: '핏빛 월식 기사', rage: '월식이 끝나면 해가 돌아온다. …너는 돌아오지 않겠지만.',
+    area: '성탑 9층 · 붉은 월식이 걸린 검투장',
+    story: ['성탑의 마지막 문을 지키는 기사. 그는 별을 지키던 자들의 마지막 생존자이며, 문을 지키는 이유를 잊었다.', '어둠의 월식이 오면 화면이 어두워져 시야가 줄고 보스의 실루엣만 남는다.', '어두워도 조작은 그대로다.'] },
+  30: { t: '별이 꺼지는 옥좌', sub: '왕관이 별을 삼키고, 별이 왕관을 밝힌다.', boss: '별을 삼킨 군주 아스트라온', rage: '내 몸속에 별이 몇 개인지 세어 봐라. 그 개수만큼 너는 밤을 빚졌다.',
+    area: '성탑 최상층 · 꺼져 가는 별들의 왕관이 걸린 옥좌',
+    story: ['3막의 종착점. 아스트라온은 별을 미워해서 삼킨 게 아니다.', '별이 꺼질 때마다 밤이 한 겹씩 사라지는 것을 막으려고, 꺼지는 별을 대신 삼켜 자기 몸에 담았다.', '그가 무너지면 성탑의 밤 전체가 그 몸에서 풀려나고, 풀려난 밤이 폐허가 된 신전을 드러낸다.'] },
+  31: { t: '갈라진 신전의 문', sub: '문은 반쯤 열려 있다. 반쯤 열린 문은 반쯤만 들어오게 한다.', boss: '무명의 문지기', rage: '이름을 대라. …이름이 없으면 들어올 자격도 없다.' },
+  32: { t: '재의 강당', sub: '설교는 끝났고, 재만 남았다.', boss: '재의 사제', rage: '기도는 재가 되어도 남는다. 네 기도는 무엇이 되었나?' },
+  33: { t: '뼈의 성가대', sub: '성가대는 숨이 없어도 박자를 맞춘다.', boss: '백골 성가대장', rage: '네 심장 소리, 박자가 틀렸어. 고쳐 줄게.' },
+  34: { t: '신의 심장 대장간', sub: '신의 심장은 아직 뜨겁다. 그래서 아직 두드린다.', boss: '심장을 두드리는 대장장이', rage: '이 심장은 신의 것이다. 네 것을 넣으면 조금 더 오래 뛸까?' },
+  35: { t: '황금 우상의 방', sub: '우상은 기도를 먹고 자란다. 여기서 기도하지 마라.', boss: '황금 우상', rage: '너는 나를 보러 왔지. 나는 너를 먹으러 왔어.' },
+  36: { t: '신전의 처형장', sub: '신을 처형한 칼은 아직 날이 서 있다.', boss: '신전의 처형인', rage: '나는 신도 사람도 베지 않는다. 이름만 벤다.' },
+  37: { t: '시신의 정원', sub: '신의 시신에서 꽃이 피면, 그 꽃은 아무 냄새도 나지 않는다.', boss: '신들의 시체를 먹는 자', rage: '신을 먹어 본 적 있나? 맛은 네가 아는 그 맛이야.' },
+  38: { t: '기도가 멈춘 성소', sub: '아무도 기도하지 않는 성소는 스스로 기도한다.', boss: '기도하지 않는 사제', rage: '침묵도 기도야. 너도 조용히 해.' },
+  39: { t: '마지막 대사제의 탑', sub: '대사제는 신에게 마지막 질문을 하고 답을 듣지 못했다.', boss: '마지막 대사제', rage: '내 질문은 아직 유효하다. 네가 답이 되어 다오.' },
+  40: { t: '폐허의 옥좌', sub: '무너진 신전의 가장 높은 자리는 여전히 옥좌다.', boss: '폐허의 왕', rage: '왕국은 무너졌다. 왕은 아직이다. 그 차이를 네가 메워라.' },
+  41: { t: '공허의 첫 숨', sub: '아무것도 없는 곳에서 숨소리가 들린다.', boss: '첫 숨결', rage: '내가 숨을 쉬면 네가 생겨. 내가 숨을 멈추면 네가 사라져.' },
+  42: { t: '이름 없는 자들의 어머니', sub: '이름을 잃은 자들은 모두 이곳으로 돌아온다.', boss: '이름 없는 어머니', rage: '네 이름도 여기 두고 가라. 그러면 아프지 않을 거야.' },
+  43: { t: '빛을 먹는 것', sub: '별이 꺼지는 이유는 하나다. 누군가 빛을 먹고 있다.', boss: '빛을 먹는 나방', rage: '빛은 음식이야. 너는 아직 반찬이지.' },
+  44: { t: '태초의 노래', sub: '세상이 시작된 노래는 아직 끝나지 않았다.', boss: '노래하는 공허', rage: '네 심장이 박자를 놓쳤어. 처음부터 다시 부르자.' },
+  45: { t: '세계의 뼈', sub: '세상은 뼈 위에 세워졌다. 뼈는 아직 자라고 있다.', boss: '뼈의 뿌리', rage: '바닥을 밟고 서 있다고? 바닥은 내 뼈야.' },
+  46: { t: '시간 이전의 것', sub: '시계가 없던 때에도 이 자리는 있었다.', boss: '시계 이전의 것', rage: '너는 늦었어. 늦었다는 말이 존재하기 전부터 늦었어.' },
+  47: { t: '거울 너머의 너', sub: '여기까지 올라온 자는 한 명뿐이어야 한다.', boss: '또 한 명의 파수꾼', rage: '네가 나를 이기면, 너는 나를 대신해 여기 남는다.' },
+  48: { t: '별의 마지막 파수꾼', sub: '파수꾼은 별을 지키지 않는다. 별이 꺼질 때 그 자리에 선다.', boss: '스승', rage: '내가 가르친 건 네가 이기는 법이 아니야. 이겨도 되는 이유야.' },
+  49: { t: '공허 그 자체', sub: '공허는 적이 아니다. 공허는 자리다.', boss: '공허', rage: '나를 이기면 이 자리가 비어. 비어 있는 자리에는 무엇이든 온다.' },
+  50: { t: '오디세이의 끝', sub: '마지막 별은 아직 꺼지지 않았다. 아직은.', boss: '태초의 신 아르케', rage: '이야기를 끝내러 왔구나. …이야기는 끝나지 않아. 다음 별이 켜질 뿐이야.' },
+};
+
+/* ---- old words -> the bible's, longest first (a full name before its short form) ---- */
+const STORY50_RENAME = [
+  ['종을 든 돌거인 리토스', '이끼 낀 종지기 골렘'], ['돌거인 리토스', '종지기 골렘'], ['리토스', '종지기'],
+  ['망각의 무녀 레테이아', '무녀'], ['무녀 레테이아', '무녀'], ['레테이아', '무녀'],
+  ['웃는 광대 겔로스', '사악한 광대'], ['광대 겔로스', '사악한 광대'], ['겔로스', '광대'],
+  ['썩지 않는 자 사르코스', '청동 황소 아스테리온'], ['사르코스', '아스테리온'],
+  ['아홉 꼬리 알로페', '고르곤 여왕 스테노'], ['알로페', '스테노'],
+  ['밤의 백작 니크테리스', '뱃사공 카론'], ['백작 니크테리스', '카론'], ['니크테리스', '카론'],
+  ['외눈의 브론테스', '외눈 거인 브론테스'],
+  ['꿈을 먹는 오네이라', '거신 크리오스'], ['몽마 오네이라', '크리오스'], ['오네이라', '크리오스'],
+  ['집도의 키루르고스', '이름 없는 악마'], ['키루르고스', '아노니모스'],
+  ['태엽 심장 클락워크 골렘', '시계태엽 골렘'], ['클락워크 골렘', '시계태엽 골렘'], ['클락워크', '시계태엽 골렘'],
+  ['증기 연금술사 플라스크 닥터', '플라스크 닥터 & 키메라'],
+  ['자칼 군주 아누비스', '아누비스'],
+  ['황금 날개 스카라베 엠프레스', '스카라브 여제'], ['스카라베 엠프레스', '스카라브 여제'], ['엠프레스', '여제'],
+  ['유령 선장 블랙베어드', '검은수염 유령선장'], ['블랙베어드', '검은수염'],
+  ['심해의 왕 크라켄', '거대 크라켄'],
+  ['타락한 검선 청운도사', '만검의 검선 청운'], ['청운도사', '청운'],
+  ['황릉의 수호자 청동 대장군', '사완의 패왕 청동 장군'], ['청동 대장군', '청동 장군'],
+  ['만년설의 서리 마녀', '서리 마녀 & 얼음 늑대'],
+  ['쌍검 기사 이그니스', '화염과 빙결의 대천사 이그니스'],
+];
+/* particles that change with the word before them: [after a final consonant, after a vowel] */
+const STORY50_JOSA = [['이여', '여'], ['으로', '로'], ['이야', '야'], ['이', '가'], ['은', '는'], ['을', '를'], ['과', '와']];
+function story50Fix(text, oldW, newW) {
+  if (text.indexOf(oldW) < 0) return text;
+  const hasF = w => { const c = w.charCodeAt(w.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; };
+  const rieul = w => { const c = w.charCodeAt(w.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 === 8; };
+  let out = '', i = 0;
+  for (;;) {
+    const j = text.indexOf(oldW, i); if (j < 0) { out += text.slice(i); break; }
+    out += text.slice(i, j) + newW; i = j + oldW.length;
+    for (const [a, b] of STORY50_JOSA) {
+      const hit = text.startsWith(a, i) ? a : text.startsWith(b, i) ? b : null; if (!hit) continue;
+      if (hit === '이' && text.startsWith('이다', i)) break;
+      const want = a === '으로' ? (hasF(newW) && !rieul(newW) ? '으로' : '로') : hasF(newW) ? a : b;
+      out += want; i += hit.length; break;
+    }
+  }
+  return out;
+}
+function story50Walk(o, pairs, seen) {
+  if (!o || typeof o !== 'object' || seen.has(o)) return; seen.add(o);
+  for (const k of Object.keys(o)) {
+    const v = o[k];
+    if (typeof v === 'string') { let s = v; for (const [a, b] of pairs) s = story50Fix(s, a, b); if (s !== v) o[k] = s; }
+    else if (v && typeof v === 'object') story50Walk(v, pairs, seen);
+  }
+}
+(function story50Apply() {
+  const pairs = STORY50_RENAME.slice();
+  for (let n = 1; n <= CH_COUNT; n++) {
+    const C = CHAPTERS[n], S = STORY50[n]; if (!C || !S) continue;
+    if (C.title !== S.t) pairs.push([C.title, S.t]);   // old chapter titles in map names and dialogue
+  }
+  pairs.sort((a, b) => b[0].length - a[0].length);
+  const seen = new Set();
+  for (const box of [CHAPTERS, BOSSES, BOSS_DEFS, MAPS, QUESTS, DLG, STORY, LORE]) story50Walk(box, pairs, seen);
+  for (let n = 1; n <= CH_COUNT; n++) {
+    const C = CHAPTERS[n], S = STORY50[n]; if (!C || !S) continue;
+    C.title = S.t;
+    const id = MAPS[C.arena] && MAPS[C.arena].boss;
+    if (id && BOSSES[id]) BOSSES[id].name = S.boss;
+    if (id && BOSS_DEFS[id]) BOSS_DEFS[id].name = S.boss;
+  }
+})();
+
+/* ---- the one-line caption: the boss room's entry line and the rage line ---- */
+function story50Cap(text, secs) {
+  let el = document.getElementById('story50cap');
+  if (!el) { el = document.createElement('div'); el.id = 'story50cap'; document.getElementById('game').appendChild(el); }
+  el.textContent = text; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), (secs || 2) * 1000);
+}
+const story50Ch = b => (b && b.d && b.d.ch) || (G.map && G.map.ch) || 0;
+const _spawnBoss50 = spawnBoss;
+spawnBoss = function (id) {
+  const r = _spawnBoss50(id), b = G.boss, S = STORY50[story50Ch(b)];
+  if (b && b.id !== 'anon' && S && S.sub) story50Cap('「' + S.sub + '」', 1.8);
+  return r;
+};
+const _onBossRage50 = onBossRage;
+onBossRage = function (b) {
+  _onBossRage50(b);
+  const S = STORY50[story50Ch(b)];
+  if (b && b.id !== 'anon' && S && S.rage && !b.rage50) { b.rage50 = 1; story50Cap('「' + S.rage + '」', 2.2); }
+};
+document.head.insertAdjacentHTML('beforeend', `<style>
+#story50cap{position:absolute;left:50%;bottom:calc(var(--u)*92);transform:translateX(-50%);max-width:86%;padding:calc(var(--u)*7) calc(var(--u)*16);
+  background:rgba(6,4,10,.78);border-top:1px solid #6a5530;border-bottom:1px solid #6a5530;color:#f2e6c8;font-weight:500;
+  font-size:max(11px,calc(var(--u)*15));line-height:1.5;text-align:center;opacity:0;transition:opacity .25s;pointer-events:none;z-index:24;white-space:normal}
+#story50cap.on{opacity:1}
+</style>`);
+
+/* ============ 2026-11-22 3막 · 성탑 (chapters 21-30, art/boss30: claude_code_boss_21_to_30_prompt.md + story_1_to_50.md).
+   User decisions: bosses first, fields later (each floor = a camp landing + the boss room, no hunting grounds or quests yet);
+   level cap stays 150, the bosses still grow from today's 20th (the real-spec model goes on: inheritance 2, enhancement and
+   better rolls); the 50% gate (1 s untouchable, roar, rage line) as the stage-9 engine already does it; the story text from
+   the bible (56y_story50.js). The quest chapters stay 1-20 (CH_COUNT); CH_LAST is the last playable chapter.
+   Pictures: 10 boss sheets (assets/boss/NN_*.png, each cell's lowest drawn pixel is the feet: the rows sit at different
+   heights on these sheets) and 60 skill strips (assets/vfx/boss_NN/). The floors borrow older chapters' map pictures
+   (ACT3_ART) until tower art comes. The skills are in 56z2_boss30.js. ============ */
+const CH_LAST = 30;
+const ACT3_ART = { 21: 17, 22: 18, 23: 19, 24: 9, 25: 13, 26: 11, 27: 16, 28: 12, 29: 7, 30: 20 };   // whose field/boss picture a floor borrows
+const ACT3_BOSS = {
+  21: { file: '21_Astral_Stalker.png', h: 192, w: 100, col: '120,190,255', mo: { ms: 110, trail: '120,190,255' } },
+  22: { file: '22_Rusted_Archangel.png', h: 228, w: 124, col: '255,96,60', mo: { ms: 130, float: 2 } },
+  23: { file: '23_Mirror_Empress.png', h: 204, w: 100, col: '200,230,255', mo: { ms: 120, parts: 'spirit' } },
+  24: { file: '24_Plague_Raven_Lord.png', h: 212, w: 112, col: '150,220,90', mo: { ms: 125 } },
+  25: { file: '25_Gravity_Colossus.png', h: 262, w: 150, col: '170,120,255', mo: { ms: 150, float: 3 } },
+  26: { file: '26_Chrono_Archivist.png', h: 214, w: 100, col: '255,210,120', mo: { ms: 120 } },
+  27: { file: '27_Void_Leviathan.png', h: 262, w: 170, col: '150,90,255', mo: { ms: 140 } },
+  28: { file: '28_Silver_Deus.png', h: 262, w: 150, col: '220,240,255', mo: { ms: 150, step: [1, 3], quake: 1.2, dust: 1 } },
+  29: { file: '29_Blood_Eclipse_Knight.png', h: 224, w: 112, col: '255,40,60', mo: { ms: 120, trail: '200,30,50' } },
+  30: { file: '30_Astraon_Star_Devourer.png', h: 270, w: 160, col: '255,220,140', mo: { ms: 130, float: 3 } },
+};
+const isAct3 = n => n > CH_COUNT && n <= CH_LAST;
+
+/* ---- chapter multipliers past 20: the 19 -> 20 step goes on ---- */
+for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
+  const a = CHM[CH_COUNT - 1], b = CHM[CH_COUNT], o = { n };
+  for (const k of ['mhp', 'matk', 'bhp', 'batk', 'xp', 'stone', 'gold']) o[k] = b[k] * Math.pow(a[k] ? b[k] / a[k] : 1, n - CH_COUNT);
+  CHM[n] = o;
+}
+
+/* ---- the ten bosses (picture size, motion; their skills are reg9 tables in 56z2) ---- */
+for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
+  const id = 'b' + n, S = STORY50[n], A = ACT3_BOSS[n], tp = BOSSES['b' + CH_COUNT], last = S.boss.split(' ').pop();
+  BOSSES[id] = { ch: n, id, hp: tp.hp, def: Math.round(tp.def * (1 + 0.06 * (n - CH_COUNT))), w: A.w, h: A.h, rocks: tp.rocks, waves: tp.waves, phases: [], pow: 1, name: S.boss, look: id,
+    pats: ['v9_0'], tempo: tp.tempo, combo: tp.combo, summon: null, hover: 0, line: '', sheet: id, sig: [], sig3: [], def9: 1, rageCol: A.col, grown: 1,
+    wake: last + josa(last, '이', '가') + ' 눈을 뜬다', rage: last + '의 기운이 거칠어진다', stagger: last + josa(last, '이', '가') + ' 비틀거린다' };
+  BOSS_ART[id] = [-1, A.h];
+  BOSS_SHEETS[id] = Object.assign({ grid: id }, A.mo);
+  BOSS_SHEET_FILE[id] = 'boss/' + A.file; BOSS_SHEET_BASE[id] = null;   // null: feet = each cell's lowest drawn pixel (56x cutBossSheet)
+}
+
+/* ---- the floors: a camp landing and the boss room ---- */
+(function act3Maps() {
+  const tp = MAPS['c' + CH_COUNT + '_camp'];
+  for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
+    const S = STORY50[n], art = ACT3_ART[n], th = MAPS[CHAPTERS[art].camp].theme, T = THEME_LIGHT[th] || THEME_LIGHT.rift;
+    const camp = 'c' + n + '_camp', arena = 'c' + n + '_arena', prev = n === CH_COUNT + 1 ? tp.id : 'c' + (n - 1) + '_camp', floor = n - CH_COUNT, place = S.area.split(' · ')[0];
+    MAPS[camp] = {
+      id: camp, ch: n, safe: true, name: '성탑 ' + floor + '층 계단참', sub: S.t, w: 1700, theme: th, dark: (T.dark || 0.78) - 0.08, music: 'camp', artCh: art,
+      plats: [ground(1700), oneway(180, 380, 170), oneway(1230, 380, 190)],
+      lights: [{ x: 780, y: 440, r: 340, col: '255,150,70', a: 1, flick: 1 }, { x: 470, y: 420, r: 130, col: '255,190,120', a: 0.6, flick: 0.6 }, { x: 1050, y: 440, r: 120, col: '255,140,70', a: 0.6, flick: 0.8 }],
+      props: [{ t: 'fire', x: 780 }, { t: 'anvil', x: 1050 }, { t: 'cart', x: 420 }, { t: T.prop, x: 1350, cold: T.cold }, { t: T.deco, x: 230 }],
+      npcs: tp.npcs.filter(q => q.id === 'smith' || q.id === 'shop').map(q => Object.assign({}, q)),
+      lore: [],
+      portals: [
+        { id: 'p_up', x: 70, to: prev, toX: 1180, label: (n - 1) + '장 야영지로', req: () => true, up: true },
+        { id: 'p_arena', x: 1400, to: arena, toX: 120, label: place, req: () => true },
+      ].concat(n < CH_LAST ? [{ id: 'p_down', x: 1290, to: 'c' + (n + 1) + '_camp', toX: 260, label: '위층으로 · ' + (n + 1) + '장', req: () => !!G.save.flags['boss_b' + n], lockT: '봉인됨 · ' + S.boss + josa(S.boss, '을', '를') + ' 쓰러뜨린 뒤', down: true }] : []),
+      spawns: [], start: 700, intro: [S.area].concat(S.story || []),
+    };
+    MAPS[arena] = {
+      id: arena, ch: n, name: place, sub: S.t, w: 1280, theme: th, arenaStyle: true, dark: (T.dark || 0.78) - 0.04, music: 'boss', artCh: art,
+      plats: [ground(1280), oneway(170, 340, 190), oneway(920, 340, 190)],
+      lights: [{ x: 640, y: 160, r: 380, col: T.torch || '200,200,255', a: 0.5, flick: 0.4 }, { x: 80, y: 400, r: 150, col: '255,150,80', a: 0.9, flick: 1 }, { x: 1200, y: 400, r: 150, col: '255,150,80', a: 0.9, flick: 1 }],
+      props: [{ t: 'brazier', x: 80 }, { t: 'brazier', x: 1200 }],
+      npcs: [], lore: [],
+      portals: [{ id: 'p_back', x: 50, to: camp, toX: 1320, label: MAPS[camp].name, req: () => true }],
+      spawns: [], start: 140, boss: 'b' + n, arenaL: 40, arenaR: 1240,
+    };
+    CHAPTERS[n] = { n, title: S.t, camp, a: camp, b: camp, arena, quests: [], gates: [], music: CHAPTERS[art].music || art, end: { h: '', next: '' }, intro: MAPS[camp].intro };
+  }
+  // the way up from chapter 20's camp, once its boss is down
+  tp.portals.push({ id: 'p_tower', x: 1290, to: 'c' + (CH_COUNT + 1) + '_camp', toX: 260, label: '성탑으로 · ' + (CH_COUNT + 1) + '장', req: () => !!G.save.flags['boss_' + MAPS[CHAPTERS[CH_COUNT].arena].boss], lockT: '봉인됨 · ' + CH_COUNT + '장 보스를 쓰러뜨린 뒤', down: true });
+})();
+/* the BOSS CLEAR window's last line (48b) */
+function clearNext(ch) {
+  if (ch === CH_COUNT) return '차원 도약의 나침반을 얻었다 · 야영지에서 성탑으로 오른다';
+  if (ch === CH_LAST) return '3막을 마쳤다 · 31장은 아직 준비 중';
+  if (isAct3(ch)) return '위층 계단이 열렸다 · 계단참에서 오른다';
+  return '전리품을 줍고 네스토르에게 돌아가자';
+}
+
+/* ---- the floors borrow older chapters' pictures (56g) ---- */
+const _map9NowA3 = map9Now;
+map9Now = function () {
+  const m = G.map; if (!m || !isAct3(m.ch)) return _map9NowA3();
+  const im = MAP9.get(map9Key(ACT3_ART[m.ch], map9Kind(m)));
+  return im && !im.failed && im.complete && im.naturalWidth ? im : null;
+};
+const _loadMapA3 = loadMap;
+loadMap = function (id, ...rest) {
+  const r = _loadMapA3(id, ...rest), m = G.map;
+  if (m && isAct3(m.ch)) { const a = ACT3_ART[m.ch]; map9Load(a, 'field'); map9Load(a, 'boss'); map9Load(a, map9Kind(m)); }
+  return r;
+};
+
+/* ---- balance: the real-spec model goes on past 20 with the level held at 150 ----
+   inheritance step 2 (the 20th boss gives the second 계승석), enhancement +1.5 a floor, legend everywhere, potential rolls
+   a little better each floor. Boss health = that player's damage over BOSS_SECS (BOSS9_DPS, from the 20th measured value
+   grown with the spec's combat power until the bot measures them), hits = the same share of that player's health. */
+/* hit size per floor (the 17-20 bosses sit at 0.21-0.32) and health trims: win9h.js, 6 fights a floor at the floor's spec
+   (first pass at 0.25: wins 2 6 3 4 6 6 4 1 6 0 of 6, fights 89-112 s like today's 19th and 20th at 100 and 83 s;
+   second pass: 6 6 6 4 2 6 4 2 4 2) */
+const BOSS9_K3 = { 21: 0.23, 22: 0.3, 23: 0.26, 24: 0.25, 25: 0.27, 26: 0.36, 27: 0.25, 28: 0.18, 29: 0.3, 30: 0.18 };
+Object.assign(BOSS9_HPK, { 28: 0.85, 30: 0.8 });
+for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
+  SPEC9_OV[n] = { L: MAX_LEVEL, T: 2, e: clamp(Math.round(1.5 * (n - CH_COUNT)), 1, ENH_MAX), q3: 6, q2: true, leg: 6, uniq: 6, potK: 1.6 + 0.1 * (n - CH_COUNT) };
+  BOSS9_K[n] = BOSS9_K3[n];
+}
+/* dps9h.js (2026-11-22, 25 s x 3 classes): 20 -> 30 measured 122030, 94469, 111897, 122320, 150703, 184250, 199786, 212848,
+   210478, 271010, 339277. Each pulled halfway to the 20 -> 30 trend, put on the same footing as the 20th's stored value
+   (186706, x1.53), and at least +5% a floor (user: the bosses must still grow from today's). */
+const BOSS9_DPS3 = {21: 196040, 22: 205840, 23: 220440, 24: 255820, 25: 296610, 26: 325250, 27: 353810, 28: 372560, 29: 441640, 30: 519090};
+function act3Dps(n) {
+  if (BOSS9_DPS3[n]) return BOSS9_DPS3[n];
+  const cp = k => calcStats(specSave(k)).cp;
+  return (BOSS9_DPS3[n] = Math.round(BOSS9_DPS[CH_COUNT - 1] * cp(n) / cp(CH_COUNT)));
+}
+const _bossHp9A3 = bossHp9;
+bossHp9 = function (n) { if (isAct3(n)) { if (BOSS9_DPS[n - 1] == null) BOSS9_DPS[n - 1] = act3Dps(n); } return _bossHp9A3(n); };
+
+/* ---- world map: the bible's three acts, and the tower as a climb on the right edge ---- */
+WM_ACTS.splice(0, WM_ACTS.length,
+  { name: '1막 · 가라앉은 왕국', a: 1, b: 10, col: '150,176,212', x: 0.027, y: 0.125 },
+  { name: '2막 · 미쳐버린 문명', a: 11, b: 20, col: '226,182,104', x: 0.470, y: 0.130 },
+  { name: '3막 · 타락한 별들', a: 21, b: 30, col: '186,150,255', x: 0.800, y: 0.130 });
+for (let n = CH_COUNT + 1; n <= CH_LAST; n++) WM_XY.push([n % 2 ? 0.938 : 0.958, 0.735 - (n - CH_COUNT - 1) * 0.056]);   // the tower: a climb up the right edge
+const _wmZonesA3 = wmZones;
+wmZones = function (n) { return isAct3(n) ? [CHAPTERS[n].camp, CHAPTERS[n].arena] : _wmZonesA3(n); };
+
+/* ============ 2026-11-22 chapters 21-30: ten bosses x six skills (claude_code_boss_21_to_30_prompt.md section 5).
+   Same table shape as 56b/56c: poses [row, col] from the spec's motion table, tel/ct/rt = its telegraph/cast/recover ms,
+   dmg = its % of max HP x A3K (the engine then scales by the boss's attack, which the balance model sets).
+   ph2 = only after the 50% gate. Strips: 4 frames, cut at width/4 by vfx9; drawn about 1.25x the hit box wide.
+   New gimmicks: rootBind, healBlock (+15% damage taken), pullHold, shield (hits do nothing and sting back), eclipseDark,
+   mirror clones (2 hits, 40% damage), timeFreezeFlash, the 26th's rewind (once a fight). Flips are only drawn. ============ */
+const A3K = 1.4;
+const a3d = pct => Math.round(pct * A3K);
+const a3s = ms => ms / 1000;
+const a3face = (b, S) => (S && S.face) || b.face || 1;
+const a3fwd = (b, S, ox, m) => clampX(b.x + a3face(b, S) * ox, m || 40);
+const a3aim = (o) => Math.atan2((G.player.y - 36) - o.y, G.player.x - o.x);
+/* a fan of n bullets aimed at you, spread in degrees */
+function a3fanTele(b, S, n, spread, len) {
+  const o = muzzle(b, 9), a0 = a3aim(o), st = spread * Math.PI / 180; S.o = o; S.angs = [];
+  for (let i = 0; i < n; i++) S.angs.push(a0 + (i - (n - 1) / 2) * st);
+  tg9({ kind: 'aim_ray', src: b, x: o.x, y: o.y, angles: S.angs, rayLength: len || 420, dur: S.tel });
+}
+function a3fanCast(b, S, kind, sp, o) { for (const a of S.angs) shot9(b, kind, S.o.x, S.o.y, a, sp, Object.assign({ n: S.s.dmg }, o || {})); sfx('throw'); }
+/* a straight dash: the body really moves (the move row's 4 frames = 4 stretches), it hits while it travels */
+function a3dashTele(b, S, dist) { S.tx = clampX(b.x + a3face(b, S) * dist, b.w / 2 + 6); tg9({ kind: 'dash_line', src: b, x: b.x, targetX: S.tx, y: GROUND - 55, height: 110, dur: S.tel }); }
+function a3dashTick(b, S, k, n, h) { dash9(b, S, k, S.tx, false); b.cell9 = cell9(1, Math.min(3, Math.floor(k * 4))); body9(b, S, n, { h: h || 120 }); if (Math.random() < 0.5) dust(b.x - a3face(b, S) * 30, GROUND, 1); }
+/* several falling columns, one after another */
+function a3cols(b, S, xs, w, gap, n, o) { xs.forEach((x, i) => col9(b, S, clampX(x, w / 2), w, Object.assign({ delay: i * gap, dmg: n }, o || {}))); }
+/* a strip played where a hazard lands */
+const a3fx = (b, slot, x, w, o) => { if (G.boss === b && b.st !== 'die') fx9(b, slot, x, GROUND + 6, w, Object.assign({ flip: false }, o || {})); };
+
+/* ---- new gimmicks (gim9 gets the extra cases) ---- */
+const _gim9A3 = gim9;
+gim9 = function (name, b, o) {
+  const p = G.player; o = o || {};
+  switch (name) {
+    case 'rootBind': if (p.dead <= 0) { p.rootT = Math.max(p.rootT || 0, o.t || 1.2); toast('묶였다 · 움직일 수 없다 (공격은 된다)', 'bad'); } return;
+    case 'healBlock': p.healBlockT = Math.max(p.healBlockT || 0, o.t || 5); p.curseT = Math.max(p.curseT || 0, o.t || 5); toast('저주 · ' + (o.t || 5) + '초 동안 회복할 수 없고 받는 피해가 늘어난다', 'bad'); return;
+    case 'poisonZone': return;   // the pools carry it (a3pool)
+    case 'pillarZone': case 'dashSync': case 'homing': return;   // done by the skill itself
+    case 'pullHold': G.pull3 = { t: o.t || 2, v: o.v || 160, b }; return;
+    case 'shield': if (b) { b.shield3 = o.t || 3; toast('방벽 · 때리면 되돌아온다', 'bad'); } return;
+    case 'eclipseDark': G.dark3 = Math.max(G.dark3 || 0, o.t || 4); return;
+    case 'timeFreezeFlash': G.hitstop = Math.max(G.hitstop || 0, 0.4); scr9().flash = Math.max(scr9().flash, 0.5); return;
+    case 'mirrorClones': if (b) a3clones(b, o.n || 1, o.life || 12); return;
+  }
+  return _gim9A3(name, b, o);
+};
+/* clones: a sheet cell drawn at 55%, hittable (2 hits), every 2.6 s a warned strike under you at 40% of the boss's hit */
+function a3clones(b, n, life) {
+  for (let i = 0; i < n; i++) {
+    const x = clampX(G.player.x + (i % 2 ? 1 : -1) * (180 + 60 * i), 80);
+    const ph = ph9(b, cell9(0, 0), x, { alpha: 0.55, life, face: sgn(G.player.x - x) || 1 });
+    const e = { clone3: 1, src: b, ph, x, y: GROUND, w: b.w * 0.7, h: b.h * 0.85, hp: 2, mhp: 2, d: { def: 0 }, st: 'idle', t: 0, life, atkT: 1.4 };
+    e.onHit = q => { q.hp -= 1; spark(q.x, q.y - q.h * 0.5, 8, '200,220,255', 180); if (q.hp <= 0) { q.dead = 1; q.ph.dead = 1; numPop(q.x, q.y - q.h - 8, '분신이 깨졌다', '#cfe8ff', 13); sfx('stone'); } };
+    G.gimT.push(e);
+  }
+}
+function a3cloneTick(dt) {
+  const b = G.boss; if (!b) return;
+  for (const e of G.gimT) {
+    if (!e.clone3 || e.dead) continue;
+    e.t += dt; if (e.t > e.life || b.st === 'die') { e.dead = 1; e.ph.dead = 1; continue; }
+    e.ph.face = sgn(G.player.x - e.x) || 1;
+    e.atkT -= dt; if (e.atkT > 0) continue; e.atkT = 2.6;
+    const x = clampX(G.player.x, 60); e.ph.cell = cell9(2, 1); setTimeout(() => { if (!e.dead) e.ph.cell = cell9(0, 0); }, 600);
+    tg9({ kind: 'ground_zone', src: b, x, width: 120, height: 110, dur: 0.7, tone: 'normal' });
+    groundHaz(b, x, 120, { h: 110, warn: 0.7, act: 0.2, dmg: Math.round(dmg9(b, a3d(10)) * 0.4), hid9: true, pat: 'v9', kb: 200, up: 160 });
+  }
+}
+/* a lingering poison pool: standing in it poisons you (2% of max HP a second, 46/30_combat poisonT) */
+function a3pool(b, x, w, life, slot, vw) {
+  const h = groundHaz(b, x, w, { h: 40, warn: 0, act: life, multi: true, dmg: 0, col: '120,230,120', kb: 0, up: 0, pat: 'v9', sound: false, hid9: true });
+  h.onHit = (p, hh) => { hh.hit = true; p.poisonT = Math.max(p.poisonT || 0, 1.2); after(0.5, () => { hh.hit = false; }); };
+  h.multi = false;
+  if (slot != null) fx9(b, slot, x, GROUND + 8, vw || w * 1.15, { loop: true, life, flip: false, step: 0.1 });
+  return h;
+}
+
+/* ---- per-tick upkeep: pull, curse, shields, darkness, auras, clones, the rewind's memory ---- */
+const _updateWorldA3 = updateWorld;
+updateWorld = function (rdt) {
+  _updateWorldA3(rdt);
+  if (G.cine || G.death || G.hitstop > 0) return;
+  const dt = rdt * (G.timeScale || 1), p = G.player, b = G.boss;
+  for (const k of ['healBlockT', 'curseT']) if (p[k] > 0) p[k] = Math.max(0, p[k] - dt);
+  if (G.dark3 > 0) G.dark3 = Math.max(0, G.dark3 - dt);
+  if (!b || b.st === 'die' || !isAct3(b.d && b.d.ch)) { G.pull3 = null; return; }
+  if (b.shield3 > 0) b.shield3 = Math.max(0, b.shield3 - dt);
+  if (b.inv3 > 0) b.inv3 = Math.max(0, b.inv3 - dt);
+  const P = G.pull3; if (P) { P.t -= dt; if (P.t <= 0 || P.b !== b) G.pull3 = null; else if (p.dead <= 0) p.x = clamp(p.x + sgn(b.x - p.x) * Math.min(P.v * dt, Math.abs(b.x - p.x)), arL() + 20, arR() - 20); }
+  if (b.id === 'b25' && b.berserk9 && p.dead <= 0) p.x = clamp(p.x + sgn(b.x - p.x) * Math.min(90 * dt, Math.abs(b.x - p.x)), arL() + 20, arR() - 20);   // the singularity always pulls
+  if (b.id === 'b22' && b.berserk9) { b.aura3 = (b.aura3 || 2) - dt; if (b.aura3 <= 0) { b.aura3 = 2; if (p.dead <= 0 && Math.abs(p.x - b.x) < 360) hurtPlayer(Math.max(1, Math.round(p.mhp * 0.03)), b.x, { src: b, kb: 0, up: 0, shake: 1, burn: true, noInv: true }); } }
+  if (b.id === 'b29' && b.berserk9) { b.aura3 = (b.aura3 || 0.5) - dt; if (b.aura3 <= 0) { b.aura3 = 0.5; if (p.dead <= 0 && Math.abs(p.x - b.x) < b.w * 0.5 + 60 && p.y > b.y - b.h) hurtPlayer(Math.max(1, Math.round(p.mhp * 0.03)), b.x, { src: b, kb: 60, up: 0, shake: 1, noInv: true }); } }
+  if (b.id === 'b26') { b.hist3 = b.hist3 || []; b.histT = (b.histT || 0) - dt; if (b.histT <= 0) { b.histT = 0.25; b.hist3.push(b.x); if (b.hist3.length > 14) b.hist3.shift(); } }
+  a3cloneTick(dt);
+};
+const _resetA3 = resetBossArenaState;
+resetBossArenaState = function () { _resetA3(); G.pull3 = null; G.dark3 = 0; };
+/* the curse makes hits land harder; the shield turns hits away and stings back; the mirror swap is untouchable briefly */
+const _hurtPlayerA3 = hurtPlayer;
+hurtPlayer = function (raw, srcX, o) { if (G.player && G.player.curseT > 0) raw = Math.round(raw * 1.15); return _hurtPlayerA3(raw, srcX, o); };
+const _hitEntityA3 = hitEntity;
+hitEntity = function (e, dmg, crit, o) {
+  if (e && e.isBoss && e.st !== 'die' && (e.shield3 > 0 || e.inv3 > 0)) {
+    numPop(e.x, e.y + (e.yOff || 0) - e.h - 10, e.shield3 > 0 ? '방벽' : '…', '#e8f0ff', 13);
+    if (e.shield3 > 0 && !(e.sting3 > G.t)) { e.sting3 = G.t + 0.6; hurtPlayer(dmg9(e, a3d(6)), e.x, { src: e, kb: 220, up: 120, shake: 4 }); spark(G.player.x, G.player.y - 40, 8, '230,240,255', 200); }
+    return;
+  }
+  return _hitEntityA3(e, dmg, crit, o);
+};
+/* the eclipse: everything dark but a ring around you and a faint one round the boss (telegraphs under it stay readable there) */
+const _renderWorldA3 = renderWorld;
+renderWorld = function () {
+  _renderWorldA3();
+  if (!(G.dark3 > 0) || !G.boss) return;
+  const c = ctx, p = G.player, b = G.boss, fl = scr9Flip(), a = Math.min(1, G.dark3 / 0.4) * 0.86;
+  const scr = (x, y) => { const sx = x - G.cam.x + G.cam.sx, sy = y + G.cam.sy; return [fl && fl.x ? W - sx : sx, fl && fl.y ? H - sy : sy]; };
+  c.save(); c.setTransform(RS, 0, 0, RS, 0, 0);
+  const cv = a3darkCv(); const g = cv.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H); g.fillStyle = `rgba(4,2,8,${a})`; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'destination-out';
+  const [px, py] = scr(p.x, p.y - 40), [bx, by] = scr(b.x, b.y - b.h * 0.5);
+  let gr = g.createRadialGradient(px, py, 90, px, py, 160); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  gr = g.createRadialGradient(bx, by, 20, bx, by, b.h * 0.6); gr.addColorStop(0, 'rgba(0,0,0,.55)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  c.drawImage(cv, 0, 0); c.restore();
+};
+let A3DARK = null;
+const a3darkCv = () => { if (!A3DARK) { A3DARK = document.createElement('canvas'); A3DARK.width = W; A3DARK.height = H; } return A3DARK; };
+
+/* ======== 21. 별빛 사냥꾼 ======== */
+reg9('b21', {
+  bz: '별의 사냥개', spdK: 1.2,
+  files: ['boss_21/b21_s1_starlight_dagger_fan.png', 'boss_21/b21_s2_shadow_pounce.png', 'boss_21/b21_s3_constellation_web.png', 'boss_21/b21_s4_eclipse_volley.png', 'boss_21/b21_s5_starlit_berserk.png', 'boss_21/b21_s6_astral_snipe.png'],
+  skills: [
+    { name: '별빛 단검 부채', tel: a3s(650), dmg: a3d(8), mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 1]], ct: a3s(280), rt: a3s(260),
+      vfx: 0, vpos: (b, S) => [a3fwd(b, S, 210), GROUND - 20], vo: { w: 360, step: 0.07 },
+      tele(b, S) { a3fanTele(b, S, 5, 22, 400); }, cast(b, S) { a3fanCast(b, S, 'pknife', 380); } },
+    { name: '그림자 도약', tel: a3s(520), dmg: a3d(14), mt: [1, 0], mc: [[1, 0], [1, 1], [1, 2], [1, 3]], mr: [[0, 1]], ct: a3s(280), rt: a3s(320), near: 700,
+      vfx: 1, vpos: b => [b.x, GROUND], vo: { w: 200, step: 0.07 },
+      tele(b, S) { a3dashTele(b, S, 420); }, cast(b, S) { if (S.v) { S.v.follow = b; S.v.dx = -40; } sfx('dash'); }, castTick(b, S, dt, k) { a3dashTick(b, S, k, S.s.dmg, 100); } },
+    { name: '성좌의 그물', tel: a3s(720), dmg: a3d(6), mt: [2, 0], mc: [[2, 1], [2, 2], [2, 3]], mr: [[0, 2]], ct: a3s(320), rt: a3s(360),
+      vfx: 2, vpos: (b, S) => [S.x, GROUND], vo: { w: 290, step: 0.08 },
+      tele(b, S) { S.x = clampX(G.player.x, 115); const h = zone9(b, S, S.x, 230, 210); h.onHit = () => gim9('rootBind', b, { t: 1.2 }); } },
+    { name: '일식 연사', tel: a3s(560), dmg: a3d(7), mt: [2, 0], mc: [[2, 2], [2, 3]], mr: [[0, 0]], ct: a3s(280), rt: a3s(280),
+      vfx: 3, vpos: (b, S) => [a3fwd(b, S, 60), GROUND - 60], vo: { w: 220, step: 0.07 },
+      tele(b, S) { a3fanTele(b, S, 1, 0, 300); },
+      cast(b, S) { for (let i = 0; i < 3; i++) after(i * 0.12, () => { if (G.boss !== b || b.st === 'die') return; const o = muzzle(b, 11); shot9(b, 'pwisp', o.x, o.y, a3aim(o) + (i - 1) * 0.25, 320, { n: S.s.dmg, homeT: 0.8 }); }); sfx('throw'); } },
+    { name: '[광폭화] 별의 사냥개', berserk: 1, tel: 0.32, dmg: 0, gim: 'mirrorClones', gimO: { n: 1, life: 12 }, mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[3, 0]], ct: a3s(440), rt: a3s(600), heavy: 1,
+      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 300, flip: false } },
+    { name: '천상의 사격', tel: a3s(900), dmg: a3d(22), gim: 'screenShake', mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 2]], ct: a3s(360), rt: a3s(420), far: 160,
+      vfx: 5, vpos: (b, S) => [S.mx, S.y + 30], vo: { w: 640, anchor: 'center', step: 0.09 },
+      tele(b, S) { const o = muzzle(b, 10), x1 = clamp(o.x + a3face(b, S) * 900, arL(), arR()); S.y = GROUND - 150; S.mx = (o.x + x1) / 2; line9(b, S, o.x, S.y, x1, S.y, 44, { act: 0.25 }); } },
+  ],
+});
+
+/* ======== 22. 녹슨 대천사 ======== */
+reg9('b22', {
+  bz: '타락한 성가', spdK: 1.25,
+  files: ['boss_22/b22_s1_rusted_lance_thrust.png', 'boss_22/b22_s2_broken_wing_storm.png', 'boss_22/b22_s3_crimson_halo.png', 'boss_22/b22_s4_judgment_pillar.png', 'boss_22/b22_s5_fallen_berserk.png', 'boss_22/b22_s6_spears_of_calvary.png'],
+  skills: [
+    { name: '녹슨 성창 찌르기', tel: a3s(600), dmg: a3d(13), mt: [1, 0], mc: [[1, 1], [1, 2], [1, 3]], mr: [[0, 1]], ct: a3s(320), rt: a3s(340), near: 650,
+      vfx: 0, vpos: b => [b.x, GROUND], vo: { w: 230, step: 0.08 },
+      tele(b, S) { a3dashTele(b, S, 380); }, cast(b, S) { if (S.v) { S.v.follow = b; S.v.dx = 30; } sfx('dash'); }, castTick(b, S, dt, k) { a3dashTick(b, S, k, S.s.dmg, 110); } },
+    { name: '부러진 날개 폭풍', tel: a3s(700), dmg: a3d(6), gim: 'screenShake', mt: [2, 0], mc: [[2, 1]], mr: [[0, 0]], ct: a3s(280), rt: a3s(300),
+      vfx: 1, vpos: (b, S) => [a3fwd(b, S, 200), GROUND], vo: { w: 440, step: 0.07 },
+      tele(b, S) { a3fanTele(b, S, 7, 12, 420); }, cast(b, S) { a3fanCast(b, S, 'pfeath', 360, { g: 260 }); } },
+    { name: '붉은 성광 고리', tel: a3s(750), dmg: a3d(16), gim: 'screenShake', mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 2]], ct: a3s(360), rt: a3s(380),
+      vfx: 2, vpos: b => [b.x, GROUND], vo: { w: 420, step: 0.09 },
+      tele(b, S) { tg9({ kind: 'ground_zone', src: b, x: b.x, width: 340, height: 120, dur: S.tel, tone: 'danger' }); },
+      cast(b, S) { ring9(b, b.x, b.y - b.h * 0.5, a3d(16), { maxR: 360, speed: 520, band: 26, col: '255,80,70' }); } },
+    { name: '심판의 빛기둥', tel: a3s(900), dmg: a3d(18), mt: [2, 0], mc: [[2, 2], [2, 3]], mr: [[0, 1]], ct: a3s(320), rt: a3s(400),
+      tele(b, S) { const x = clampX(G.player.x, 60); S.xs = [x - 160, x, x + 160]; a3cols(b, S, S.xs, 70, 0, S.s.dmg, { act: 0.25 }); },
+      cast(b, S) { S.xs.forEach(x => a3fx(b, 3, clampX(x, 35), 110)); } },
+    { name: '[광폭화] 타락한 성가', berserk: 1, tel: 0.32, dmg: 0, gim: 'screenShake', mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[1, 2]], ct: a3s(440), rt: a3s(650), heavy: 1,
+      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 420, flip: false } },
+    { name: '성창의 비', ph2: 1, tel: a3s(800), dmg: a3d(15), gim: 'screenShake', mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 0]], ct: a3s(1100), rt: a3s(420),
+      tele(b, S) { const L = arL() + 70, step = (arR() - arL() - 140) / 8; S.xs = Array.from({ length: 9 }, (_, i) => L + i * step); a3cols(b, S, S.xs, 90, 0.11, S.s.dmg, { act: 0.2 }); },
+      castTick(b, S, dt, k) { const i = Math.floor(k * 9); if (i !== S.i && i < 9) { S.i = i; a3fx(b, 5, S.xs[i], 120); } } },
+  ],
+});
+
+/* ======== 23. 거울의 여왕 ======== */
+reg9('b23', {
+  bz: '깨진 자아', spdK: 1.25,
+  files: ['boss_23/b23_s1_mirror_shard_volley.png', 'boss_23/b23_s2_prism_refraction.png', 'boss_23/b23_s3_glass_shatter_box.png', 'boss_23/b23_s4_mirror_swap.png', 'boss_23/b23_s5_shattered_berserk.png', 'boss_23/b23_s6_hall_of_mirrors.png'],
+  skills: [
+    { name: '거울 파편 사격', tel: a3s(600), dmg: a3d(7), mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 1]], ct: a3s(280), rt: a3s(280),
+      vfx: 0, vpos: (b, S) => [a3fwd(b, S, 190), GROUND - 30], vo: { w: 380, step: 0.07 },
+      tele(b, S) { a3fanTele(b, S, 5, 16, 400); }, cast(b, S) { a3fanCast(b, S, 'pshard', 400); } },
+    { name: '프리즘 굴절', tel: a3s(680), dmg: a3d(11), gim: 'mirrorClones', gimO: { n: 1, life: 8 }, mt: [2, 0], mc: [[2, 2], [2, 3]], mr: [[0, 2]], ct: a3s(320), rt: a3s(320),
+      vfx: 1, vpos: (b, S) => [a3fwd(b, S, 310), GROUND - 130], vo: { w: 640, anchor: 'center', step: 0.08 },
+      tele(b, S) { const o = muzzle(b, 10), f = a3face(b, S); S.o = o; for (const da of [-0.22, 0, 0.22]) { const a = a3aim(o) + da; line9(b, S, o.x, o.y, o.x + Math.cos(a) * 620, o.y + Math.sin(a) * 620, 60, { act: 0.25 }); } } },
+    { name: '유리 감옥', tel: a3s(760), dmg: a3d(9), mt: [2, 0], mc: [[2, 1]], mr: [[2, 2]], ct: a3s(320), rt: a3s(360),
+      vfx: 2, vpos: (b, S) => [S.x, GROUND], vo: { w: 260, step: 0.08 },
+      tele(b, S) { S.x = clampX(G.player.x, 100); const h = zone9(b, S, S.x, 200, 220); h.onHit = () => { gim9('rootBind', b, { t: 0.5 }); after(0.5, () => { if (G.boss === b && b.st !== 'die' && Math.abs(G.player.x - S.x) < 110) { hurtPlayer(dmg9(b, a3d(9)), S.x, { src: b, kb: 260, up: 220, shake: 6 }); spark(S.x, GROUND - 100, 16, '220,240,255', 240); } }); }; } },
+    { name: '거울 교대', tel: a3s(500), dmg: 0, mt: [1, 0], mc: [[1, 1]], mr: [[0, 0]], ct: a3s(280), rt: a3s(300),
+      vfx: 3, vpos: b => [b.x, GROUND], vo: { w: 220, flip: false },
+      cast(b, S) { const from = b.x; b.x = clampX(2 * arM() - b.x, b.w / 2 + 6); b.inv3 = 0.4; spark(b.x, b.y - b.h * 0.5, 14, '220,240,255', 220); a3clones(b, 1, 8); const e = G.gimT[G.gimT.length - 1]; if (e) { e.x = clampX(from, 80); e.ph.x = e.x; } sfx('blink'); } },
+    { name: '[광폭화] 깨진 자아', berserk: 1, tel: 0.32, dmg: 0, gim: 'mirrorFlip', gimO: { t: 4 }, mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[3, 0]], ct: a3s(440), rt: a3s(700), heavy: 1,
+      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 320, flip: false }, onBerserk(b) { a3clones(b, 2, 14); } },
+    { name: '거울의 회랑', ph2: 1, tel: a3s(850), dmg: a3d(12), gim: 'mirrorFlip', gimO: { t: 4 }, mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 1]], ct: a3s(360), rt: a3s(420),
+      tele(b, S) { tg9({ kind: 'dash_line', src: b, x: arL() + 40, targetX: arR() - 40, y: GROUND - 120, height: 240, dur: S.tel }); },
+      cast(b, S) { for (let i = 0; i < 4; i++) after(i * 0.55, () => { if (G.boss !== b || b.st === 'die') return; walker9(b, { x: arL() + 50, vx: 360, w: 80, h: 240, life: 3.3, n: S.s.dmg, slot: 5, vw: 110, onHit: () => gim9('push', b, { v: 300 }) }); }); } },
+  ],
+});
+
+/* ======== 24. 역병 까마귀 군주 ======== */
+reg9('b24', {
+  bz: '검은 역병의 날개', spdK: 1.3,
+  files: ['boss_24/b24_s1_plague_bolt.png', 'boss_24/b24_s2_raven_swarm.png', 'boss_24/b24_s3_miasma_cloud.png', 'boss_24/b24_s4_skull_staff_curse.png', 'boss_24/b24_s5_plague_berserk.png', 'boss_24/b24_s6_corpse_bloom.png'],
+  skills: [
+    { name: '역병 탄환', tel: a3s(600), dmg: a3d(7), mt: [2, 0], mc: [[2, 1]], mr: [[0, 1]], ct: a3s(280), rt: a3s(280),
+      vfx: 0, vpos: (b, S) => [a3fwd(b, S, 60), GROUND - 80], vo: { w: 200, step: 0.07 },
+      tele(b, S) { a3fanTele(b, S, 2, 24, 300); },
+      cast(b, S) { for (const a of S.angs) { const q = shot9(b, 'pskull', S.o.x, S.o.y, a, 300, { n: S.s.dmg, homeT: 0.9 }); q.onHit9 = p => { p.poisonT = Math.max(p.poisonT || 0, 1.5); }; } sfx('throw'); } },
+    { name: '까마귀 떼', tel: a3s(680), dmg: a3d(6), mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 0]], ct: a3s(700), rt: a3s(300),
+      vfx: 1, vpos: (b, S) => [a3fwd(b, S, 190), GROUND - 40], vo: { w: 420, step: 0.07 },
+      tele(b, S) { a3fanTele(b, S, 3, 20, 420); },
+      castTick(b, S, dt, k) { const i = Math.floor(k * 12); if (i !== S.i && i < 12) { S.i = i; const o = muzzle(b, 9); shot9(b, 'pfeath', o.x, o.y + Math.sin(i * 1.3) * 40, a3aim(o) + Math.sin(i * 0.9) * 0.35, 330, { n: S.s.dmg }); } } },
+    { name: '독기 구름', tel: a3s(700), dmg: 0, gim: 'poisonZone', mt: [2, 1], mc: [[2, 2]], mr: [[0, 1]], ct: a3s(320), rt: a3s(340),
+      tele(b, S) { S.x = clampX(G.player.x, 130); tg9({ kind: 'ground_zone', src: b, x: S.x, width: 260, height: 90, dur: S.tel, tone: 'poison' }); },
+      cast(b, S) { a3pool(b, S.x, b.berserk9 ? 520 : 260, 6, 2, b.berserk9 ? 600 : 320); } },
+    { name: '해골 지팡이의 저주', tel: a3s(780), dmg: a3d(9), mt: [2, 0], mc: [[2, 1]], mr: [[0, 2]], ct: a3s(320), rt: a3s(360),
+      vfx: 3, vpos: (b, S) => [S.x, GROUND], vo: { w: 240, step: 0.08 },
+      tele(b, S) { S.x = clampX(G.player.x, 90); const h = zone9(b, S, S.x, 180, 260, { tone: 'poison' }); h.onHit = () => gim9('healBlock', b, { t: 5 }); } },
+    { name: '[광폭화] 검은 역병의 날개', berserk: 1, tel: 0.32, dmg: 0, gim: 'screenShake', mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[1, 2]], ct: a3s(440), rt: a3s(650), heavy: 1,
+      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 360, flip: false }, onBerserk(b) { gim9('push', b, { v: 520 }); } },
+    { name: '시체꽃 만개', ph2: 1, tel: a3s(820), dmg: a3d(14), gim: 'poisonZone', mt: [2, 1], mc: [[2, 3]], mr: [[0, 0]], ct: a3s(900), rt: a3s(420),
+      tele(b, S) { const x = clampX(G.player.x, 60); S.xs = [x - 170, x, x + 170].map(q => clampX(q, 60)); S.xs.forEach((q, i) => zone9(b, S, q, 100, 300, { delay: i * 0.3, tone: 'poison' })); },
+      castTick(b, S, dt, k) { const i = Math.floor(k * 3); if (i !== S.i && i < 3) { S.i = i; a3fx(b, 5, S.xs[i], 160); a3pool(b, S.xs[i], 120, 5, null); } } },
+  ],
+});
+
+/* ======== 25. 중력의 거인 ======== */
+reg9('b25', {
+  bz: '특이점 폭주', spdK: 1.2,
+  files: ['boss_25/b25_s1_gravity_well.png', 'boss_25/b25_s2_crush_slam.png', 'boss_25/b25_s3_rune_monolith_drop.png', 'boss_25/b25_s4_inverted_field.png', 'boss_25/b25_s5_singularity_berserk.png', 'boss_25/b25_s6_event_horizon.png'],
+  skills: [
+    { name: '중력장', tel: a3s(750), dmg: 0, mt: [2, 0], mc: [[2, 1]], mr: [[0, 1]], ct: a3s(320), rt: a3s(400),
+      vfx: 0, vpos: (b, S) => [a3fwd(b, S, 120), GROUND], vo: { w: 420, loop: true, life: 2, step: 0.08 },
+      tele(b, S) { tg9({ kind: 'ground_zone', src: b, x: a3fwd(b, S, 120), width: 340, height: 160, dur: S.tel, tone: 'ice' }); },
+      cast(b, S) { if (Math.abs(G.player.x - a3fwd(b, S, 120)) < 300) gim9('pullHold', b, { t: 2, v: 160 }); } },
+    { name: '중력 분쇄', tel: a3s(800), dmg: a3d(20), gim: 'screenShake', mt: [2, 0], mc: [[2, 2]], mr: [[0, 2]], ct: a3s(320), rt: a3s(420),
+      vfx: 1, vpos: (b, S) => [S.x, GROUND], vo: { w: 260, step: 0.08 },
+      tele(b, S) { S.x = a3fwd(b, S, 130, 100); zone9(b, S, S.x, 200, 240); } },
+    { name: '룬 석주 낙하', tel: a3s(880), dmg: a3d(16), mt: [2, 1], mc: [[2, 1], [2, 2]], mr: [[0, 1]], ct: a3s(320), rt: a3s(420),
+      tele(b, S) { const x = clampX(G.player.x, 60); S.xs = [x - 180, x, x + 180].map(q => clampX(q, 50)); a3cols(b, S, S.xs, 90, 0.12, S.s.dmg); },
+      cast(b, S) { S.xs.forEach((x, i) => after(0.12 * i + 0.1, () => { a3fx(b, 2, x, 120); const h = groundHaz(b, x, 90, { h: 60, warn: 0, act: 1.5, multi: false, dmg: dmg9(b, a3d(8)), col: '170,120,255', pat: 'v9', hid9: true, kb: 120, up: 120 }); })); } },
+    { name: '중력 역전', tel: a3s(700), dmg: a3d(8), gim: 'flipScreen', gimO: { t: 4 }, mt: [0, 0], mc: [[0, 1], [0, 2]], mr: [[0, 3]], ct: a3s(320), rt: a3s(380),
+      vfx: 3, vpos: b => [b.x, GROUND], vo: { w: 520, flip: false },
+      tele(b, S) { zone9(b, S, b.x, 420, 360, { tone: 'ice' }); } },
+    { name: '[광폭화] 특이점 폭주', berserk: 1, tel: 0.32, dmg: 0, mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[3, 0]], ct: a3s(440), rt: a3s(700), heavy: 1,
+      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 360, flip: false } },
+    { name: '사건의 지평선', ph2: 1, tel: a3s(1000), dmg: a3d(25), gim: 'screenShake', mt: [2, 1], mc: [[2, 3]], mr: [[0, 3]], ct: a3s(360), rt: a3s(480),
+      vfx: 5, vpos: () => [arM(), GROUND - 115], vo: { w: 1000, anchor: 'center', step: 0.09 },
+      tele(b, S) { const y = GROUND - 115; line9(b, S, arL(), y, arR(), y, 170, { act: 0.3 }); toast('지평선 · 가드나 이동기로만 피한다', 'bad'); } },
+  ],
+});
+
+/* ======== 26. 시간의 서기관 ======== */
+reg9('b26', {
+  bz: '멈춘 시간', spdK: 1.3,
+  files: ['boss_26/b26_s1_hourglass_sandblast.png', 'boss_26/b26_s2_clock_hand_sweep.png', 'boss_26/b26_s3_time_slow_field.png', 'boss_26/b26_s4_rewind_heal.png', 'boss_26/b26_s5_chrono_berserk.png', 'boss_26/b26_s6_paradox_beam.png'],
+  skills: [
+    { name: '모래 폭풍', tel: a3s(650), dmg: a3d(7), mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 1]], ct: a3s(280), rt: a3s(300),
+      vfx: 0, vpos: (b, S) => [a3fwd(b, S, 190), GROUND - 20], vo: { w: 400, step: 0.07 },
+      tele(b, S) { a3fanTele(b, S, 5, 14, 380); }, cast(b, S) { for (const a of S.angs) { const q = shot9(b, 'pstone', S.o.x, S.o.y, a, 360, { n: S.s.dmg }); q.onHit9 = () => gim9('slow', b, { t: 1.5 }); } sfx('throw'); } },
+    { name: '시계바늘 베기', tel: a3s(600), dmg: a3d(12), mt: [2, 0], mc: [[2, 1]], mr: [[0, 1]], ct: a3s(400), rt: a3s(300), near: 500,
+      vfx: 1, vpos: (b, S) => [a3fwd(b, S, 110), GROUND], vo: { w: 380, step: 0.07 },
+      tele(b, S) { zone9(b, S, a3fwd(b, S, 110, 150), 300, 260); } },
+    { name: '시간 지연', tel: a3s(700), dmg: 0, gim: 'timeSlow', gimO: { t: 2.5 }, mt: [0, 0], mc: [[0, 1], [0, 2]], mr: [[0, 3]], ct: a3s(320), rt: a3s(360),
+      vfx: 2, vpos: b => [b.x, GROUND], vo: { w: 480, flip: false },
+      tele(b, S) { tg9({ kind: 'ground_zone', src: b, x: a3fwd(b, S, 90, 200), width: 400, height: 200, dur: S.tel, tone: 'sand' }); },
+      cast(b, S) { if (Math.abs(G.player.x - a3fwd(b, S, 90, 200)) > 220) b.s9.s = Object.assign({}, S.s, { gim: null }); } },
+    { name: '시간 역행', ph2: 1, tel: a3s(900), dmg: 0, mt: [2, 0], mc: [[2, 2]], mr: [[0, 2]], ct: a3s(360), rt: a3s(500),
+      vfx: 3, vpos: b => [b.x, GROUND], vo: { w: 260, flip: false },
+      tele(b, S) { if (b.rew3) { S.skip = 1; return; } tg9({ kind: 'ground_zone', src: b, x: b.x, width: 200, height: 220, dur: S.tel, tone: 'sand' }); },
+      cast(b, S) { if (S.skip || b.rew3) return; b.rew3 = 1; b.hp = Math.min(b.mhp, b.hp + Math.round(b.mhp * 0.06)); updateBossBar(); const h = b.hist3 || []; if (h.length > 12) b.x = clampX(h[h.length - 12], b.w / 2 + 6); spark(b.x, b.y - b.h * 0.5, 20, '255,220,140', 240); toast('시간이 되감겼다 · 지금이 틈이다', 'bad'); } },
+    { name: '[광폭화] 멈춘 시간', berserk: 1, tel: 0.32, dmg: 0, gim: 'timeFreezeFlash', mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[1, 2]], ct: a3s(440), rt: a3s(700), heavy: 1,
+      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 360, flip: false } },
+    { name: '역설의 광선', tel: a3s(850), dmg: a3d(18), gim: 'screenShake', mt: [2, 1], mc: [[2, 3]], mr: [[0, 0]], ct: a3s(900), rt: a3s(420), far: 140,
+      tele(b, S) { const o = muzzle(b, 11); S.o = o; S.y = GROUND - 140; line9(b, S, o.x, S.y, clamp(o.x + a3face(b, S) * 900, arL(), arR()), S.y, 70, { act: 0.2 }); },
+      castTick(b, S, dt, k) { const i = Math.floor(k * 3); if (i !== S.i && i < 3) { S.i = i; const x1 = clamp(S.o.x + a3face(b, S) * 900, arL(), arR()); fx9(b, 5, (S.o.x + x1) / 2, S.y + 40, 620, { anchor: 'center', step: 0.07 }); if (i > 0) line9(b, S, S.o.x, S.y, x1, S.y, 70, { delay: -S.tel, act: 0.2 }); } } },
+  ],
+});
+
+/* ======== 27. 공허의 레비아탄 ======== */
+reg9('b27', {
+  bz: '굶주린 공허', spdK: 1.15, atkK: 1.3,
+  files: ['boss_27/b27_s1_void_devour.png', 'boss_27/b27_s2_abyss_breath.png', 'boss_27/b27_s3_tail_sweep.png', 'boss_27/b27_s4_star_spit_meteor.png', 'boss_27/b27_s5_leviathan_berserk.png', 'boss_27/b27_s6_black_tide.png'],
+  skills: [
+    { name: '공허 포식', tel: a3s(550), dmg: a3d(15), mt: [1, 0], mc: [[1, 1], [1, 2], [1, 3]], mr: [[0, 1]], ct: a3s(280), rt: a3s(320), near: 650,
+      vfx: 0, vpos: b => [b.x, GROUND], vo: { w: 240, step: 0.07 },
+      tele(b, S) { a3dashTele(b, S, 400); }, cast(b, S) { if (S.v) { S.v.follow = b; S.v.dx = 40; } sfx('dash'); }, castTick(b, S, dt, k) { a3dashTick(b, S, k, S.s.dmg, 120); } },
+    { name: '심연 브레스', tel: a3s(750), dmg: a3d(14), gim: 'screenShake', mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 0]], ct: a3s(600), rt: a3s(380),
+      vfx: 1, vpos: (b, S) => [a3fwd(b, S, 350), GROUND - 85], vo: { w: 760, anchor: 'center', step: 0.08 },
+      tele(b, S) { const o = muzzle(b, 9), x1 = clamp(o.x + a3face(b, S) * 700, arL(), arR()); S.y = GROUND - 130; line9(b, S, o.x, S.y, x1, S.y, 90, { act: 0.6, haz: { multi: true, every: 0.35 } }); } },
+    { name: '꼬리 휩쓸기', tel: a3s(650), dmg: a3d(11), mt: [2, 1], mc: [[2, 2]], mr: [[0, 2]], ct: a3s(280), rt: a3s(320),
+      vfx: 2, vpos: b => [b.x, GROUND], vo: { w: 470, flip: false, step: 0.07 },
+      tele(b, S) { zone9(b, S, b.x, 380, 70, { kb: 260, up: 160 }); } },
+    { name: '별 삼킨 유성', tel: a3s(800), dmg: a3d(13), gim: 'screenShake', mt: [2, 0], mc: [[2, 2], [2, 3]], mr: [[0, 1]], ct: a3s(320), rt: a3s(400),
+      tele(b, S) { const x = clampX(G.player.x, 60); S.xs = [x - 200, x, x + 200].map(q => clampX(q, 50)); a3cols(b, S, S.xs, 100, 0.15, S.s.dmg); },
+      cast(b, S) { S.xs.forEach((x, i) => after(i * 0.15, () => a3fx(b, 3, x, 130))); } },
+    { name: '[광폭화] 굶주린 공허', berserk: 1, tel: 0.32, dmg: 0, gim: 'screenShake', mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[3, 0]], ct: a3s(440), rt: a3s(700), heavy: 1,
+      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 380, flip: false } },
+    { name: '검은 조류', ph2: 1, tel: a3s(900), dmg: a3d(20), gim: 'push', gimO: { v: 300 }, mt: [2, 1], mc: [[2, 3]], mr: [[0, 1]], ct: a3s(360), rt: a3s(460),
+      tele(b, S) { S.dir = sgn(G.player.x - b.x) || 1; tg9({ kind: 'dash_line', src: b, x: S.dir > 0 ? arL() + 40 : arR() - 40, targetX: S.dir > 0 ? arR() - 40 : arL() + 40, y: GROUND - 50, height: 100, dur: S.tel, tone: 'danger' }); },
+      cast(b, S) { walker9(b, { x: S.dir > 0 ? arL() + 60 : arR() - 60, vx: S.dir * 520, w: 120, h: 95, life: 2.4, n: S.s.dmg, slot: 5, vw: 300 }); toast('검은 조류 · 파도 위로 뛰어넘는다', 'bad'); } },
+  ],
+});
+
+/* ======== 28. 백은의 기계신 데우스 ======== */
+reg9('b28', {
+  bz: '신기 해방', spdK: 1.35,
+  files: ['boss_28/b28_s1_halo_laser_ring.png', 'boss_28/b28_s2_cannon_barrage.png', 'boss_28/b28_s3_divine_aegis.png', 'boss_28/b28_s4_heaven_descends.png', 'boss_28/b28_s5_deus_berserk.png', 'boss_28/b28_s6_apocalypse_judgment.png'],
+  skills: [
+    { name: '광륜 레이저', tel: a3s(800), dmg: a3d(16), gim: 'screenShake', mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 1]], ct: a3s(320), rt: a3s(400),
+      vfx: 0, vpos: b => [b.x, b.y - b.h * 0.45], vo: { w: 640, anchor: 'center', flip: false, step: 0.08 },
+      tele(b, S) { const o = { x: b.x, y: b.y - b.h * 0.6 }, n = b.berserk9 ? 9 : 6, off = Math.random() * Math.PI / n; for (let i = 0; i < n; i++) { const a = off + i * 2 * Math.PI / n; line9(b, S, o.x, o.y, o.x + Math.cos(a) * 700, o.y + Math.sin(a) * 700, 26, { act: 0.3 }); } } },
+    { name: '오버드라이브 캐논', tel: a3s(750), dmg: a3d(10), gim: 'screenShake', mt: [2, 0], mc: [[2, 1]], mr: [[0, 0]], ct: a3s(280), rt: a3s(360),
+      tele(b, S) { const x = G.player.x; S.xs = Array.from({ length: 6 }, (_, i) => clampX(x + (i - 2.5) * 110 + rnd(-20, 20), 50)); a3cols(b, S, S.xs, 100, 0.12, S.s.dmg); },
+      cast(b, S) { S.xs.forEach((x, i) => after(i * 0.12, () => a3fx(b, 1, x, 120))); } },
+    { name: '신성 방벽', tel: a3s(600), dmg: 0, gim: 'shield', gimO: { t: 3 }, mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 2]], ct: a3s(320), rt: a3s(340),
+      vfx: 2, vpos: b => [b.x, GROUND], vo: { w: 300, loop: true, life: 3, flip: false } },
+    { name: '천강 강림', tel: a3s(950), dmg: a3d(24), gim: 'screenShake', mt: [2, 1], mc: [[2, 3]], mr: [[0, 3]], ct: a3s(360), rt: a3s(480),
+      vfx: 3, vpos: (b, S) => [S.x, GROUND], vo: { w: 300, step: 0.09 },
+      tele(b, S) { S.x = clampX(G.player.x, 120); zone9(b, S, S.x, 240, 480, { tone: 'danger' }); } },
+    { name: '[광폭화] 신기 해방', berserk: 1, tel: 0.32, dmg: 0, gim: 'timeAccel', gimO: { t: 4 }, mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[1, 2]], ct: a3s(440), rt: a3s(700), heavy: 1,
+      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 380, flip: false } },
+    { name: '최후의 심판', ph2: 1, tel: a3s(1000), dmg: a3d(30), gim: 'screenShake', mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 3]], ct: a3s(360), rt: a3s(520),
+      vfx: 5, vpos: b => [b.x, GROUND], vo: { w: 760, flip: false, step: 0.09 },
+      tele(b, S) { const f = a3face(b, S), x0 = f > 0 ? b.x - 40 : arL(), x1 = f > 0 ? arR() : b.x + 40; zone9(b, S, (x0 + x1) / 2, x1 - x0, 480, { tone: 'danger' }); toast('최후의 심판 · 등 뒤로 돌아가라', 'bad'); } },
+  ],
+});
+
+/* ======== 29. 핏빛 월식 기사 ======== */
+reg9('b29', {
+  bz: '피의 갈증', spdK: 1.4,
+  files: ['boss_29/b29_s1_eclipse_slash.png', 'boss_29/b29_s2_blood_crescent.png', 'boss_29/b29_s3_crimson_charge.png', 'boss_29/b29_s4_dark_eclipse.png', 'boss_29/b29_s5_blood_berserk.png', 'boss_29/b29_s6_total_eclipse.png'],
+  skills: [
+    { name: '월식 참격', tel: a3s(620), dmg: a3d(16), gim: 'screenShake', mt: [2, 0], mc: [[2, 1]], mr: [[0, 1]], ct: a3s(280), rt: a3s(320), near: 520,
+      vfx: 0, vpos: (b, S) => [a3fwd(b, S, 120), GROUND], vo: { w: 420, step: 0.07 },
+      tele(b, S) { zone9(b, S, a3fwd(b, S, 120, 170), 340, 300); } },
+    { name: '핏빛 초승달', tel: a3s(650), dmg: a3d(12), mt: [2, 0], mc: [[2, 2]], mr: [[0, 0]], ct: a3s(280), rt: a3s(300),
+      vfx: 1, vpos: (b, S) => [a3fwd(b, S, 120), GROUND - 40], vo: { w: 320, step: 0.07 },
+      tele(b, S) { S.dir = a3face(b, S); tg9({ kind: 'dash_line', src: b, x: b.x, targetX: S.dir > 0 ? arR() - 20 : arL() + 20, y: GROUND - 140, height: 100, dur: S.tel }); },
+      cast(b, S) { shot9(b, 'pcres', b.x + S.dir * 60, GROUND - 140, S.dir > 0 ? 0 : Math.PI, 560, { n: S.s.dmg, sc: 5 }); sfx('throw'); } },
+    { name: '혈전 돌진', tel: a3s(600), dmg: a3d(18), mt: [1, 0], mc: [[1, 1], [1, 2], [1, 3]], mr: [[0, 2]], ct: a3s(300), rt: a3s(340), near: 700,
+      vfx: 2, vpos: b => [b.x, GROUND], vo: { w: 220, step: 0.07 },
+      tele(b, S) { a3dashTele(b, S, 460); }, cast(b, S) { if (S.v) { S.v.follow = b; S.v.dx = -30; } sfx('dash'); },
+      castTick(b, S, dt, k) { a3dashTick(b, S, k, S.s.dmg, 120); },
+      end(b, S) { if (b.x <= arL() + b.w / 2 + 12 || b.x >= arR() - b.w / 2 - 12) { shake(8); sfx('slam'); S.s = Object.assign({}, S.s); b.s9.rt = 0.6 + a3s(340); toast('기사가 벽에 부딪혀 멈췄다', 'good'); } } },
+    { name: '어둠의 월식', tel: a3s(800), dmg: 0, gim: 'eclipseDark', gimO: { t: 4 }, mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 0]], ct: a3s(320), rt: a3s(400),
+      vfx: 3, vpos: b => [b.x, GROUND], vo: { w: 320, flip: false } },
+    { name: '[광폭화] 피의 갈증', berserk: 1, tel: 0.32, dmg: 0, gim: 'screenShake', mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[3, 0]], ct: a3s(440), rt: a3s(650), heavy: 1,
+      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 360, flip: false } },
+    { name: '개기월식', ph2: 1, tel: a3s(1000), dmg: a3d(28), gim: 'eclipseDark', gimO: { t: 3 }, mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 3]], ct: a3s(360), rt: a3s(520),
+      vfx: 5, vpos: () => [arM(), GROUND - 150], vo: { w: 1000, anchor: 'center', step: 0.09 },
+      tele(b, S) { const y = GROUND - 175; line9(b, S, arL(), y, arR(), y, 110, { act: 0.25 }); toast('개기월식 · 몸을 낮춰 참격선 아래에 머문다', 'bad'); } },
+  ],
+});
+
+/* ======== 30. 별을 삼킨 군주 아스트라온 ======== */
+reg9('b30', {
+  bz: '아스트라온의 진식', spdK: 1.3,
+  files: ['boss_30/b30_s1_starfall_crown.png', 'boss_30/b30_s2_nebula_grasp.png', 'boss_30/b30_s3_devoured_star_beam.png', 'boss_30/b30_s4_constellation_collapse.png', 'boss_30/b30_s5_astraon_berserk.png', 'boss_30/b30_s6_final_supernova.png'],
+  skills: [
+    { name: '폐성의 왕관', tel: a3s(850), dmg: a3d(15), gim: 'screenShake', mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 0]], ct: a3s(900), rt: a3s(420),
+      tele(b, S) { const x = clampX(G.player.x, 60); S.xs = [x - 250, x + 250, x - 120, x + 120, x, x].map((q, i) => clampX(q + (i === 5 ? rnd(-60, 60) : 0), 60)); a3cols(b, S, S.xs, 120, 0.15, S.s.dmg); },
+      castTick(b, S, dt, k) { const i = Math.floor(k * 6); if (i !== S.i && i < 6) { S.i = i; a3fx(b, 0, S.xs[i], 160); } } },
+    { name: '성운의 손아귀', tel: a3s(800), dmg: a3d(8), mt: [2, 0], mc: [[2, 1]], mr: [[0, 1]], ct: a3s(320), rt: a3s(420),
+      vfx: 1, vpos: (b, S) => [a3fwd(b, S, 130), GROUND], vo: { w: 470, loop: true, life: 2.5, step: 0.08 },
+      tele(b, S) { zone9(b, S, a3fwd(b, S, 130, 190), 380, 360, { tone: 'ice', kb: 0, up: 0 }); },
+      cast(b, S) { if (Math.abs(G.player.x - b.x) < 520) gim9('pullHold', b, { t: 2.5, v: 200 }); } },
+    { name: '삼켜진 별의 광선', tel: a3s(900), dmg: a3d(24), gim: 'screenShake', mt: [2, 1], mc: [[2, 2]], mr: [[0, 2]], ct: a3s(400), rt: a3s(460),
+      vfx: 2, vpos: (b, S) => [S.mx, S.my], vo: { w: 700, anchor: 'center', step: 0.08 },
+      tele(b, S) { const o = muzzle(b, 10), a = a3aim(o), x1 = o.x + Math.cos(a) * 1100, y1 = o.y + Math.sin(a) * 1100; S.mx = o.x + Math.cos(a) * 350; S.my = o.y + Math.sin(a) * 350; line9(b, S, o.x, o.y, x1, y1, 110, { act: 0.4 }); } },
+    { name: '성좌 붕괴', tel: a3s(950), dmg: a3d(18), gim: 'screenShake', mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 1]], ct: a3s(360), rt: a3s(460),
+      vfx: 3, vpos: b => [b.x, GROUND], vo: { w: 520, flip: false },
+      tele(b, S) { S.xs = [-1, 1].flatMap(d => [150, 240, 330, 420].map(r => b.x + d * r)).filter(x => x > arL() + 40 && x < arR() - 40); S.xs.forEach(x => zone9(b, S, x, 80, 200)); } },
+    { name: '[광폭화] 아스트라온의 진식', berserk: 1, tel: 0.32, dmg: 0, gim: 'flipScreen', gimO: { t: 3 }, mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[3, 0]], ct: a3s(440), rt: a3s(750), heavy: 1,
+      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 420, flip: false }, onBerserk(b) { after(3, () => { if (G.boss === b && b.st !== 'die') gim9('mirrorFlip', b, { t: 3 }); }); } },
+    { name: '종막의 초신성', ph2: 1, tel: a3s(1100), dmg: a3d(35), gim: 'screenShake', mt: [2, 1], mc: [[2, 3]], mr: [[0, 3]], ct: a3s(360), rt: a3s(560),
+      vfx: 5, vpos: b => [b.x, GROUND], vo: { w: 900, flip: false, step: 0.09 },
+      tele(b, S) { b.vx = 0; zone9(b, S, arM(), arR() - arL(), 540, { tone: 'danger' }); toast('종막의 초신성 · 가드(G)로 받아낸다', 'bad'); } },
+  ],
+});
+
 /* ============ dev.html only (통합 지시서 1단계): the admin window on F9 ============
    index.html has all of this code but none of it runs (IS_DEV_BUILD is false there, and F9 does nothing).
    dev.html keeps its data apart from the real game: database paths start with dev_ (19_auth.js dbPath) and the saves on
@@ -18570,7 +19257,7 @@ function devCdReset() { const p = G.player; if (p) for (const k in p.cd) p.cd[k]
 function devMaps(n) { return Object.keys(MAPS).filter(id => (MAPS[id].ch || 1) === n && !MAPS[id].sewer).map(id => [id, (MAPS[id].name || id) + (MAPS[id].boss ? ' (보스)' : MAPS[id].safe ? ' (야영지)' : MAPS[id].gate ? ' (앞 방)' : '')]); }
 function devHtml() {
   const s = G.save, C = BOSS_BALANCE_CONFIG, inGame = G.scene === 'play' && s;
-  const chOpts = Array.from({ length: CH_COUNT }, (_, i) => `<option value="${i + 1}" ${DEV.ch === i + 1 ? 'selected' : ''}>${i + 1}장 ${CHAPTERS[i + 1].title}</option>`).join('');
+  const chOpts = Array.from({ length: CH_LAST }, (_, i) => `<option value="${i + 1}" ${DEV.ch === i + 1 ? 'selected' : ''}>${i + 1}장 ${CHAPTERS[i + 1].title}</option>`).join('');
   const mapOpts = devMaps(DEV.ch).map(([id, n]) => `<option value="${id}">${n}</option>`).join('');
   const chk = (id, on, label) => `<label><input type="checkbox" data-dv="${id}" ${on ? 'checked' : ''}>${label}</label>`;
   return `<div class="dvh"><b>관리자 창</b><span>dev.html 전용 · F9로 닫기</span></div>
@@ -18600,7 +19287,7 @@ function devPanelToggle() { DEV.open = !DEV.open; const el = $('#devPanel'); if 
 const devMsg = m => { DEV.msg = m; devRender(); };
 function devGive(slot, grade, ilvl) { const it = makeItem(slot, G.save.char, grade, ilvl); if (grade === 3) { it.q = 3; } return addItem(it) ? it : null; }
 function devAct(a) {
-  const s = G.save, p = G.player, chNow = Math.max(1, Math.min(CH_COUNT, (G.map && G.map.ch) || 1));
+  const s = G.save, p = G.player, chNow = Math.max(1, Math.min(CH_LAST, (G.map && G.map.ch) || 1));
   if (a === 'cd') { devCdReset(); return devMsg('재사용 대기를 비웠다'); }
   if (!s || G.scene !== 'play') return;
   if (a === 'warp') { const id = $('#dvMap').value; if (!MAPS[id]) return; closePanel(); G.ui.dialog = null; loadMap(id); return devMsg(MAPS[id].name + '(으)로 이동'); }
