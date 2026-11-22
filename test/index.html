@@ -611,9 +611,9 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261122-2157"></script>
+<script src="assets/js/pfx.js?v=261122-2210"></script>
 <script>
-const GAME_VER = '261122-2157';
+const GAME_VER = '261122-2210';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -8357,6 +8357,8 @@ function drawProps(c, cam) {
     } else if (p.t === 'statue') {
       c.drawImage(propSprite('statue' + stone, 70, 130, g => statueSil(g, 35, 130, 1.2, hexLight(stone, 30))), p.x - 35, GROUND - 130, 70, 130);
     } else if (p.t === 'bone' && prop10(c, 'prop_titan_bone', p.x, GROUND, { w: 58, h: 176 })) {
+    } else if ((p.t === 'stele' || p.t === 'post' || p.t === 'mask' || p.t === 'gear') && prop10(c, 'prop_' + p.t, p.x, GROUND, { w: 80, h: 120 })) {   // 2026-11-22 arena objects pack
+    } else if (p.t === 'reeds' && prop10(c, 'prop_reeds', p.x, GROUND, { w: 80, h: 70, frame: prop10Frame(4, p.x, 260), frames: 4 })) {
     } else if (p.t === 'stele' || p.t === 'post' || p.t === 'mask' || p.t === 'bone' || p.t === 'gear') {
       const key = p.t + stone;
       c.drawImage(propSprite(key, 80, 120, g => {
@@ -8369,7 +8371,7 @@ function drawProps(c, cam) {
     } else if (p.t === 'reeds') {
       c.strokeStyle = 'rgba(40,60,52,.95)'; c.lineWidth = 1.4;
       for (let i = 0; i < 14; i++) { const x = p.x - 40 + i * 6, h = 40 + ((i * 37) % 30), sw = Math.sin(t * 1.3 + i * 0.7) * 4; c.beginPath(); c.moveTo(x, GROUND); c.quadraticCurveTo(x + sw * 0.4, GROUND - h * 0.6, x + sw, GROUND - h); c.stroke(); }
-    } else if (p.t === 'chain') { chainLine(c, p.x, 0, 200 + Math.sin(p.x) * 60, '#2a2a30'); }
+    } else if (p.t === 'chain') { const y1 = 200 + Math.sin(p.x) * 60; if (!drawVTileProp(c, 'prop_chain', p.x, 0, y1)) chainLine(c, p.x, 0, y1, '#2a2a30'); }
   }
   if (G.map.safe && CHEST_X > cam.x - 60 && CHEST_X < cam.x + W + 60 && !prop10(c, 'prop_storage_chest', CHEST_X, GROUND, { w: 66, h: 35 })) {
     c.drawImage(propSprite('chest', 56, 40, g => { poly(g, [4, 40, 52, 40, 52, 16, 4, 16], MAT.wood, 28, 16, 28, 40); poly(g, [4, 16, 52, 16, 48, 4, 8, 4], dimMat(MAT.wood, 1.15), 28, 4, 28, 16); g.fillStyle = MAT.bronze[1]; g.fillRect(4, 15, 48, 3); g.fillRect(12, 4, 4, 36); g.fillRect(40, 4, 4, 36); ball(g, 28, 22, 3.5, MAT.gold); }), CHEST_X - 28, GROUND - 40, 56, 40);
@@ -8416,7 +8418,7 @@ function drawGround(c, cam) {
   for (const s of bg.slabs) {
     const pl = s.pl; if (pl.x + pl.w < cam.x - 10 || pl.x > cam.x + W + 10) continue;
     c.fillStyle = 'rgba(0,0,0,.28)'; c.beginPath(); c.ellipse(pl.x + pl.w / 2, pl.y + 26, pl.w * 0.5, 5, 0, 0, 6.283); c.fill();
-    c.drawImage(s.cv, pl.x - 4, pl.y, pl.w + 8, 30);
+    if (!drawLedgeProp(c, 'stone', pl.x, pl.y - 4, pl.w)) c.drawImage(s.cv, pl.x - 4, pl.y, pl.w + 8, 30);   // 2026-11-22 stone tiles, the slab picture as the fallback
   }
 }
 
@@ -10333,12 +10335,14 @@ function drawGims(c, front) {
     if (g.t === 'portal') { drawGimSprite(c, g.to % 2 ? 'portal2' : 'portal', g.x, g.y, 0, { sc: 0.85 }); drawGimSprite(c, 'rune', g.x, g.y + 8, 0, { sc: 0.9 }); continue; }
     if (g.t === 'block' || g.t === 'cart') { const q = g.pl; if (g.art && drawGimSprite(c, g.art, q.x - 6, q.y + q.h + 4, q.w + 12, { hgt: q.h + 14 })) continue; if (g.art === 'prop_block8' && prop10(c, 'prop_ch08_block', q.x + q.w / 2, q.y + q.h, { w: q.w, h: q.h })) continue; c.fillStyle = '#2a2420'; c.fillRect(q.x, q.y, q.w, q.h); c.fillStyle = '#6a5a48'; c.fillRect(q.x, q.y, q.w, 4); continue; }
     if (g.t === 'rope' && g.bamboo) {   // a bamboo stalk: green pole with joints and leaves
+      if (drawVTileProp(c, 'prop_bamboo', g.x, g.y0, g.y1 + 10)) continue;   // 2026-11-22 tile
       const x = Math.round(g.x); c.fillStyle = '#1e3a24'; c.fillRect(x - 5, g.y0, 10, g.y1 - g.y0 + 10); c.fillStyle = '#3f7a46'; c.fillRect(x - 3, g.y0, 6, g.y1 - g.y0 + 10); c.fillStyle = '#7ab87a'; c.fillRect(x - 3, g.y0, 2, g.y1 - g.y0 + 10);
       for (let y = g.y0 + 30; y < g.y1; y += 46) { c.fillStyle = '#1e3a24'; c.fillRect(x - 6, y, 12, 4); c.fillStyle = '#4a8a4a'; c.fillRect(x + 4, y - 10, 14, 4); c.fillRect(x + 14, y - 14, 6, 4); }
       continue;
     }
     if (g.t === 'rope') {
       if (g.art) { const fr = gimFr(g.art); if (fr && imgReady(fr.img)) { c.save(); c.imageSmoothingEnabled = false; c.drawImage(fr.img, Math.round(g.x - fr.w * (g.sc || 1) / 2), g.y0, Math.round(fr.w * (g.sc || 1)), g.y1 - g.y0); c.restore(); continue; } }
+      if (drawVTileProp(c, 'prop_rope', g.x, g.y0, g.y1)) continue;   // 2026-11-22 tile (a rope with its own 4-frame picture above wins)
       c.fillStyle = '#5a4a32'; c.fillRect(Math.round(g.x - 2), g.y0, 4, g.y1 - g.y0); c.fillStyle = '#8a7350'; for (let y = g.y0; y < g.y1; y += 8) c.fillRect(Math.round(g.x - 2), y, 2, 4); continue;
     }
     if (g.t === 'tramp') { drawGimSprite(c, 'net', g.x, GROUND + 6, g.w, { sy: 0.55 * g.w / 144 }); continue; }
@@ -10346,11 +10350,20 @@ function drawGims(c, front) {
     if (!pl || pl.off) { if (g.t === 'slab' && g.st === 'broken') drawGimSprite(c, 'slab_broken', pl.x, GROUND + 4, pl.w, { hgt: 46, alpha: 0.5 }); continue; }
     if (g.t === 'slab') drawGimSprite(c, g.st === 'crack' ? 'slab_crack' : 'slab', pl.x - 4, pl.y + 34, pl.w + 8, { hgt: 40 });
     else if (g.t === 'roof') drawGimSprite(c, 'roof_tile', pl.x - 8, pl.y + 34, pl.w + 16, { hgt: 42 });
-    else if (g.t === 'ledge') { const [base, hi, dk] = LEDGE_COL[g.style] || LEDGE_COL.rock, x = Math.round(pl.x), y = Math.round(pl.y), w = Math.round(pl.w); c.fillStyle = dk; c.fillRect(x - 2, y - 2, w + 4, 26); c.fillStyle = base; c.fillRect(x, y, w, 22); c.fillStyle = hi; c.fillRect(x, y, w, 4); c.fillStyle = dk; for (let i = 24; i < w; i += 30) c.fillRect(x + i, y + 6, 2, 16); }
+    else if (g.t === 'ledge') { const st = ['gothic', 'steel', 'rock', 'dream'].includes(g.style) ? g.style : 'rock';   // 2026-11-22 arena objects pack: tiles, the old blocks as the fallback
+      if (!drawLedgeProp(c, st, pl.x, pl.y - 4, pl.w)) { const [base, hi, dk] = LEDGE_COL[g.style] || LEDGE_COL.rock, x = Math.round(pl.x), y = Math.round(pl.y), w = Math.round(pl.w); c.fillStyle = dk; c.fillRect(x - 2, y - 2, w + 4, 26); c.fillStyle = base; c.fillRect(x, y, w, 22); c.fillStyle = hi; c.fillRect(x, y, w, 4); c.fillStyle = dk; for (let i = 24; i < w; i += 30) c.fillRect(x + i, y + 6, 2, 16); } }
     else if (g.t === 'plank') { const sh = g.touch > 0 ? Math.sin(G.t * 50) * 2 : 0; drawGimSprite(c, 'plank_chain', pl.x + sh, pl.y + 30, pl.w); }
     else if (g.t === 'phantom') drawGimSprite(c, 'cloud', pl.x - 8, pl.y + 34, pl.w + 16, { alpha: 0.75 - (g.touch || 0) });
-    else if (g.t === 'lift') { c.fillStyle = '#3a1410'; c.fillRect(Math.round(pl.x + 10), 0, 4, Math.round(pl.y)); c.fillRect(Math.round(pl.x + pl.w - 14), 0, 4, Math.round(pl.y)); drawGimSprite(c, 'roof_tile', pl.x - 8, pl.y + 34, pl.w + 16, { hgt: 42 }); }
-    else if (g.t === 'swing') { c.fillStyle = '#4a4a52'; c.fillRect(Math.round(pl.x + 6), 0, 3, Math.round(pl.y)); c.fillRect(Math.round(pl.x + pl.w - 9), 0, 3, Math.round(pl.y)); c.fillStyle = '#3a2a1a'; c.fillRect(Math.round(pl.x), Math.round(pl.y), pl.w, 10); c.fillStyle = '#6a4a2a'; c.fillRect(Math.round(pl.x), Math.round(pl.y), pl.w, 4); }
+    else if (g.t === 'lift') {
+      const railOK = drawVTileProp(c, 'prop_lift_rail', pl.x + 12, 0, pl.y) && drawVTileProp(c, 'prop_lift_rail', pl.x + pl.w - 12, 0, pl.y);
+      if (!railOK) { c.fillStyle = '#3a1410'; c.fillRect(Math.round(pl.x + 10), 0, 4, Math.round(pl.y)); c.fillRect(Math.round(pl.x + pl.w - 14), 0, 4, Math.round(pl.y)); }
+      if (!drawLedgeProp(c, 'steel', pl.x, pl.y - 4, pl.w)) drawGimSprite(c, 'roof_tile', pl.x - 8, pl.y + 34, pl.w + 16, { hgt: 42 });
+    }
+    else if (g.t === 'swing') {
+      const chOK = drawVTileProp(c, 'prop_chain', pl.x + 7, 0, pl.y) && drawVTileProp(c, 'prop_chain', pl.x + pl.w - 8, 0, pl.y);
+      if (!chOK) { c.fillStyle = '#4a4a52'; c.fillRect(Math.round(pl.x + 6), 0, 3, Math.round(pl.y)); c.fillRect(Math.round(pl.x + pl.w - 9), 0, 3, Math.round(pl.y)); }
+      if (!drawSwingPlank(c, pl.x, pl.y, pl.w)) { c.fillStyle = '#3a2a1a'; c.fillRect(Math.round(pl.x), Math.round(pl.y), pl.w, 10); c.fillStyle = '#6a4a2a'; c.fillRect(Math.round(pl.x), Math.round(pl.y), pl.w, 4); }
+    }
   }
 }
 
@@ -10725,7 +10738,7 @@ function drawPatternBits(c) {
 function tickPatternBits(dt) {
   for (const j of G.jx) j.t += dt; G.jx = G.jx.filter(j => j.t < j.dur);
   for (const e of G.gimT) if (e.box && !e.dead) { e.t += dt; if (e.t > e.life) { e.dead = true; if (e.haz) e.haz.dead = true; } }
-  G.gimT = G.gimT.filter(e => !e.dead || e.gim);
+  G.gimT = G.gimT.filter(e => !e.dead || e.gim || e.pillar);   // a broken 7th pillar stays as rubble (2026-11-22, arena objects pack); pillarsLeft() counts the standing ones
   tickAims(dt); sewerTick(dt); patterns2Tick(dt);
   if (G.boss && G.boss.d.kit && G.boss.st === 'die') { G.haz = []; G.aims = []; G.jx = []; G.gimT = G.gimT.filter(e => e.gim); }
 }
@@ -11061,7 +11074,10 @@ function mirrorProj(q) {
 function drawPatterns2(c) {
   for (const s of G.sun) { c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = 'rgba(255,220,120,.16)'; c.fillRect(Math.round(s.x - s.w / 2), 260, s.w, GROUND - 260); c.fillStyle = 'rgba(255,240,180,.22)'; c.fillRect(Math.round(s.x - s.w / 4), 260, Math.round(s.w / 2), GROUND - 260); c.restore(); }
   for (const d of G.blood) { c.fillStyle = `rgba(150,10,30,${Math.min(1, d.t / 2)})`; c.fillRect(Math.round(d.x) - 5, GROUND - 3, 10, 4); c.fillRect(Math.round(d.x) - 2, GROUND - 5, 4, 2); }
-  for (const e of G.gimT) if (e.pillar && !e.dead) drawGimSprite(c, e.cracks ? 'column_broken' : 'column', e.x, GROUND, 0, { sc: 1.25 });
+  for (const e of G.gimT) if (e.pillar) {   // 2026-11-22: ok / cracked / rubble (a broken pillar leaves its stump, so the cleared way reads)
+    if (e.dead) { if (!prop10(c, 'prop_ch07_pillar_broken', e.x, GROUND, { w: 54, h: 40 })) drawGimSprite(c, 'column_broken', e.x, GROUND, 0, { sc: 1.0, alpha: 0.6 }); }
+    else if (!prop10(c, e.cracks ? 'prop_ch07_pillar_crack' : 'prop_ch07_pillar_ok', e.x, GROUND, { w: 54, h: 150 })) drawGimSprite(c, e.cracks ? 'column_broken' : 'column', e.x, GROUND, 0, { sc: 1.25 });
+  }
   for (const w of G.waves) for (const side of [-1, 1]) { const x = Math.round(w.x + side * w.r); c.fillStyle = 'rgba(200,200,190,.35)'; c.fillRect(x - 12, 60, 24, GROUND - 60); c.fillStyle = 'rgba(255,255,255,.8)'; c.fillRect(x - 2, 60, 4, GROUND - 60); }
   if (G.mirror) { drawGimSprite(c, 'mirror', G.mirror.x, G.mirror.y, 0, { sc: 1.7 }); }
   if (G.shadow) { c.save(); c.globalAlpha = 0.6; c.filter = 'brightness(0.2) saturate(0)'; drawHeroSprite(c, G.save.char, { anim: G.t, onGround: true, vx: 0, act: null, hurt: 0, dead: 0, guard: 0, parryFx: 0 }, G.shadow.x, G.shadow.y, G.shadow.face, { crisp: true }); c.restore(); }
@@ -11179,7 +11195,7 @@ gimTick = function (dt) {
       carry(g.pl, g.dir * 75 * dt, 0);
     }
     if (g.pil && g.hp <= 0) { g.regen -= dt; if (g.regen <= 0) { g.hp = 2; g.pl.off = false; dust(g.x + g.w / 2, GROUND, 10, '200,170,110'); } }
-    if (g.t === 'cannon') { g.cd = Math.max(0, g.cd - dt); if (g.fuse > 0) { g.fuse -= dt; if (Math.random() < 0.6) spark(g.x - 26, GROUND - 62, 2, '255,200,90', 120); if (g.fuse <= 0) cannonFire(g); } }
+    if (g.t === 'cannon') { g.cd = Math.max(0, g.cd - dt); g.flash = Math.max(0, (g.flash || 0) - dt); if (g.fuse > 0) { g.fuse -= dt; if (Math.random() < 0.6) spark(g.x - 26, GROUND - 62, 2, '255,200,90', 120); if (g.fuse <= 0) cannonFire(g); } }
   }
   if (G.pend) pendTick(dt);
   if (G.anub) anubTick(dt);
@@ -11271,9 +11287,11 @@ function valveHit(g) {
 }
 function drawValve(c, g) {
   const x = g.x, y = g.y, open = g.open > 0;
+  if (!prop10(c, 'prop_ch12_valve', x, y, { w: 100, h: 92, frame: open ? 1 : 0, frames: 2 })) {   // 2026-11-22 picture; the pipe and wheel as the fallback
   px3(c, x - 5, y - 70, 10, 70, '#5a5450'); px3(c, x - 60, y - 74, 120, 10, '#6a6058'); px3(c, x - 60, y - 74, 120, 3, '#9a9088');
   c.save(); c.translate(x, y - 46); c.rotate(open ? G.t * 3 : 0); c.strokeStyle = open ? '#e04030' : '#4a8a50'; c.lineWidth = 6; c.beginPath(); c.arc(0, 0, 16, 0, 6.283); c.stroke();
   c.fillStyle = c.strokeStyle; c.fillRect(-18, -3, 36, 6); c.fillRect(-3, -18, 6, 36); c.restore();
+  }
   if (open) { if (Math.random() < 0.5) addPart({ x: x + rnd(-6, 6), y: y - 80, vx: rnd(-20, 20), vy: rnd(-60, -20), g: -20, life: 0.8, r: rnd(3, 6), col: '230,235,240', glow: 0 });
     c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(255,120,90,${0.2 + Math.sin(G.t * 8) * 0.1})`; c.beginPath(); c.arc(x, y - 46, 30, 0, 6.283); c.fill(); c.restore(); }
 }
@@ -11298,7 +11316,7 @@ function urnHit(g) {
 }
 function drawUrn(c, g) {
   const x = g.x, y = GROUND;
-  px3(c, x - 22, y - 46, 44, 46, '#5a4428'); px3(c, x - 28, y - 52, 56, 8, '#8a6a38'); px3(c, x - 18, y - 40, 36, 4, '#b8924a');
+  if (!prop10(c, 'prop_ch13_urn', x, y, { w: 56, h: 56, frame: g.lit ? 1 : 0, frames: 2 })) { px3(c, x - 22, y - 46, 44, 46, '#5a4428'); px3(c, x - 28, y - 52, 56, 8, '#8a6a38'); px3(c, x - 18, y - 40, 36, 4, '#b8924a'); }   // 2026-11-22 picture
   if (g.lit) { for (let i = 0; i < 2; i++) addPart({ x: x + rnd(-12, 12), y: y - 54, vx: rnd(-14, 14), vy: rnd(-90, -50), g: 0, life: rnd(0.3, 0.6), r: rnd(3, 6), col: Math.random() < 0.5 ? '255,180,70' : '255,230,140', glow: 1 });
     c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = 'rgba(255,170,70,.18)'; c.beginPath(); c.arc(x, y - 60, 60, 0, 6.283); c.fill(); c.restore(); }
   else if (G.anub) { c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(255,220,140,${0.12 + Math.sin(G.t * 6) * 0.08})`; c.beginPath(); c.arc(x, y - 30, 38, 0, 6.283); c.fill(); c.restore(); }
@@ -11372,6 +11390,7 @@ function cannonHit(g) {
   g.fuse = 1.0; g.cd = 11; g.face = sgn(b.x - g.x) || 1; sfx('fire'); tell('cannon', '도화선에 불이 붙었다');
 }
 function cannonFire(g) {
+  g.flash = 0.12;   // the firing frame (drawCannon)
   const b = G.boss; sfx('boom'); shake(10); boomAt(g.x + g.face * 60, GROUND - 50, '120,230,255', 20);
   proj({ from: 'm', harmless: true, pierce: true, kind: 'pghost', x: g.x + g.face * 60, y: GROUND - 50, vx: g.face * 900, vy: 0, w: 30, h: 30, life: 2, maxDist: 1400, sc: 5, cannon: true });
 }
@@ -11384,8 +11403,9 @@ function cannonProjTick() {
 }
 function drawCannon(c, g) {
   const x = g.x, f = g.face || (G.boss ? sgn(G.boss.x - x) || 1 : 1), y = GROUND, ready = g.cd <= 0 && g.fuse <= 0;
+  if (!prop10Mirror(c, 'prop_ch15_cannon', x, y, { w: 120, h: 74, frame: g.flash > 0 ? 2 : g.fuse > 0 ? 1 : 0, frames: 3 }, f)) {   // 2026-11-22 picture: waiting / lit / firing
   px3(c, x - 40, y - 26, 80, 26, '#4a3020'); px3(c, x - 34, y - 12, 18, 12, '#2a1a10'); px3(c, x + 16, y - 12, 18, 12, '#2a1a10');
-  c.save(); c.translate(x, y - 34); c.scale(f, 1); px3(c, -30, -16, 86, 30, '#3a4a52'); px3(c, 50, -20, 12, 38, '#2a3238'); px3(c, -30, -16, 86, 6, '#6a8090'); c.restore();
+  c.save(); c.translate(x, y - 34); c.scale(f, 1); px3(c, -30, -16, 86, 30, '#3a4a52'); px3(c, 50, -20, 12, 38, '#2a3238'); px3(c, -30, -16, 86, 6, '#6a8090'); c.restore(); }
   if (ready) { c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(120,230,255,${0.16 + Math.sin(G.t * 6) * 0.08})`; c.beginPath(); c.arc(x, y - 36, 50, 0, 6.283); c.fill(); c.restore(); }
 }
 
@@ -11832,7 +11852,8 @@ drawGims = function (c, front) {
   if (front) { drawInk(c); drawChant(c, true); return; }
   for (const g of G.gims) {
     if (g.t === 'statue18') drawStatue18(c, g);
-    if (g.t === 'ice') { c.fillStyle = 'rgba(200,235,255,.22)'; c.fillRect(g.x0, GROUND, g.x1 - g.x0, 6); for (let x = g.x0 + 20; x < g.x1; x += 70) { c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(x, GROUND + 1, 22, 1); } }
+    if (g.t === 'ice' && propImg('prop_ice_shelf')) { const im = propImg('prop_ice_shelf'); c.save(); c.imageSmoothingEnabled = false; for (let x = g.x0; x < g.x1; x += 64) { const dw = Math.min(64, g.x1 - x); c.drawImage(im, 0, 0, dw * 2, 20, Math.round(x), GROUND, dw, 10); } c.restore(); }   // 2026-11-22 tile
+    else if (g.t === 'ice') { c.fillStyle = 'rgba(200,235,255,.22)'; c.fillRect(g.x0, GROUND, g.x1 - g.x0, 6); for (let x = g.x0 + 20; x < g.x1; x += 70) { c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(x, GROUND + 1, 22, 1); } }
     if (g.t === 'cliff') drawCliff(c, g);
   }
   if (G.fireZ.length) for (const z of G.fireZ) { const gr = c.createLinearGradient(0, GROUND - 30, 0, GROUND + 8); gr.addColorStop(0, 'rgba(255,90,20,0)'); gr.addColorStop(1, `rgba(255,110,30,${0.45 + Math.sin(G.t * 6) * 0.08})`); c.fillStyle = gr; c.fillRect(z[0], GROUND - 30, z[1] - z[0], 38); }
@@ -11880,6 +11901,7 @@ function drawTents(c) {
   const wy = waterY();
   for (const g of G.kr.tents) {
     if (g.dead) continue;
+    if (drawTentProp(c, g, wy)) continue;   // 2026-11-22 picture (sway 4 frames / the slam 3 frames), the drawn curve as the fallback
     const sl = g.slam, k = sl ? (sl.t < 1.0 ? Math.min(1, sl.t / 1.0) : 1) : 0, down = sl && sl.t >= 1.0;
     const tipX = sl ? (down ? sl.x : g.x + (sl.x - g.x) * 0.3 * k) : g.x + Math.sin(g.ph * 1.3) * 24, tipY = sl ? (down ? sl.y - 10 : wy - 230 - 40 * k) : wy - 200 + Math.sin(g.ph * 2) * 10;
     c.save(); c.lineCap = 'round';
@@ -11922,7 +11944,48 @@ BOSS_EXT.kr_b = {   // frame 11: an ink spray from the mouth; the ink blots the 
 };
 
 /* ---- 17 sword sage: the cloud edge, flying swords, the parry ---- */
+function drawTentProp(c, g, wy) {
+  const sl = g.slam, stand = propImg('prop_ch16_tent'), lean = propImg('prop_ch16_tent_lean');
+  if (!stand || !lean) return false;
+  const draw = (fn) => { fn(1); if (g.hit > 0) { c.save(); c.globalAlpha = 0.55; c.globalCompositeOperation = 'lighter'; fn(1); c.restore(); } };
+  c.save(); c.imageSmoothingEnabled = false;
+  if (sl) {
+    const f = sl.t < 0.35 ? 0 : sl.t < 0.7 ? 1 : 2, fw = lean.naturalWidth / 3, x0 = Math.round(g.x - 8), y = Math.round(wy + 18 - 250);
+    draw(() => { if (sl.x >= g.x) c.drawImage(lean, f * fw, 0, fw, lean.naturalHeight, x0, y, 300, 250);
+      else { c.save(); c.translate(2 * x0, 0); c.scale(-1, 1); c.drawImage(lean, f * fw, 0, fw, lean.naturalHeight, x0, y, 300, 250); c.restore(); } });
+  } else {
+    const f = Math.floor(G.t * 5 + g.ph * 2) % 4;
+    draw(() => prop10(c, 'prop_ch16_tent', g.x, wy + 18, { w: 140, h: 250, frame: f, frames: 4 }));
+  }
+  c.restore();
+  const hpk = g.hp / g.mhp; c.fillStyle = 'rgba(0,0,0,.6)'; c.fillRect(g.x - 30, wy - 252, 60, 6); c.fillStyle = '#d070ff'; c.fillRect(g.x - 30, wy - 252, 60 * hpk, 6);
+  return true;
+}
 function drawCliff(c, g) {
+  const bank = propImg('prop_cloud_bank'), mist = propImg('prop_cloud_mist'), edge = propImg('prop_cliff_edge');
+  if (bank) {   // 2026-11-22: cloud tiles (every other one mirrored, so no seam shows), mist over them, the jade edge at the cliff
+    const top = Math.round(GROUND - 40), hgt = 120;
+    for (const [x0, x1] of [[0, g.x0], [g.x1, G.map.w]]) {
+      c.save(); c.imageSmoothingEnabled = false;
+      let i = 0;
+      for (let x = x0; x < x1; x += 256, i++) {
+        const dw = Math.min(256, x1 - x);
+        if (i % 2 === 0) c.drawImage(bank, 0, 0, dw * 2, 240, Math.round(x), top, dw, hgt);
+        else { c.save(); c.translate(Math.round(x) * 2 + dw, 0); c.scale(-1, 1); c.drawImage(bank, 0, 0, dw * 2, 240, Math.round(x), top, dw, hgt); c.restore(); }
+      }
+      if (H > top + hgt) { c.fillStyle = '#9fb0c8'; c.fillRect(x0, top + hgt - 1, x1 - x0, H - top - hgt + 1); }   // below the tile, down to the screen edge
+      if (mist) {
+        const fw = mist.naturalWidth / 4, f = Math.floor(G.t * 3) % 4;
+        c.beginPath(); c.rect(x0, 0, x1 - x0, H); c.clip(); c.globalAlpha = 0.22;
+        for (let x = x0 - ((G.t * 10) % 128); x < x1; x += 128) c.drawImage(mist, f * fw, 0, fw, mist.naturalHeight, Math.round(x), top + 34, 128, 60);
+        c.globalAlpha = 1;
+      }
+      c.restore();
+    }
+    if (edge) { c.save(); c.imageSmoothingEnabled = false; c.drawImage(edge, 0, 0, 12, 88, Math.round(g.x0 - 6), Math.round(GROUND - 4), 6, 44); c.drawImage(edge, 0, 0, 12, 88, Math.round(g.x1), Math.round(GROUND - 4), 6, 44); c.restore(); }
+    else { c.fillStyle = '#e8e4da'; c.fillRect(g.x0 - 6, GROUND - 4, 6, 40); c.fillRect(g.x1, GROUND - 4, 6, 40); }
+    return;
+  }
   for (const [x0, x1] of [[0, g.x0], [g.x1, G.map.w]]) {
     const gr = c.createLinearGradient(0, GROUND - 40, 0, H + 40); gr.addColorStop(0, 'rgba(230,240,255,.0)'); gr.addColorStop(0.3, 'rgba(225,235,250,.95)'); gr.addColorStop(1, 'rgba(160,180,210,1)');
     c.fillStyle = gr; c.fillRect(x0, GROUND - 40, x1 - x0, H);
@@ -11982,10 +12045,13 @@ function statueHit(g) {
 }
 function drawStatue18(c, g) {
   const x = g.x, y = GROUND;
+  if (prop10(c, 'prop_ch18_statue', x, y, { w: 60, h: 150, frame: g.broken ? 2 : g.lit ? 1 : 0, frames: 3 })) { if (g.broken) return; }   // 2026-11-22 picture: waiting / soul fire / broken
+  else {
   if (g.broken) { px3(c, x - 30, y - 22, 60, 22, '#4a3e30'); return; }
   px3(c, x - 22, y - 128, 44, 110, '#6a5a44'); px3(c, x - 16, y - 150, 32, 26, '#7a6a52'); px3(c, x - 30, y - 18, 60, 18, '#4a3e30');
   px3(c, x - 22, y - 100, 44, 6, '#8a7a5a'); px3(c, x - 10, y - 140, 6, 6, '#2a2018'); px3(c, x + 4, y - 140, 6, 6, '#2a2018');
   if (g.hp < 3) { c.fillStyle = '#2a2018'; c.fillRect(x - 4, y - 120, 3, 40); c.fillRect(x - 4, y - 84, 14, 3); }
+  }
   if (g.lit) { for (let i = 0; i < 2; i++) addPart({ x: x + rnd(-14, 14), y: y - 150, vx: rnd(-10, 10), vy: -rnd(40, 90), g: 0, life: rnd(0.3, 0.6), r: rnd(3, 6), col: Math.random() < 0.5 ? '255,70,50' : '255,150,90', glow: 1 });
     c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(255,60,40,${0.2 + Math.sin(G.t * 6) * 0.08})`; c.beginPath(); c.arc(x, y - 120, 60, 0, 6.283); c.fill(); c.restore(); }
 }
@@ -17174,7 +17240,15 @@ drawNetPlayers = function (c) {
    prop10()으로 그리고, 아직 안 불러왔거나 실패하면 false라 예전 코드 그림이 그대로 나온다(폴더를 지우면 원래대로).
    판정·좌표는 그대로. 차가운 맵의 등불도 같은 그림(사용자). 이름이 prop10인 건 56n_npcs.js에 propDraw가 이미 있어서. ============ */
 const PROP10_IDS = ['prop_lantern_post', 'prop_brazier', 'prop_campfire', 'prop_merchant_cart', 'prop_storage_chest', 'prop_portal',
-  'prop_titan_bone', 'prop_ch11_pendulum', 'prop_ch11_lever', 'prop_ch14_pillar', 'prop_ch08_block'];
+  'prop_titan_bone', 'prop_ch11_pendulum', 'prop_ch11_lever', 'prop_ch14_pillar', 'prop_ch08_block',
+  /* 2026-11-22 arena objects pack (art/arena, claude_code_arena_objects_prompt.txt): 40 more */
+  'prop_ch07_pillar_ok', 'prop_ch07_pillar_crack', 'prop_ch07_pillar_broken', 'prop_ch12_valve', 'prop_ch13_urn', 'prop_ch15_cannon',
+  'prop_ch16_tent', 'prop_ch16_tent_lean', 'prop_ch18_statue', 'prop_stele', 'prop_post', 'prop_mask', 'prop_gear', 'prop_reeds',
+  'prop_cloud_bank', 'prop_cloud_mist', 'prop_cliff_edge', 'prop_ice_shelf',
+  'prop_ledge_gothic_l', 'prop_ledge_gothic_m', 'prop_ledge_gothic_r', 'prop_ledge_steel_l', 'prop_ledge_steel_m', 'prop_ledge_steel_r',
+  'prop_ledge_rock_l', 'prop_ledge_rock_m', 'prop_ledge_rock_r', 'prop_ledge_dream_l', 'prop_ledge_dream_m', 'prop_ledge_dream_r',
+  'prop_ledge_stone_l', 'prop_ledge_stone_m', 'prop_ledge_stone_r',
+  'prop_lift_rail', 'prop_swing_plank_l', 'prop_swing_plank_m', 'prop_swing_plank_r', 'prop_chain', 'prop_rope', 'prop_bamboo'];
 const PROP10_IMG = {};
 for (const id of PROP10_IDS) {
   const im = new Image();
@@ -17192,6 +17266,45 @@ function prop10(c, id, x, y, o) {
   c.drawImage(im, f * fw, 0, fw, fh, dx + (n > 1 ? prop10Shift(id, im, n, fw, fh)[f] * w / fw : 0), dy, w, h);
   c.restore();
   return true;
+}
+/* ---- arena objects pack helpers (2026-11-22). File px = world px x 2; every draw falls back (false) until the file is in ---- */
+const propImg = id => (prop10Ready(id) ? PROP10_IMG[id] : null);
+/* a ledge from three tiles: left 16, middle 32 repeated, right 16 (30 high); (x, y) = top left, the walking line is 4 px down */
+function drawLedgeProp(c, style, x, y, w) {
+  const l = propImg('prop_ledge_' + style + '_l'), m = propImg('prop_ledge_' + style + '_m'), r = propImg('prop_ledge_' + style + '_r');
+  if (!l || !m || !r) return false;
+  x = Math.round(x); y = Math.round(y); w = Math.round(w);
+  const LW = 16, MW = 32, RW = 16, HGT = 30, piece = (im, dx, dw, sx, sw) => c.drawImage(im, sx * 2, 0, sw * 2, 60, dx, y, dw, HGT);
+  c.save(); c.imageSmoothingEnabled = false;
+  if (w <= LW + RW) { piece(m, x, w, 0, Math.min(w, MW)); c.restore(); return true; }
+  piece(l, x, LW, 0, LW); piece(r, x + w - RW, RW, 0, RW);
+  for (let dx = x + LW; dx < x + w - RW; dx += MW) { const dw = Math.min(MW, x + w - RW - dx); if (dw > 0) piece(m, dx, dw, 0, dw); }
+  c.restore(); return true;
+}
+/* a vertical repeat (chain, rope, bamboo, rail); x = the middle line */
+function drawVTileProp(c, id, x, y0, y1) {
+  const im = propImg(id); if (!im) return false;
+  const ww = im.naturalWidth / 2, th = im.naturalHeight / 2; y0 = Math.round(y0); y1 = Math.round(y1);
+  c.save(); c.imageSmoothingEnabled = false;
+  for (let y = y0; y < y1; y += th) { const dh = Math.min(th, y1 - y); c.drawImage(im, 0, 0, im.naturalWidth, dh * 2, Math.round(x - ww / 2), y, ww, dh); }
+  c.restore(); return true;
+}
+/* a prop drawn facing left (the 15th cannon) */
+function prop10Mirror(c, id, x, y, o, face) {
+  if (face >= 0) return prop10(c, id, x, y, o);
+  c.save(); c.translate(Math.round(x) * 2, 0); c.scale(-1, 1); const r = prop10(c, id, Math.round(x), y, o); c.restore(); return r;
+}
+/* the swinging plank: left 12, middle 40 repeated, right 12 (14 high) */
+function drawSwingPlank(c, x, y, w) {
+  const l = propImg('prop_swing_plank_l'), m = propImg('prop_swing_plank_m'), r = propImg('prop_swing_plank_r');
+  if (!l || !m || !r) return false;
+  x = Math.round(x); y = Math.round(y); w = Math.round(w);
+  const LW = 12, MW = 40, RW = 12, HGT = 14, piece = (im, dx, dw, sw) => c.drawImage(im, 0, 0, sw * 2, 28, dx, y, dw, HGT);
+  c.save(); c.imageSmoothingEnabled = false;
+  if (w <= LW + RW) { piece(m, x, w, Math.min(w, MW)); c.restore(); return true; }
+  piece(l, x, LW, LW); piece(r, x + w - RW, RW, RW);
+  for (let dx = x + LW; dx < x + w - RW; dx += MW) { const dw = Math.min(MW, x + w - RW - dx); if (dw > 0) piece(m, dx, dw, dw); }
+  c.restore(); return true;
 }
 /* frames whose base sits a few px off frame 0 (the brazier's bowl moves 4 file px left and right, user: it should stay put):
    the middle of the lower 40% of each frame is measured once and the frame is moved back onto frame 0's */
