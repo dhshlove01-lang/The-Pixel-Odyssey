@@ -619,10 +619,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-2008"></script>
-<script src="assets/js/act3_data.js?v=261123-2008"></script>
+<script src="assets/js/pfx.js?v=261123-2022"></script>
+<script src="assets/js/act3_data.js?v=261123-2022"></script>
 <script>
-const GAME_VER = '261123-2016';
+const GAME_VER = '261123-2022';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -22444,6 +22444,63 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 #trophyBook .pst{white-space:nowrap;color:#a99c84;font-size:max(8px,calc(var(--u)*11))}#trophyBook .pst b{color:#ffe6a8}
 #trophyBook .pbr.lock .pst{color:#4e4740}
 </style>`);
+
+/* ============ 2026-11-23 (user, camp screenshots): nothing may cover a portal, and the things in a camp may not overlap each other
+   either. In every camp the torch/brazier stood between the two right portals and the right stone ledge ran across their tops;
+   moving them put the lantern under the ledge (user: 얘네들끼리도 겹치잖아). So each time a safe map loads (camp portals come and go
+   with progress, getPortals):
+     1. a low ledge (y > GROUND-170) over a portal, an NPC's head or another ledge moves to the nearest stretch clear of those;
+     2. a ground prop that touches a portal, an NPC, the storage chest, another prop, or (when it is taller than the gap) a ledge
+        above it, moves to the nearest free spot. Sizes are the drawn ones (40_render.js, 56q_props.js), 8 px apart.
+   The anvil stays by its smith (the smith-at-the-anvil scene), hanging chains are not on the ground. Fields and boss rooms
+   are left as they are. ============ */
+const CC_GAP = 8;
+const CC_SIZE = { fire: [58, 54], cart: [140, 70], torch: [48, 150], brazier: [64, 64], bone: [58, 176], stele: [80, 120], post: [80, 120],
+  mask: [80, 120], gear: [80, 120], reeds: [80, 70], anvil: [180, 44], column: [70, 230], statue: [70, 130] };
+const ccPortalW = pt => { try { return PORTAL_ART[portalKind(pt)].w; } catch (e) { return 80; } };
+function campClear(m) {
+  if (!m || !m.safe) return 0;
+  const pts = getPortals().map(pt => ({ x: pt.x, w: ccPortalW(pt) })), npcs = m.npcs || [], skip = typeof map9Now === 'function' && map9Now() ? MAP9_SKIP_PROPS : new Set(),
+    props = (m.props || []).filter(p => p.t !== 'chain' && !skip.has(p.t) && !(p.y != null && p.y < GROUND - 40));   // only what is drawn (painted maps skip column/statue/gear/mask, 56g_maps.js)
+  const ledges = (m.plats || []).slice(1).filter(pl => !pl.gim && pl.t === 'oneway' && pl.y > GROUND - 170);
+  const span = (x, w) => [x - w / 2, x + w / 2], hit = (a, b, g) => a[0] < b[1] + g && b[0] < a[1] + g;
+  let moved = 0;
+  /* 1. ledges */
+  const size = p => CC_SIZE[p.t] || [60, 100];
+  const tallUnder = (r, pl, self) => props.some(p => p !== self && size(p)[1] >= GROUND - pl.y - 8 && hit(r, span(p.x, size(p)[0]), CC_GAP));
+  const onPortal = r => pts.some(pt => hit(r, span(pt.x, pt.w), 16));
+  const ledgeOk = (x, pl, w) => { const r = [x, x + w]; return x > 30 && x + w < m.w - 30
+    && !onPortal(r) && npcs.every(n => !hit(r, span(n.x, 80), 0)) && !tallUnder(r, pl)
+    && ledges.every(o => o === pl || Math.abs(o.y - pl.y) > 40 || !hit(r, [o.x, o.x + o.w], 40)); };
+  for (const pl of ledges) {
+    if (!onPortal([pl.x, pl.x + pl.w])) continue;   // only a ledge across a portal moves (the rest of the camp stays as it was laid out)
+    // the nearest stretch at full width; if the camp has none, a shorter ledge (user: 발판 줄이기), down to 100
+    let done = false;
+    for (let w = pl.w; w >= 100 && !done; w -= 10) for (let d = 0; d < m.w; d += 10) {
+      const x = ledgeOk(pl.x - d, pl, w) ? pl.x - d : ledgeOk(pl.x + d, pl, w) ? pl.x + d : null;
+      if (x != null) { pl.x = x; pl.w = w; moved++; done = true; break; }
+    }
+  }
+  /* 2. ground props: only one on a portal, or a tall one stuck through a ledge, moves */
+  const bad = p => { const [w, h] = size(p), r = span(p.x, w); return pts.some(pt => hit(r, span(pt.x, pt.w), CC_GAP)) || ledges.some(pl => h >= GROUND - pl.y - 8 && hit(r, [pl.x, pl.x + pl.w], CC_GAP)); };
+  const propOk = (x, p) => { const [w, h] = size(p), r = span(x, w); return r[0] > 20 && r[1] < m.w - 20
+    && pts.every(pt => !hit(r, span(pt.x, pt.w), CC_GAP))
+    && (p.t === 'anvil' || npcs.every(n => !hit(r, span(n.x, 52), CC_GAP)))
+    && !hit(r, span(CHEST_X, 66), CC_GAP)
+    && props.every(o => o === p || !hit(r, span(o.x, size(o)[0]), CC_GAP))
+    && ledges.every(pl => h < GROUND - pl.y - 8 || !hit(r, [pl.x, pl.x + pl.w], CC_GAP)); };
+  for (const p of props.slice()) {
+    if (!bad(p)) continue;
+    let x = null;
+    for (let d = 10; d < m.w && x == null; d += 10) x = propOk(p.x - d, p) ? p.x - d : propOk(p.x + d, p) ? p.x + d : null;
+    if (x != null) p.x = x;
+    else { const i = m.props.indexOf(p); if (i >= 0) m.props.splice(i, 1); props.splice(props.indexOf(p), 1); }   // no room anywhere: this decoration leaves the camp (user: 장식 빼기)
+    moved++;
+  }
+  return moved;
+}
+const _loadMapCC = loadMap;
+loadMap = function (...a) { const r = _loadMapCC(...a); try { campClear(G.map); } catch (e) { console.warn('[campClear]', e); } return r; };
 
 /* ============ MAIN LOOP ============ */
 function ambient(dt) {
