@@ -592,7 +592,8 @@ button{font-family:inherit;color:inherit}
         <kbd>I</kbd><span>장비 · 능력치 (야영지에서 강화)</span>
         <kbd>T</kbd><span>특성 (레벨업마다 포인트 1)</span>
         <kbd>B</kbd><span>배경 음악 켜기/끄기</span>
-        <kbd>M</kbd><span>모든 소리 켜기/끄기</span>
+        <kbd>U</kbd><span>모든 소리 켜기/끄기 · 소리 크기는 O 창의 소리 설정에서</span>
+        <kbd>M</kbd><span>전체 지도</span>
         <kbd>N</kbd><span>미니맵 켜기/끄기 · 야영지에서 미니맵을 누르면 다른 장으로 이동</span>
       </div>
       <p class="note">연고와 귀환 주문서는 야영지의 행상에게서 산다. 진행 상황은 이 브라우저에 자동 저장된다.</p>
@@ -619,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1104"></script>
-<script src="assets/js/act3_data.js?v=261123-1104"></script>
+<script src="assets/js/pfx.js?v=261123-1335"></script>
+<script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1104';
+const GAME_VER = '261123-1335';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -4864,7 +4865,9 @@ const MAIN_W = [0.10, 0.12, 0.14, 0.14, 0.16, 0.34];
 const MAIN_W8 = [0.07, 0.08, 0.09, 0.10, 0.10, 0.12, 0.14, 0.30];   // chapters 11-20 have eight mains   // share of a chapter's story reward per main quest (sum 1 = the old three quests)
 const SUB_W = 0.08;
 const SUB_ORDER = [];
-const chMaps = n => n === 1 ? { camp: 'camp', a: 'ruins', b: 'under', arena: 'tower' } : { camp: 'c' + n + '_camp', a: 'c' + n + '_a', b: 'c' + n + '_b', arena: 'c' + n + '_arena' };
+const chMaps = n => n === 1 ? { camp: 'camp', a: 'ruins', b: 'under', arena: 'tower' }
+  : n > CH_COUNT && CHAPTERS[n] ? { camp: CHAPTERS[n].camp, a: CHAPTERS[n].a, b: CHAPTERS[n].b, arena: CHAPTERS[n].arena }   // 2026-11-23: the tower floors (21-30) name their own maps (camp / c21_field / arena)
+  : { camp: 'c' + n + '_camp', a: 'c' + n + '_a', b: 'c' + n + '_b', arena: 'c' + n + '_arena' };
 const mainId = (n, i) => 'c' + n + 'm' + (i + 1);
 const mainsDone = (n, k) => { for (let i = 0; i < k; i++) if (qs(mainId(n, i)) < 3) return false; return true; };
 const chBossQ = n => mainId(n, STORY[n].main.length - 1);
@@ -5256,7 +5259,10 @@ function genSideField(id, n, base, style, rng) {
   for (let n = 1; n <= CH_COUNT; n++) {
     const M = chMaps(n), rng = seeded(n * 4271 + 5);
     for (const [key, style, suffix, music] of [['a', 'stairs', '너머', 'field'], ['b', 'towers', '밑바닥', 'deep']]) {
-      const base = MAPS[M[key]], id = M[key] + '2', mid = Math.round(base.w * 0.5 / 10) * 10;
+      const base = MAPS[M[key]], id = M[key] + '2';
+      let mid = Math.round(base.w * 0.5 / 10) * 10;   // P11 2026-11-23: the middle, unless a record stone or another door is within 90 px
+      const clearP = x => (base.portals || []).every(pt => Math.abs(x - pt.x) > 90) && (base.lore || []).every(l => Math.abs(x - l.x) > 90);
+      if (!clearP(mid)) for (let d = 40; d <= 400; d += 40) { if (clearP(mid + d)) { mid += d; break; } if (clearP(mid - d)) { mid -= d; break; } }
       const f = genSideField(id, n, base, style, rng);
       Object.assign(f, { name: base.name + ' ' + suffix, sub: base.sub, dark: (base.dark || 0.76) + 0.02, music: base.music || music,
         portals: [{ id: 'p_back', x: 70, to: base.id, toX: mid + 60, label: base.name, req: () => true }] });
@@ -5794,6 +5800,17 @@ function moveBody(b, dt) {
   }
   if (was && !b.onGround) b.coy = 0.1;
 }
+/* P7 2026-11-23: the one-way ledge under the body (same width test as moveBody), for the down-jump only; supportAt stays as it was */
+function onewayUnder(p) {
+  const hw = p.w / 2; let best = null;
+  for (const pl of G.map.plats) {
+    if (pl.off || pl.t !== 'oneway') continue;
+    if (p.x + hw <= pl.x || p.x - hw >= pl.x + pl.w) continue;
+    if (pl.y < p.y - 6 || pl.y > p.y + 14) continue;
+    if (!best || Math.abs(pl.y - p.y) < Math.abs(best.y - p.y)) best = pl;
+  }
+  return best;
+}
 function supportAt(x, y) {
   for (const pl of G.map.plats) if (!pl.off && x >= pl.x && x <= pl.x + pl.w && pl.y >= y - 6 && pl.y <= y + 20) return pl;
   return null;
@@ -5940,8 +5957,8 @@ function updatePlayer(dt) {
   else p.vx = approach(p.vx, dir * maxV * mv, (p.onGround ? 2800 : 1800) * dt * slipK(p));   // slipK: ice floors (48d_bosspat4.js)
   if (dir !== 0 && !(a && a.lf)) p.face = dir;
   if (p.hurt <= 0 && p.jbuf > 0 && (p.onGround || p.coy > 0) && !(a && a.dash) && !(p.rootT > 0 || p.sleepT > 0 || p.petT > 0)) {
-    const pl = supportAt(p.x, p.y);
-    if (IN.down.down && p.onGround && pl && pl.t === 'oneway') { p.drop = 0.25; p.y += 2; p.onGround = false; p.jbuf = 0; }
+    const pl = onewayUnder(p);   // P7 2026-11-23: the body's width like moveBody (supportAt looked at the centre only, so standing on a ledge's edge jumped up)
+    if (IN.down.down && pl) { p.drop = 0.28; p.y = pl.y + 2; p.vy = Math.max(p.vy, 90); p.onGround = false; p.coy = 0; p.jbuf = 0; sfx('jump'); }   // down held: always down
     else { p.vy = -JUMP * Math.sqrt(1 + (S.jumpP || 0) / 100) * (G.map.water && swimming(p) ? SWIM_JUMP : 1); p.onGround = false; p.coy = 0; p.jbuf = 0; sfx('jump'); dust(p.x, p.y, 4); }
   }
   if (mob && ch === 'lykos' && !p.onGround && p.coy <= 0 && !p.dj && p.hurt <= 0 && (p.jbuf > 0 || IN.press.shift) && !(a && a.dash)) {
@@ -6010,7 +6027,7 @@ function startAct(id) {
     mageStartAct(id, as);   // 56j_mage.js
   } else {
     if (id === 'z') {
-      const n = p.combo, dur = [0.22, 0.22, 0.34][n] / as;
+      const n = p.combo, dur = [0.17, 0.17, 0.27][n] / as;   // P6 2026-11-23: was [0.22, 0.22, 0.34] (a 3-hit cycle 0.78 s -> 0.61 s, +27.9%); multipliers, reach, knockback unchanged
       p.act = { id, n, t: 0, dur, hitAt: dur * 0.45, done: 0, mv: 0.5 };
       p.vx += p.face * [60, 60, 130][n] * (p.onGround ? 1 : 0.5);
       sfx('stab', n);
@@ -6757,6 +6774,14 @@ function bossDie() {
   vfxStrip('boss_finisher', b.x, b.y - b.h * 0.45, { dur: 1.15, s: 2 });
   sfx('boss_kill');
   showBossBar(false);
+  if (!b._xpGiven) {   // P4 2026-11-23: every boss kill gives XP (half its quest's), split in a raid with the party bonus; once per boss object
+    b._xpGiven = 1;
+    const qx = QUEST_ORDER.find(id => QUESTS[id].type === 'boss' && QUESTS[id].boss === b.id);
+    const base = qx ? QUESTS[qx].rew.xp * 0.5 : Math.round(320 * (CHM[b.d.ch] ? CHM[b.d.ch].xp : 1));
+    const nP = Math.max(1, (typeof netInRaid === 'function' && netInRaid()) ? (netMembers().filter(r => !r.d).length || 1) : 1);
+    const gain = Math.round(base * (1 + PARTY_XP_BONUS * (nP - 1)) / nP);
+    gainXp(gain); toast('보스 경험치 +' + nf(gain) + (nP > 1 ? ' · ' + nP + '명 분배' : ''), 'gold');
+  }
   if (b.d.hidden) return anonDefeated(b);
   G.save.flags['boss_' + b.id] = true;
   awardTrophies(b, b.fightT || 0, b.noHit !== false);   // master spec STEP 4
@@ -7332,7 +7357,7 @@ function castSkill(key) {
     else if (key === 'd') { A(1.4, 0.4); p.vy = -680; p.onGround = false; p.inv = Math.max(p.inv, 1.2); }
   } else if (ch === 'kallisto') {
     if (key === 'a') A(0.5, 0.2);
-    else if (key === 's') { A(0.3, 0); G.traps.push({ x: p.x, y: p.y, t: 0, life: 8, arm: 0.4, fx: pfx('arcane/rune-circle', p.x, p.y, {}) }); }
+    else if (key === 's') { A(0.3, 0); const gy = (typeof remGround === 'function') ? remGround(p) : p.y; G.traps.push({ x: p.x, y: gy, t: 0, life: 8, arm: 0.4, fx: pfx('arcane/rune-circle', p.x, gy, {}) }); }   // P10 2026-11-23: on the ground even when thrown in the air
     else if (key === 'd') A(0.5, 0);
   } else if (ch === 'mage') {
     if (mageCast(key, A) === false) return;   // 56j_mage.js
@@ -7499,7 +7524,7 @@ function drawSkillProj(c, q) {
 }
 function drawSkillFx(c) {
   const p = G.player;
-  for (const tr of G.traps) { c.strokeStyle = `rgba(255,200,120,${tr.t > tr.arm ? 0.8 : 0.4})`; c.lineWidth = 1.5; c.beginPath(); c.ellipse(tr.x, tr.y - 2, 16, 5, 0, 0, 6.283); c.stroke(); for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(tr.x + i * 6, tr.y - 2); c.lineTo(tr.x + i * 7, tr.y - 9); c.stroke(); } }
+  for (const tr of G.traps) { if (tr.rem) continue; c.strokeStyle = `rgba(255,200,120,${tr.t > tr.arm ? 0.8 : 0.4})`; c.lineWidth = 1.5; c.beginPath(); c.ellipse(tr.x, tr.y - 2, 16, 5, 0, 0, 6.283); c.stroke(); for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(tr.x + i * 6, tr.y - 2); c.lineTo(tr.x + i * 7, tr.y - 9); c.stroke(); } }
   for (const x of G.execs) { const e = x.e, k = x.t / x.dur; c.strokeStyle = `rgba(255,90,80,${0.5 + k * 0.5})`; c.lineWidth = 2; const cy = e.y + (e.yOff || 0) - e.h - 20, r = 10 - k * 4; c.beginPath(); c.moveTo(e.x - r, cy - r); c.lineTo(e.x + r, cy + r); c.moveTo(e.x + r, cy - r); c.lineTo(e.x - r, cy + r); c.stroke(); c.beginPath(); c.arc(e.x, cy, 14 - k * 5, 0, 6.283 * k); c.stroke(); }
   if (p.shield > 0) { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = 'rgba(255,240,180,.5)'; c.lineWidth = 2; c.beginPath(); c.ellipse(p.x, p.y - 24, 22, 32, 0, 0, 6.283); c.stroke(); c.restore(); }
   if (p.atkBuff > 0 && Math.random() < 0.3) addPart({ x: p.x + rnd(-12, 12), y: p.y - rnd(0, 40), vx: 0, vy: -60, g: 0, life: 0.4, r: 1.6, col: '255,160,90', glow: 1 });
@@ -7558,7 +7583,7 @@ const NET = {
   map: null, es: {}, mirror: { live: null, raid: null }, others: {}, sendT: 0, last: '', join: 0, fid: 0, patN: 0, seenN: 0,
   dmg: 0, dmgSent: -1, dmgT: 0, applied: {}, scaled: false, denied: false, errs: 0, bytesOut: 0, bytesIn: 0, hostWas: null,
 };
-const NET_STALE = 10000, NET_MAX = 6, NET_HZ_FIGHT = 8, NET_HZ_CAMP = 3;
+const NET_STALE = 10000, NET_MAX = 6, NET_HZ_FIGHT = 10, NET_HZ_CAMP = 6;   // P3 2026-11-23: was 8 / 3 (hunting grounds 6 -> 8 in netTick)
 /* the server's clock. A PC's own clock can be off by a minute (one here ran 47s fast and nobody could see the others), and
    every "is this still alive" check compares a time written on another PC, so shared times use the database's clock:
    the online heartbeat asks the server to stamp it ({".sv":"timestamp"}) and the reply gives the difference. */
@@ -7664,27 +7689,40 @@ function netTick(dt) {
   if (NET.scopeT <= 0) { NET.scopeT = 1; const sc = G.mapId && netOn() ? netScope(G.mapId) : null; if (sc !== (NET.map ? NET.scope : null)) { if (sc) netEnterMap(G.mapId); else netLeave(); } }
   if (!NET.map) return;
   if (!netOn()) { netLeave(); return; }
-  const p = G.player, inRaid = netInRaid(), hz = inRaid ? NET_HZ_FIGHT : netField() ? 6 : NET_HZ_CAMP;
+  const p = G.player, inRaid = netInRaid(), hz = inRaid ? NET_HZ_FIGHT : netField() ? 8 : NET_HZ_CAMP;
   NET.sendT -= dt;
-  // my record: only when something visible changed, or a heartbeat every 4s
-  const rec = { t: 0, j: NET.join, n: myNick(), c: G.save.char, l: G.save.level, x: Math.round(p.x), y: Math.round(p.y), f: p.netF || 0, fc: p.face, e: G.save.slotE.weapon.e, d: p.dead > 0 ? 1 : 0 };
-  const sig = [rec.x, rec.y, rec.f, rec.fc, rec.e, rec.d, rec.c, rec.n].join(',');
-  if (NET.sendT <= 0 && (sig !== NET.last || NET.sendT < -4)) { rec.t = srvNow(); NET.last = sig; NET.sendT = 1 / hz; netReq('PUT', 'live/' + NET.scope + '/' + netSelf(), rec); }
+  // my record: only when something visible changed, or a heartbeat every 4s.
+  // P3 2026-11-23: + vx (the receiver guesses up to 200 ms ahead with it); a turn, a stop or start, a jump or landing, a step of
+  // 24 px or a new skill cast (P5, NET.cast in s) goes out at once instead of waiting for the next slot.
+  const mv = Math.abs(p.vx || 0) > 5 ? 1 : 0;
+  const rec = { t: 0, j: NET.join, n: myNick(), c: G.save.char, l: G.save.level, x: Math.round(p.x), y: Math.round(p.y), f: p.netF || 0, fc: p.face, e: G.save.slotE.weapon.e, d: p.dead > 0 ? 1 : 0, vx: mv ? Math.round(p.vx) : 0, s: NET.cast || undefined };
+  const sig = [rec.x, rec.y, rec.f, rec.fc, rec.e, rec.d, rec.c, rec.n, mv, NET.cast ? NET.cast.t : 0].join(',');
+  if (NET.lastX != null && (Math.abs(rec.x - NET.lastX) >= 24 || rec.fc !== NET.lastFc || mv !== NET.lastMv || !!p.onGround !== NET.lastG || (NET.cast ? NET.cast.t : 0) !== NET.lastCast)) NET.sendT = Math.min(NET.sendT, 0);
+  if (NET.sendT <= 0 && (sig !== NET.last || NET.sendT < -4)) { rec.t = srvNow(); NET.last = sig; NET.sendT = 1 / hz; NET.lastX = rec.x; NET.lastFc = rec.fc; NET.lastMv = mv; NET.lastG = !!p.onGround; NET.lastCast = NET.cast ? NET.cast.t : 0; netReq('PUT', 'live/' + NET.scope + '/' + netSelf(), rec); }
   // others: replayed a moment late, sliding between the two updates around that moment. Times are when each update arrived
   // here, so the other PC's clock does not matter. Updates come 3 times a second in camps, and easing straight to the newest
   // spot made people move in stop-and-go hops with their legs frozen.
-  const seen = {}, nowL = performance.now(), step = 1000 / hz, rt = nowL - step - 90;
+  // P3 2026-11-23: the replay delay was a whole send step + 90 ms (423 ms in camps). Now 0.7 step + 40 ms + twice each player's
+  // measured arrival jitter (the old delay for the first 5 updates), and past the newest update a guess ahead from its vx (<= 200 ms).
+  const seen = {}, nowL = performance.now(), step = 1000 / hz;
   for (const r of netPeers()) {
     seen[r.id] = 1; let o = NET.others[r.id];
-    if (!o) o = NET.others[r.id] = { x: r.x, y: r.y, vx: 0, ph: 0, lt: r.t, buf: [{ x: r.x, y: r.y, at: nowL - step * 2 }] };
+    if (!o) o = NET.others[r.id] = { x: r.x, y: r.y, vx: 0, ph: 0, lt: r.t, buf: [{ x: r.x, y: r.y, at: nowL - step * 2 }], jit: 0, n: 0, la: 0, castT: r.s ? r.s.t : 0 };
     if (r.t !== o.lt) {
       o.lt = r.t; const last = o.buf[o.buf.length - 1];
+      if (o.la) o.jit += (Math.abs(nowL - o.la - step) - o.jit) * 0.15; o.la = nowL; o.n++;
       if (nowL - last.at > step * 1.6) o.buf.push({ x: last.x, y: last.y, at: nowL - step });   // was standing: start walking from here now, not from back then
-      o.buf.push({ x: r.x, y: r.y, at: nowL }); if (o.buf.length > 8) o.buf.splice(0, o.buf.length - 8);
+      o.buf.push({ x: r.x, y: r.y, at: nowL, vx: r.vx || 0 }); if (o.buf.length > 8) o.buf.splice(0, o.buf.length - 8);
     }
-    let a = o.buf[0], b = a;
-    for (let i = o.buf.length - 1; i >= 0; i--) if (o.buf[i].at <= rt) { a = o.buf[i]; b = o.buf[i + 1] || a; break; }
-    const k = b === a ? 1 : clamp((rt - a.at) / (b.at - a.at), 0, 1), nx = a.x + (b.x - a.x) * k, ny = a.y + (b.y - a.y) * k;
+    const rt = nowL - (o.n >= 5 ? step * 0.7 + 40 + Math.min(120, o.jit * 2) : step + 90), lb = o.buf[o.buf.length - 1];
+    let nx, ny;
+    if (rt > lb.at) { nx = lb.x + (lb.vx || 0) * Math.min(200, rt - lb.at) / 1000; ny = lb.y; if (G.map) nx = clamp(nx, 20, G.map.w - 20); }
+    else {
+      let a = o.buf[0], b = a;
+      for (let i = o.buf.length - 1; i >= 0; i--) if (o.buf[i].at <= rt) { a = o.buf[i]; b = o.buf[i + 1] || a; break; }
+      const k = b === a ? 1 : clamp((rt - a.at) / (b.at - a.at), 0, 1); nx = a.x + (b.x - a.x) * k; ny = a.y + (b.y - a.y) * k;
+    }
+    if (r.s && r.s.t !== o.castT) { o.castT = r.s.t; if (srvNow() - r.s.t < 1500) netCastFx(r.c, r.s.k, nx, ny, r.s.f || r.fc); }   // P5: their cast, shown here (visual only)
     const vx = dt > 0 && Math.abs(nx - o.x) < 200 ? (nx - o.x) / dt : 0;
     o.vx += (vx - o.vx) * Math.min(1, dt * 10); o.x = nx; o.y = ny; o.r = r;
     o.ph = Math.abs(o.vx) > 20 ? o.ph + dt * (6 + 6 * clamp(Math.abs(o.vx) / 200, 0, 1)) : 0;   // legs at the speed they move, like your own walk
@@ -7698,7 +7736,7 @@ function netRaid(dt) {
     // took over from someone who left: keep their fight going
     if (NET.hostWas === false && raid.b && raid.b.fid) { NET.fid = raid.b.fid; NET.patN = raid.b.n || 0; }
     NET.hostWas = true;
-    if (b.st !== 'wait' && !NET.fid) { NET.fid = now; for (const k of ['b', 'p', 'd']) netReq('PUT', 'raid/' + NET.scope + '/' + k, null); }   // a new fight: clear the last one
+    if (b.st !== 'wait' && !NET.fid) { NET.fid = now; NET.myDmg = 0; for (const k of ['b', 'p', 'd', 'r']) netReq('PUT', 'raid/' + NET.scope + '/' + k, null); }   // P2: + r (the last fight's results)   // a new fight: clear the last one
     if (b.st === 'roar' && !NET.scaled && b.phase === 1 && NET.fid) {   // the boss grows with the party, once, when it wakes
       NET.scaled = true; const n = Math.min(NET_MAX, 1 + peers.filter(r => !r.d).length);
       if (n > 1) { const f = 1 + 0.6 * (n - 1); b.mhp = Math.round(b.mhp * f); b.hp = Math.round(b.hp * f); toast('함께 싸운다 · ' + n + '명 (보스 HP ' + f.toFixed(1) + '배)', 'gold'); }
@@ -7713,9 +7751,10 @@ function netRaid(dt) {
     if (NET.dmgT <= 0 && NET.fid) { NET.dmgT = 1 / NET_HZ_FIGHT; netReq('PUT', 'raid/' + NET.scope + '/b', { t: now, fid: NET.fid, x: Math.round(b.x), f: b.face, s: b.st, h: Math.max(0, Math.round(b.hp)), m: b.mhp, n: NET.patN }); }
   } else {
     NET.hostWas = false;
+    { const R = raid.r; if (R && R.fid && R.fid === NET.fid && NET.mvpSeen !== R.fid) { NET.mvpSeen = R.fid; G.mvpPending = Object.assign({}, R, { mine: decodeURIComponent(netSelf()) }); } }   // P2: the host's results arrived
     const s = raid.b;
     if (s && s.fid && now - s.t < 5000 && (NET.fid === s.fid || (s.s !== 'die' && s.h > 0))) {   // join only a fight that is still on
-      if (NET.fid !== s.fid) { NET.fid = s.fid; NET.dmg = 0; NET.dmgSent = -1; NET.seenN = s.n || 0; }
+      if (NET.fid !== s.fid) { NET.fid = s.fid; NET.dmg = 0; NET.dmgSent = -1; NET.seenN = s.n || 0; NET.myDmg = 0; }
       b.mhp = s.m;
       if (s.h < b.hp || s.h > b.hp + b.mhp * 0.03) b.hp = s.h;   // others' hits come in; a heal (the count drinking) too
       if (b.st === 'wait' && s.s !== 'wait') { b.st = 'idle'; b.cd = 0.3; showBossBar(true); }
@@ -7724,7 +7763,7 @@ function netRaid(dt) {
       if (P && P.fid === s.fid && P.n > NET.seenN && b.st !== 'die') { NET.seenN = P.n; netPlayPattern(b, P); }
     }
     NET.dmgT -= dt;
-    if (NET.dmgT <= 0 && NET.dmg !== NET.dmgSent && NET.fid) { NET.dmgT = 0.2; NET.dmgSent = NET.dmg; netReq('PUT', 'raid/' + NET.scope + '/d/' + netSelf(), { f: NET.fid, v: Math.round(NET.dmg) }); }
+    if (NET.dmgT <= 0 && NET.dmg !== NET.dmgSent && NET.fid) { NET.dmgT = 0.2; NET.dmgSent = NET.dmg; netReq('PUT', 'raid/' + NET.scope + '/d/' + netSelf(), { f: NET.fid, v: Math.round(NET.dmg), n: myNick(), c: G.save.char, l: G.save.level }); }   // P2: name, class, level for the results
   }
   updateBossBar();
 }
@@ -7764,7 +7803,7 @@ function netPlayPattern(b, P) {
   netWithAim({ x: P.tx, y: P.ty, vx: 0 }, () => bossStartPat(b, P.p));
 }
 /* a guest's own hits on the boss: counted and sent to the host */
-function netBossDamage(dmg) { if (netGuest()) NET.dmg += dmg; }
+function netBossDamage(dmg) { if (netGuest()) NET.dmg += dmg; else if (netInRaid()) NET.myDmg = (NET.myDmg || 0) + dmg; }   // P2 2026-11-23: the host counts its own damage too
 
 /* ---- drawing the others ---- */
 function drawNetPlayers(c) {
@@ -9685,7 +9724,7 @@ function heroPose(ch, p) {
   let f = A.idle[0], sx = 1, sy = 1, tilt = 0, dx = 0, flip = 1;
   if (!a && p.onGround) { const br = Math.sin(t * 2.4); sy = 1 + br * 0.018; sx = 1 - br * 0.006; }   // breathing
   if (p.walking && !a) {   // walk/run cycle at the speed of the feet (walkPh, 30_combat.js), with a small rise on the passing frames
-    const ph = p.walkPh || 0; f = A.run[Math.floor(ph) % A.run.length];
+    const ph = (p.walkPh || 0) * (A.runK || 1); f = A.run[Math.floor(ph) % A.run.length];   // 2026-11-23 48f: 14 run frames, phase x runK
     sy = 1 + (Math.floor(ph) % 2 ? 0.015 : -0.01);
   }
   if (!p.onGround && !a) f = p.vy > 120 ? A.fall : A.air;
@@ -9713,7 +9752,7 @@ function heroPose(ch, p) {
     }
   }
   if (p.hurt > 0) { f = A.hurt; tilt = -0.08; dx = -3; }   // recoil away from the hit
-  if (p.dead > 0) { const e = 2.8 - p.dead; f = A.dead[Math.min(A.dead.length - 1, Math.floor(e / 0.22))]; sx = sy = 1; tilt = 0; dx = 0; }
+  if (p.dead > 0) { const e = 2.8 - p.dead; f = A.dead[Math.min(A.dead.length - 1, Math.floor(e / (A.deadMs || 0.22)))]; sx = sy = 1; tilt = 0; dx = 0; }
   return { f, sx, sy, tilt, dx, flip };
 }
 function drawWeapon(c, ch, gx, gy, ang, behind, glow, eOver, len) {
@@ -9897,8 +9936,7 @@ const BOSS_SHEETS = {
   b20: { grid: 'b20', ms: 95, trail: '255,150,80' },                     // ignis: fire and ice wings
 };
 /* 4x4 sheets: frame index for each state */
-const GRID_COL = { ATTACK1_STARTUP: 8, ATTACK1_ACTIVE: 9, ATTACK2_STARTUP: 10, ATTACK2_ACTIVE: 11, PHASE_CHANGE: 10 };
-const GRID_DEAD_T = 0.3;   // seconds per death frame; frameX stops at 3
+const BS48 = { idle: 0, idleN: 8, move: 8, moveN: 14, atk: 22, atkN: 16, dead: 38, deadN: 10, deadMs: 0.11 };   // 48프레임 구간: 대기 0-7 / 이동 8-21 / 공격 22-37 / 사망 38-47
 const BOSS_ATK2 = new Set(['rocks', 'sweep', 'gaze', 'summon']);   // shared moves drawn with the second attack; signature moves too
 const FSM_COL = { ATTACK1_STARTUP: 0, ATTACK1_ACTIVE: 1, ATTACK2_STARTUP: 2, ATTACK2_ACTIVE: 3, PHASE_CHANGE: 2, HURT: 4, DEAD: 5 };
 const FSM_ATTACK = s => s.startsWith('ATTACK');
@@ -9938,14 +9976,14 @@ function bossAnimTick(b, dt) {
     const base = 70 + 14 * ((b.phase || 1) - 1) + 3 * ((b.d && b.d.ch) || 1), spd = floater ? 1 : clamp(Math.abs(b.vx || 0) / base, 0.6, 2.2);
     f.wt += dt * 1000 * spd;
     if (f.wt >= f.delay) {
-      f.wt -= f.delay; f.wf = (f.wf + 1) % (S.grid && SPR[S.grid] ? 4 : 6);
+      f.wt -= f.delay; f.wf = (f.wf + 1) % (S.grid && SPR[S.grid] ? BS48.moveN : 6);
       f.delay = walkMs(S, f.wf) + (S.jitter ? rnd(-S.jitter, S.jitter) : 0);
       if (s === 'MOVE' && S.step && S.step.includes(f.wf)) {
         if (S.quake) shake(S.quake);
         if (S.dust || S.quake) dust(b.x + rnd(-b.w * 0.3, b.w * 0.3), b.y, 5, '150,140,120');
       }
     }
-  } else if (s === 'IDLE' && S.grid) { f.wt += dt * 1000; if (f.wt >= 170) { f.wt -= 170; f.wf = (f.wf + 1) % 4; } }   // the idle row breathes
+  } else if (s === 'IDLE' && S.grid) { f.wt += dt * 1000; if (f.wt >= 170) { f.wt -= 170; f.wf = (f.wf + 1) % BS48.idleN; } }   // the idle row breathes
   else if (s === 'IDLE') { f.wf = 0; f.wt = 0; }
   // particles that follow the body
   if (S.parts === 'spirit' && Math.random() < 0.12) addPart({ x: b.x + rnd(-b.w * 0.6, b.w * 0.6), y: b.y - rnd(20, b.h), vx: rnd(-8, 8), vy: rnd(-26, -10), g: 0, life: rnd(1, 1.8), r: rnd(1.4, 2.6), col: '170,230,255', glow: 1 });
@@ -9954,15 +9992,20 @@ function bossAnimTick(b, dt) {
     if (S.parts === 'bat' && Math.random() < 0.06) addPart({ x: b.x - f.face * b.w * 0.4, y: b.y - b.h * rnd(0.4, 0.9), vx: -f.face * rnd(40, 80), vy: rnd(-40, -10), g: 0, life: rnd(0.6, 1), r: 2.4, col: '30,20,30', glow: 0 });
     if (S.parts === 'heart' && Math.random() < 0.1) addPart({ x: b.x - f.face * b.w * 0.35, y: b.y - b.h * rnd(0.3, 0.8), vx: -f.face * rnd(10, 30), vy: rnd(-30, -10), g: 0, life: rnd(0.6, 1.1), r: rnd(1.6, 2.6), col: Math.random() < 0.5 ? '255,140,200' : '90,60,100', glow: 1 });
   }
-  f.sheetInfo = S.grid ? ['Grid4x4', S.grid, gridIndex(S, s, f)] : s === 'IDLE' || s === 'MOVE' ? ['WalkSheet', S.walk, f.wf] : [S.act[0].replace('boss_act', 'ActionSheet'), S.act[1], fsmCol(S, s)];
+  f.sheetInfo = S.grid ? ['Grid8x6', S.grid, gridIndex(S, s, f)] : s === 'IDLE' || s === 'MOVE' ? ['WalkSheet', S.walk, f.wf] : [S.act[0].replace('boss_act', 'ActionSheet'), S.act[1], fsmCol(S, s)];
 }
 
 /* which frame to draw and how to move it; also used for clones and ghosts that have no state machine of their own */
+/* 2026-11-23: one frame table for every boss sheet (8x6, 48 frames). The 6-skill tables still name poses as
+   [row, col] of the old 4x4 sheets; cell9 (3-A-5) turns those into 48-frame indices, so those tables do not change. */
 function gridIndex(S, s, f, t) {
-  if (s === 'DEAD') return 12 + Math.min(3, Math.floor((f ? f.t : 9) / GRID_DEAD_T));   // 12 -> 15, then it stays down
-  if (s === 'MOVE') return 4 + (f ? f.wf : Math.floor((t || 0) * 9) % 4);
-  if (s === 'IDLE' || s === 'HURT') return f ? f.wf % 4 : Math.floor((t || 0) * 6) % 4;   // no hurt frame on these sheets: idle + white flash
-  return GRID_COL[s] != null ? GRID_COL[s] : 0;
+  if (s === 'DEAD') return BS48.dead + Math.min(BS48.deadN - 1, Math.floor((f ? f.t : 9) / BS48.deadMs));   // 38 -> 47, then it stays down
+  if (s === 'MOVE') return BS48.move + (f ? f.wf % BS48.moveN : Math.floor((t || 0) * 10) % BS48.moveN);
+  if (s === 'IDLE' || s === 'HURT') return BS48.idle + (f ? f.wf % BS48.idleN : Math.floor((t || 0) * 6) % BS48.idleN);
+  const e = f ? f.t : 0;   // attack states: the wind-up covers the front of the row, the strike the rest
+  if (s === 'PHASE_CHANGE') return BS48.atk + 7 + Math.min(2, Math.floor(e / 0.12));
+  if (s === 'ATTACK1_STARTUP' || s === 'ATTACK2_STARTUP') return BS48.atk + Math.min(6, Math.floor(e / 0.055));
+  return BS48.atk + 7 + Math.min(BS48.atkN - 8, Math.floor(e / 0.06));
 }
 function bossSheetPose(b) {
   const S = BOSS_SHEETS[b.id || b.bid]; if (!S) return null;
@@ -9970,7 +10013,7 @@ function bossSheetPose(b) {
   if (!gk && !(S.act && SPR.boss_walk && SPR[S.act[0]])) return null;
   const f = b.fsm, s = f ? f.s : bossFsmState(b), t = b.anim || G.t;
   let fr, sheet;
-  if (gk) { fr = SPR[S.grid][gridIndex(S, s, f, t)]; sheet = 'grid'; }
+  if (gk) { const A48 = SPR[S.grid]; fr = A48[gridIndex(S, s, f, t)] || A48[0]; sheet = 'grid'; }
   else if (s === 'IDLE' || s === 'MOVE') { const wf = f ? f.wf : (S.float || s === 'MOVE' ? Math.floor(t * 9) % 6 : 0); fr = SPR.boss_walk[S.walk * 6 + wf]; sheet = 'walk'; }
   else { fr = SPR[S.act[0]][S.act[1] * 6 + fsmCol(S, s)]; sheet = 'act'; }
   if (!fr) return null;
@@ -9999,7 +10042,7 @@ function frameArea(fr) {
 function bossSheetScale(id, sheet) {
   const S = BOSS_SHEETS[id], H = (BOSS_ART[id] || [0, 180])[1], key = '_sc_' + sheet;
   if (S[key]) return S[key];
-  if (S.grid && SPR[S.grid]) { const hs = [0, 1, 2, 3].map(i => SPR[S.grid][i].bodyH).sort((a, c) => a - c); return (S[key] = H / hs[1]); }   // the idle row sets the size
+  if (S.grid && SPR[S.grid]) { const hs = SPR[S.grid].slice(0, BS48.idleN).filter(Boolean).map(fr => fr.bodyH).sort((a, c) => a - c); return (S[key] = H / hs[hs.length >> 1]); }   // the idle row sets the size
   const act = SPR[S.act[0]], hs = [0, 1, 2, 3, 4].map(i => (act[S.act[1] * 6 + i] || {}).bodyH || 0).sort((a, c) => a - c), scA = H / hs[2];
   if (sheet !== 'walk') return (S[key] = scA);
   const aA = frameArea(act[S.act[1] * 6 + 4]), aW = frameArea(SPR.boss_walk[S.walk * 6]);
@@ -10028,7 +10071,7 @@ function drawBossSheet(c, b, x, y, o) {
     fr = tintedFrame(fr, col);
   }
   if (P.S.ghost && P.s === 'MOVE' && f && (P.sheet !== 'grid' || (typeof BOSS_SHEET_FILE !== 'undefined' && BOSS_SHEET_FILE[id]))) {   // the fox's tails smear behind it (b5 keeps it on its new sheet)
-    const prev = P.sheet === 'grid' ? SPR[P.S.grid][4 + (f.wf + 3) % 4] : SPR.boss_walk[P.S.walk * 6 + (f.wf + 5) % 6];
+    const prev = P.sheet === 'grid' ? SPR[P.S.grid][BS48.move + (f.wf + BS48.moveN - 1) % BS48.moveN] : SPR.boss_walk[P.S.walk * 6 + (f.wf + 5) % 6];
     if (prev) drawSprite(c, prev, x - face * 12, y + P.dy, face, sc, { sx: P.sx, sy: P.sy, tilt: P.tilt, alpha: 0.22 * (o.alpha == null ? 1 : o.alpha), crisp: true });
   }
   drawSprite(c, fr, x, y + P.dy, face, sc, { sx: P.sx, sy: P.sy, tilt: P.tilt, alpha: o.alpha, crisp: true });
@@ -11693,13 +11736,10 @@ drawCineUI = function (c) { _drawCineUI3(c); drawClearPop(c); };
    are as big as their pixel art. Moving bosses leave sand, gold dust or spray on the floor of the world, not in the picture.
    dev.html has a "히트박스 & 발사원점 표시" switch: red = what can hit you right now, cross = where it came from. */
 /* fire points, in sheet pixels (1024x1024 sheets, cells of 256): frame index -> [x, y] */
-const MUZZLE = {   // read off shots/muzzle_rows.png (the attack row with a 32px grid)
-  b11: { 9: [472, 608], 10: [752, 566], 11: [985, 650] },          // arm cannon's mouth / the swung bar's tip / the fist
-  b12: { 10: [655, 600], 11: [952, 652] },                          // the doctor's raised hand / the chimera's open mouth
-  b13: { 9: [438, 528], 10: [722, 730], 11: [815, 578] },           // the ankh's head through the swing
-  b14: { 9: [383, 560], 10: [650, 630], 11: [902, 642] },           // her raised hand, then the reaching hand
-  b15: { 9: [452, 606], 10: [705, 608], 11: [940, 690] },           // cutlass tip / the casting fist
-};
+/* 2026-11-23: the old fire points were sheet pixels of the 4x4 sheets (frame 8+col). The 48-frame attack row is new art,
+   so those numbers no longer point at a hand. Empty = the generic body-relative point (muzzle() already falls back).
+   After play-testing, add per-frame points again: MUZZLE.b11 = { 27: [x, y], 32: [x, y], 37: [x, y] } (sheet pixels). */
+const MUZZLE = {};
 const COLF = n => 'COL' + n;   // b.fsmForce = COLF(2) shows frame 8 + 2 (attack row, column 2)
 /* where a frame's fire point is in the world right now */
 function muzzle(b, idx) {
@@ -11717,7 +11757,7 @@ function pbul(b, kind, x, y, vx, vy, o) { const sc = (o && o.sc) || 3, [w, h] = 
 
 /* 4x4 sheets: 'COL<n>' states pick an exact attack frame */
 const _gridIndex4 = gridIndex;
-gridIndex = function (S, s, f, t) { if (typeof s === 'string' && s.startsWith('COL')) return 8 + (+s.slice(3)); return _gridIndex4(S, s, f, t); };
+gridIndex = function (S, s, f, t) { if (typeof s === 'string' && s.startsWith('COL')) return BS48.atk + (+s.slice(3)) * 5; return _gridIndex4(S, s, f, t); };
 
 /* ---- beams drawn by code: white core, coloured glow, sparks at the mouth; drawn exactly as wide (th) as they hit ---- */
 const _drawHaz4 = drawHaz;
@@ -12231,7 +12271,7 @@ function drawPixelText(c, str, cx, cy, scale, o) {
   c.drawImage(cv, Math.round(cx - cv.width * scale / 2), Math.round(cy - cv.height * scale / 2), Math.round(cv.width * scale), Math.round(cv.height * scale)); c.restore();
 }
 /* the music falls silent for the entrance */
-function musicHush(on) { if (!AU.ctx || !AU.musGain) return; AU.musGain.gain.setTargetAtTime(on ? 0.0001 : (AU.musicOn ? MUS_VOL : 0), AU.ctx.currentTime, on ? 0.25 : 0.5); }
+function musicHush(on) { if (!AU.ctx || !AU.musGain) return; AU.musGain.gain.setTargetAtTime(on ? 0.0001 : (AU.musicOn ? AU.vol.mus : 0), AU.ctx.currentTime, on ? 0.25 : 0.5); }
 
 /* draw a boss in a given animation state at a spot (used while the real one is hidden) */
 function drawBossAs(c, b, s, x, y, o) {
@@ -12599,6 +12639,7 @@ function keysHtml() {
     html += `<div class="krow"><span>${label}</span><button class="kbtn ${wait ? 'wait' : ''}" data-rebind="${a}">${wait ? '키를 누르세요' : BINDS[a].map(keyName).join(' / ')}</button></div>`;
   }
   return `<div class="ph"><h3>키 설정</h3><span class="sub">바꿀 칸을 누른 다음 원하는 키를 누른다 · Esc는 취소</span><button class="xbtn" data-close="1">닫기 (${keyOf('m_keys')})</button></div>
+    <div class="krow" style="margin-bottom:calc(var(--u)*6)"><span>소리 설정 · 배경 음악과 효과음 크기</span><button class="kbtn" data-audio="1">열기</button></div>
     <div class="kgrid">${html}</div>
     <div class="tfoot"><span>같은 키를 다른 동작에 지정하면 원래 동작에서는 빠진다. 이 기기에 저장된다.</span><button class="mini" data-kreset="1">기본값으로</button></div>`;
 }
@@ -12733,7 +12774,7 @@ function renderPanel() {
   const P = G.ui.panel;
   if (isUiWin(P)) { uiRefresh(); return; }
   if (P === 'party') { $('#pBox').innerHTML = partyHtml(); partyPanelFill(); return; }
-  $('#pBox').innerHTML = P === 'guide' ? guideHtml() : P === 'keys' ? keysHtml() : P === 'travel' ? travelHtml() : traitsHtml();
+  $('#pBox').innerHTML = P === 'guide' ? guideHtml() : P === 'audio' ? audioHtml() : P === 'keys' ? keysHtml() : P === 'travel' ? travelHtml() : traitsHtml();
 }
 const fmtVal = (k, v) => { const u = SLOT_INFO[k].unit; return (k === 'pauldron' || u === '%' ? v.toFixed(1).replace(/\.0$/, '') : nf(v)) + u; };
 const gradeSpan = it => `<span style="color:${GRADES[it.grade].col}">${it.name}</span>`;
@@ -12768,6 +12809,9 @@ $('#panel').addEventListener('click', e => {
   else if (t.dataset.inh) inherit(t.dataset.inh);
   else if (t.dataset.rebind) { G.ui.rebind = t.dataset.rebind; renderPanel(); }
   else if (t.dataset.kreset) { resetBinds(); renderPanel(); }
+  else if (t.dataset.audio) openPanel('audio');   // P12
+  else if (t.dataset.amus) { toggleMusic(); renderPanel(); }
+  else if (t.dataset.amute) { toggleMute(); renderPanel(); }
   else if (t.dataset.sel) { G.ui.bagSel = +t.dataset.sel; renderPanel(); }
   else if (t.dataset.filt) { G.ui.bagFilt = t.dataset.filt; renderPanel(); }
   else if (t.dataset.eq) equipItem(+t.dataset.eq);
@@ -13076,7 +13120,7 @@ $('#title').addEventListener('click', e => {
 });
 function startGame(save, intro) {
   $('#title').classList.remove('art', 'dim', 'sel'); $('#title').style.backgroundImage = '';
-  G.save = fixSave(save); G.player = newPlayer(); G.playT = save.time || 0; G.fragPity = 0;
+  G.save = fixSave(save); hero48Load(G.save.char); G.player = newPlayer(); G.playT = save.time || 0; G.fragPity = 0;
   G.ui = { panel: null, dialog: null, help: false, intro: false, ending: false };
   G.stats = calcStats(); refreshStats(); G.player.hp = G.player.mhp;
   buildSkills();
@@ -13893,7 +13937,21 @@ function rollPot(grade) {
 }
 /* 4차 패치 Q4: the range a line can roll at this grade (what rollPot can give) */
 const potRange = (k, g) => { const m = 1 + (g || 0) * 0.25, r1 = v => Math.round(v * m * 10) / 10; return [r1(POT[k].r[0]), r1(POT[k].r[1])]; };
-const potLine = (pl, g) => { const [lo, hi] = potRange(pl.k, g); return POT[pl.k].n + ' +' + pl.v + '% (' + lo + '% ~ ' + hi + '%)'; };
+/* P8 2026-11-23: each potential line shows how good its roll is within that grade's range: top third gold, middle blue, bottom grey */
+const POT_TIERS = [
+  { min: 2 / 3, col: '#f0c040', n: '상' },
+  { min: 1 / 3, col: '#5aa8ff', n: '중' },
+  { min: -9, col: '#9a9a9a', n: '하' },
+];
+function potTier(v, k, g) {
+  const [lo, hi] = potRange(k, g);
+  const r = hi > lo ? (v - lo) / (hi - lo) : 1;
+  return POT_TIERS.find(t => r >= t.min) || POT_TIERS[POT_TIERS.length - 1];
+}
+const potLine = (pl, g) => {
+  const [lo, hi] = potRange(pl.k, g), t = potTier(pl.v, pl.k, g);
+  return `<span style="color:${t.col}">${POT[pl.k].n} +${pl.v}%</span>` + ` <span style="color:#6d7080">(${lo}% ~ ${hi}%)</span>`;
+};
 const potText = it => (it.pot || []).map(pl => potLine(pl, it.grade)).join(', ');
 const _makeItem9 = makeItem;
 makeItem = function (slot, cls, grade, ilvl, save) { const it = _makeItem9(slot, cls, grade, ilvl, save); it.q = rollQuality(); it.pot = rollPot(grade); return it; };
@@ -14390,7 +14448,10 @@ function sk9(b) { return S9[b.id] && S9[b.id].skills; }
 function zr9(b) { return b.berserk9 ? 0.78 : 1; }                                    // telegraphs get shorter in berserk
 const tel9 = (b, s) => Math.max(0.32, s * zr9(b) / (b.accelT > 0 ? 1.35 : 1));
 const dmg9 = (b, n) => Math.round(n * DMG9 * b.atkMul * (b.berserk9 ? (S9[b.id].atkK || 1.25) : 1) * (b.cryT > 0 ? 1.2 : 1));   // cryT: 18's war cry
-const cell9 = (r, c) => r * 4 + c;
+/* 2026-11-23: [row, col] of the old 4x4 sheets -> a frame of the 48-frame sheet. Row 0 idle, 1 move, 2 attack,
+   3 death; the four key poses of each row land on the four key frames of the new row. */
+const CELL9_MAP = [[0, 2, 4, 6], [8, 12, 17, 21], [22, 27, 32, 37], [38, 41, 44, 47]];
+const cell9 = (r, c) => CELL9_MAP[Math.max(0, Math.min(3, r | 0))][Math.max(0, Math.min(3, c | 0))];
 /* round robin + distance gate: every skill comes out each cycle; slot 4 (berserk) only once berserk */
 function pick9(b) {
   const L = sk9(b), p = G.player, dist = Math.abs(p.x - b.x);
@@ -15064,19 +15125,12 @@ reg9('b20', {
    art/boss21/giantcut.py into assets/boss/b7_giant.png (each frame alone in its slot, pixels unchanged) and loaded only
    when the boss room opens. Rows: 0 idle, 1 walk/charge, 2 raise -> smash -> crack -> aftershock, 3 roar, hurt, kneel, down.
    The stone pillars of the old room stay: a charge stops at one, two hits break it, with none left he tears the ledges off. ============ */
-const GIANT_CELLS = [{"sx": 57, "sy": 15, "w": 186, "h": 225, "ax": 95, "ay": 225, "bodyH": 225, "bodyTop": 0, "bodyW": 186, "sheet": 1}, {"sx": 360, "sy": 19, "w": 180, "h": 221, "ax": 88, "ay": 221, "bodyH": 221, "bodyTop": 0, "bodyW": 180}, {"sx": 657, "sy": 15, "w": 186, "h": 225, "ax": 94, "ay": 225, "bodyH": 225, "bodyTop": 0, "bodyW": 186}, {"sx": 959, "sy": 17, "w": 181, "h": 223, "ax": 92, "ay": 223, "bodyH": 223, "bodyTop": 0, "bodyW": 181}, {"sx": 55, "sy": 266, "w": 190, "h": 214, "ax": 90, "ay": 214, "bodyH": 214, "bodyTop": 0, "bodyW": 190}, {"sx": 348, "sy": 270, "w": 204, "h": 210, "ax": 99, "ay": 210, "bodyH": 210, "bodyTop": 0, "bodyW": 204}, {"sx": 647, "sy": 269, "w": 205, "h": 211, "ax": 93, "ay": 211, "bodyH": 211, "bodyTop": 0, "bodyW": 205}, {"sx": 953, "sy": 270, "w": 194, "h": 210, "ax": 90, "ay": 210, "bodyH": 210, "bodyTop": 0, "bodyW": 194}, {"sx": 48, "sy": 483, "w": 204, "h": 237, "ax": 96, "ay": 237, "bodyH": 237, "bodyTop": 0, "bodyW": 204}, {"sx": 325, "sy": 495, "w": 250, "h": 225, "ax": 103, "ay": 225, "bodyH": 225, "bodyTop": 0, "bodyW": 250}, {"sx": 603, "sy": 492, "w": 293, "h": 228, "ax": 137, "ay": 228, "bodyH": 228, "bodyTop": 0, "bodyW": 293}, {"sx": 924, "sy": 534, "w": 252, "h": 186, "ax": 120, "ay": 186, "bodyH": 186, "bodyTop": 0, "bodyW": 252}, {"sx": 51, "sy": 728, "w": 197, "h": 232, "ax": 103, "ay": 232, "bodyH": 232, "bodyTop": 0, "bodyW": 197}, {"sx": 347, "sy": 737, "w": 205, "h": 223, "ax": 115, "ay": 223, "bodyH": 223, "bodyTop": 0, "bodyW": 205}, {"sx": 616, "sy": 791, "w": 267, "h": 169, "ax": 142, "ay": 169, "bodyH": 169, "bodyTop": 0, "bodyW": 267}, {"sx": 914, "sy": 843, "w": 271, "h": 117, "ax": 147, "ay": 117, "bodyH": 117, "bodyTop": 0, "bodyW": 271}];
-
-/* the sheet as SPR.b7: one shared picture with no src until the boss is spawned (vfx9Load sets it) */
-const _loadSprites9 = loadSprites;
-SPRITE_SRC.b7 = GIANT_CELLS;   // sizes only (sizeBossesFromArt reads them); the picture itself is not in the html
-loadSprites = function () { const keep = SPRITE_SRC.b7; delete SPRITE_SRC.b7; _loadSprites9(); SPRITE_SRC.b7 = keep; const img = new Image(); SPR.b7 = GIANT_CELLS.map(f => Object.assign({ img }, f)); };
+/* 2026-11-23: b7 is an 8x6 sheet now (assets/boss/b7_giant.png, 2048x1536). Its own 16-cell table, loader and
+   three-frame death row are gone; cutBossSheet/gridIndex draw it like every other boss. Body size stays the old one. */
 BOSS_ART.b7 = [-1, 228];
 BOSS_SHEETS.b7 = { grid: 'b7', ms: 150, step: [1, 3], quake: 1.6, dust: 1 };
-(function sizeGiant() { const d = BOSSES.b7; if (!d) return; const fr = GIANT_CELLS[0], sc = 228 / fr.bodyH; d.h = 228; d.w = Math.round(Math.min(fr.bodyW * sc * 0.72, 150)); })();
+(function sizeGiant() { const d = BOSSES.b7; if (!d) return; d.h = 228; d.w = 136; d.grown = 1; })();
 if (BOSS_DEFS.b7) BOSS_DEFS.b7.name = '폭주 거인';
-/* his death row: hurt, kneel, down (the first cell of row 3 is the roar) */
-const _gridIndexG = gridIndex;
-gridIndex = function (S, s, f, t) { if (S && S.grid === 'b7' && s === 'DEAD') return 13 + Math.min(2, Math.floor((f ? f.t : 9) / 0.35)); return _gridIndexG(S, s, f, t); };
 
 /* the lava rock: frame 0 of the strip flies (not spinning), frames 1-3 play where it lands */
 function boulder9(b, x0, y0, x1, T) {
@@ -15257,7 +15311,7 @@ const NEWS = {
   title: '새 소식',
   sub: '성탑의 문이 열렸다',
   items: [
-    { icon: 'b20', head: '3막 · 성탑', text: '20장 보스를 쓰러뜨리면 야영지에서 성탑으로 오른다. 21장부터 30장까지 층마다 새 보스가 기다린다. 의뢰는 나중에 붙는다.' },
+    { icon: 'b20', head: '3막 · 성탑', text: '20장 보스를 쓰러뜨리면 야영지에서 성탑으로 오른다. 21장부터 30장까지 층마다 새 보스가 기다린다. 층마다 네스토르의 의뢰와 그 층 사람의 부탁이 붙는다.' },
     { icon: 'warn', head: '성탑 복도', text: '층마다 계단참과 보스방 사이에 복도가 생겼다. 그 층에만 사는 괴물 넷이 지키고, 보스방 문 앞에는 정예가 버틴다.' },
     { icon: 'road', head: '성탑의 노래', text: '성탑에서는 새 음악이 흐른다. 아래층과 위층, 보스방과 마지막 보스의 곡이 저마다 다르다.' },
     { icon: 'gold', head: '성탑의 장비와 쁘띠', text: '성탑에서 얻는 장비에는 성좌, 거울, 월식 같은 새 이름이 붙는다. 성탑 보스의 영혼을 무기에 넣으면 그 보스를 닮은 쁘띠가 따라온다.' },
@@ -15306,7 +15360,7 @@ const NEWS_PER = 5;   // lines on one page; more than this and the window gets <
 function newsIcon(cv, kind, t) {
   const c = cv.getContext('2d'), W = cv.width, H = cv.height; c.clearRect(0, 0, W, H); c.imageSmoothingEnabled = false;
   const boss = (id, cell) => { const S = BOSS_SHEETS[id], fr = S && S.grid ? SPR[S.grid] && SPR[S.grid][cell] : bossArt(id); if (!fr || !imgReady(fr.img)) return false; const sc = (H - 10) / (fr.bodyH || fr.h); drawSprite(c, fr, W / 2, H - 4, -1, sc, { crisp: true }); return true; };
-  if (kind === 'giant') { const fr = SPR.b7 && SPR.b7[0]; if (fr && !fr.img.src) fr.img.src = ASSET9 + 'boss/b7_giant.png'; boss('b7', Math.floor(t * 5) % 4); }
+  if (kind === 'giant') boss('b7', Math.floor(t * 5) % 8);   // 48f: 7장 보스방을 한 번 들어간 뒤부터 나온다(시트를 미리 불러오지 않음)
   else if (kind === 'b20') boss('b20', Math.floor(t * 5) % 4);
   else if (kind === 'npc') { const S = typeof NPC_SPR !== 'undefined' && NPC_SPR.chalkias; if (S && S.ok && imgReady(S.img)) { const i = Math.floor(t * 1000 / S.ms) % S.n, sc = (H - 6) / S.ch; c.drawImage(S.img, i * S.cw, 0, S.cw, S.ch, Math.round(W / 2 - S.ax * sc), Math.round(H - 3 - S.ay * sc), Math.round(S.cw * sc), Math.round(S.ch * sc)); } }   // the smith at his anvil
   else if (kind === 'hero') { const ch = ['theron', 'kallisto', 'lykos'][Math.floor(t / 1.2) % 3], set = SPR[ch], fr = set && set[3 + Math.floor(t * 8) % 4]; if (fr && imgReady(fr.img)) drawSprite(c, fr, W / 2, H - 4, 1, (H - 10) / fr.bodyH * 0.95, { crisp: true }); }   // the new heroes running
@@ -15884,7 +15938,7 @@ heroPose = function (ch, p) {
   const ps = _heroPoseM(ch, p); if (ch !== 'mage' || !p) return ps;
   const A = HERO_ANIM.mage, a = p.act;
   if (p.dead > 0 || p.hurt > 0) return ps;
-  if (a && MAGE_SEQ[a.id]) {
+  if (a && MAGE_SEQ[a.id] && !(SPR.mage && SPR.mage.sheet48)) {   // 48f has no old cast row
     const S = MAGE_SEQ[a.id], pick = (L, k) => L[Math.min(L.length - 1, Math.max(0, Math.floor(k * L.length)))];
     if (S.all) ps.f = pick(S.all, a.t / a.dur);
     else {
@@ -15892,7 +15946,7 @@ heroPose = function (ch, p) {
       ps.f = a.t < hit ? pick(S.pre, a.t / hit) : a.t < last ? S.hit : pick(S.post, (a.t - last) / Math.max(0.01, a.dur - last));
     }
     ps.dx = 0; ps.flip = 1; ps.tilt = 0;
-  } else if (!a && ps.f === A.idle[0] && p.onGround && !p.walking) ps.f = A.idle[Math.floor((p.anim || 0) * 4) % 3];   // three idle frames: breathing, the orb bobbing
+  } else if (!a && ps.f === A.idle[0] && p.onGround && !p.walking) ps.f = A.idle[Math.floor((p.anim || 0) * 4) % A.idle.length];   // three idle frames: breathing, the orb bobbing
   return ps;
 };
 
@@ -16429,7 +16483,7 @@ const _heroPoseR = heroPose;
 heroPose = function (ch, p) {
   const ps = _heroPoseR(ch, p); if (!REM_SHEET[ch] || !p) return ps;
   const A = HERO_ANIM[ch];
-  if (!p.act && p.onGround && !p.walking && ps.f === A.idle[0] && !(p.hurt > 0) && !(p.dead > 0)) ps.f = A.idle[Math.floor((p.anim || 0) * 4) % 3];   // three idle frames
+  if (!p.act && p.onGround && !p.walking && ps.f === A.idle[0] && !(p.hurt > 0) && !(p.dead > 0)) ps.f = A.idle[Math.floor((p.anim || 0) * 4) % A.idle.length];   // three idle frames
   if (ch === 'lykos' && p.walking && !p.act) ps.dx = 0;   // the old run frames needed their heads held still (54_fix8.js); these do not
   return ps;
 };
@@ -16445,6 +16499,7 @@ function remGlowFrame(ch, f, col) {
 const _drawHeroSpriteR = drawHeroSprite;
 drawHeroSprite = function (c, ch, p, x, y, face, o) {
   o = o || {};
+  if (!HERO48_IMG[ch] && !HERO48_TRY[ch]) hero48Load(ch);   // 48f: the first sight of a class starts its sheet
   const set = SPR[ch];
   // on a rope: the back view (peers send frame 100 + rope frame)
   const ropeF = o.pose ? (o.pose.f >= 100 ? o.pose.f - 100 : -1) : (p && p.rope ? remRopeFrame(p) : -1);
@@ -16478,6 +16533,57 @@ function remRopeFrame(p) {
   p.ropeLastY = y;
   if (p.ropeStill > 6) return 0;
   return 1 + (((Math.floor(p.ropeD / 12) % 3) + 3) % 3);
+}
+
+/* ============ 2026-11-23: 주인공 4종 48프레임 시트 (8x6, 셀 320x320, 지면 292, 몸통축 160) ============
+   파일: assets/heroes/hero_<class>_48f.png (2560x1920). idle 0-7 / move 8-21 / attack 22-37 / death 38-47.
+   - 지금 쓰는 리마스터 7x4 시트를 대신한다. 로드에 실패하면 리마스터 시트가 그대로 남는다(클래스별로 따로 교체).
+   - 셀 안 지면·축이 고정이라 프레임별 잉크 측정이 필요 없다: ax 160, ay 292.
+   - 무기는 그림에 들어 있다. 강화 표시는 마스크 글로우였는데 48프레임에는 같은 마스크가 없어 글로우를 끈다
+     (set.rem을 두지 않으므로 drawHeroSprite의 글로우 블록이 건너뛴다).
+   - 로프 뒷모습은 별도 스트립(hero_<class>_rope.png)이라 그대로 동작한다.
+   ============ */
+const HERO48 = {
+  theron:   { file: 'heroes/hero_theron_48f.png',   stand: 184, k: 1 },
+  kallisto: { file: 'heroes/hero_kallisto_48f.png', stand: 198, k: 1 },
+  lykos:    { file: 'heroes/hero_lykos_48f.png',    stand: 140, k: 0.9 },  // 지금 리마스터 시트와 같은 크기(옛 ROGUE_SCALE 0.9). 다른 클래스처럼 90px로 키우려면 k: 1
+  mage:     { file: 'heroes/hero_mage_48f.png',     stand: 192, k: 1 },
+};
+const HERO48_CELL = 320, HERO48_GROUND = 292, HERO48_PIVOT = 160;
+const HERO48_IMG = {}, HERO48_TRY = {};
+const _h48 = (a, n) => Array.from({ length: n }, (_, i) => a + i);
+const HERO48_ANIM = {
+  theron: { idle: _h48(0, 8), run: _h48(8, 14), runK: 2.5, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
+    z: [{ w: 24, s: 28, f: 33 }, { w: 25, s: 29, f: 34 }, { w: 26, s: 30, f: 35 }],
+    x: { w: 23, s: 29, f: 34 },                                 // 상향 일섬
+    c: { spin: [28, 33] },                                      // 회전 검풍
+    sk_a: { w: 24, s: 29, f: 35 }, sk_s: { w: 22, s: 28, f: 31 }, sk_d: { rise: 23, drop: 30, s: 34 } },
+  kallisto: { idle: _h48(0, 8), run: _h48(8, 14), runK: 2.5, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
+    shoot: [22, 24, 26, 28, 30, 31, 32], roll: [12, 16], sk_s: { w: 26, s: 30, f: 33 },
+    z: { w: 24, s: 30, f: 34 }, x: { w: 24, s: 30, f: 34 }, c: { w: 24, s: 30, f: 34 }, sk_a: { w: 24, s: 30, f: 34 }, sk_d: { w: 24, s: 30, f: 34 } },
+  lykos: { idle: _h48(0, 8), run: _h48(8, 14), runK: 2.5, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
+    z: [{ w: 22, s: 26, f: 35 }, { w: 23, s: 28, f: 36 }, { w: 22, s: 30, f: 37 }],
+    x: { w: 22, s: 25, f: 34 }, c: { w: 22, s: 27, f: 34 },
+    sk_a: { w: 22, alt: [26, 30], f: 36 }, sk_s: { w: 23, s: 28, f: 35 }, sk_d: { w: 22, alt: [27, 32], f: 37 } },
+  mage: { idle: _h48(0, 8), run: _h48(8, 14), runK: 2.5, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
+    z: [{ w: 24, s: 29, f: 33 }, { w: 24, s: 29, f: 33 }, { w: 24, s: 30, f: 34 }],
+    x: { w: 24, s: 29, f: 33 }, c: { w: 23, s: 28, f: 33 },
+    sk_a: { w: 24, s: 29, f: 33 }, sk_s: { w: 23, s: 29, f: 33 }, sk_d: { w: 24, s: 30, f: 34 } },
+};
+function hero48Load(ch) {
+  const C = HERO48[ch]; if (!C || HERO48_IMG[ch] || HERO48_TRY[ch]) return;
+  HERO48_TRY[ch] = 1;
+  const im = new Image();
+  im.onload = () => {
+    const fr = [];
+    for (let i = 0; i < 48; i++) fr.push({ img: im, sx: (i % 8) * HERO48_CELL, sy: ((i / 8) | 0) * HERO48_CELL,
+      w: HERO48_CELL, h: HERO48_CELL, ax: HERO48_PIVOT, ay: HERO48_GROUND, bodyH: C.stand, bodyW: HERO48_CELL, bodyTop: 0 });
+    fr.sc = HERO_H / C.stand * (C.k || 1); fr.sheet48 = ch; fr.crisp = true;   // 지금 리마스터 시트와 같은 픽셀 선명도
+    HERO48_IMG[ch] = fr;
+    SPR[ch] = fr; HERO_ANIM[ch] = HERO48_ANIM[ch];      // 이 순간부터 이 클래스는 48f로 그려진다
+  };
+  im.onerror = () => { console.warn('[48f] 주인공 시트를 못 불러왔다:', im.src); };
+  im.src = ASSET9 + C.file;
 }
 
 /* ---- class select: 결정 / 이전 sit on the red face (y 499-528 of the art), two lines, centred, never past the lip ---- */
@@ -16682,6 +16788,7 @@ castSkill = function (key) {
   if (ch === 'kallisto' && key === 's' && G.traps.length > nT) {
     const tr = G.traps[G.traps.length - 1], sk = REM_SK.kallisto.s; if (tr.fx) { tr.fx.fx.stop(); G.pfx = G.pfx.filter(e => e !== tr.fx); tr.fx = null; }
     tr.rem = 1; tr.face = p.face; tr.box = remBox(p, sk); remImg(sk.file);
+    tr.x = tr.box.x + tr.box.w / 2; tr.y = tr.box.y + tr.box.h;   // P10 2026-11-23: everything that reads the trap uses the strip's spot
   }
   if (ch === 'lykos' && key === 's' && G.execs.length > nX) { G.execs[G.execs.length - 1].rem = 1; remImg(REM_SK.lykos.s.file); }
   return r;
@@ -17893,7 +18000,8 @@ function wmGo(n, kind) {   // where the button goes, or why it can not
   if (!wmOpenCh(n)) return { why: '아직 열리지 않은 장' };
   if (!G.map || !G.map.safe) return { why: '장 이동은 야영지에서 할 수 있다' };
   if (kind === 'camp') return G.mapId === C.camp ? { why: '지금 여기' } : { id: C.camp, x: 760 };
-  let open = isAct3(n); if (!open) { try { open = chArenaOpen(n); } catch (e) { open = false; } }
+  let open = false; try { open = chArenaOpen(n); } catch (e) { open = false; }
+  if (isAct3(n) && G.save.flags['boss_b' + n]) open = true;   // 2026-11-23: tower floors open with their quests; a floor already beaten can be fought again
   if (!open) return { why: '보스 방이 아직 닫혀 있다' };
   const id = bossEntry(n); return G.mapId === id ? { why: '지금 여기' } : { id, x: 120 };
 }
@@ -18480,10 +18588,12 @@ document.head.insertAdjacentHTML('beforeend', `<style>
    Only the boss of the room is loaded (its sheet and its four strips); the previous one is let go. ============ */
 const BOSS_SHEET_FILE = {
   b1: 'boss/b1_lithos.png', b2: 'boss/b2_letheia.png', b3: 'boss/b3_gelos.png',
-  b4: 'boss/b4_sarkos.png', b5: 'boss/b5_alope.png', b6: 'boss/b6_nykteris.png',
+  b4: 'boss/b4_sarkos.png', b5: 'boss/b5_alope.png', b6: 'boss/b6_nykteris.png', b7: 'boss/b7_giant.png',
   b8: 'boss/b8_brontes.png', b9: 'boss/b9_oneira.png', b10: 'boss/b10_cheirurgos.png',
-};
-const BOSS_SHEET_BASE = { b1: 240, b2: 240, b3: 240, b4: 240, b5: 240, b6: 232, b8: 232, b9: 236, b10: 232 };   // the feet line inside each 256 cell
+  b11: 'boss/b11_48f.png', b12: 'boss/b12_48f.png', b13: 'boss/b13_48f.png', b14: 'boss/b14_48f.png', b15: 'boss/b15_48f.png',
+  b16: 'boss/b16_48f.png', b17: 'boss/b17_48f.png', b18: 'boss/b18_48f.png', b19: 'boss/b19_48f.png', b20: 'boss/b20_48f.png',
+};   // 2026-11-23: all 8x6. 21-30 add themselves below (ACT3_BOSS.file48)
+const BOSS_SHEET_BASE = { b1: 240, b2: 240, b3: 240, b4: 240, b5: 240, b6: 240, b7: 240, b8: 240, b9: 240, b10: 240 };   // 48f: the feet line is 240 on every cell of every sheet
 const BSH = {};   // id -> 'loading' | 'ok' | 'bad'
 function bossSheetLoad(id) {
   if (!BOSS_SHEET_FILE[id] || BSH[id]) return SPR[id];
@@ -18499,22 +18609,25 @@ function bossSheetLoad(id) {
   return null;   // until it is cut, the old sheets draw
 }
 /* each cell's ink box, measured once when the sheet arrives; the feet sit on the sheet's base line.
-   (The spec's formula took the row offset into the feet line, which only holds for row 0; here it is per cell.) */
+   (The spec's formula took the row offset into the feet line, which only holds for row 0; here it is per cell.)
+   2026-11-23: every boss sheet is 8 columns x 6 rows = 48 frames, cell 256: idle 0-7 / move 8-21 / attack 22-37 / death 38-47.
+   (The frame numbers live in BS48, declared in 3-A-3 next to the old GRID_COL it replaces.) */
 function cutBossSheet(img, base) {
-  const cw = img.naturalWidth >> 2, ch = img.naturalHeight >> 2;
+  const COLS = 8, ROWS = 6, cw = img.naturalWidth / COLS, ch = img.naturalHeight / ROWS;
   const cv = document.createElement('canvas'); cv.width = img.naturalWidth; cv.height = img.naturalHeight;
   const c = cv.getContext('2d', { willReadFrequently: true }); c.drawImage(img, 0, 0);
   const out = [];
-  for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) {
-    const d = c.getImageData(k * cw, r * ch, cw, ch).data;
+  for (let r = 0; r < ROWS; r++) for (let k = 0; k < COLS; k++) {
+    let d;
+    try { d = c.getImageData(k * cw, r * ch, cw, ch).data; } catch (e) { out.push(null); continue; }
     let x0 = cw, y0 = ch, x1 = -1, y1 = -1;
     for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) if (d[(y * cw + x) * 4 + 3] > 16) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     if (x1 < 0) { out.push(null); continue; }
     const w = x1 - x0 + 1, h = y1 - y0 + 1;
-    const foot = base == null ? y1 + 1 : base;   // null (chapters 21-30): the feet are the cell's lowest drawn pixel
+    const foot = base == null ? y1 + 1 : base;   // 48f sheets: the feet line is 240 on every cell
     out.push({ img, sx: k * cw + x0, sy: r * ch + y0, w, h, ax: Math.round(w / 2), ay: foot - y0, bodyH: foot - y0, bodyW: w, bodyTop: 0 });
   }
-  return out;
+  return out;   // 48 entries
 }
 /* the grid on each row; every motion option stays, walk/act stay for the fallback, ms in 4 steps */
 Object.assign(BOSS_SHEETS.b1, { grid: 'b1', ms: [130, 175, 130, 175] });
@@ -19021,16 +19134,16 @@ const ACT3_ART = { 21: 17, 22: 18, 23: 19, 24: 9, 25: 13, 26: 11, 27: 16, 28: 12
 /* 2026-11-23 (3막 통합 지시서 4-3): light and fog per floor (THEME_LIGHT keys only; the picture itself is the floor's own art) */
 const ACT3_THEME = { 21: 'titans', 22: 'asphodel', 23: 'styx', 24: 'gorgon', 25: 'titans', 26: 'labyrinth', 27: 'styx', 28: 'titans', 29: 'throne', 30: 'throne' };
 const ACT3_BOSS = {
-  21: { file: '21_Astral_Stalker.png', h: 192, w: 100, col: '120,190,255', mo: { ms: 110, trail: '120,190,255' } },
-  22: { file: '22_Rusted_Archangel.png', h: 228, w: 124, col: '255,96,60', mo: { ms: 130, float: 2 } },
-  23: { file: '23_Mirror_Empress.png', h: 204, w: 100, col: '200,230,255', mo: { ms: 120, parts: 'spirit' } },
-  24: { file: '24_Plague_Raven_Lord.png', h: 212, w: 112, col: '150,220,90', mo: { ms: 125 } },
-  25: { file: '25_Gravity_Colossus.png', h: 262, w: 150, col: '170,120,255', mo: { ms: 150, float: 3 } },
-  26: { file: '26_Chrono_Archivist.png', h: 214, w: 100, col: '255,210,120', mo: { ms: 120 } },
-  27: { file: '27_Void_Leviathan.png', h: 262, w: 170, col: '150,90,255', mo: { ms: 140 } },
-  28: { file: '28_Silver_Deus.png', h: 262, w: 150, col: '220,240,255', mo: { ms: 150, step: [1, 3], quake: 1.2, dust: 1 } },
-  29: { file: '29_Blood_Eclipse_Knight.png', h: 224, w: 112, col: '255,40,60', mo: { ms: 120, trail: '200,30,50' } },
-  30: { file: '30_Astraon_Star_Devourer.png', h: 270, w: 160, col: '255,220,140', mo: { ms: 130, float: 3 } },
+  21: { file: '21_Astral_Stalker.png', file48: 'b21_48f.png', h: 192, w: 100, col: '120,190,255', mo: { ms: 110, trail: '120,190,255' } },
+  22: { file: '22_Rusted_Archangel.png', file48: 'b22_48f.png', h: 228, w: 124, col: '255,96,60', mo: { ms: 130, float: 2 } },
+  23: { file: '23_Mirror_Empress.png', file48: 'b23_48f.png', h: 204, w: 100, col: '200,230,255', mo: { ms: 120, parts: 'spirit' } },
+  24: { file: '24_Plague_Raven_Lord.png', file48: 'b24_48f.png', h: 212, w: 112, col: '150,220,90', mo: { ms: 125 } },
+  25: { file: '25_Gravity_Colossus.png', file48: 'b25_48f.png', h: 262, w: 150, col: '170,120,255', mo: { ms: 150, float: 3 } },
+  26: { file: '26_Chrono_Archivist.png', file48: 'b26_48f.png', h: 214, w: 100, col: '255,210,120', mo: { ms: 120 } },
+  27: { file: '27_Void_Leviathan.png', file48: 'b27_48f.png', h: 262, w: 170, col: '150,90,255', mo: { ms: 140 } },
+  28: { file: '28_Silver_Deus.png', file48: 'b28_48f.png', h: 262, w: 150, col: '220,240,255', mo: { ms: 150, step: [1, 3], quake: 1.2, dust: 1 } },
+  29: { file: '29_Blood_Eclipse_Knight.png', file48: 'b29_48f.png', h: 224, w: 112, col: '255,40,60', mo: { ms: 120, trail: '200,30,50' } },
+  30: { file: '30_Astraon_Star_Devourer.png', file48: 'b30_48f.png', h: 270, w: 160, col: '255,220,140', mo: { ms: 130, float: 3 } },
 };
 const isAct3 = n => n > CH_COUNT && n <= CH_LAST;
 
@@ -19049,7 +19162,7 @@ for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
     wake: last + josa(last, '이', '가') + ' 눈을 뜬다', rage: last + '의 기운이 거칠어진다', stagger: last + josa(last, '이', '가') + ' 비틀거린다' };
   BOSS_ART[id] = [-1, A.h];
   BOSS_SHEETS[id] = Object.assign({ grid: id }, A.mo);
-  BOSS_SHEET_FILE[id] = 'boss/' + A.file; BOSS_SHEET_BASE[id] = null;   // null: feet = each cell's lowest drawn pixel (56x cutBossSheet)
+  BOSS_SHEET_FILE[id] = 'boss/' + (A.file48 || A.file); BOSS_SHEET_BASE[id] = 240;   // 2026-11-23: 48f sheets, feet on y 240
 }
 
 /* ---- the floors: a camp landing, the floor's hall (field, 2026-11-23: where the act-3 mobs live) and the boss room ---- */
@@ -19064,7 +19177,8 @@ for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
       plats: [ground(1700), oneway(180, 380, 170), oneway(1230, 380, 190)],
       lights: [{ x: 780, y: 440, r: 340, col: '255,150,70', a: 1, flick: 1 }, { x: 470, y: 420, r: 130, col: '255,190,120', a: 0.6, flick: 0.6 }, { x: 1050, y: 440, r: 120, col: '255,140,70', a: 0.6, flick: 0.8 }],
       props: [{ t: 'fire', x: 780 }, { t: 'anvil', x: 1050 }, { t: 'cart', x: 420 }, { t: T.prop, x: 1350, cold: T.cold }, { t: T.deco, x: 230 }],
-      npcs: tp.npcs.filter(q => q.id === 'smith' || q.id === 'shop').map(q => Object.assign({}, q)),
+      npcs: tp.npcs.filter(q => q.id === 'smith' || q.id === 'shop').map(q => Object.assign({}, q))
+        .concat([{ id: 'hal', x: 650, name: NS, look: 'nestor' }]),   // 3막: 성탑에도 의뢰를 주는 노인 (2026-11-23)
       lore: [],
       portals: [
         { id: 'p_up', x: 70, to: prev, toX: 1180, label: (n - 1) + '장 야영지로', req: () => true, up: true },
@@ -19083,7 +19197,8 @@ for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
       spawns: [mk(1, 520), mk(1, 1180), mk(1, 1780), mk(1, 2120), mk(2, 760), mk(2, 1420), mk(2, 1980), mk(3, 980), mk(3, 1620), mk(3, 2260), mk(4, 2040)],
       portals: [
         { id: 'p_back', x: 70, to: camp, toX: 1320, label: MAPS[camp].name, req: () => true },
-        { id: 'p_boss', x: 2330, to: arena, toX: 120, label: place + ' · ' + S.boss, req: () => true },
+        { id: 'p_boss', x: 2330, to: arena, toX: 120, label: place + ' · ' + S.boss,
+          req: () => chArenaOpen(n) || !!G.save.flags['boss_b' + n], lockT: '봉인됨 · 이 층의 의뢰를 마쳐야 열린다' },   // 2026-11-23: main 1·2 first (a floor already beaten stays open)
       ],
     };
     MAPS[arena] = {
@@ -19185,6 +19300,374 @@ function act3Dps(n) {
 }
 const _bossHp9A3 = bossHp9;
 bossHp9 = function (n) { if (isAct3(n)) { if (BOSS9_DPS[n - 1] == null) BOSS9_DPS[n - 1] = act3Dps(n); } return _bossHp9A3(n); };
+
+/* ============ 2026-11-23: 3막(21~30장) 메인·서브 의뢰 ============
+   자료 구조는 1~20장(STORY[n].main / .sub)과 같다. buildStory()는 CH_COUNT까지만 도므로
+   여기서 21~CH_LAST를 같은 규칙으로 만든다(buildAct3Story, 아래).
+   - main[0] 잡몹 처치 / main[1] 층 탐사(모으기) / main[2] 보스 토벌
+   - sub[0] 네스토르(hal) / sub[1] 그 층 사이드 NPC('side')
+   - 몬스터 id는 act3_data.js의 MOB_REG[21..30]과 같다: mobNN_01(일반), _02, _03, _04(정예).
+   - gather의 spot은 게임이 그리는 소품 종류다: brazier·tag·mirror·grave·ore·chain·flower·herb·toy.
+   ============ */
+const ACT3_W = [0.30, 0.30, 0.40];   // 메인 3개짜리 장의 보상 비중(합 1). MAIN_W는 6개짜리 장용이라 쓰지 않는다
+const ACT3_Q = {
+  21: {
+    side: { id: 'sera', name: '세라', title: '계단을 오르던 순례자', map: 'camp', x: 1160, look: 'iris', idle: [
+      ['세라', '성탑에 기도하러 왔어요. 별이 꺼지기 전까지는 이 계단이 하늘로 이어졌다고 했어요.'],
+      ['세라', '올라오다가 문이 사라지는 걸 봤어요. 뒤돌아보면 벽만 있어요.'],
+      ['세라', '괜찮아요. 내려갈 길이 없으면, 올라가는 수밖에.'],
+    ] },
+    main: [
+      { type: 'kill', giver: 'hal', mon: ['mob21_01'], need: 8, map: 'a', title: '잔해에 내려앉은 것들', obj: '별빛 사냥개 8마리 처치', dlg: {
+        offer: [[NS, '첫 계단을 올라오니 아래 문이 사라졌네. 이제 올라가는 길밖에 없어.'],
+          [NS, '잔해 위에 사냥개들이 내려앉았어. 꺼진 별의 빛을 따라오는 짐승이지. 여덟 마리만 정리해 주게.']],
+        remind: [[NS, '사냥개는 빛이 있는 쪽으로 모이네. 복도 안쪽까지 들어가 보게.']],
+        done: [[NS, '발소리가 멎었군.'], [NS, '이제 저 끝에 앉은 자를 보게. 별을 거둬 가는 자일세.']] } },
+      { type: 'gather', giver: 'hal', spot: 'brazier', item: '잔해의 등불', need: 3, map: 'a', title: '꺼진 등불', obj: '복도의 등불 셋에 불 붙이기', dlg: {
+        offer: [[NS, '복도 등불이 다 꺼졌네. 어둡면 발밑의 잔해를 밟게 돼.'], [NS, '불을 옮겨 붙여 두게. 셋이면 충분해.']],
+        remind: [[NS, '등불 앞에 서서 ↑를 누르게. 불은 금방 옮겨 붙어.']],
+        done: [[NS, '길이 보이는군.'], [NS, '이 빛에 또 뭔가 모여들겠지만, 그건 내일 걱정일세.']] } },
+      { type: 'boss', giver: 'hal', map: 'arena', title: '별빛 사냥꾼', obj: '별빛 사냥꾼 쓰러뜨리기', dlg: {
+        offer: [[NS, '저자가 별을 거둬 가는 동안, 하늘에는 밤이 한 겹씩 비었네.'], [NS, '가서 멈추게. 별을 삼킨 게 아니라, 삼켜지지 않게 막고 있다고 하더라도.']],
+        remind: [[NS, '한 번 더 올라가기 전에, 강화를 더 하고 가도 늦지 않네.']],
+        done: [['', '「빛을 거두지 않으면, 빛이 너를 찾아온다.」'], [NS, '…저 말을 남기고 쓰러졌군.'], [NS, '위층에서 발소리가 들리네. 아직 올라갈 사람이 있다는 뜻이지.']] } },
+    ],
+    sub: [
+      { type: 'kill', giver: 'hal', mon: ['mob21_02'], need: 12, map: 'a', rew: { potions: 2 }, title: '계단을 지키는 파수병', obj: '성탑 파수병 12명 처치', dlg: {
+        offer: [[NS, '올라가는 계단마다 파수병이 서 있네. 우리를 막으려는 게 아니라, 이 층을 지키려는 거겠지.'], [NS, '열둘만 정리하게. 그 이상은 부탁하지 않겠네.']],
+        remind: [[NS, '창을 든 놈들이 먼저 붙어 오네. 벽 쪽으로 몰리지 말게.']],
+        done: [[NS, '자리가 비었군. 이제 계단이 우리를 지나가게 해 줄 걸세.']] } },
+      { type: 'gather', giver: 'side', spot: 'tag', item: '순례자의 기도문', need: 1, map: 'a', rew: { scroll: 1 }, title: '기도문 한 장', obj: '복도에서 순례자의 기도문 찾기', dlg: {
+        offer: [['세라', '올라오다 기도문을 떨어뜨렸어요. 마지막 장에 언니 이름이 적혀 있어요.'], ['세라', '복도 어딘가에 있을 거예요. 한 장뿐이니까, 찾으면 꼭 갖다 주세요.']],
+        remind: [['세라', '종이니까 바닥에 붙어 있을 거예요. 낮은 데를 보세요.']],
+        done: [['세라', '이거예요. 이 한 장이면 돼요.'], ['세라', '별이 다 꺼져도, 이름은 안 꺼지네요.']] } },
+    ],
+    end: { h: '첫 계단을 넘었다', next: '녹슨 성좌의 회랑' },
+  },
+  22: {
+    side: { id: 'bel', name: '벨', title: '성좌지기 견습', map: 'camp', x: 1160, look: 'teo', idle: [
+      ['벨', '여기 성좌판은 전부 뒤집혀 있어요. 별은 원래 아래에 있었다고, 스승님이 그러셨는데.'],
+      ['벨', '뒤집힌 성좌를 다시 돌리면 별이 돌아올까요? 저는 아직 못 돌려 봤어요.'],
+      ['벨', '녹이 손에 묻어요. 하루 종일 닦아도 끝이 없어요.'],
+    ] },
+    main: [
+      { type: 'kill', giver: 'hal', mon: ['mob22_01'], need: 8, map: 'a', title: '녹슨 날개', obj: '녹슨 날개기사 8기 처치', dlg: {
+        offer: [[NS, '회랑을 걷는 기사들은 날개가 녹이 슬었네. 그래도 아직 날 수 있다고 믿고 있어.'], [NS, '여덟 기만 꺾어 주게. 날개를 부러뜨리라는 게 아니라, 여기서 멈추게 하라는 걸세.']],
+        remind: [[NS, '녹슨 놈들은 높이 뜨지 못하네. 바닥에 붙어서 싸우게.']],
+        done: [[NS, '날갯소리가 멎었군.'], [NS, '이제 회랑 안쪽의 성가가 들릴 걸세. 그 소리는 사람 목소리가 아니야.']] } },
+      { type: 'gather', giver: 'hal', spot: 'tag', item: '성좌의 명판', need: 3, map: 'a', title: '뒤집힌 성좌', obj: '회랑의 성좌 명판 3장 읽기', dlg: {
+        offer: [[NS, '성좌판마다 명판이 붙어 있네. 어느 별이 언제 꺼졌는지 적혀 있지.'], [NS, '세 장만 읽어 오게. 순서가 맞아야 무슨 일이 있었는지 알 수 있어.']],
+        remind: [[NS, '명판 앞에서 ↑를 누르게. 글자는 짧지만, 읽으면 오래 남네.']],
+        done: [[NS, '첫 별이 꺼진 밤에, 열두 번째 종이 울리지 않았다고 적혀 있군.'], [NS, '그게 시작일세. 우리가 아는 밤은 그날로 끝났어.']] } },
+      { type: 'boss', giver: 'hal', map: 'arena', title: '녹슨 대천사', obj: '녹슨 대천사 쓰러뜨리기', dlg: {
+        offer: [[NS, '성좌를 지키던 대천사는 아직 심판을 집행하네.'], [NS, '문제는, 무엇이 죄인지 기억하지 못한다는 거야. 회랑에 들어온 모든 것을 죄인으로 봐.']],
+        remind: [[NS, '성가가 커지면 성좌판이 떨리네. 그때가 비어 있는 순간일세.']],
+        done: [['', '「녹슨 것은 날개가 아니다. 네가 늦게 온 시간이다.」'], [NS, '…심판을 멈췄군.'], [NS, '회랑 끝에서 바람이 부네. 창문이 열린 게 아닐세. 하늘이 뚫린 거지.']] } },
+    ],
+    sub: [
+      { type: 'kill', giver: 'side', mon: ['mob22_03'], need: 10, map: 'a', rew: { item: 1 }, title: '톱니가 도는 소리', obj: '톱니 천사병 10기 처치', dlg: {
+        offer: [['벨', '천사병들 톱니가 밤새 돌아요. 그 소리 때문에 성가를 못 읽겠어요.'], ['벨', '열 기만 조용하게 해 주세요. 이 회랑에서 제일 시끄러운 게 그것들이에요.']],
+        remind: [['벨', '톱니는 붙어 있을 때 더 크게 울려요. 가까이서 끝내 주세요.']],
+        done: [['벨', '아, 이제 성가가 들려요.'], ['벨', '…들리면 안 되는 소리였네요. 미안해요, 말하지 마세요.']] } },
+      { type: 'gather', giver: 'side', spot: 'ore', item: '녹슨 청동못', need: 4, map: 'a', rew: { potions: 2 }, title: '청동못 네 개', obj: '회랑의 녹슨 청동못 4개 줍기', dlg: {
+        offer: [['벨', '성좌판을 고정하는 청동못이 빠졌어요. 판이 하나씩 떨어지고 있어요.'], ['벨', '네 개만 찾아 주세요. 제가 다시 박을 수 있어요.']],
+        remind: [['벨', '녹슨 것 중에 머리가 큰 게 못이에요. 금빛이 도는 건 명판이고요.']],
+        done: [['벨', '됐다. 이제 안 떨어져요.'], ['벨', '…조금만 더 있으면, 스승님도 이 회랑을 알아보시겠죠.']] } },
+    ],
+    end: { h: '뒤집힌 성좌를 읽었다', next: '거울로 된 하늘' },
+  },
+  23: {
+    side: { id: 'mire', name: '미레', title: '유리장이', map: 'camp', x: 1160, look: 'nella', idle: [
+      ['미레', '거울은 깨져도 자기 얼굴은 안 잃어요. 조각마다 다 제 얼굴을 갖고 있죠.'],
+      ['미레', '이 층 거울은 제가 붙인 게 아니에요. 원래 하늘에 붙어 있었어요.'],
+      ['미레', '하늘을 보지 마세요. 여기선 하늘이 먼저 봐요.'],
+    ] },
+    main: [
+      { type: 'kill', giver: 'hal', mon: ['mob23_01'], need: 8, map: 'a', title: '거울 파편령', obj: '거울 파편령 8체 처치', dlg: {
+        offer: [[NS, '거울 조각이 스스로 걸어 다니네. 발밑에 유리가 깔려서 걷기도 어렵지.'], [NS, '여덟 놈만 부숴 주게. 부수면 다시 붙지 않아.']],
+        remind: [[NS, '파편은 사람 그림자를 밟고 옮겨 다니네. 그림자를 흔들어 두게.']],
+        done: [[NS, '유리 소리가 멎었군.'], [NS, '이제 거울을 보게. …아니, 보지 말게. 미레가 그러더군.']] } },
+      { type: 'gather', giver: 'hal', spot: 'mirror', item: '깨진 거울 조각', need: 3, map: 'a', title: '일곱 겹의 거울', obj: '방 안의 깨진 거울 조각 3개 줍기', dlg: {
+        offer: [[NS, '여왕은 자기 자신을 비추는 거울을 지키고 있네. 그걸 일곱 겹이라고 하더군.'], [NS, '조각 셋만 가져오게. 몇 겹이 진짜인지 세어 볼 걸세.']],
+        remind: [[NS, '조각을 들면 네 얼굴이 비치네. 오래 들여다보지 말게.']],
+        done: [[NS, '셋 다 같은 얼굴이군.'], [NS, '거울이 아니라 우리를 비추고 있었던 거야. 이 방은 처음부터 우리를 보고 있었네.']] } },
+      { type: 'boss', giver: 'hal', map: 'arena', title: '거울의 여왕', obj: '거울의 여왕 쓰러뜨리기', dlg: {
+        offer: [[NS, '여왕은 자기가 별을 지킨다고 믿네. 실제로는 자기 얼굴을 지키고 있지.'], [NS, '분신을 세지 말게. 거울에 비친 별의 개수를 세게.']],
+        remind: [[NS, '화면이 뒤집혀도 자네 손은 그대로일세. 그건 믿어도 되네.']],
+        done: [['', '「네가 나를 깨면, 너도 여기 있던 다른 누군가가 깨는 거야.」'], [NS, '거울이 다 떨어졌군.'],
+          [NS, '이제 위층에서는 하늘이 보인다더군. 진짜 하늘이면 좋겠네.']] } },
+    ],
+    sub: [
+      { type: 'kill', giver: 'side', mon: ['mob23_03'], need: 10, map: 'a', rew: { potions: 3 }, title: '반사되는 검', obj: '반사 검객 10명 처치', dlg: {
+        offer: [['미레', '검객들이 제 거울을 자꾸 베어요. 팔 수 있는 거울이 몇 개 안 남았어요.'], ['미레', '열 명만 치워 주세요. 부탁이에요, 그거 팔아야 밥을 먹어요.']],
+        remind: [['미레', '그 검객들, 제 얼굴 보고 웃어요. 기분 나빠요.']],
+        done: [['미레', '고마워요. 이제 거울 좀 팔 수 있겠네요.'], ['미레', '…한 개는 남겨 둘게요. 제 얼굴 확인용으로요.']] } },
+      { type: 'gather', giver: 'side', spot: 'mirror', item: '미레의 손거울', need: 1, map: 'a', rew: { item: 1 }, title: '손거울 하나', obj: '복도에서 미레의 손거울 찾기', dlg: {
+        offer: [['미레', '제 손거울을 이 층에 두고 왔어요. 은테에 이름이 새겨져 있어요.'], ['미레', '찾아 주시면, 그거라도 팔아서 값을 치를게요.']],
+        remind: [['미레', '은테는 이 방에서 유일하게 반짝이는 거예요. 눈에 띌 거예요.']],
+        done: [['미레', '이거예요. 이름도 그대로네요.'], ['미레', '…역시 안 팔게요. 이건 제 거예요.']] } },
+    ],
+    end: { h: '거울 하늘을 지나왔다', next: '까마귀가 세는 층' },
+  },
+  24: {
+    side: { id: 'toma', name: '토마', title: '계단을 세는 아이', map: 'camp', x: 1160, look: 'poli', idle: [
+      ['토마', '이 층엔 계단이 없어요. 그래서 제가 세고 있어요. 하나, 둘, …'],
+      ['토마', '까마귀가 저보다 더 많이 세요. 저는 열까지인데, 까마귀는 끝을 몰라요.'],
+      ['토마', '숨 쉬는 사람은 숫자래요. 그럼 저도 숫자인가요?'],
+    ] },
+    main: [
+      { type: 'kill', giver: 'hal', mon: ['mob24_01'], need: 8, map: 'a', title: '까마귀가 세는 것', obj: '역병 까마귀 8마리 처치', dlg: {
+        offer: [[NS, '이 층은 깃털이 바닥이 됐네. 까마귀가 죽은 자를 세고 있어.'], [NS, '여덟 마리만 줄여 주게. 수가 줄면 저놈도 잠깐 멈출 걸세.']],
+        remind: [[NS, '까마귀는 숫자를 세니, 뒤에서 세게. 앞에서는 세어 버려.']],
+        done: [[NS, '수가 흐트러졌군.'], [NS, '저놈은 숫자가 맞아야 편한데, 이제 맞지 않을 걸세.']] } },
+      { type: 'gather', giver: 'hal', spot: 'grave', item: '이름 없는 표석', need: 3, map: 'a', title: '이름 없는 표석', obj: '층의 표석 3개 읽기', dlg: {
+        offer: [[NS, '이 층 여기저기에 작은 표석이 서 있네. 이름이 다 지워졌어.'], [NS, '셋만 읽어 보게. 지워진 이름도 자국은 남아 있어.']],
+        remind: [[NS, '표석 앞에서 ↑를 누르게. 읽고 나면 손이 무거워질 걸세.']],
+        done: [[NS, '…셋 다 같은 날짜군.'], [NS, '별이 꺼진 밤에 죽은 사람들일세. 까마귀는 이 날짜를 세고 있었어.']] } },
+      { type: 'boss', giver: 'hal', map: 'arena', title: '역병 까마귀 군주', obj: '역병 까마귀 군주 쓰러뜨리기', dlg: {
+        offer: [[NS, '까마귀 군주는 역병을 세는 회계사일세. 죽은 자를 되살리는 대신 수를 줄이려 하지.'], [NS, '그러니 살아 있는 자를 세네. 우리가 그 숫자일세.']],
+        remind: [[NS, '독 장판이 깔리면 서두르지 말게. 장판 사이로 걷게.']],
+        done: [['', '「숨을 쉬는 놈은 아직 숫자야. 숫자는 언제든 지울 수 있어.」'], [NS, '셈이 끝났군.'],
+          [NS, '토마가 계단을 세고 있네. 아이에게도 숫자가 하나는 있어야지.']] } },
+    ],
+    sub: [
+      { type: 'gather', giver: 'side', spot: 'toy', item: '나무 새', need: 1, map: 'a', rew: { scroll: 2 }, title: '나무 새', obj: '층에서 토마의 나무 새 찾기', dlg: {
+        offer: [['토마', '제 나무 새를 떨어뜨렸어요. 깃털 사이에 있으면 못 찾아요.'], ['토마', '그거 없으면 잠이 안 와요. 세다가 자꾸 까먹거든요.']],
+        remind: [['토마', '날개가 하나 부러져 있어요. 그래서 더 잘 보일 거예요.']],
+        done: [['토마', '찾았어요!'], ['토마', '이제 이걸로 세면 돼요. 하나, 둘, 셋…']] } },
+      { type: 'kill', giver: 'hal', mon: ['mob24_02'], need: 10, map: 'a', rew: { potions: 2 }, title: '부리 수도사', obj: '부리 수도사 10명 처치', dlg: {
+        offer: [[NS, '수도사들이 부리로 바닥을 쪼고 있네. 이름을 새로 새기려는 거야.'], [NS, '열 명만 멈추게. 이름은 새로 새길 게 아니라, 찾아야 하는 걸세.']],
+        remind: [[NS, '쪼는 소리가 들리면 가까이 있네. 발소리를 죽이게.']],
+        done: [[NS, '조용해졌군. 이제 표석의 이름이 지워지지 않겠어.']] } },
+    ],
+    end: { h: '이름 없는 자들을 세었다', next: '무게가 사라진 방' },
+  },
+  25: {
+    side: { id: 'eno', name: '에노', title: '떠 있는 사람', map: 'camp', x: 1160, look: 'euno', idle: [
+      ['에노', '여기서는 떨어져도 아프지 않아요. 대신 아무 데도 닿지 않죠.'],
+      ['에노', '저는 이 방에 오래 떠 있었어요. 바닥이 어디였는지 잊었어요.'],
+      ['에노', '위로 갈수록 가벼워져요. 가벼운 게 좋은 줄 알았는데.'],
+    ] },
+    main: [
+      { type: 'kill', giver: 'hal', mon: ['mob25_01'], need: 8, map: 'a', title: '떠다니는 거석병', obj: '부유 거석병 8기 처치', dlg: {
+        offer: [[NS, '무게가 없으니 돌도 떠 있네. 그 돌들이 병사처럼 줄을 서 있어.'], [NS, '여덟 기만 내려놓게. 땅으로 떨어뜨리면 다시 못 떠.']],
+        remind: [[NS, '떠 있는 놈은 위에서 내려오네. 고개를 들고 다니게.']],
+        done: [[NS, '무게가 돌아왔군.'], [NS, '이 방의 주인은 모든 무게를 혼자 들고 있네. 벌써 지쳐 있을 걸세.']] } },
+      { type: 'gather', giver: 'hal', spot: 'ore', item: '떠 있는 광석', need: 3, map: 'a', title: '무게를 가진 돌', obj: '방 안의 떠 있는 광석 3개 줍기', dlg: {
+        offer: [[NS, '이 방에서 무게를 가진 건 몇 안 되네. 광석 몇 조각이 그나마 아래로 떨어져.'], [NS, '셋만 주워 오게. 무게가 무엇인지 다시 배울 걸세.']],
+        remind: [[NS, '광석은 발끝 아래에 있어. 떠 있는 돌이 아니라, 떨어진 돌을 보게.']],
+        done: [[NS, '손에 무게가 느껴지나.'], [NS, '그게 없으면 우리는 위로 떨어지네. 아래로 떨어지는 것보다 무섭지.']] } },
+      { type: 'boss', giver: 'hal', map: 'arena', title: '중력의 거인', obj: '중력의 거인 쓰러뜨리기', dlg: {
+        offer: [[NS, '거인은 별의 무게를 대신 들어 올린 자일세.'], [NS, '그를 쓰러뜨리면 이 방의 중력이 뒤집히네. 천장이 바닥이 될 걸세. 조작은 그대로야.']],
+        remind: [[NS, '무게가 바뀌어도 자네 손은 정방향일세. 그건 잊지 말게.']],
+        done: [['', '「무게를 내려놓으면, 이 방은 위로 떨어진다. 나를 이기고 싶다면 그걸 감당해.」'], [NS, '천장이 바닥이 됐군.'],
+          [NS, '위층의 계단이 이제 아래에서 보이네. 기분이 이상하지.']] } },
+    ],
+    sub: [
+      { type: 'kill', giver: 'side', mon: ['mob25_03'], need: 10, map: 'a', rew: { item: 1 }, title: '성운 망치', obj: '성운 해머거인 10기 처치', dlg: {
+        offer: [['에노', '망치 든 거인들이 제 발밑을 자꾸 내리쳐요. 떨어질까 봐 무서워요.'], ['에노', '열 기만 치워 주세요. 그러면 제가 바닥을 찾을 수 있을지도 몰라요.']],
+        remind: [['에노', '망치가 들리면 한 발 옆으로. 그게 전부예요.']],
+        done: [['에노', '조용해졌어요.'], ['에노', '…아직 떠 있네요. 그래도 좀 낫네요.']] } },
+      { type: 'gather', giver: 'side', spot: 'tag', item: '에노의 시', need: 3, map: 'a', rew: { potions: 3 }, title: '떠 버린 시', obj: '방 안에 흩어진 시 3장 줍기', dlg: {
+        offer: [['에노', '제 시를 쓴 종이가 방 안에 다 흩어졌어요. 떠다녀서 손이 안 닿아요.'], ['에노', '세 장만 주워 주세요. 제가 쓴 게 맞는지 확인하고 싶어요.']],
+        remind: [['에노', '종이는 천장 쪽에 붙어 있어요. 높은 데를 보세요.']],
+        done: [['에노', '…이건 제가 쓴 게 아니네요.'], ['에노', '누군가 제 이름으로 썼어요. 여기 있던 사람이겠죠.']] } },
+    ],
+    end: { h: '무게를 돌려받았다', next: '멈춘 시계의 서고' },
+  },
+  26: {
+    side: { id: 'lib', name: '리브', title: '서고의 필경사', map: 'camp', x: 1160, look: 'thera', idle: [
+      ['리브', '이 서고의 책은 전부 같은 문장에서 멈춰 있어요.'],
+      ['리브', '제가 필사한 것도 그 문장에서 멈췄어요. 다음 장이 기억나지 않아요.'],
+      ['리브', '시간이 되감기는 동안, 저는 같은 줄을 계속 쓰고 있어요.'],
+    ] },
+    main: [
+      { type: 'kill', giver: 'hal', mon: ['mob26_01'], need: 8, map: 'a', title: '태엽이 도는 서기', obj: '시계태엽 서기 8명 처치', dlg: {
+        offer: [[NS, '서기들이 태엽을 감으며 돌아다니네. 멈춘 시계를 다시 돌리려는 거야.'], [NS, '여덟 명만 세우게. 시간은 다시 돌리면 안 되네.']],
+        remind: [[NS, '서기들은 걸음마다 태엽 소리를 내네. 소리를 따라가면 된다.']],
+        done: [[NS, '태엽 소리가 줄었군.'], [NS, '이제 서기관을 만나러 갈 걸세. 그는 기록을 지우지 않겠다고 했어.']] } },
+      { type: 'gather', giver: 'hal', spot: 'tag', item: '멈춘 문장', need: 3, map: 'a', title: '같은 문장', obj: '서고에 떨어진 책장 3장 줍기', dlg: {
+        offer: [[NS, '서고 책장이 바닥에 흩어져 있네. 다 같은 문장이야.'], [NS, '세 장만 모아 오게. 같은지 다른지 자네 눈으로 확인해 주게.']],
+        remind: [[NS, '책장은 무게가 있어. 가벼운 종이와 헷갈리지 말게.']],
+        done: [[NS, '…셋 다 같은 문장이군.'], [NS, '문장이 멈춘 게 아니라, 누가 같은 줄을 계속 쓰고 있는 거야.']] } },
+      { type: 'boss', giver: 'hal', map: 'arena', title: '시간의 서기관', obj: '시간의 서기관 쓰러뜨리기', dlg: {
+        offer: [[NS, '그는 별이 꺼진 시각을 기록하는 자일세. 그 문장을 되돌리려고 시간을 되감고 있어.'], [NS, '되감으면 자네가 준 피해도 함께 되감기네. 역행이 끝난 직후가 유일한 틈일세.']],
+        remind: [[NS, '한 번뿐일세. 그 한 번을 아끼게.']],
+        done: [['', '「몇 번째 너니? …아, 상관없어. 이번엔 기록을 지우지 않을 테니까.」'], [NS, '기록이 멈췄군.'],
+          [NS, '이제 이 서고의 책은 끝까지 읽을 수 있겠어. 읽고 싶다면, 말일세.']] } },
+    ],
+    sub: [
+      { type: 'kill', giver: 'side', mon: ['mob26_03'], need: 10, map: 'a', rew: { scroll: 2 }, title: '깃펜 소리', obj: '깃펜 마법사 10명 처치', dlg: {
+        offer: [['리브', '깃펜 소리가 제 필사를 방해해요. 한 줄을 쓰면 세 줄이 지워져요.'], ['리브', '열 명만 조용하게 해 주세요. 그러면 이번엔 끝까지 쓸 수 있을 거예요.']],
+        remind: [['리브', '그들은 허공에 써요. 종이가 없어도 소리는 나요.']],
+        done: [['리브', '조용해졌어요.'], ['리브', '이제 쓰면 되는데… 다음 문장이 기억나지 않네요.']] } },
+      { type: 'gather', giver: 'side', spot: 'ore', item: '모래시계의 모래', need: 4, map: 'a', rew: { potions: 2 }, title: '흘러내린 모래', obj: '서고 바닥의 모래 4줌 줍기', dlg: {
+        offer: [['리브', '모래시계가 깨졌어요. 모래가 바닥에 다 쏟아졌어요.'], ['리브', '네 줌만 모아 주세요. 다시 채우면 시간이 좀 더 흐를 거예요.']],
+        remind: [['리브', '모래는 발밑에 얇게 깔려 있어요. 서두르면 날아가요.']],
+        done: [['리브', '이만큼이면 되겠네요.'], ['리브', '…모래를 세는 건 저예요. 시간을 세는 건 아니에요.']] } },
+    ],
+    end: { h: '멈춘 문장을 읽었다', next: '별을 삼킨 뱀의 우물' },
+  },
+  27: {
+    side: { id: 'kur', name: '쿠르', title: '우물지기', map: 'camp', x: 1160, look: 'mikos', idle: [
+      ['쿠르', '우물 안에 별이 하나 있어요. 뱀이 그걸 보고 있어요.'],
+      ['쿠르', '뱀은 별을 삼킨 게 아니에요. 삼켜진 별들이 뱀 안에 모여 있는 거예요.'],
+      ['쿠르', '그를 죽이면 층이 어두워져요. 그래도 가야죠.'],
+    ] },
+    main: [
+      { type: 'kill', giver: 'hal', mon: ['mob27_01'], need: 8, map: 'a', title: '우물에서 기어 나온 것', obj: '공허 촉수충 8마리 처치', dlg: {
+        offer: [[NS, '우물에서 촉수가 기어 나오네. 뱀이 몸을 뒤척일 때마다 하나씩.'], [NS, '여덟 마리만 잘라 주게. 우물은 아직 건드리지 말고.']],
+        remind: [[NS, '촉수는 바닥을 기네. 발밑을 보게.']],
+        done: [[NS, '우물이 조용해졌군.'], [NS, '이제 뱀의 몸을 따라 계단이 돈다는 걸 알겠네.']] } },
+      { type: 'gather', giver: 'hal', spot: 'chain', item: '우물의 사슬', need: 3, map: 'a', title: '우물을 묶은 사슬', obj: '우물가의 사슬 3개 풀기', dlg: {
+        offer: [[NS, '우물 둘레에 사슬이 감겨 있네. 누가 뱀을 묶어 둔 거야.'], [NS, '셋만 풀어 주게. 묶은 자가 누군지 알고 싶네.']],
+        remind: [[NS, '사슬 앞에서 ↑를 누르게. 녹이 슬어도 아직 단단해.']],
+        done: [[NS, '사슬 끝에 표식이 있군. 성탑의 문장일세.'], [NS, '우리를 막으려고 묶은 게 아니야. 뱀이 나오지 않게 묶은 거지.']] } },
+      { type: 'boss', giver: 'hal', map: 'arena', title: '공허의 레비아탄', obj: '공허의 레비아탄 쓰러뜨리기', dlg: {
+        offer: [[NS, '레비아탄은 별을 삼킨 장본인이 아니네. 삼켜진 별들의 무덤일세.'], [NS, '그를 쓰러뜨리면 층이 어두워지네. 어두운 층에서만 위층 문이 보인다고 하더군.']],
+        remind: [[NS, '뱃속의 빛이 새어 나오네. 그 빛이 유일한 등불일세.']],
+        done: [['', '「나를 죽이면 어두워질 뿐이야. …그래도 계속할 거지?」'], [NS, '층이 어두워졌군.'],
+          [NS, '어둡지만 문은 보이네. 별이 꺼진 자리는 원래 어둡지.']] } },
+    ],
+    sub: [
+      { type: 'kill', giver: 'side', mon: ['mob27_02'], need: 10, map: 'a', rew: { item: 1 }, title: '우물을 지키는 뱀전사', obj: '심연 뱀전사 10명 처치', dlg: {
+        offer: [['쿠르', '뱀전사들이 우물을 지켜요. 제가 물을 길러 가면 쫓아와요.'], ['쿠르', '열 명만 치워 주세요. 그러면 물 한 바가지쯤은 길 수 있을 거예요.']],
+        remind: [['쿠르', '물가에서는 미끄러워요. 서두르지 마세요.']],
+        done: [['쿠르', '물을 길었어요.'], ['쿠르', '…별이 비치네요. 물속에 하나, 우물 위에 하나.']] } },
+      { type: 'gather', giver: 'side', spot: 'chain', item: '끊어진 사슬 고리', need: 4, map: 'a', rew: { potions: 2 }, title: '끊어진 고리', obj: '우물가의 끊어진 고리 4개 줍기', dlg: {
+        offer: [['쿠르', '사슬이 끊어졌어요. 제가 다시 이어야 해요.'], ['쿠르', '고리 네 개만 주워 주세요. 그거면 하나는 이을 수 있어요.']],
+        remind: [['쿠르', '고리는 무거워요. 촉수와 헷갈리지 마세요.']],
+        done: [['쿠르', '이으면 되겠어요.'], ['쿠르', '한 고리씩 이으면, 언젠간 다 이어지겠죠.']] } },
+    ],
+    end: { h: '뱀의 우물을 지나왔다', next: '백은의 제단' },
+  },
+  28: {
+    side: { id: 'agne', name: '아그네', title: '백은 제단의 신관', map: 'camp', x: 1160, look: 'thanas', idle: [
+      ['아그네', '제단은 기도를 받지 않아요. 기도를 채점하죠.'],
+      ['아그네', '저는 오래 기도했어요. 아직 점수를 못 받았어요.'],
+      ['아그네', '신은 스스로가 신인지 의심하고 있어요. 그게 제일 무서운 일이죠.'],
+    ] },
+    main: [
+      { type: 'kill', giver: 'hal', mon: ['mob28_01'], need: 8, map: 'a', title: '기도를 세는 오토마톤', obj: '백은 오토마톤 8기 처치', dlg: {
+        offer: [[NS, '백은으로 된 기계들이 제단을 오가네. 기도를 세는 중이야.'], [NS, '여덟 기만 세우게. 이 층의 기도는 아직 우리 것이네.']],
+        remind: [[NS, '기계는 소리가 나네. 기름 안 묻은 관절 소리야.']],
+        done: [[NS, '셈이 멎었군.'], [NS, '이제 제단 앞에 서 보게. 채점을 받을지, 안 받을지는 자네가 정하게.']] } },
+      { type: 'gather', giver: 'hal', spot: 'ore', item: '백은 조각', need: 3, map: 'a', title: '백은의 값', obj: '층에 떨어진 백은 조각 3개 줍기', dlg: {
+        offer: [[NS, '제단에서 떨어져 나온 백은 조각이 굴러다니네. 값이 나갈 물건이지.'], [NS, '셋만 주워 오게. 값이 아니라 무게를 보려는 걸세.']],
+        remind: [[NS, '은빛이 도는 돌이네. 다른 돌과 헷갈리지 말게.']],
+        done: [[NS, '무겁군. 사람이 만든 무게야.'], [NS, '신을 빚은 것도 사람이네. 이 무게를 견뎌야 했겠지.']] } },
+      { type: 'boss', giver: 'hal', map: 'arena', title: '백은의 기계신 데우스', obj: '백은의 기계신 데우스 쓰러뜨리기', dlg: {
+        offer: [[NS, '인간이 별 대신 세운 신일세. 별이 꺼지자 인간이 스스로 신을 빚은 거야.'], [NS, '방벽을 세우면 반사 피해가 오네. 걷힐 때까지 기다리게.']],
+        remind: [[NS, '기다리는 것도 싸움일세. 서두르면 반사만 맞네.']],
+        done: [['', '「나는 신이 아니다. …그러니 심판은 내가 아니라, 네가 받아라.」'], [NS, '광륜이 꺼졌군.'],
+          [NS, '이제 이 층에 기도하는 자는 아무도 없네. …아그네가 울고 있겠어.']] } },
+    ],
+    sub: [
+      { type: 'kill', giver: 'side', mon: ['mob28_03'], need: 10, map: 'a', rew: { potions: 3 }, title: '레이저 드론', obj: '레이저 드론 10기 격추', dlg: {
+        offer: [['아그네', '드론이 제 기도를 채점해요. 점수가 오르지 않아요.'], ['아그네', '열 기만 격추해 주세요. 채점관이 없으면 점수도 없겠죠.']],
+        remind: [['아그네', '드론은 낮게 떠요. 위를 보지 마세요.']],
+        done: [['아그네', '조용해졌네요.'], ['아그네', '이제 점수가 없으니, 처음부터 다시 해야겠어요.']] } },
+      { type: 'gather', giver: 'side', spot: 'brazier', item: '제단의 등불', need: 3, map: 'a', rew: { scroll: 1 }, title: '꺼진 제단 등불', obj: '제단의 등불 3개에 불 붙이기', dlg: {
+        offer: [['아그네', '제단 등불이 다 꺼졌어요. 불이 없으면 채점도 없어요.'], ['아그네', '셋만 밝혀 주세요. 그래야 제가 기도를 드릴 수 있어요.']],
+        remind: [['아그네', '등불 앞에서 ↑를 누르세요. 불은 옮겨 붙어요.']],
+        done: [['아그네', '밝네요.'], ['아그네', '…이 빛에도 점수는 없네요. 그냥 빛일 뿐이에요.']] } },
+    ],
+    end: { h: '기계신의 심판이 끝났다', next: '월식의 검투장' },
+  },
+  29: {
+    side: { id: 'pel', name: '펠', title: '검투장 사환', map: 'camp', x: 1160, look: 'pelo', idle: [
+      ['펠', '월식이 오면 검은 이름을 잊어요. 그래서 여기 기사들은 이름을 안 써요.'],
+      ['펠', '저는 사환이라 이름이 있어요. 팰. 잊지 마세요.'],
+      ['펠', '관중석은 비었는데, 함성은 아직 남아 있어요.'],
+    ] },
+    main: [
+      { type: 'kill', giver: 'hal', mon: ['mob29_01'], need: 8, map: 'a', title: '핏빛 검투사', obj: '핏빛 검투사 8명 처치', dlg: {
+        offer: [[NS, '검투장에 검투사가 남아 있네. 월식이 끝날 때까지 싸우는 중이야.'], [NS, '여덟 명만 멈추게. 그들은 이미 이긴 자들일세.']],
+        remind: [[NS, '검투사는 물러서지 않네. 자네가 물러서야 해.']],
+        done: [[NS, '함성이 줄었군.'], [NS, '이제 기사가 보일 걸세. 문 앞에 서서 이름을 잊은 자일세.']] } },
+      { type: 'gather', giver: 'hal', spot: 'brazier', item: '검투장의 횃불', need: 3, map: 'a', title: '꺼진 함성', obj: '검투장 횃불 3개에 불 붙이기', dlg: {
+        offer: [[NS, '관중석 횃불이 꺼져 있네. 그 불이 함성을 흉내 내고 있었어.'], [NS, '셋만 밝히게. 어둠 속에서 월식이 오면 시야가 줄어드네.']],
+        remind: [[NS, '횃불 앞에서 ↑를 누르게. 심지가 아직 젖어 있네.']],
+        done: [[NS, '함성이 돌아왔군. 사람은 없는데.'], [NS, '저 소리는 아마 기억일세. 이 검투장이 아직 자기 소리를 잊지 못한 거야.']] } },
+      { type: 'boss', giver: 'hal', map: 'arena', title: '핏빛 월식 기사', obj: '핏빛 월식 기사 쓰러뜨리기', dlg: {
+        offer: [[NS, '성탑의 마지막 문을 지키는 기사일세. 별을 지키던 자들의 마지막 생존자야.'], [NS, '문을 지키는 이유는 잊었네. 잊은 채로 계속 지키고 있어.']],
+        remind: [[NS, '월식이 오면 화면이 어두워지네. 실루엣만 보고 싸우게.']],
+        done: [['', '「월식이 끝나면 해가 돌아온다. …너는 돌아오지 않겠지만.」'], [NS, '월식이 걷혔군.'],
+          [NS, '문이 열렸네. 마지막 층일세. …펠이 뭐라고 했지, 이름을 잊지 말라고 했네.']] } },
+    ],
+    sub: [
+      { type: 'kill', giver: 'side', mon: ['mob29_04'], need: 3, map: 'a', rew: { item: 1 }, title: '저주받은 투사', obj: '저주받은 투사 3기 처치', dlg: {
+        offer: [['펠', '투사들이 관중석으로 올라가려 해요. 관중은 없는데도요.'], ['펠', '세 기만 막아 주세요. 제가 그동안 문을 잠글게요.']],
+        remind: [['펠', '투사는 느려요. 대신 한 번 맞으면 아파요.']],
+        done: [['펠', '문 잠갔어요.'], ['펠', '저 사람들, 관중을 찾고 있었어요. 자기 함성을 들으려고요.']] } },
+      { type: 'gather', giver: 'side', spot: 'grave', item: '이름을 새긴 표석', need: 2, map: 'a', rew: { potions: 2 }, title: '잊힌 이름', obj: '검투장의 표석 2개 읽기', dlg: {
+        offer: [['펠', '검투장 뒤에 표석이 있어요. 진 사람 이름이 새겨져 있어요.'], ['펠', '두 개만 읽어 주세요. 저는 아직 못 읽어요.']],
+        remind: [['펠', '표석 앞에서 ↑를 누르세요. 글씨가 얕아서 잘 안 보여요.']],
+        done: [['펠', '…이 이름, 제 형이에요.'], ['펠', '여기서 진 사람은 이름이 남는다고 했어요. 형은 이겼는데도 여기 있네요.']] } },
+    ],
+    end: { h: '마지막 문이 열렸다', next: '별이 꺼지는 옥좌' },
+  },
+  30: {
+    side: { id: 'raon', name: '라온', title: '옥좌를 지키던 사냥꾼', map: 'camp', x: 1160, look: 'agros', idle: [
+      ['라온', '저는 별을 사냥하러 왔어요. 사냥감이 별인 줄 알았죠.'],
+      ['라온', '왕관이 별을 삼키고 있어요. 삼키는 걸 막을 수는 없어요.'],
+      ['라온', '마지막 층이에요. 여기서 내려가면, 다시는 못 올라와요.'],
+    ] },
+    main: [
+      { type: 'kill', giver: 'hal', mon: ['mob30_01'], need: 8, map: 'a', title: '꺼진 별의 기사', obj: '꺼진 별의 기사 8기 처치', dlg: {
+        offer: [[NS, '옥좌를 지키는 기사들이 아직 서 있네. 별이 꺼진 뒤로 자리를 뜨지 않았어.'], [NS, '여덟 기만 쉬게 하게. 이제 곧 주인을 만날 걸세.']],
+        remind: [[NS, '기사들은 검을 내리지 않네. 끝까지 올려 두게.']],
+        done: [[NS, '자리가 비었군.'], [NS, '이제 옥좌로 가는 길에 아무도 없네. …마지막일세.']] } },
+      { type: 'gather', giver: 'hal', spot: 'flower', item: '꺼진 별의 꽃', need: 3, map: 'a', title: '꺼진 자리에 핀 것', obj: '최상층에 핀 꽃 3송이 꺾기', dlg: {
+        offer: [[NS, '별이 꺼진 자리에 꽃이 피네. 별빛 대신 핀 거야.'], [NS, '세 송이만 꺾게. 옥좌 앞에 두면 좋겠네.']],
+        remind: [[NS, '꽃은 낮게 피어 있네. 무릎을 굽히고 보게.']],
+        done: [[NS, '빛이 없는데도 피었군.'], [NS, '이 꽃이 밤을 대신 지고 있는 걸지도 모르지.']] } },
+      { type: 'boss', giver: 'hal', map: 'arena', title: '별을 삼킨 군주 아스트라온', obj: '별을 삼킨 군주 아스트라온 쓰러뜨리기', dlg: {
+        offer: [[NS, '아스트라온은 별을 미워해서 삼킨 게 아니네.'], [NS, '별이 꺼질 때마다 밤이 한 겹씩 사라지는 걸 막으려고, 대신 삼킨 거야.']],
+        remind: [[NS, '그를 이기는 게 아니라, 그가 진 밤을 받아 내는 걸세.']],
+        done: [['', '「내 몸속에 별이 몇 개인지 세어 봐라. 그 개수만큼 너는 밤을 빚졌다.」'], [NS, '…밤이 풀려났군.'],
+          [NS, '이제 성탑 아래에 신전이 보인다더군. 별이 가려져 있던 자리일세.'], [NS, '라온, 이름을 잊지 말라고 하게. 다음 층에도 이름이 필요하니까.']] } },
+    ],
+    sub: [
+      { type: 'kill', giver: 'side', mon: ['mob30_03'], need: 10, map: 'a', rew: { item: 1 }, title: '공허 성좌사', obj: '공허 성좌사 10명 처치', dlg: {
+        offer: [['라온', '성좌사들이 별자리를 허공에 그려요. 그리면 하나씩 꺼져요.'], ['라온', '열 명만 멈춰 주세요. 별을 하나라도 남겨야죠.']],
+        remind: [['라온', '그들은 손끝으로 그려요. 손을 먼저 치세요.']],
+        done: [['라온', '그림이 멈췄어요.'], ['라온', '…별이 하나 남았네요. 저건 사냥하지 않을게요.']] } },
+      { type: 'gather', giver: 'side', spot: 'herb', item: '왕관의 잎', need: 4, map: 'a', rew: { potions: 3 }, title: '왕관에 깃든 잎', obj: '옥좌 근처의 잎 4장 줍기', dlg: {
+        offer: [['라온', '왕관에서 잎이 떨어져요. 별을 삼킨 자리에 잎이 나요.'], ['라온', '네 장만 주워 주세요. 제 사냥감이 무엇이었는지 확인하고 싶어요.']],
+        remind: [['라온', '잎은 돌바닥에 붙어 있어요. 살아 있는 것처럼 보여도 떨어진 거예요.']],
+        done: [['라온', '…이건 별이 아니에요.'], ['라온', '제가 사냥한 건 밤이었네요. 밤을 사냥하면 어떻게 되는지, 이제 알 것 같아요.']] } },
+    ],
+    end: { h: '별이 꺼지는 옥좌에서', next: '', final: true },
+  },
+};
+
+(function buildAct3Story() {
+  for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
+    const D = ACT3_Q[n], C = CHAPTERS[n], S = (STORY[n] = STORY[n] || {});
+    if (!D || !C) continue;
+    const M = chMaps(n), k = CHM[n];
+    Object.assign(S, { title: (STORY50[n] && STORY50[n].t) || C.title, main: D.main, sub: D.sub, side: D.side, openB: 1,
+      intro: MAPS[M.camp].intro, end: D.end });
+    const R = { gold: 740 * k.gold, stone: 62 * k.stone, xp: 520 * k.xp };
+    const sg = stoneGold(n), rw = (f, extra) => Object.assign({ gold: Math.round((R.gold + R.stone * sg) * f / 5) * 5, xp: Math.round(R.xp * f) }, extra || {});
+    const mk = (q, id, extra) => {
+      const Q = Object.assign({}, q, { id, ch: n, mapId: q.map ? M[q.map] : null, need: q.need || 1 }, extra);
+      if (q.type === 'boss') Q.boss = MAPS[M.arena].boss;
+      if (!Q.title) Q.title = q.item || (q.type === 'boss' ? BOSSES[Q.boss].name.split(' ').pop() : '부탁');
+      if (!Q.obj) Q.obj = defaultObj(Q, S);
+      DLG[id] = q.dlg || {};
+      return Q;
+    };
+    S.main.forEach((q, i) => { const id = mainId(n, i); QUESTS[id] = mk(q, id, { main: true, idx: i, rew: rw(ACT3_W[i] || 0.1) }); QUEST_ORDER.push(id); });
+    (S.sub || []).forEach((q, i) => { const id = 'c' + n + 's' + (i + 1); QUESTS[id] = mk(q, id, { sub: true, idx: i, rew: rw(SUB_W, q.rew) }); SUB_ORDER.push(id); });
+    C.quests = S.main.map((_, i) => mainId(n, i));
+    C.end = { h: S.end.h, next: S.end.next || ((STORY50[n + 1] && STORY50[n + 1].t) || ''), final: !!S.end.final };
+    const sm = MAPS[M[S.side.map || 'camp']];
+    sm.npcs = sm.npcs.filter(x => x.id !== 'side');
+    sm.npcs.push({ id: 'side', x: S.side.x || 1160, name: S.side.name, title: S.side.title, look: S.side.look, ch: n });
+  }
+})();
 
 /* ---- world map: the bible's three acts, and the tower as a climb on the right edge ---- */
 WM_ACTS.splice(0, WM_ACTS.length,
@@ -19755,7 +20238,8 @@ killMon = function (m) {
   try { return _killMonS(m); } finally { SH.split = 0; }
 };
 const _gainXpS = gainXp;
-gainXp = function (n) { if (SH.split > 1) n = Math.max(1, Math.round(n / SH.split)); return _gainXpS(n); };
+const PARTY_XP_BONUS = 0.15;   // P4 2026-11-23: each extra party member adds 15% to a shared kill's total XP
+gainXp = function (n) { if (SH.split > 1) n = Math.max(1, Math.round(n * (1 + PARTY_XP_BONUS * (SH.split - 1)) / SH.split)); return _gainXpS(n); };
 const _addDropS = addDrop;
 addDrop = function (k, v, x, y) { if (SH.split > 1 && k === 'gold') v = Math.max(1, Math.round(v / SH.split)); return _addDropS(k, v, x, y); };
 const _maybeAnonS = maybeAnon;
@@ -19988,7 +20472,17 @@ document.head.insertAdjacentHTML('beforeend', `<style>
    in ancient Greek modes. Each chapter has its own mode, tempo and instrument; each map type (camp,
    field, deep, boss) changes density and drums. */
 const MUS_VOL = 0.9;
-const AU = { ctx: null, master: null, sfxBus: null, musBus: null, musGain: null, rev: null, muted: false, musicOn: true, noise: null, want: { key: 'title', ch: 1 } };
+const AU = { ctx: null, master: null, sfxBus: null, musBus: null, musGain: null, rev: null, muted: false, musicOn: true, noise: null, want: { key: 'title', ch: 1 }, vol: { mus: 0.9, sfx: 1 } };   // P12: vol 0-1
+/* P12 2026-11-23: music and effects volume, kept on this device (applied when audio starts, so a phone's first touch gets them too) */
+const VOL_KEY = 'devil-renown-vol';
+function loadVol() { try { const v = JSON.parse(localStorage.getItem(VOL_KEY) || 'null'); if (v) { const m = +v.mus, s = +v.sfx; if (isFinite(m)) AU.vol.mus = clamp(m, 0, 1); if (isFinite(s)) AU.vol.sfx = clamp(s, 0, 1); } } catch (e) { } }
+function saveVol() { try { localStorage.setItem(VOL_KEY, JSON.stringify(AU.vol)); } catch (e) { } }
+function applyVol() {
+  if (!AU.ctx) return;
+  if (AU.musGain) AU.musGain.gain.setTargetAtTime(AU.musicOn ? AU.vol.mus : 0, AU.ctx.currentTime, 0.05);
+  if (AU.sfxBus) AU.sfxBus.gain.setTargetAtTime(AU.vol.sfx, AU.ctx.currentTime, 0.05);
+}
+loadVol();
 function audioInit() {
   if (AU.ctx) { if (AU.ctx.state === 'suspended' && !document.hidden) AU.ctx.resume(); return; }
   try {
@@ -19998,9 +20492,9 @@ function audioInit() {
     AU.master = c.createGain(); AU.master.gain.setValueAtTime(0.0001, c.currentTime); AU.master.gain.linearRampToValueAtTime(AU.muted ? 0 : 0.6, c.currentTime + 1.5); AU.master.connect(comp);
     AU.rev = makeReverb(c, 3.4);
     const revOut = c.createGain(); revOut.gain.value = 0.55; AU.rev.connect(revOut); revOut.connect(AU.master);
-    AU.sfxBus = c.createGain(); AU.sfxBus.gain.value = 1; AU.sfxBus.connect(AU.master);
+    AU.sfxBus = c.createGain(); AU.sfxBus.gain.value = AU.vol.sfx; AU.sfxBus.connect(AU.master);
     const sfxSend = c.createGain(); sfxSend.gain.value = 0.12; AU.sfxBus.connect(sfxSend); sfxSend.connect(AU.rev);
-    AU.musGain = c.createGain(); AU.musGain.gain.value = AU.musicOn ? MUS_VOL : 0; AU.musGain.connect(AU.master);
+    AU.musGain = c.createGain(); AU.musGain.gain.value = AU.musicOn ? AU.vol.mus : 0; AU.musGain.connect(AU.master);
     const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6200; lp.Q.value = 0.4; lp.connect(AU.musGain);
     AU.musBus = c.createGain(); AU.musBus.gain.value = 1; AU.musBus.connect(lp);
     const musSend = c.createGain(); musSend.gain.value = 0.7; AU.musGain.connect(musSend); musSend.connect(AU.rev);   // send after the volume, so B mutes the reverb tail too
@@ -20028,7 +20522,7 @@ function toggleMute() {
 }
 function toggleMusic() {
   AU.musicOn = !AU.musicOn;
-  if (AU.musGain) AU.musGain.gain.setTargetAtTime(AU.musicOn ? MUS_VOL : 0, AU.ctx.currentTime, 0.3);
+  if (AU.musGain) AU.musGain.gain.setTargetAtTime(AU.musicOn ? AU.vol.mus : 0, AU.ctx.currentTime, 0.3);
   const el = $('#musT'); if (el) el.textContent = AU.musicOn ? '음악 켬' : '음악 끔'; $('#bMus').classList.toggle('off', !AU.musicOn);
   audioInit();
 }
@@ -20382,6 +20876,360 @@ function drum(t, vel, P, soft) {     // frame drum: pitched sine body + short sk
   if (!soft) { const o2 = c.createOscillator(), g2 = c.createGain(); o2.type = 'triangle'; o2.frequency.setValueAtTime(240, t); o2.frequency.exponentialRampToValueAtTime(120, t + 0.06); g2.gain.setValueAtTime(0.0001, t); g2.gain.exponentialRampToValueAtTime(0.03 * vel, t + 0.003); g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.08); o2.connect(g2); g2.connect(AU.musBus); o2.start(t); o2.stop(t + 0.1); }
 }
 
+/* ============ 2026-11-23 멀티 QA (claude_code_multi_qa_12_prompt.txt): P5 원격 스킬 연출, P2 파티 딜량, P1 우클릭 메뉴와 거래 ============
+   No new EventSource: casts ride the live record (P5), damage the raid record (P2), trades are REST + polling (P1). */
+
+/* ---- P5: skill casts shown on the other screens (visual only: no damage, no hit boxes, no projectiles, no status) ---- */
+function netCast(k) {
+  if (!NET.map || !G.player) return;
+  const now = srvNow(); if (NET.castLast && now - NET.castLast < 1000 / 12) return;   // at most 12 a second
+  NET.castLast = now; NET.cast = { k, t: now, f: G.player.face || 1 }; NET.sendT = Math.min(NET.sendT || 0, 0);
+}
+const NET_SKFX = {   // fallback pfx when the class has no strip for that key (REM_SK first)
+  theron: { z: 'melee/sword-slash', c: 'melee/spin-slash', d: 'melee/hammer-smash' },
+  kallisto: { c: 'arcane/rune-circle', a: 'arcane/star-fall', d: 'arcane/star-fall' },
+  lykos: { z: 'melee/double-slash', x: 'melee/thrust', c: 'melee/double-slash', a: 'melee/spin-slash', d: 'shadow/shadow-tendrils' },
+  mage: { z: 'shadow/hex-sigil', x: 'arcane/star-fall', c: 'shadow/shadow-tendrils', a: 'arcane/star-fall', s: 'shadow/hex-sigil', d: 'arcane/star-fall' },
+};
+function netCastFx(ch, k, x, y, face) {
+  if (!G.map || !G.cam || Math.abs(x - (G.cam.x + W / 2)) > W / 2 + 200) return;   // off screen by 200 px or more: nothing
+  face = face || 1;
+  try {
+    if (k === 'v') {   // the ultimate: no cut-in, no full-screen strip; a short ring in the class colour
+      const col = (ULT12[ch] && ULT12[ch].tint) || '255,220,140';
+      G.fx.push({ k: 'ring', x, y: y - 40, t: 0, dur: 0.45, R: 120, col });
+      for (let i = 0; i < 12; i++) addPart({ x: x + rnd(-20, 20), y: y - rnd(20, 70), vx: rnd(-160, 160), vy: rnd(-200, -40), g: 120, life: rnd(0.35, 0.7), r: rnd(2, 4), col, glow: 1 });
+      return;
+    }
+    const sk = REM_SK[ch] && REM_SK[ch][k];
+    if (sk && sk.file) { remFx(sk, { box: remBox({ x, y, face, onGround: true }, sk), face }); return; }
+    const nm = NET_SKFX[ch] && NET_SKFX[ch][k];
+    if (nm) pfx(nm, x + face * 28, y - 40, { flip: face < 0 });
+  } catch (e) { }
+}
+
+/* ---- P2: who did how much to the boss, shown when a party kills it ---- */
+function netMvpHost(b) {
+  if (!netInRaid() || netGuest() || !NET.fid) return;
+  const raid = NET.mirror.raid || {}, self = decodeURIComponent(netSelf());
+  const list = [{ id: self, n: myNick(), c: G.save.char, l: G.save.level, dmg: Math.round(NET.myDmg || 0) }];
+  for (const k in raid.d || {}) { const v = raid.d[k], id = decodeURIComponent(k); if (!v || v.f !== NET.fid || id === self) continue; list.push({ id, n: v.n || id, c: v.c, l: v.l, dmg: Math.round(v.v || 0) }); }
+  if (list.length < 2) return;   // alone: no popup
+  const ft = Math.max(0.1, Math.round((b.fightT || 0) * 10) / 10), total = list.reduce((a, r) => a + r.dmg, 0) || 1;
+  for (const r of list) { r.dps = Math.round(r.dmg / ft); r.pct = Math.round(r.dmg / total * 1000) / 10; }
+  list.sort((a, c) => c.dmg - a.dmg || c.dps - a.dps);
+  const R = { t: srvNow(), fid: NET.fid, ft, boss: b.id, name: b.d.name, list, mvp: list[0].id };
+  netReq('PUT', 'raid/' + NET.scope + '/r', R);
+  NET.mvpSeen = NET.fid; G.mvpPending = Object.assign({}, R, { mine: self });
+}
+function showMvp() {
+  const R = G.mvpPending; G.mvpPending = null; if (!R || !R.list) return;
+  let el = $('#mvp'); if (!el) { el = document.createElement('div'); el.id = 'mvp'; $('#game').appendChild(el); el.addEventListener('pointerdown', e => e.stopPropagation()); }
+  const ft = R.ft || 0, mm = Math.floor(ft / 60), ss = Math.round(ft % 60), cls = c => (CHARS[c] && CHARS[c].cls) || (CHARS[c] && CHARS[c].name) || '';
+  const rows = R.list.map((r, i) => `<div class="mv-r${r.id === R.mvp ? ' top' : ''}${r.id === R.mine ? ' me' : ''}">
+      <span class="mv-n">${r.id === R.mvp ? '<img src="assets/ui/ui_icon_mvp_crown.png" alt="">' : `<i>${i + 1}</i>`}<b>${r.n}</b><small>${cls(r.c)} Lv.${r.l || '?'}</small></span>
+      <span class="mv-d">${nf(r.dmg)}</span><span class="mv-p">${nf(r.dps)}</span>
+      <span class="mv-b"><i style="width:${Math.max(2, Math.min(100, r.pct))}%"></i><em>${r.pct.toFixed(1)}%</em></span></div>`).join('');
+  el.innerHTML = `<div class="mv-h"><b>파티 딜량</b><small>${R.name || ''} · 처치 시간 ${mm ? mm + '분 ' : ''}${ss}초</small></div>
+    <div class="mv-r mv-head"><span class="mv-n">이름</span><span class="mv-d">누적 피해</span><span class="mv-p">DPS</span><span class="mv-b">기여도</span></div>${rows}
+    <div class="mv-f"><button type="button" data-mvx="1">닫기</button></div>`;
+  el.classList.add('on'); clearTimeout(showMvp.tm); showMvp.tm = setTimeout(hideMvp, 8000);
+  el.querySelector('[data-mvx]').onclick = hideMvp;
+}
+function hideMvp() { const el = $('#mvp'); if (el) el.classList.remove('on'); clearTimeout(showMvp.tm); }
+setInterval(() => { if (G.mvpPending && !G.death && !G.clearPop && !G.cine) showMvp(); }, 300);   // after the BOSS CLEAR window and the death scene
+addEventListener('keydown', e => { if (e.code === 'Escape' && $('#mvp') && $('#mvp').classList.contains('on')) { hideMvp(); } }, true);
+addEventListener('pointerdown', e => { const el = $('#mvp'); if (el && el.classList.contains('on') && !el.contains(e.target)) hideMvp(); }, true);
+const _bossDieMv = bossDie;
+bossDie = function () { const b = G.boss; const r = _bossDieMv.apply(this, arguments); try { if (b && !b.d.hidden) netMvpHost(b); } catch (e) { } return r; };
+
+/* ---- P1: right-click another player -> 거래 요청 / 파티 초대 ---- */
+function netPlayerAt(cx, cy) {
+  const cv = $('#cv'), r = cv.getBoundingClientRect(); if (!r.width || !G.cam) return null;
+  const wx = (cx - r.left) / r.width * W + G.cam.x - G.cam.sx, wy = (cy - r.top) / r.height * H - G.cam.sy;
+  let best = null, bd = 1e9;
+  for (const k in NET.others) {
+    const o = NET.others[k], rr = o.r; if (!rr || rr.d) continue;   // not the fallen
+    if (Math.abs(wx - o.x) <= 26 && wy >= o.y - 96 && wy <= o.y + 12) { const d = Math.abs(wx - o.x); if (d < bd) { bd = d; best = { uid: decodeURIComponent(k), nick: rr.n || decodeURIComponent(k), cls: rr.c, lv: rr.l, x: o.x, y: o.y }; } }
+  }
+  return best;
+}
+function closeNetMenu() { const m = $('#netmenu'); if (m) m.classList.remove('on'); clearTimeout(closeNetMenu.tm); }
+function openNetMenu(hit, cx, cy) {
+  let m = $('#netmenu');
+  if (!m) {
+    m = document.createElement('div'); m.id = 'netmenu'; $('#game').appendChild(m);
+    m.addEventListener('pointerdown', e => e.stopPropagation());
+    m.addEventListener('click', e => { const b = e.target.closest('[data-nm]'); if (!b || !m.hit) return; const h = m.hit; closeNetMenu();
+      if (b.dataset.nm === 'trade') tradeOpen(h.uid, h.nick); else partyInvite(h.uid); });
+    m.addEventListener('pointermove', () => { clearTimeout(closeNetMenu.tm); closeNetMenu.tm = setTimeout(closeNetMenu, 3000); });
+  }
+  const fighting = G.boss && G.boss.st !== 'die' && G.boss.st !== 'wait';
+  m.hit = hit;
+  m.innerHTML = `<div class="nm-h"><img src="assets/ui/ui_icon_party.png" alt=""><b>${hit.nick}</b><small>${(CHARS[hit.cls] && CHARS[hit.cls].name) || ''} · Lv.${hit.lv || '?'}</small></div>
+    ${fighting ? '' : '<button type="button" data-nm="trade"><img src="assets/ui/ui_icon_trade.png" alt="">거래 요청</button>'}
+    <button type="button" data-nm="party"><img src="assets/ui/ui_icon_party.png" alt="">파티 초대</button>`;
+  const g = $('#game').getBoundingClientRect(); m.classList.add('on');
+  const mw = m.offsetWidth, mh = m.offsetHeight;
+  m.style.left = clamp(cx - g.left + 12, 4, g.width - mw - 4) + 'px'; m.style.top = clamp(cy - g.top - mh / 2, 4, g.height - mh - 4) + 'px';
+  clearTimeout(closeNetMenu.tm); closeNetMenu.tm = setTimeout(closeNetMenu, 3000);
+}
+$('#game').addEventListener('contextmenu', e => {
+  if (G.scene !== 'play' || !G.map) return;
+  if (G.ui.panel || G.ui.dialog || G.cine || G.death || G.ult || G.ui.travel || G.ui.worldmap) return;
+  const hit = netPlayerAt(e.clientX, e.clientY); if (!hit) return;   // empty spot: the browser's own menu
+  e.preventDefault(); openNetMenu(hit, e.clientX, e.clientY);
+});
+addEventListener('pointerdown', e => { const m = $('#netmenu'); if (m && m.classList.contains('on') && !m.contains(e.target)) closeNetMenu(); }, true);
+addEventListener('keydown', e => { if (e.code === 'Escape') closeNetMenu(); }, true);
+/* P1-b: a long press on a phone (500 ms, under 8 px of movement) on the game picture */
+(function netLongPress() {
+  let tm = 0, sx = 0, sy = 0;
+  $('#cv').addEventListener('touchstart', e => { const t = e.touches[0]; if (!t || e.touches.length > 1) return; sx = t.clientX; sy = t.clientY; clearTimeout(tm);
+    tm = setTimeout(() => { if (G.scene !== 'play' || G.ui.panel || G.ui.dialog) return; const hit = netPlayerAt(sx, sy); if (hit) openNetMenu(hit, sx, sy); }, 500); }, { passive: true });
+  $('#cv').addEventListener('touchmove', e => { const t = e.touches[0]; if (t && Math.hypot(t.clientX - sx, t.clientY - sy) > 8) clearTimeout(tm); }, { passive: true });
+  $('#cv').addEventListener('touchend', () => clearTimeout(tm), { passive: true });
+})();
+
+/* ---- P1: trading ----
+   1) an item is in one place at any moment: bag -> (locked) -> escrow -> the other bag.
+   2) the offer node gets an item's JSON only after it has left my bag (this is what stops copies).
+   3) a received item gets a new uid (the same rule as taking things out of storage).
+   4) a trade is applied once per tid (a flag on this device + the node's done flag).
+   5) a refresh or a crash with things in escrow: they come back to the bag at the next start.
+   2026-11-23 change from the spec: the exchange happens only when BOTH sides have pressed 수락 (the spec applied it on my own
+   press, which left a moment where the other side could unlock and keep their items too). After 수락 you can not unlock.
+   The database rules for tradereq/ and trade/ (who may write which side) are the owner's to set.
+   tradereq/<to> = { from, n, tid, t }      trade/<tid> = { a: side, b: side, done: { a, b }, t }
+   side = { u, n, c, l, g, it: [items], lock: 0|1, ok: 0|1, t } — each player writes only their own side. */
+const TRADE_KEY = () => 'dr-trade:' + G.uid, TRADE_DONE = tid => 'dr-trade-done:' + G.uid + ':' + tid;   // per account: two accounts on one PC share this storage (the first test applied one side and skipped the other)
+let TR = null;   // { tid, side, other: { uid, nick }, offered: Set, gold, node, lastNode, seenT, waiting, opened }
+const TRQ = { mir: null, busy: false, t: 0, seen: 0, req: null };
+const trOther = s => s === 'a' ? 'b' : 'a';
+/* trade requests have their own helper: a refusal (no database rule for trade/ and tradereq/ yet) stops trading only, with one
+   message, and gives back anything in escrow. ptyReq would have switched party and chat off for the whole session. */
+const TRD = { denied: false };
+function trDenied(silent) {
+  if (!TRD.denied) { TRD.denied = true; if (!silent) toast('거래가 막혀 있다 · 데이터베이스 규칙에 trade, tradereq를 넣어야 한다', 'bad'); }
+  if (TR) { const t = TR; TR = null; trEscrowRestore(); if (G.ui.panel === 'trade') closePanel(); }
+  TRQ.req = null; const bar = $('#tradeBar'); if (bar) bar.classList.remove('on');
+}
+function trReq(method, path, body) {
+  if (!netBase() || TRD.denied) return Promise.resolve(false);
+  const b = body === undefined ? undefined : JSON.stringify(body);
+  return fetch(dbUrl(path, 'print=silent'), { method, body: b, headers: b ? { 'Content-Type': 'application/json' } : undefined })
+    .then(r => { if (r.status === 401 || r.status === 403) { trDenied(); return false; } return r.ok; }).catch(() => false);
+}
+function trGet(path, silent) { if (TRD.denied) return Promise.resolve(null); return fetch(dbUrl(path)).then(r => { if (r.status === 401 || r.status === 403) { trDenied(silent); return null; } return r.ok ? r.json() : null; }).catch(() => null); }
+function trMine() { return { u: G.uid, n: myNick(), c: G.save.char, l: G.save.level }; }
+function tradeOpen(toUid, nick) {
+  if (!ptyOn()) { toast('온라인일 때만 거래할 수 있다', 'bad'); return; }
+  if (TRD.denied) { toast('거래가 막혀 있다 · 데이터베이스 규칙에 trade, tradereq를 넣어야 한다', 'bad'); return; }
+  if (TR) { toast('이미 거래 중이다', 'bad'); return; }
+  if (toUid === G.uid) return;
+  const tid = myId() + '-' + Date.now().toString(36);
+  TR = { tid, side: 'a', other: { uid: toUid, nick }, offered: new Set(), gold: 0, node: null, seenT: performance.now(), waiting: true };
+  trReq('PUT', 'trade/' + tid + '/a', Object.assign(trMine(), { g: 0, it: [], lock: 0, ok: 0, t: srvNow() }));
+  trReq('PUT', 'tradereq/' + netKey(toUid), { from: G.uid, n: myNick(), tid, t: srvNow() });
+  toast(nick + '님에게 거래를 요청했다', 'gold');
+}
+function tradeAnswer(yes) {
+  const v = TRQ.req; TRQ.req = null; $('#tradeBar').classList.remove('on');
+  trReq('DELETE', 'tradereq/' + myId());
+  if (!yes || !v) return;
+  if (TR) { toast('이미 거래 중이다', 'bad'); return; }
+  TR = { tid: v.tid, side: 'b', other: { uid: v.from, nick: v.n || v.from }, offered: new Set(), gold: 0, node: null, seenT: performance.now(), waiting: false };
+  trReq('PUT', 'trade/' + v.tid + '/b', Object.assign(trMine(), { g: 0, it: [], lock: 0, ok: 0, t: srvNow() }));
+  TR.opened = true; openPanel('trade');
+}
+function trEscrowRestore(why) {
+  let e = null; try { e = JSON.parse(localStorage.getItem(TRADE_KEY()) || 'null'); } catch (er) { }
+  if (!e) return false;
+  const s = G.save; s.gold += e.gold || 0; for (const it of e.items || []) s.items.push(it);
+  try { localStorage.removeItem(TRADE_KEY()); } catch (er) { }
+  writeSave(); updateHud(true); if (why) toast(why, 'gold'); return true;
+}
+function tradeEnd(msg, restore) {
+  if (!TR) return; const t = TR; TR = null;
+  const w = trReq('PUT', 'trade/' + t.tid + (t.side === 'a' ? '' : '/' + t.side), null);   // the requester takes the whole trade away   // withdraw my side first, then take my things back
+  if (restore) w.then(() => trEscrowRestore());
+  if (G.ui.panel === 'trade') closePanel();
+  if (msg) toast(msg, restore ? 'bad' : 'gold');
+}
+function tradeLock() {
+  if (!TR || !TR.node) return; const s = G.save, me = TR.node[TR.side] || {}, ot = TR.node[trOther(TR.side)] || {};
+  if (me.lock) return;
+  const uids = [...TR.offered].filter(u => s.items.some(x => x.uid === u)), gold = clamp(Math.floor(TR.gold || 0), 0, s.gold);
+  if (!uids.length && !gold) { toast('제안할 물건이나 골드를 넣자', 'bad'); return; }
+  if (s.items.length - uids.length + (ot.it ? ot.it.length : 0) > BAG_MAX) { toast('가방이 모자라다', 'bad'); return; }
+  const items = uids.map(u => s.items.find(x => x.uid === u));
+  s.items = s.items.filter(x => !uids.includes(x.uid)); s.gold -= gold;   // out of my bag first
+  try { localStorage.setItem(TRADE_KEY(), JSON.stringify({ tid: TR.tid, side: TR.side, gold, items })); } catch (e) { }   // side: so a restart can look the trade up
+  writeSave(); updateHud(true);
+  trReq('PUT', 'trade/' + TR.tid + '/' + TR.side, Object.assign(trMine(), { g: gold, it: items, lock: 1, ok: 0, t: srvNow() }));
+  TR.offered = new Set(); TR.gold = gold; TR.lockedItems = items; renderPanel();
+}
+function tradeUnlock() {
+  if (!TR || !TR.node) return; const me = TR.node[TR.side] || {}, ot = TR.node[trOther(TR.side)] || {};
+  if (!me.lock || me.ok || ot.ok) return;   // after either 수락: no going back
+  const back = (TR.lockedItems || []).map(x => x.uid);
+  trEscrowRestore(); TR.offered = new Set(back); TR.lockedItems = null;
+  trReq('PUT', 'trade/' + TR.tid + '/' + TR.side, Object.assign(trMine(), { g: 0, it: [], lock: 0, ok: 0, t: srvNow() }));
+  renderPanel();
+}
+function tradeAccept() {
+  if (!TR || !TR.node) return; const me = TR.node[TR.side] || {}, ot = TR.node[trOther(TR.side)] || {};
+  if (!me.lock || !ot.lock || me.ok) return;
+  try { const e = JSON.parse(localStorage.getItem(TRADE_KEY()) || 'null'); if (e) { e.ok = 1; localStorage.setItem(TRADE_KEY(), JSON.stringify(e)); } } catch (er) { }   // remembered: after 수락 a restart must ask the server before giving things back
+  trReq('PUT', 'trade/' + TR.tid + '/' + TR.side + '/ok', 1); me.ok = 1; renderPanel();
+}
+function tradeApply() {   // both pressed 수락: take the other side's offer, once
+  const t = TR, ot = t.node[trOther(t.side)] || {}, s = G.save;
+  let done = false; try { done = localStorage.getItem(TRADE_DONE(t.tid)) === '1'; } catch (e) { }
+  if (!done) {
+    s.gold += ot.g || 0;
+    for (const it of ot.it || []) { s.nextUid = (s.nextUid || 1) + 1; s.items.push(Object.assign({}, it, { uid: s.nextUid })); }
+    try { localStorage.setItem(TRADE_DONE(t.tid), '1'); localStorage.removeItem(TRADE_KEY()); } catch (e) { }
+    writeSave(); updateHud(true); sfx('quest');
+    toast('거래 완료 · ' + (ot.it || []).length + '개' + (ot.g ? ' · 골드 ' + nf(ot.g) : ''), 'gold');
+  }
+  trReq('PUT', 'trade/' + t.tid + '/done/' + t.side, 1);
+  t.applied = true;
+}
+function tradeTick(dt) {
+  if (!ptyOn() || TRD.denied) return;
+  TRQ.t -= dt;
+  if (TRQ.t <= 0 && !TRQ.busy) { TRQ.t = TR ? 1 : 2.5; TRQ.busy = true;   // P1: the request inbox; the open trade every second
+    Promise.all([trGet('tradereq/' + myId(), true), TR ? trGet('trade/' + TR.tid) : Promise.resolve(undefined)]).then(([q, n]) => {
+      TRQ.mir = q; if (TR && n !== undefined) tradeNode(n);
+    }).finally(() => { TRQ.busy = false; });
+  }
+  const v = TRQ.mir;
+  if (!TR && v && v.t && v.t > TRQ.seen && srvNow() - v.t < 30000) { TRQ.seen = v.t; TRQ.req = v; $('#tradeText').textContent = (v.n || v.from) + '님이 거래를 요청했다'; $('#tradeBar').classList.add('on'); sfx('quest'); }
+  if (TRQ.req && srvNow() - TRQ.req.t > 30000) { TRQ.req = null; $('#tradeBar').classList.remove('on'); }
+}
+function tradeNode(n) {
+  const t = TR; if (!t) return;
+  const me = n && n[t.side], ot = n && n[trOther(t.side)];
+  if (!n || !me) { if (t.applied) { tradeEnd(null, false); return; } if (performance.now() - t.seenT > 4000) tradeEnd('거래가 끝났다 · 물건과 골드를 되돌렸다', true); return; }   // the node is gone
+  const sig = JSON.stringify(ot || null) + (me.lock || 0) + (me.ok || 0);
+  if (sig !== t.lastSig) { t.lastSig = sig; t.seenT = performance.now(); }
+  t.node = n;
+  if (ot) t.sawOther = true;
+  if (t.sawOther && !ot && !t.applied) { tradeEnd(t.other.nick + '님이 거래를 취소했다 · 내 물건과 골드를 되돌렸다', true); return; }   // the other side withdrew
+  if (t.waiting) {
+    if (ot) { t.waiting = false; t.opened = true; toast(t.other.nick + '님이 거래를 수락했다', 'gold'); openPanel('trade'); }
+    else if (performance.now() - t.seenT > 30000) { tradeEnd('거래 요청에 답이 없다', true); trReq('PUT', 'trade/' + t.tid, null); return; }
+  }
+  if (me.lock && me.ok && ot && ot.lock && ot.ok && !t.applied) tradeApply();
+  if (t.applied && n.done && n.done.a && n.done.b) { const side = t.side; setTimeout(() => { if (side === 'a') trReq('PUT', 'trade/' + t.tid, null); }, 1500); TR = null; setTimeout(() => { if (G.ui.panel === 'trade') closePanel(); }, 2000); return; }
+  if (!t.applied && ot && performance.now() - t.seenT > 30000 && !(me.ok && ot.ok)) { tradeEnd('30초 동안 움직임이 없어 거래를 취소했다', true); return; }
+  if (G.ui.panel === 'trade') renderPanel();
+}
+function tradeHtml() {
+  const t = TR, s = G.save; if (!t) return `<div class="ph"><h3>거래</h3><button class="xbtn" data-close="1">닫기</button></div><p>거래가 끝났다.</p>`;
+  const n = t.node || {}, me = n[t.side] || {}, ot = n[trOther(t.side)] || {}, locked = !!me.lock;
+  const line = it => `<div class="tr-it">${itemImg(it)}<span style="color:${gcol(it)}">${it.name}</span><small>${it.type === 'soul' ? '영혼' : (SLOT_INFO[it.slot] ? SLOT_INFO[it.slot].name : '') + ' · Lv.' + (it.ilvl || 1)}</small></div>`;
+  const bag = s.items.map(it => `<button type="button" class="tr-cell${t.offered.has(it.uid) ? ' on' : ''}" data-trit="${it.uid}" ${locked ? 'disabled' : ''} title="${it.name}">${itemImg(it)}</button>`).join('') || '<p class="tr-empty">가방이 비었다</p>';
+  const mine = locked ? (me.it || []) : s.items.filter(x => t.offered.has(x.uid));
+  const step = !ot.u ? '상대를 기다리는 중' : !locked && !ot.lock ? '잠금 대기 · 넣을 것을 고르고 잠근다' : locked && !ot.lock ? '상대가 잠그기를 기다리는 중' : !locked ? '상대 잠금 완료 · 내 쪽도 잠그자' : !me.ok && !ot.ok ? '양쪽 잠금 · 수락하면 교환' : me.ok && !ot.ok ? '상대 수락을 기다리는 중' : !me.ok ? '상대가 수락했다 · 수락하면 교환' : '교환 중…';
+  return `<div class="ph tr-ph"><img class="tr-ic" src="assets/ui/ui_icon_trade.png" alt=""><h3>거래 · ${t.other.nick}</h3><span class="sub">${step}</span><button class="xbtn" data-trx="cancel">${me.ok ? '닫기' : '취소'}</button></div>
+    <div class="tr-cols"><div class="tr-col"><h4>내 가방 (${s.items.length})</h4><div class="tr-bag">${bag}</div></div>
+      <div class="tr-col"><h4>내 제안</h4><div class="tr-list">${mine.map(line).join('') || '<p class="tr-empty">비어 있다</p>'}</div>
+        <div class="tr-gold">골드 <input id="tradeGold" type="number" min="0" max="${s.gold}" value="${locked ? (me.g || 0) : (t.gold || 0)}" ${locked ? 'disabled' : ''}><button type="button" class="mini" data-trx="all" ${locked ? 'disabled' : ''}>전부</button></div></div>
+      <div class="tr-col"><h4>${t.other.nick}의 제안 ${ot.lock ? '· 잠금' : ''}${ot.ok ? ' · 수락' : ''}</h4><div class="tr-list">${(ot.it || []).map(line).join('') || '<p class="tr-empty">비어 있다</p>'}</div>
+        <div class="tr-gold">골드 <b>${nf(ot.g || 0)}</b></div></div></div>
+    <div class="tfoot"><span class="tr-note">강화 수치는 부위에 붙어 있어 함께 가지 않는다</span>
+      ${locked ? `<button class="mini" data-trx="unlock" ${me.ok || ot.ok ? 'disabled' : ''}>잠금 해제</button><button class="gbtn" data-trx="ok" ${ot.lock && !me.ok ? '' : 'disabled'}>수락</button>` : `<button class="gbtn" data-trx="lock" ${ot.u ? '' : 'disabled'}>잠금</button>`}</div>`;
+}
+$('#panel').addEventListener('click', e => {
+  const b = e.target.closest('[data-trit],[data-trx]'); if (!b || G.ui.panel !== 'trade' || !TR) return;
+  e.stopPropagation();
+  if (b.dataset.trit) { const u = +b.dataset.trit; TR.offered.has(u) ? TR.offered.delete(u) : TR.offered.add(u); renderPanel(); return; }
+  const a = b.dataset.trx;
+  if (a === 'lock') { const g = $('#tradeGold'); TR.gold = g ? clamp(Math.floor(+g.value || 0), 0, G.save.gold) : 0; tradeLock(); }
+  else if (a === 'unlock') tradeUnlock();
+  else if (a === 'ok') tradeAccept();
+  else if (a === 'all') { TR.gold = G.save.gold; renderPanel(); }
+  else if (a === 'cancel') { const me = TR.node && TR.node[TR.side]; if (me && me.ok) { closePanel(); return; } tradeEnd('거래를 취소했다', true); }
+}, true);
+$('#panel').addEventListener('input', e => { if (e.target.id === 'tradeGold' && TR) TR.gold = clamp(Math.floor(+e.target.value || 0), 0, G.save.gold); });
+for (const ev of ['keydown', 'keyup']) $('#panel').addEventListener(ev, e => { if (e.target && e.target.id === 'tradeGold') e.stopPropagation(); });
+const _renderPanelT = renderPanel;
+renderPanel = function () { if (G.ui.panel === 'trade') { $('#pBox').innerHTML = tradeHtml(); return; } return _renderPanelT(); };
+/* while an item is on offer it can not be sold, worn, stored or fed a soul */
+for (const fn of ['sellItems', 'equipItem', 'itemToStorage', 'insertSoul']) {
+  const orig = window[fn]; if (typeof orig !== 'function') continue;
+  window[fn] = function (arg) { const us = Array.isArray(arg) ? arg : [arg]; if (TR && us.some(u => TR.offered.has(+u))) { toast('거래 중인 물건이다', 'bad'); return; } return orig.apply(this, arguments); };
+}
+const _partyTickT = partyTick;
+partyTick = function (dt) { _partyTickT(dt); tradeTick(dt); };
+const _startGameT = startGame;
+startGame = function () { const r = _startGameT.apply(this, arguments); tradeRecover(); return r; };
+/* a trade cut off by a refresh or a crash: ask the server what became of it before giving anything back.
+   Both sides had pressed 수락 -> it went through: take the other side's offer. Otherwise withdraw my side, then restore.
+   Server out of reach and I had pressed 수락 -> keep the escrow and try again at the next start (restoring could double it). */
+async function tradeRecover() {
+  let e = null; try { e = JSON.parse(localStorage.getItem(TRADE_KEY()) || 'null'); } catch (er) { }
+  if (!e || !e.tid) { if (e) trEscrowRestore('끊긴 거래의 물건과 골드를 가방에 되돌렸다'); return; }
+  let n; try { const r = await fetch(dbUrl('trade/' + e.tid)); n = r.ok ? await r.json() : undefined; } catch (er) { n = undefined; }
+  if (n === undefined) { if (!e.ok) trEscrowRestore('끊긴 거래의 물건과 골드를 가방에 되돌렸다'); return; }
+  const side = e.side || 'a', me = n && n[side], ot = n && n[side === 'a' ? 'b' : 'a'];
+  if (me && me.ok && ot && ot.lock && ot.ok) { TR = { tid: e.tid, side, other: { uid: ot.u, nick: ot.n || ot.u }, offered: new Set(), gold: 0, node: n, seenT: performance.now() }; tradeApply(); TR = null; return; }
+  if (me) await trReq('PUT', 'trade/' + e.tid + '/' + side, null);
+  trEscrowRestore('끊긴 거래의 물건과 골드를 가방에 되돌렸다');
+}
+(function tradeUi() {
+  const bar = document.createElement('div'); bar.id = 'tradeBar';
+  bar.innerHTML = '<img src="assets/ui/ui_icon_trade.png" alt=""><span id="tradeText"></span><button id="tradeYes" type="button">수락</button><button id="tradeNo" type="button">거절</button>';
+  ($('#invBar').parentNode).appendChild(bar);
+  $('#tradeYes').addEventListener('click', e => { e.stopPropagation(); tradeAnswer(true); });
+  $('#tradeNo').addEventListener('click', e => { e.stopPropagation(); tradeAnswer(false); });
+  bar.addEventListener('pointerdown', e => e.stopPropagation());
+  document.head.insertAdjacentHTML('beforeend', `<style>
+#tradeBar{position:absolute;left:50%;top:calc(var(--u)*104);transform:translateX(-50%);display:none;gap:calc(var(--u)*8);align-items:center;background:rgba(10,12,20,.95);border:1px solid var(--accent2);padding:calc(var(--u)*6) calc(var(--u)*12);z-index:30;font-size:max(11px,calc(var(--u)*13));color:#ffe6a8}
+#tradeBar.on{display:flex}#tradeBar img{width:calc(var(--u)*24);height:calc(var(--u)*24);image-rendering:pixelated}
+#tradeBar button{font:inherit;background:#2a2416;color:#ffe6a8;border:1px solid #8a6a2a;padding:3px 12px;cursor:pointer}
+#netmenu{position:absolute;z-index:45;display:none;flex-direction:column;gap:calc(var(--u)*4);width:calc(var(--u)*190);padding:calc(var(--u)*4);border:calc(var(--u)*14) solid transparent;border-image:url(assets/ui/ui_panel_dark_gold.png) 48 fill / calc(var(--u)*14) stretch;color:#f2e6c8;font-size:max(11px,calc(var(--u)*13))}
+#netmenu.on{display:flex}
+#netmenu .nm-h{display:flex;align-items:center;gap:calc(var(--u)*6);padding-bottom:calc(var(--u)*4);border-bottom:1px solid rgba(211,156,58,.4)}
+#netmenu .nm-h img,#netmenu button img{width:calc(var(--u)*22);height:calc(var(--u)*22);image-rendering:pixelated}
+#netmenu .nm-h small{margin-left:auto;color:#b8a888;font-size:.85em}
+#netmenu button{display:flex;align-items:center;gap:calc(var(--u)*8);background:rgba(30,24,14,.6);border:1px solid #7c5018;color:#ffe6a8;font:inherit;padding:calc(var(--u)*4) calc(var(--u)*8);cursor:pointer;text-align:left}
+#netmenu button:hover{border-color:#d39c3a;background:rgba(60,44,18,.8)}
+#mvp{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:44;display:none;width:calc(var(--u)*520);padding:calc(var(--u)*6) calc(var(--u)*10);border:calc(var(--u)*24) solid transparent;border-image:url(assets/ui/ui_panel_dark_gold.png) 48 fill / calc(var(--u)*24) stretch;color:#f2e6c8;font-size:max(10px,calc(var(--u)*13));opacity:0;transition:opacity .2s,transform .2s}
+#mvp.on{display:block;opacity:1;transform:translate(-50%,-50%)}
+#mvp .mv-h{text-align:center;margin-bottom:calc(var(--u)*8)}#mvp .mv-h b{display:block;font-size:1.45em;color:#fcf0c6}#mvp .mv-h small{color:#b8a888}
+#mvp .mv-r{display:grid;grid-template-columns:2.1fr 1fr .8fr 1.7fr;gap:calc(var(--u)*8);align-items:center;padding:calc(var(--u)*4) calc(var(--u)*6);border:1px solid transparent}
+#mvp .mv-head{color:#8a8292;font-size:.85em}#mvp .mv-r.me{border-color:rgba(211,156,58,.8)}#mvp .mv-r.top .mv-n b{color:#f0c040}
+#mvp .mv-n{display:flex;align-items:center;gap:calc(var(--u)*6);white-space:nowrap;overflow:hidden}#mvp .mv-n img{width:calc(var(--u)*22);height:calc(var(--u)*22);image-rendering:pixelated}
+#mvp .mv-n i{display:inline-block;width:calc(var(--u)*22);text-align:center;font-style:normal;color:#8a8292}#mvp .mv-n small{color:#8a8292}
+#mvp .mv-d,#mvp .mv-p{text-align:right;font-variant-numeric:tabular-nums}
+#mvp .mv-b{position:relative;height:calc(var(--u)*14);background:rgba(255,255,255,.07)}#mvp .mv-b i{position:absolute;left:0;top:0;bottom:0;background:#5aa8ff}#mvp .mv-r.top .mv-b i{background:#d39c3a}
+#mvp .mv-b em{position:absolute;right:calc(var(--u)*4);top:50%;transform:translateY(-50%);font-style:normal;font-size:.85em}
+#mvp .mv-head .mv-b{background:none}
+#mvp .mv-f{text-align:right;margin-top:calc(var(--u)*8)}#mvp .mv-f button{font:inherit;background:#2a2416;color:#ffe6a8;border:1px solid #8a6a2a;padding:3px 14px;cursor:pointer}
+.tr-ph{display:flex;align-items:center;gap:calc(var(--u)*8)}.tr-ic{width:calc(var(--u)*28);height:calc(var(--u)*28);image-rendering:pixelated}
+.tr-cols{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:calc(var(--u)*12);margin-top:calc(var(--u)*8)}
+.tr-col{border:calc(var(--u)*14) solid transparent;border-image:url(assets/ui/ui_panel_dark_gold.png) 48 fill / calc(var(--u)*14) stretch;padding:calc(var(--u)*4);min-height:calc(var(--u)*200)}
+.tr-col h4{margin:0 0 calc(var(--u)*6);font-size:max(11px,calc(var(--u)*13));color:#fcf0c6}
+.tr-bag{display:grid;grid-template-columns:repeat(6,1fr);gap:calc(var(--u)*4);max-height:calc(var(--u)*220);overflow:auto}
+.tr-cell{aspect-ratio:1;background:rgba(0,0,0,.35);border:1px solid #3a3020;padding:2px;cursor:pointer}.tr-cell.on{border-color:#f0c040;box-shadow:0 0 0 1px #f0c040 inset}.tr-cell:disabled{opacity:.5;cursor:default}
+.tr-cell img{width:100%;height:100%;image-rendering:pixelated}
+.tr-list{display:flex;flex-direction:column;gap:calc(var(--u)*3);max-height:calc(var(--u)*170);overflow:auto}
+.tr-it{display:grid;grid-template-columns:calc(var(--u)*24) 1fr;column-gap:calc(var(--u)*6);align-items:center;font-size:max(10px,calc(var(--u)*12))}
+.tr-it img{width:calc(var(--u)*24);height:calc(var(--u)*24);image-rendering:pixelated;grid-row:span 2}.tr-it small{color:#8a8292}
+.tr-gold{margin-top:calc(var(--u)*8);display:flex;align-items:center;gap:calc(var(--u)*6)}.tr-gold input{width:calc(var(--u)*90)}
+.tr-empty{color:#8a8292;font-size:.9em}.tr-note{color:#8a8292;font-size:.85em}
+</style>`);
+})();
+/* the cast hooks, outermost so every path is seen: Z/X/C start, A/S/D when a cooldown was really spent, V */
+const _startActN = startAct;
+startAct = function (id) { const r = _startActN.apply(this, arguments); const a = G.player && G.player.act; if ((id === 'z' || id === 'x' || id === 'c') && a && a.id === id && a.t <= STEP) netCast(id); return r; };
+const _castSkillN = castSkill;
+castSkill = function (key) { const p = G.player, cd0 = p ? JSON.stringify(p.cd) : ''; const r = _castSkillN.apply(this, arguments); if (p && JSON.stringify(p.cd) !== cd0) netCast(key); return r; };
+if (typeof startUlt === 'function') { const _startUltN = startUlt; startUlt = function () { const u0 = G.ult; const r = _startUltN.apply(this, arguments); if (G.ult && G.ult !== u0) netCast('v'); return r; }; }
+
 /* ============ MAIN LOOP ============ */
 function ambient(dt) {
   const m = G.map, cam = G.cam; G.ambT -= dt; if (G.ambT > 0) return; G.ambT = 0.08;
@@ -20427,6 +21275,28 @@ $('#bTrait').addEventListener('click', () => togglePanel('traits'));
 $('#bHelp').addEventListener('click', () => toggleTutBook());   // master spec STEP 4: the ? button opens the guide book (the old #help stays in the code)
 $('#bTrophy').addEventListener('click', () => toggleTrophy());
 $('#bMute').addEventListener('click', toggleMute);
+/* P12 2026-11-23: 소리 설정 (O 창의 첫 줄, or right-click the HUD sound buttons) */
+function audioHtml() {
+  const row = (k, icon, name) => { const v = Math.round(AU.vol[k] * 100), off = k === 'mus' && !AU.musicOn;
+    return `<div class="avrow${off ? ' off' : ''}"><img class="avic" src="assets/ui/${icon}" alt=""><span class="avn">${name}</span><input type="range" min="0" max="100" step="1" value="${v}" data-vol="${k}" ${off ? 'disabled' : ''}><b id="vol${k.toUpperCase()}">${v}%</b></div>`; };
+  return `<div class="ph"><h3>소리 설정</h3><span class="sub">움직이면 바로 바뀐다 · 이 기기에 저장된다</span><button class="xbtn" data-close="1">닫기</button></div>
+    <div class="avbox">${row('mus', 'ui_icon_bgm_note.png', '배경 음악')}${row('sfx', 'ui_icon_sfx_speaker.png', '효과음')}
+      <div class="avbtns"><button class="kbtn" data-amus="1">${AU.musicOn ? '음악 끄기' : '음악 켜기'} (${keyOf('m_music')})</button><button class="kbtn" data-amute="1">${AU.muted ? '모든 소리 켜기' : '모든 소리 끄기'} (${keyOf('m_mute')})</button></div></div>`;
+}
+$('#panel').addEventListener('input', e => {
+  const t = e.target.closest('[data-vol]'); if (!t) return;
+  const k = t.dataset.vol, v = clamp(+t.value / 100, 0, 1);
+  AU.vol[k] = v; applyVol(); saveVol();
+  const lab = $('#vol' + k.toUpperCase()); if (lab) lab.textContent = Math.round(v * 100) + '%';
+});
+for (const id of ['#bMute', '#bMus']) $(id).addEventListener('contextmenu', e => { e.preventDefault(); if (G.scene === 'play') openPanel('audio'); });
+document.head.insertAdjacentHTML('beforeend', `<style>
+.avbox{display:flex;flex-direction:column;gap:calc(var(--u)*12);padding:calc(var(--u)*16) calc(var(--u)*20);margin-top:calc(var(--u)*8);border:calc(var(--u)*24) solid transparent;border-image:url(assets/ui/ui_panel_dark_gold.png) 48 fill / calc(var(--u)*24) stretch}
+.avrow{display:flex;align-items:center;gap:calc(var(--u)*12);font-size:max(11px,calc(var(--u)*14))}
+.avrow.off{opacity:.5}.avic{width:calc(var(--u)*32);height:calc(var(--u)*32);image-rendering:pixelated;flex:none}
+.avn{width:calc(var(--u)*80);flex:none}.avrow input{flex:1;accent-color:var(--accent);height:calc(var(--u)*18)}.avrow b{width:calc(var(--u)*44);text-align:right;color:var(--accent2)}
+.avbtns{display:flex;gap:calc(var(--u)*10);justify-content:flex-end}
+</style>`);
 $('#bMus').addEventListener('click', toggleMusic);
 $('#bMap').addEventListener('click', toggleMinimap);
 $('#bKeys').addEventListener('click', () => togglePanel('keys'));
