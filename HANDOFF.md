@@ -69,6 +69,10 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1451  새 소식 261123b (오늘 바뀐 것)   (대상: test/index.html, 정식 미배포)
+- NEWS (새 소식 창, 56f_news.js): id '261123a' → '261123b', sub '그림자와 불꽃이 새로 깨어났다', 항목 9개(2쪽):
+  리코스 X·D·A·이단 도약·특성 / 테론 X·A와 C 15단계 / 각성기 V(칼리스토·리코스) / 움직임 다듬기. 아이콘은 기존 종류(hero, warn, road, gold, ult)
+
 ### 261123-1444  정식 배포 (test → 루트: 1444 도적 V 화면 전체, 전사 C 15랭크)
 - 루트 index.html = test/index.html 에서 noindex · DEV_TOOLS 두 줄만 뺀 것. 새 그림 없음
 
