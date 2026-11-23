@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1941"></script>
-<script src="assets/js/act3_data.js?v=261123-1941"></script>
+<script src="assets/js/pfx.js?v=261123-1945"></script>
+<script src="assets/js/act3_data.js?v=261123-1945"></script>
 <script>
-const GAME_VER = '261123-1941';
+const GAME_VER = '261123-1945';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -13498,7 +13498,7 @@ function pixIcon(n) {
 }
 const pimg = (n, cls) => `<img class="pix ${cls || ''}" src="${pixIcon(n)}" alt="">`;
 const itemImg = it => it.type === 'soul' ? pimg('soul') : itemIconSrc(it, G.save.char) ? `<img class="pix" src="${itemIconSrc(it, G.save.char)}" alt="">` : `<span class="glyph">${SLOT_INFO[it.slot].glyph}</span>`;
-const slotImg = (k, it) => { const s = G.save, src = k === 'weapon' ? weaponIconSrc(s.char, s.slotE.weapon.e) : itemIconSrc(it, s.char); return src ? `<img class="pix" src="${src}" alt="">` : (k === 'acc1' ? `<span class="glyph">반</span>` : ''); };
+const slotImg = (k, it) => { const s = G.save, eq = typeof equipIconFor === 'function' ? equipIconFor(it, s.char) : null, src = eq || (k === 'weapon' ? weaponIconSrc(s.char, s.slotE.weapon.e) : itemIconSrc(it, s.char)); return src ? `<img class="pix" src="${src}" alt="">` : (k === 'acc1' ? `<span class="glyph">반</span>` : ''); };   // 2026-11-23: the grade icon first (64_equipicon.js), the old art when there is none
 const gcol = it => GRADES[it.grade || 0].col;
 const fmtPct = v => (Math.round(v * 10) / 10) + '%';
 
@@ -22290,6 +22290,40 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .qwbar{display:block;height:calc(var(--u)*5);background:#1a1a22;border:1px solid #333}.qwbar i{display:block;height:100%;background:linear-gradient(90deg,#c08a2a,#ffe08a)}
 .qwn{color:#9a9184;padding:calc(var(--u)*16);text-align:center}
 #qtrack .qhint{display:block;margin-top:calc(var(--u)*3);color:#8a8070;font-size:max(8px,calc(var(--u)*9))}
+</style>`);
+
+/* ============ 2026-11-23 (user): equipment icons, art/equip72 (the_pixel_odyssey_equip_72_no_ring.zip) -> assets/equip/
+   {warrior,mage,archer}/{normal,rare,unique,legend}/{slot}.png, 64x64 with their own dark gold frame, used as they are.
+   Every window that shows an item (bag, gear slots, smith, shop, storage) goes through itemIconSrc / slotImg (52_uiwin.js), so this
+   swaps the source there. The equipped weapon shows its grade icon too (user: 등급 아이콘으로 통일; the +stage is still the number).
+   No picture yet (the rogue, or the file has not loaded): the old icon stays. ============ */
+const EQUIP_ICON_DIR = 'assets/equip/';
+const EQUIP_CLS = { theron: 'warrior', mage: 'mage', kallisto: 'archer' };
+const EQUIP_GRADE = ['normal', 'rare', 'unique', 'legend'];
+const EQUIP_SLOTS = ['weapon', 'helm', 'pauldron', 'chest', 'legs', 'boots'];
+const EQUIP_IMG = {};
+function equipIconPath(cls, gradeId, slot) {
+  const c = EQUIP_CLS[cls], g = EQUIP_GRADE[Math.max(0, Math.min(3, gradeId | 0))];
+  return c && g && EQUIP_SLOTS.includes(slot) ? EQUIP_ICON_DIR + c + '/' + g + '/' + slot + '.png' : null;
+}
+/* loaded once at start; a path is used only after its picture really arrived */
+for (const cls in EQUIP_CLS) for (let g = 0; g < 4; g++) for (const sl of EQUIP_SLOTS) {
+  const p = equipIconPath(cls, g, sl), im = new Image(); im.decoding = 'async';
+  im.onload = () => { EQUIP_IMG[p] = im; if (typeof uiRefresh === 'function' && G.ui && G.ui.panel) try { uiRefresh(); } catch (e) { } };
+  im.src = p + '?v=' + (typeof GAME_VER !== 'undefined' ? GAME_VER : '1');
+}
+function equipIconFor(it, ch) {
+  if (!it || it.ring || it.type === 'soul' || !EQUIP_SLOTS.includes(it.slot)) return null;
+  const p = equipIconPath(it.cls || ch || (G.save && G.save.char), it.grade || 0, it.slot);
+  return p && EQUIP_IMG[p] ? EQUIP_IMG[p].src : null;
+}
+const _itemIconSrcEQ = itemIconSrc;
+itemIconSrc = function (it, ch) { return equipIconFor(it, ch) || _itemIconSrcEQ(it, ch); };
+document.head.insertAdjacentHTML('beforeend', `<style>
+#uiwin img.pix[src*="assets/equip/"]{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 0 calc(var(--m)*2) var(--gc,transparent))}
+#uiwin .eq:has(img[src*="assets/equip/"]){padding:calc(var(--m)*8)}
+#uiwin .cell:has(img[src*="assets/equip/"]){padding:calc(var(--m)*12)}
+#uiwin .srow .si:has(img[src*="assets/equip/"]){padding:calc(var(--m)*2)}
 </style>`);
 
 /* ============ MAIN LOOP ============ */
