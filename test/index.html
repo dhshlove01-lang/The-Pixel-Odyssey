@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1522"></script>
-<script src="assets/js/act3_data.js?v=261123-1335"></script>
+<script src="assets/js/pfx.js?v=261123-1925"></script>
+<script src="assets/js/act3_data.js?v=261123-1925"></script>
 <script>
-const GAME_VER = '261123-1522';
+const GAME_VER = '261123-1925';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -668,6 +668,23 @@ const SLOT_INFO = {
   chest:    { name: '상의', glyph: '상', stat: 'def',   label: '방어력',      base: 4,   per: 4,     unit: '' },
   legs:     { name: '하의', glyph: '하', stat: 'crit',  label: '치명타 확률', base: 2,   per: 1.8,   unit: '%', linear: 1 },
   boots:    { name: '신발', glyph: '신', stat: 'pen',   label: '방어력 무시', base: 0,   per: 0.085, unit: '%', linear: 1 },   // 2026-11-19: was attack speed; kept scarce (about 10% at best)
+  acc1:     { name: '반지', glyph: '반', stat: 'acc',   label: '반지',        base: 0,   per: 0,     unit: '' },   // [S2-1] 2026-11-23: SLOTS에는 넣지 않는다(강화·계승 없음)
+};
+/* [S2-1] 2026-11-23 (user): 10·20·30장 보스 전용 반지. acc1 한 칸, acc2(목걸이)는 계속 잠금. */
+const RINGS = {
+  10: { name: '키루르고스의 수술 반지', file: 'ring_ch10', col: '#7ad0a0', atkP: 4, bossDmg: 6 },
+  20: { name: '이그니스의 불꽃 인장',   file: 'ring_ch20', col: '#ff9a5a', atkP: 5, critDmg: 12 },
+  30: { name: '아스트론의 성좌 반지',   file: 'ring_ch30', col: '#b48aff', atkP: 7, cdr: 5 },
+};
+const RING_DROP = { 10: 0.12, 20: 0.15, 30: 0.20 };   // 보스 처치 1회당 (사용자: 12·15·20%)
+function makeRing(ch, save) {
+  const s = save || G.save, R = RINGS[ch]; s.nextUid = (s.nextUid || 1) + 1;
+  return { uid: s.nextUid, slot: 'acc1', ring: 1, ch, grade: 3, ilvl: ch, q: 1, pot: [], name: R.name };
+}
+const ringLine = it => {
+  const R = it && it.ring && RINGS[it.ch]; if (!R) return '';
+  const bits = [R.atkP ? '공격력 +' + R.atkP + '%' : '', R.bossDmg ? '보스 피해 +' + R.bossDmg + '%' : '', R.critDmg ? '치명타 피해 +' + R.critDmg + '%' : '', R.cdr ? '재사용 대기시간 -' + R.cdr + '%' : ''].filter(Boolean);
+  return `<br><span style="color:${R.col}">반지의 힘 · ${bits.join(' · ')}</span>`;
 };
 const ENH_MAX = 15, TIER_EVERY = 5;   // TIER_EVERY only shapes the gold economy curve (chapterCost)
 /* attack speed and HP regen no longer come from gear: they grow with level. Attack speed has a hard ceiling in all (options,
@@ -732,6 +749,7 @@ const CHM = (() => {
   return out;
 })();
 const GOLD_INCOME_X = 1.72;   // gold income after shards turned into gold; prices of everything else follow
+const GOLD_DROP_X = 0.5;   // [S6-3] 2026-11-23 (user): 몹이 떨어뜨리는 골드 50% (상점 가격·의뢰 보상은 그대로)
 const stoneGold = n => { const c = chapterCost(1); return c.g / ENH_GOLD_X / c.s * GOLD9(n); };   // what one old shard is worth in gold, chapter n (9-patch 5: the chapter-1 value grown smoothly)
 const potionPrice = n => 50;   // the same in every chapter; it heals a share of max HP
 const scrollPrice = n => Math.round(40 * CHM[n].gold * GOLD_INCOME_X / 5) * 5;
@@ -1647,7 +1665,7 @@ function genField(id, n, def, theme, mons, rng) {
     if (px + pw < w - 260) plats.push(oneway(Math.round(px), 280, Math.round(pw)));
   }
   const spawns = [], total = mons.reduce((s, m) => s + m[1], 0);
-  const order = []; mons.forEach(([t, c]) => { for (let i = 0; i < c; i++) order.push(t); });
+  const order = []; mons.forEach(([t, c]) => { const n2 = (MON[t] && MON[t].elite) ? c : Math.max(1, Math.round(c * 1.5)); for (let i = 0; i < n2; i++) order.push(t); });   // [S6-2] 2026-11-23 (user): 잡몹만 1.5배(정예는 그대로)
   for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
   order.forEach((t, i) => {
     const d = MON[t], sx = 380 + (w - 640) * (i + 0.5) / total + (rng() - 0.5) * 80;
@@ -1665,7 +1683,7 @@ function genField(id, n, def, theme, mons, rng) {
     lights.push({ x: Math.round(lx), y: 330, r: 155, col: T.torch, a: 0.8, flick: T.flick });
     props.push({ t: T.prop, x: Math.round(lx), cold: T.cold });
   }
-  for (let px = 700; px < w - 300; px += 520 + rng() * 420) props.push(rng() < 0.6 ? { t: 'column', x: Math.round(px), h: 160 + rng() * 120, broken: rng() < 0.6 ? 1 : 0 } : { t: T.deco, x: Math.round(px) });
+  for (let px = 700; px < w - 300; px += 520 + rng() * 420) { const t = rng() < 0.6 ? { t: 'column', x: Math.round(px), h: 160 + rng() * 120, broken: rng() < 0.6 ? 1 : 0 } : { t: T.deco, x: Math.round(px) }; if (!props.some(q => Math.abs(q.x - t.x) < 56)) props.push(t); }   // [S7-4] 등과 56px 안이면 놓지 않는다
   return { id, ch: n, w, theme, plats, lights, props, npcs: [], spawns, start: 120 };
 }
 const THEME_LIGHT = {
@@ -4869,7 +4887,7 @@ const chMaps = n => n === 1 ? { camp: 'camp', a: 'ruins', b: 'under', arena: 'to
   : n > CH_COUNT && CHAPTERS[n] ? { camp: CHAPTERS[n].camp, a: CHAPTERS[n].a, b: CHAPTERS[n].b, arena: CHAPTERS[n].arena }   // 2026-11-23: the tower floors (21-30) name their own maps (camp / c21_field / arena)
   : { camp: 'c' + n + '_camp', a: 'c' + n + '_a', b: 'c' + n + '_b', arena: 'c' + n + '_arena' };
 const mainId = (n, i) => 'c' + n + 'm' + (i + 1);
-const mainsDone = (n, k) => { for (let i = 0; i < k; i++) if (qs(mainId(n, i)) < 3) return false; return true; };
+const mainsDone = (n, k) => { for (let i = 0; i < k; i++) if (qs(mainId(n, i)) < 2) return false; return true; };   // [S6-4]
 const chBossQ = n => mainId(n, STORY[n].main.length - 1);
 const chArenaOpen = n => mainsDone(n, STORY[n].main.length - 1);
 const chBOpen = n => mainsDone(n, STORY[n].openB || 3);
@@ -4907,7 +4925,7 @@ const ELITE_RESPAWN = 150;
     const R = { gold: 740 * k.gold, stone: 62 * k.stone, xp: 520 * k.xp };
     const sg = stoneGold(n), rw = (f, extra) => Object.assign({ gold: Math.round((R.gold + R.stone * sg) * f / 5) * 5, xp: Math.round(R.xp * f) }, extra || {});   // the old shard part is paid in gold
     const mk = (q, id, extra) => {
-      const Q = Object.assign({}, q, { id, ch: n, mapId: q.map ? M[q.map] : null, need: q.need || 1 }, extra);
+      const Q = Object.assign({}, q, { id, ch: n, mapId: q.map ? M[q.map] : null, need: (q.type === 'kill' || q.type === 'elite') && q.need ? Math.ceil(q.need * 1.25) : (q.need || 1) }, extra);   // [S6-2] 처치 수 소폭 상향
       if (q.mon === 'elite') Q.mon = ['c' + n + '_elite'];
       if (q.type === 'boss') Q.boss = MAPS[M.arena].boss;
       if (!Q.title) Q.title = q.item || (q.type === 'boss' ? BOSSES[Q.boss].name.split(' ').pop() : '부탁');
@@ -4931,7 +4949,7 @@ const ELITE_RESPAWN = 150;
     for (const key of ['camp', 'a', 'b', 'arena']) for (const pt of MAPS[M[key]].portals || []) {
       if (pt.to === M.b && key !== 'arena') { pt.req = () => chBOpen(n); pt.lockT = '봉인됨 · 아직 할 일이 남았다'; }
       else if (pt.to === M.arena) { pt.req = () => chArenaOpen(n); pt.lockT = '봉인됨 · 아직 준비가 덜 됐다'; }
-      else if (pt.id === 'p_down') pt.req = () => qs(chBossQ(n)) >= 3;
+      else if (pt.id === 'p_down') pt.req = () => qs(chBossQ(n)) >= 2;   // [S6-4] 보고 없이도 열린다
       const tm = MAPS[pt.to]; if (tm && pt.id !== 'p_down' && pt.id !== 'p_up') pt.label = tm.name;
     }
   }
@@ -4957,13 +4975,17 @@ function activeQuests(type) {
   return type ? out.filter(id => QUESTS[id].type === type || (type === 'kill' && QUESTS[id].type === 'elite')) : out;
 }
 /* side quests open once their chapter has started (its first main quest done) and the story has reached it */
-const subOpen = id => { const Q = QUESTS[id]; return Q.ch <= storyChapter() && qs(mainId(Q.ch, 0)) >= 3; };
+const subOpen = id => { const Q = QUESTS[id]; return Q.ch <= storyChapter() && qs(mainId(Q.ch, 0)) >= 2; };   // [S6-4]
 function npcKey(n) { return n.id === 'side' ? 'side' + n.ch : n.id; }
 const giverMatches = (Q, n) => n.id === 'side' ? (Q.giver === 'side' && Q.ch === n.ch) : Q.giver === n.id;
 const targetMatches = (Q, n) => n.id === 'side' ? (Q.to === 'side' && Q.ch === n.ch) : Q.to === n.id;
 /* what an NPC has for you: a word to receive (talk target), something to hand in, something to offer, or nothing */
 function npcBusiness(n) {
   const cur = currentQuest(), list = (cur ? [cur] : []).concat(SUB_ORDER);
+  {   // [S6-4] 2026-11-23: 완료(s=2) 상태로 장을 넘어가도, 그 NPC에게 말을 걸면 보상을 받는다
+    const pend = QUEST_ORDER.filter(id => QUESTS[id].main && questOf(id).s === 2 && giverMatches(QUESTS[id], n));
+    if (pend.length) return { id: pend[0], k: 'turnin' };
+  }
   for (const id of list) { const Q = QUESTS[id], q = questOf(id); if (Q.type === 'talk' && q.s === 1 && targetMatches(Q, n)) return { id, k: 'talkdone' }; }
   for (const id of list) { const Q = QUESTS[id], q = questOf(id); if (q.s === 2 && giverMatches(Q, n)) return { id, k: 'turnin' }; }
   if (cur && questOf(cur).s === 0 && giverMatches(QUESTS[cur], n) && (n.id === 'hal' || G.map.ch === QUESTS[cur].ch || n.id !== 'side')) return { id: cur, k: 'offer' };
@@ -4973,7 +4995,7 @@ function npcBusiness(n) {
 }
 function talkNpc(n, fallback) {
   const b = npcBusiness(n);
-  if (!b) { if (fallback) return fallback(); return openDialog(n.id === 'side' ? sideIdle(n) : [IDLE_LINES[rndi(0, IDLE_LINES.length - 1)]]); }
+  if (!b) { if (fallback) return fallback(); if (n.idle && n.idle.length) return openDialog(n.idle); return openDialog(n.id === 'side' ? sideIdle(n) : [IDLE_LINES[rndi(0, IDLE_LINES.length - 1)]]); }   // [S6-6]
   const id = b.id, Q = QUESTS[id], q = questOf(id), D = DLG[id] || {};
   const lines = arr => (arr && arr.length ? arr : [['', Q.title]]).map(l => typeof l === 'string' ? ['', l] : l);
   const finish = () => {
@@ -5002,6 +5024,9 @@ function giveQuestReward(id) {
   bits.push('골드 ' + nf(r.gold));
   if (r.potions) { s.potions += r.potions; bits.push('연고 ' + r.potions); }
   if (r.scroll) { s.scrolls = (s.scrolls || 0) + r.scroll; bits.push('귀환 주문서 ' + r.scroll); }
+  if (r.pot) { s.mats.pot = (s.mats.pot || 0) + r.pot; bits.push('잠재석 ' + r.pot); }      // [S1-7]
+  if (r.qual) { s.mats.qual = (s.mats.qual || 0) + r.qual; bits.push('품질석 ' + r.qual); }
+  if (r.freeP && Math.random() < r.freeP) { s.mats.free = (s.mats.free || 0) + 1; bits.push('무료 잠재 변경권 1'); }   // 2026-11-23 (user): 잉여맵 서브 의뢰에서 가끔
   if (r.item) { const gr = Math.random() < 0.3 ? 2 : 1, slot = SLOTS[Math.floor(Math.random() * SLOTS.length)], it = makeItem(slot, s.char, gr, QUESTS[id].ch); if (addItem(it)) bits.push(GRADES[gr].name + ' ' + it.name); }
   toast('보상: ' + bits.join(' · '), 'gold'); sfx('quest');
   updateHud(true);
@@ -5013,13 +5038,20 @@ function questProgressAny(id, n) {
   if (q.p >= Q.need) { q.s = 2; toast('목표 달성 · ' + Q.title + ' (' + giverName(Q) + '에게 보고)', 'gold'); sfx('quest'); }
   updateQuestUi(); writeSave();
 }
-function giverName(Q) { return Q.giver === 'hal' ? NS : Q.giver === 'smith' ? KC : Q.giver === 'shop' ? DN : STORY[Q.ch].side.name; }
+function giverName(Q) { return Q.gname || (Q.giver === 'hal' ? NS : Q.giver === 'smith' ? KC : Q.giver === 'shop' ? DN : STORY[Q.ch].side.name); }   // [S6-6] 잉여맵 NPC는 자기 이름
 
 /* ---- kills, drops ---- */
 function questOnKill(m) {
   if (m.minion) return;
   for (const id of activeQuests('kill')) if (QUESTS[id].mon.includes(m.type)) questProgressAny(id);
 }
+const _questOnKillQ = questOnKill;   // [S6-7]
+questOnKill = function (m) {
+  _questOnKillQ(m);
+  if (m.minion) return;
+  dailyOn('kill', 1);
+  if (m.d && m.d.elite) dailyOn('elite', 1);
+};
 function questOnLoot(m) {
   for (const id of activeQuests('collect')) {
     const Q = QUESTS[id], q = questOf(id);
@@ -5242,7 +5274,7 @@ function genSideField(id, n, base, style, rng) {
     }
   }
   const count = {}; for (const sp of base.spawns) if (!sp.respawn && !(MON[sp.type] && MON[sp.type].elite)) count[sp.type] = (count[sp.type] || 0) + 1;
-  const order = []; for (const t in count) for (let i = 0; i < Math.round(count[t] * 0.9); i++) order.push(t);
+  const order = []; for (const t in count) for (let i = 0; i < Math.round(count[t] * 1.35); i++) order.push(t);   // [S6-2] 0.9 -> 1.35
   for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
   const spawns = order.map((t, i) => {
     const d = MON[t], sx = 360 + (w - 600) * (i + 0.5) / order.length;
@@ -5598,7 +5630,14 @@ function fixSave(s) {
   if (s.quests.c4m1 && s.quests.c4m1.s >= 3) s.flags.mobility = true;   // the Shift move is learned during chapter 4
   if (!CHARS[s.char]) s.char = 'theron';
   if (!MAPS[s.map]) s.map = 'camp';
-  s.items = s.items || []; s.mats = Object.assign({ inherit: 0 }, s.mats || {}); s.nextUid = s.nextUid || 1;
+  s.items = s.items || []; s.mats = Object.assign({ inherit: 0, alch: 0, pot: 0, qual: 0, free: 0 }, s.mats || {}); s.nextUid = s.nextUid || 1;
+  s.slotE = s.slotE || {}; s.slotE.acc1 = s.slotE.acc1 || { e: 0, T: 0, gauge: 0 };   // [S2-5] 반지 칸(강화 없음)
+  /* [S3-1] 2026-11-23: 영혼 -> 펫 도감. 무기에 박혀 있던 영혼은 도감으로 옮기고 슬롯은 비운다. */
+  s.pets = s.pets || {};
+  for (const k in s.equip || {}) { const w = s.equip[k]; if (w && w.soul) { s.pets[w.soul] = 1; delete w.soul; } }
+  if (s.pet === undefined) s.pet = Object.keys(s.pets)[0] || null;
+  if (s.pet && !s.pets[s.pet]) s.pet = Object.keys(s.pets)[0] || null;
+  s.pouch = s.pouch || 0; if (s.daily === undefined) s.daily = null;   // [S6-7]
   if (typeof xpRebase === 'function') xpRebase(s);   // the slower levels (10_data.js XP_BAND_K): once per save
   s.items.forEach(renameGear); for (const k in s.equip || {}) renameGear(s.equip[k]);   // 흉갑 -> 상의, 각반 -> 하의
   if (!s.slotE) {   // older saves: one enhancement level per slot (up to +35) -> slot tier + enhancement + an item of the story chapter
@@ -5715,7 +5754,7 @@ function writeSave() {
 function deleteSlot(i) { const st = storeNow(); st.slots[i] = null; writeStore(st); }
 function newSave(ch) {
   const s = {
-    v: 3, xpV3: 1, char: ch, level: 1, xp: 0, gold: 60, stones: 6, potions: 3, scrolls: 1, tp: 0, traits: {}, equip: {}, slotE: {}, items: [], mats: { inherit: 0 }, nextUid: 1,
+    v: 3, xpV3: 1, char: ch, level: 1, xp: 0, gold: 60, stones: 6, potions: 3, scrolls: 1, tp: 0, traits: {}, equip: {}, slotE: {}, items: [], mats: { inherit: 0, alch: 0, pot: 0, qual: 0, free: 0 }, nextUid: 1,
     quests: {}, lore: {}, flags: {}, map: 'camp', time: 0, kills: 0, deaths: 0, enh: 0, seenCh: { 1: 1 },
   };
   for (const k of SLOTS) { s.slotE[k] = { e: 0, T: 0, gauge: 0 }; s.equip[k] = makeItem(k, ch, 0, 1, s); }   // plain starting kit
@@ -5754,6 +5793,11 @@ function calcStats(save) {
   const cls = CHARS[s.char].mod; st.hp *= cls.hp; st.def *= cls.def; st.crit += cls.crit || 0;
   st.critOver = Math.max(0, st.crit - 100); st.crit = Math.min(st.crit, 100);   // 4차 패치 Q5 (user: the spec as written): every 100% over 100 becomes +1% crit damage (was +2% per 1%)
   st.critOverDmg = Math.round(st.critOver / 100 * 100) / 100; st.critDmg = pot.critDmg + st.critOverDmg; st.bossDmg += pot.bossDmg; st.cdr = Math.min(40, pot.cdr);
+  if (s.equip.acc1 && s.equip.acc1.ring && RINGS[s.equip.acc1.ch]) {   // [S2-2] 반지: 고정 효과(강화·품질 없음)
+    const R = RINGS[s.equip.acc1.ch];
+    st.atk *= 1 + R.atkP / 100; st.bossDmg += R.bossDmg || 0; st.critDmg += R.critDmg || 0; st.cdr = Math.min(40, st.cdr + (R.cdr || 0));
+  }
+  if (typeof petStats === 'function') { const pb = petStats(s); if (pb.n) { st.atk *= 1 + pb.atkP / 100; st.hp *= 1 + pb.hpP / 100; } }   // [S3-2] 펫 도감 컬렉션
   if (typeof trophStats === 'function') { const tb = trophStats(s); if (tb.n) { st.atk *= 1 + tb.atkP / 100; st.critDmg += tb.critDmg; } }   // trophies: permanent, tiny
   st.aspdRaw = st.aspd; st.aspd = Math.min(ASPD_CAP, st.aspd); st.pen = Math.min(60, st.pen);
   st.cp = Math.round(st.atk * (1 + st.crit / 100 * (CRIT_MULT - 1 + st.critDmg / 100)) * (1 + st.bossDmg / 400) * (1 + st.pen / 300) * (1 + st.aspd / 100) * 8 + st.hp * 0.6 + st.def * 5 + st.regen * 40);
@@ -5830,6 +5874,8 @@ function loadMap(id, atX, quiet) {
   G.map = m; G.mapId = id;
   G.pools = []; G.illus = []; G.lanes = []; G.fence = null; G.anon = null; G.defend = null; if (G.player) { G.player.charmT = 0; }
   G.mons = []; G.drops = []; G.projs = []; G.parts = []; G.nums = []; G.timers = []; G.boss = null; G.interact = null; G.fx = []; G.marks = []; G.traps = []; G.execs = []; G.ghost = null; G.ult = null; G.pet = null;
+  G.moon = null;   // [S4-6] 달 위상은 29장 전투에서만
+  if (G.save) dailyEnsure(G.save);   // [S6-7] 12시가 지났으면 새 일일
   G.slots = m.spawns.map(sp => ({ sp, m: null, timer: 0 }));
   if (typeof ensureElite === 'function' && G.save) setTimeout(ensureElite, 0);
   for (const sl of G.slots) spawnMon(sl);
@@ -5884,7 +5930,7 @@ function questProgress(id, n) {
   if (q.p >= QUESTS[id].need) { q.s = 2; toast('목표 달성 · ' + QUESTS[id].title + ' (네스토르에게 보고)', 'gold'); sfx('quest'); }
   updateQuestUi(); writeSave();
 }
-function currentQuest() { for (const id of QUEST_ORDER) if (qs(id) < 3) return id; return null; }
+function currentQuest() { for (const id of QUEST_ORDER) if (qs(id) < 2) return id; return null; }   // [S6-4] 보고 전(s=2)이라도 완료로 본다
 function activeQuest(type) { const id = currentQuest(); return id && QUESTS[id].type === type && qs(id) === 1 ? id : null; }
 function giveReward(id) {
   const r = QUESTS[id].rew, s = G.save;
@@ -5905,8 +5951,8 @@ function spark(x, y, n, col, spd) {
 function dust(x, y, n, col) {
   for (let i = 0; i < n; i++) addPart({ x: x + rnd(-8, 8), y, vx: rnd(-50, 50), vy: rnd(-40, -5), g: 30, life: rnd(.3, .6), r: rnd(2, 4), col: col || '120,120,128', glow: 0, grow: 1 });
 }
-function numPop(x, y, text, col, size) { G.nums.push({ x, y, text, col, size: size || 15, t: 0 }); }
-function shake(a) { G.cam.shake = Math.max(G.cam.shake, a); }
+function numPop(x, y, text, col, size) { if (G.save && G.save.opt && G.save.opt.nums === false) return; G.nums.push({ x, y, text, col, size: size || 15, t: 0 }); }   // [S7-1]
+function shake(a) { if (G.save && G.save.opt && G.save.opt.shake === false) return; G.cam.shake = Math.max(G.cam.shake, a); }   // [S7-1]
 const fmtN = v => v >= 10000 ? (v / 1000).toFixed(v >= 100000 ? 0 : 1) + 'k' : String(v);
 
 function newPlayer() {
@@ -6173,7 +6219,7 @@ function hurtPlayer(raw, srcX, o) {
   const p = G.player;
   if (p.dead > 0 || p.inv > 0) return false;
   if (p.guard > 0) { parry(o.src); return true; }
-  let d = Math.max(1, Math.round(raw * p.dr * (1 - (G.stats.dmgRed || 0) / 100) * (p.atkBuff > 0 && G.save.char === 'theron' ? 0.7 : 1) * 100 / (100 + G.stats.def)));
+  let d = o.pure ? Math.max(1, Math.round(raw)) : Math.max(1, Math.round(raw * p.dr * (1 - (G.stats.dmgRed || 0) / 100) * (p.atkBuff > 0 && G.save.char === 'theron' ? 0.7 : 1) * 100 / (100 + G.stats.def)));
   if (p.shield > 0) { const ab = Math.min(p.shield, d); p.shield -= ab; d -= ab; if (d <= 0) { numPop(p.x, p.y - 58, '흡수', '#fff0b0', 14); p.inv = 0.3; return true; } }
   p.hp -= d; p.inv = o.inv || 0.9; p.flash = 0.15; p.sleepT = 0;
   if (G.boss && G.boss.st !== 'die') G.boss.noHit = false;   // no-hit trophy: a single scratch in this fight ends it
@@ -6231,7 +6277,7 @@ function targets() {
   for (const e of gimTargets()) t.push(e);   // the bell, boxes, spirit orbs, fox clones
   return t;
 }
-function hurtbox(e) { return e.isBoss ? { x: e.x - e.w * 0.42, y: e.y + (e.yOff || 0) - (e.hover || 0) - e.h, w: e.w * 0.84, h: e.h + (e.hover || 0) } : { x: e.x - e.w / 2, y: e.y - e.h, w: e.w, h: e.h }; }
+function hurtbox(e) { return e.isBoss ? { x: e.x - e.w * 0.46, y: e.y + (e.yOff || 0) - (e.hover || 0) - e.h - 24, w: e.w * 0.92, h: e.h + (e.hover || 0) + 24 } : { x: e.x - e.w / 2, y: e.y - e.h, w: e.w, h: e.h }; }   // [S4-5] 19장 발판 위 사거리 보정
 function meleeHit(r, mult, o) {
   let n = 0;
   if (G.debug) (G.dbgHits = G.dbgHits || []).push(Object.assign({ t: 0.25 }, r));
@@ -6364,9 +6410,9 @@ function dropLoot(m) {
   maybeAnon(m);
   const gr = rollGrade(Math.random());
   if (gr >= 0) { const slot = SLOTS[Math.floor(Math.random() * SLOTS.length)]; addDrop('item', 0, m.x, m.y - m.h * 0.5); G.drops[G.drops.length - 1].it = makeItem(slot, G.save.char, gr, mapChapter()); }
-  const g = rndi(d.gold[0], d.gold[1]), n = g >= d.gold[1] * 0.8 ? 3 : g >= d.gold[1] * 0.5 ? 2 : 1;
+  const g = Math.max(1, Math.round(rndi(d.gold[0], d.gold[1]) * GOLD_DROP_X)), n = g >= d.gold[1] * 0.8 ? 3 : g >= d.gold[1] * 0.5 ? 2 : 1;   // [S6-3] 드랍 골드 반토막
   for (let i = 0; i < n; i++) addDrop('gold', Math.max(1, Math.round(g / n)), m.x, m.y - m.h * 0.5);
-  if (Math.random() < d.stone[0]) { const v = Math.max(1, Math.round(rndi(d.stone[1], d.stone[2]) * stoneGold(d.ch || 1))); addDrop('gold', v, m.x, m.y - m.h * 0.5); }   // what used to be shards
+  if (Math.random() < d.stone[0]) { const v = Math.max(1, Math.round(rndi(d.stone[1], d.stone[2]) * stoneGold(d.ch || 1) * GOLD_DROP_X)); addDrop('gold', v, m.x, m.y - m.h * 0.5); }   // [S6-3] what used to be shards
   questOnLoot(m);
   if (d.elite && Math.random() < 0.5) { const slot = SLOTS[Math.floor(Math.random() * SLOTS.length)]; addDrop('item', 0, m.x, m.y - m.h * 0.5); G.drops[G.drops.length - 1].it = makeItem(slot, G.save.char, Math.random() < 0.25 ? 2 : 1, mapChapter()); }
 }
@@ -6377,7 +6423,7 @@ function updateDrops(dt) {
     const pre = d.vy;
     if (d.t > 0.45 && p.dead <= 0) {
       const dx = p.x - d.x, dy = (p.y - 20) - d.y, dist = Math.hypot(dx, dy);
-      if (dist < 90) { const sp = 260 + (90 - dist) * 6; d.x += dx / dist * sp * dt; d.y += dy / dist * sp * dt; d.magnet = 1; }
+      const RQ = (G.save && G.save.opt && G.save.opt.auto) ? 220 : 90; if (dist < RQ) { const sp = 260 + (RQ - dist) * 6; d.x += dx / dist * sp * dt; d.y += dy / dist * sp * dt; d.magnet = 1; }   // [S7-1]
       if (dist < 18) { if (collect(d) !== false) { d.dead = true; continue; } }
     }
     if (!d.magnet) {
@@ -6655,7 +6701,9 @@ function updateBoss(dt) {
       b.face = sgn(p.x - b.x);
       const dist = Math.abs(p.x - b.x), sp = 70 + 14 * (b.phase - 1) + 3 * d.ch;
       b.vx = dist > 150 ? b.face * sp : 0;
-      b.cd -= dt;
+      if (b.aa > 0) { b.aa -= dt; b.vx = 0; if (b.aa <= 0) b.cell9 = null; }   // [S4-4] 평타 모션 중
+      b.cd -= dt; b.aaCd = Math.max(0, (b.aaCd || 0) - dt);
+      if (!(b.aa > 0) && b.aaCd <= 0 && b.cd > 0.45 && p.dead <= 0 && !netGuest()) bossAA(b);   // [S4-4] 1~30장 모든 보스 (!(b.aa > 0): b.aa starts undefined)
       if (b.cd <= 0 && p.dead <= 0) { b.vx = 0; bossPattern(); }
       break;
     }
@@ -6765,6 +6813,36 @@ function updateBoss(dt) {
   }
   if (b.st !== 'leap') { b.x += b.vx * dt; b.x = clamp(b.x, L + b.w / 2 + 6, R - b.w / 2 - 6); }
 }
+/* [S4-4] 2026-11-23 (user): 스킬 사이 공백에 즉발 평타. 전조(!) 없이 모션만 보고 피한다.
+   가까우면 몸으로 치고, 멀면 낮게 나가는 충격파. 피해는 스킬의 32%.
+   48f(3막) 보스 = cell9 포즈, 1~20장 보스 = b.st='aa' (FSM이 ATTACK1_ACTIVE 포즈를 그린다). */
+function bossAA(b) {
+  const p = G.player, dist = Math.abs(p.x - b.x), far = dist > 150, s48 = !!sk9(b);
+  b.aa = 0.5; b.aaCd = 2.2 + Math.random() * 0.9; b.vx = 0;
+  if (s48) {
+    b.cell9 = cell9(2, 0);
+    after(0.12, () => { if (G.boss === b) b.cell9 = cell9(2, 1); });
+    after(0.24, () => { if (G.boss === b) b.cell9 = cell9(2, 2); });
+  } else b.st = 'aa';   // 1~20장: 상태 이름만 바꿔도 그림은 공격 포즈가 된다
+  after(0.30, () => {
+    if (G.boss !== b || b.st === 'die') return;
+    const dmg = Math.round(bdmg(b, 'slam') * 0.32);
+    if (far) {
+      proj({ from: 'm', src: b, kind: 'shock', x: b.x + b.face * 46, y: GROUND - 34, vx: b.face * 420, w: 24, h: 18, dmg, maxDist: 620, life: 1.6, kb: 170 });
+      sfx('throw');
+    } else {
+      const x1 = b.face > 0 ? b.x : b.x - 130;
+      if (ov(x1, GROUND - 110, 130, 110, p.x - p.w / 2, p.y - p.h, p.w, p.h)) hurtPlayer(dmg, b.x, { src: b, kb: 190, shake: 4 });
+      spark(b.x + b.face * 60, GROUND - 50, 8, '255,220,160', 220); sfx('swing', 1);
+    }
+  });
+  after(0.5, () => {
+    if (G.boss !== b) return;
+    b.aa = 0;
+    if (s48) b.cell9 = null;
+    else if (b.st === 'aa') { b.st = 'idle'; b.cd = Math.max(b.cd || 0, 0.2); }
+  });
+}
 function bossDie() {
   const b = G.boss;
   b.st = 'die'; b.t = 0; b.hp = 0; b.waves = []; b.tele = null; b.vx = 0; b.invuln = true; b.yOff = 0;
@@ -6785,14 +6863,36 @@ function bossDie() {
   }
   if (b.d.hidden) return anonDefeated(b);
   G.save.flags['boss_' + b.id] = true;
+  dailyOn('boss', 1);   // [S6-7]
   awardTrophies(b, b.fightT || 0, b.noHit !== false);   // master spec STEP 4
   const qid = QUEST_ORDER.find(id => QUESTS[id].type === 'boss' && QUESTS[id].boss === b.id);
   if (qid && qs(qid) === 1) { G.save.quests[qid].s = 2; G.save.quests[qid].p = 1; }
   {
     const r = Math.random(), gr = r < 0.05 ? 3 : r < 0.3 ? 2 : 1, slot = SLOTS[Math.floor(Math.random() * SLOTS.length)];
-    addDrop('item', 0, b.x, b.y - b.h * 0.5); G.drops[G.drops.length - 1].it = makeItem(slot, G.save.char, gr, b.d.ch);
+    /* [S7-3] 2026-11-23 (user): 보스는 다른 직업의 무기도 떨어뜨린다(35%). 방어구는 원래 직업 구분이 없다. */
+    let dcls = G.save.char;
+    if (slot === 'weapon' && Math.random() < 0.35) { const others = Object.keys(CHARS).filter(c => c !== G.save.char); dcls = others[Math.floor(Math.random() * others.length)]; }
+    addDrop('item', 0, b.x, b.y - b.h * 0.5); G.drops[G.drops.length - 1].it = makeItem(slot, dcls, gr, b.d.ch);
     if (INHERIT_CH.includes(b.d.ch)) { const n = b.repeat ? 2 : 6; G.save.mats.inherit += n; after(2.6, () => toast('계승석 ' + n + '개를 얻었다 · 대장장이에게서 +15 칸을 계승할 수 있다', 'gold')); }
-    if (Math.random() < SOUL_DROP) { G.save.nextUid++; const it = { uid: G.save.nextUid, type: 'soul', boss: b.id, name: b.d.name.split(' ').pop() + '의 영혼', grade: 3 }; addDrop('item', 0, b.x, b.y - b.h * 0.7); G.drops[G.drops.length - 1].it = it; }
+    G.save.pets = G.save.pets || {};
+    if (!G.save.pets[b.id]) {   // [S3-5] 첫 처치 = 그 보스 쁘띠 확정 등록
+      G.save.pets[b.id] = 1; if (!G.save.pet) G.save.pet = b.id;
+      after(2.8, () => toast('쁘띠 도감 · ' + (b.d.name || '보스') + '의 쁘띠를 얻었다 (I 창 → 쁘띠 도감)', 'gold'));
+    } else if (Math.random() < 0.10) {   // 재처치: 중복 영혼(10%)
+      G.save.nextUid++; const it = { uid: G.save.nextUid, type: 'soul', boss: b.id, name: b.d.name.split(' ').pop() + '의 영혼', grade: 3 };
+      addDrop('item', 0, b.x, b.y - b.h * 0.7); G.drops[G.drops.length - 1].it = it;
+    }
+  }
+  if (RINGS[b.d.ch]) {   // [S2-6] 10·20·30장 반지: 확률 드랍, 이미 있으면 잠재석·계승석으로 보정
+    const ch = b.d.ch, rate = RING_DROP[ch], own = (G.save.equip.acc1 && G.save.equip.acc1.ch === ch) || G.save.items.some(x => x.ring && x.ch === ch);
+    const kills = (G.save.troph[b.id] && G.save.troph[b.id].k) || 0;
+    if (own) {
+      if (Math.random() < rate) { G.save.mats.pot = (G.save.mats.pot || 0) + 3; G.save.mats.inherit = (G.save.mats.inherit || 0) + 2; after(2.6, () => toast('이미 가진 반지다 · 잠재석 3 · 계승석 2로 바뀌었다', 'gold')); }
+    } else if (Math.random() < rate || kills >= 6) {   // 6번째 처치부터는 확정(운 나쁜 세이브 보호)
+      const it = makeRing(ch);
+      if (addItem(it)) after(2.2, () => toast(RINGS[ch].name + ' 을(를) 얻었다 · I 창의 반지 칸에 낀다'.replace(' 을(를)', josa(RINGS[ch].name, '을', '를')), 'gold'));
+      else { G.save.mats.pot = (G.save.mats.pot || 0) + 3; after(2.2, () => toast('가방이 가득 찼다 · 반지 대신 잠재석 3', 'bad')); }
+    }
   }
   if (b.repeat && qid) {   // re-fight: a smaller share of the story reward, every time
     const r = QUESTS[qid].rew, g = Math.round(r.gold * 0.4);
@@ -6804,6 +6904,39 @@ function bossDie() {
 }
 
 /* ---------- World update ---------- */
+/* [S4-6] 2026-11-23 (user): 29장 달의 위상. 보름달이 차면 즉사 패턴(가드로만 방어). */
+const MOON_IMG = { im: null };
+const moonImg = () => MOON_IMG.im || (MOON_IMG.im = Object.assign(new Image(), { src: 'assets/vfx/moon_phases_29.png' }));
+function moonTick(dt) {
+  const b = G.boss;
+  if (!b || b.id !== 'b29' || b.st === 'die' || b.st === 'wait') { if (G.moon) G.moon = null; return; }
+  const M = G.moon || (G.moon = { k: 0, t: 0, warn: 0 });
+  if (M.warn > 0) { M.warn -= dt; if (M.warn <= 0) { moonDoom(b); M.t = 0; M.k = 0; } return; }
+  M.t += dt * (b.berserk9 ? 1.5 : 1);
+  const k = Math.min(7, Math.floor(M.t / 6));
+  if (k !== M.k) {
+    M.k = k;
+    if (k >= 7) { M.warn = 1.1; toast('보름달이 찼다 · 가드(G)!', 'bad'); sfx('bell', 0.8); shake(6); }
+    else if (k > 0) sfx('frag', 0.5);
+  }
+}
+function moonDoom(b) {
+  const p = G.player; if (p.dead > 0) return;
+  G.flashW = 1; shake(16); sfx('boom');
+  if (p.guard > 0) { parry(b); numPop(p.x, p.y - 86, '월식 방어', '#ffe6a0', 20); return; }
+  p.shield = 0; p.inv = 0;   // 배리어·무적 무시: 가드만 통한다
+  hurtPlayer(Math.round(p.mhp * 1.02) + 1, b ? b.x : p.x, { kb: 240, up: 190, shake: 14, inv: 0.8, stun: 0.6, pure: true });   // pure: defence does not cut it (102% of max HP really lands)
+  toast('월식이 너를 덮쳤다 · 가드로만 막을 수 있다', 'bad');
+}
+function drawMoon29(c) {
+  if (!G.moon || !G.boss || G.boss.id !== 'b29') return;
+  const im = moonImg(); if (!im.complete || !im.naturalWidth) return;
+  const fw = Math.floor(im.naturalWidth / 8), f = Math.min(7, G.moon.k || 0), x = arM(), y = 132, w = 190, h = Math.round(w * im.naturalHeight / fw);
+  c.save(); c.imageSmoothingEnabled = false; c.globalAlpha = 0.92;
+  c.drawImage(im, f * fw, 0, fw, im.naturalHeight, Math.round(x - w / 2), Math.round(y - h / 2), w, h);
+  if (f >= 6) { c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.22 + 0.14 * Math.sin(G.t * 4); c.drawImage(im, f * fw, 0, fw, im.naturalHeight, Math.round(x - w / 2), Math.round(y - h / 2), w, h); }
+  c.restore();
+}
 function updateWorld(rdt) {
   if (G.slowT > 0) { G.slowT -= rdt; G.timeScale = G.slowK || 0.35; } else { G.timeScale = 1; G.slowK = 0; }
   let dt = rdt * G.timeScale;
@@ -6830,6 +6963,7 @@ function updateWorld(rdt) {
   updateSkills(dt);
   updateMarks(dt); tickHaz(dt); tickPatternBits(dt);
   updateProjs(dt);
+  if (G.flipCd > 0) G.flipCd = Math.max(0, G.flipCd - rdt);   // [S4-8]
   updateDrops(dt);
   updateSpawns(dt);
   updateParts(dt); pfxTick(dt);
@@ -7254,6 +7388,7 @@ function anonDefeated(b) {
   addDrop('item', 0, b.x, b.y - b.h * 0.5); G.drops[G.drops.length - 1].it = makeItem(slot, G.save.char, Math.min(gr, GRADES.length - 1), n);
   const gold = Math.round((300 * n + (30 + 15 * n) * stoneGold(n)) / 20) * 10;   // QA 2-1 (user: 보상 절반)
   G.save.gold += gold; G.save.anonKills = (G.save.anonKills || 0) + 1;
+  if (Math.random() < 0.08) { G.save.mats.free = (G.save.mats.free || 0) + 1; after(2.4, () => toast('무료 잠재 변경권을 얻었다 · 대장장이 옵션 재설정에서 쓴다', 'gold')); }   // 2026-11-23 (user): 이름 없는 자, 낮은 확률(8%)
   for (let i = 0; i < 50; i++) addPart({ x: b.x + rnd(-30, 30), y: b.y - rnd(10, b.h), vx: rnd(-90, 90), vy: rnd(-260, -40), g: 60, life: rnd(1, 2.2), r: rnd(2, 4), col: '210,200,255', glow: 1 });
   after(1.4, () => toast('이름 없는 자를 쓰러뜨렸다 · 골드 ' + nf(gold), 'gold'));
   updateHud(true); writeSave();
@@ -8795,7 +8930,9 @@ function renderWorld() {
   for (const n of G.nums) {
     const a = clamp(1 - (n.t - 0.5) / 0.4, 0, 1);
     c.globalAlpha = a; c.font = `700 ${n.size}px 'Noto Sans KR',sans-serif`; c.strokeStyle = 'rgba(0,0,0,.85)'; c.lineWidth = 3;
-    const x = n.x - cam.x + cam.sx, y = n.y + cam.sy;
+    const fl2 = typeof scr9Flip === 'function' && scr9Flip();
+    const x0 = n.x - cam.x + cam.sx, y0 = n.y + cam.sy;
+    const x = fl2 && fl2.x ? W - x0 : x0, y = fl2 && fl2.y ? H - y0 : y0;   // [S4-8] 반전 중에는 숫자도 같이 뒤집힌다
     c.strokeText(n.text, x, y); c.fillStyle = n.col; c.fillText(n.text, x, y);
   }
   c.globalAlpha = 1;
@@ -8808,7 +8945,7 @@ function renderWorld() {
     c.fillStyle = '#fff4dc'; c.font = "700 12px 'Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText(pg.cd.g.toFixed(1), cx, cy + 4);
     c.restore();
   }
-  if (G.flashW > 0) { c.fillStyle = `rgba(255,214,160,${Math.min(0.2, G.flashW * 0.22)})`; c.fillRect(0, 0, W, H); }   // a short warm glow, never a white-out (full-screen white read as the screen glitching)
+  if (G.flashW > 0 && !(G.save && G.save.opt && G.save.opt.flash === false)) { c.fillStyle = `rgba(255,214,160,${Math.min(0.2, G.flashW * 0.22)})`; c.fillRect(0, 0, W, H); }   // [S7-1]
   drawCutin(c);
   drawMinimap();
 }
@@ -9817,6 +9954,7 @@ function drawBowTint(c, ch, i, fr0, bow, eOver) {
 }
 /* item icon (data URL) for the bag and gear panels */
 function itemIconSrc(it, ch) {
+  if (it && it.ring && RINGS[it.ch]) return 'assets/items/' + RINGS[it.ch].file + '.png';   // [S2-3] 반지 아이콘
   if (!it || it.type === 'soul' || !SPRITE_SRC.items) return null;
   const cls = it.cls || ch || (G.save && G.save.char) || 'theron', set = ITEM_ICON[cls] && ITEM_ICON[cls][it.slot];
   const f = set && SPRITE_SRC.items[set[Math.min(3, it.grade || 0)]]; return f ? f.src : null;
@@ -10014,7 +10152,8 @@ function bossSheetPose(b) {
   if (!gk && !(S.act && SPR.boss_walk && SPR[S.act[0]])) return null;
   const f = b.fsm, s = f ? f.s : bossFsmState(b), t = b.anim || G.t;
   let fr, sheet;
-  if (gk) { const A48 = SPR[S.grid]; fr = A48[gridIndex(S, s, f, t)] || A48[0]; sheet = 'grid'; }
+  let i48 = null;   // [S4-1] declared out here: the spec's const inside the block was out of scope at the return
+  if (gk) { const A48 = SPR[S.grid]; i48 = gridIndex(S, s, f, t); fr = A48[i48] || A48[0]; sheet = 'grid'; }
   else if (s === 'IDLE' || s === 'MOVE') { const wf = f ? f.wf : (S.float || s === 'MOVE' ? Math.floor(t * 9) % 6 : 0); fr = SPR.boss_walk[S.walk * 6 + wf]; sheet = 'walk'; }
   else { fr = SPR[S.act[0]][S.act[1] * 6 + fsmCol(S, s)]; sheet = 'act'; }
   if (!fr) return null;
@@ -10028,7 +10167,7 @@ function bossSheetPose(b) {
     if (S.lean) tilt = S.lean;
   }
   if (s === 'PHASE_CHANGE') { sy *= 1.03 + Math.sin(t * 30) * 0.01; }
-  return { fr, sheet, s, sx, sy, tilt, dy, S };
+  return { fr, sheet, s, sx, sy, tilt, dy, S, i48 };
 }
 /* scale: the walk and action sheets are drawn at different sizes, so each is fitted to the boss's height on its own */
 /* the action sheet sets the size (its middle frame height = the boss height); the walk sheet is matched to it by body area
@@ -10039,6 +10178,17 @@ function frameArea(fr) {
   let d; try { d = c.getImageData(0, 0, fr.w, fr.h).data; } catch (e) { return 0; }   // file:// (sheets are files since 2026-11-22): no measuring, the plain scale is used
   let n = 0; for (let k = 3; k < d.length; k += 4) if (d[k] > 128) n++;
   return (fr.area = n);
+}
+/* [S4-1] 2026-11-23 (#12): 48f 시트의 행별 실측 배율 보정. 대기 행 기준으로 맞춰 공격 모션이 작아지지 않게 한다.
+   사망 행은 줄어드는 연출이라 1 그대로. */
+const ROW48 = [[0, 8], [8, 22], [22, 38], [38, 48]];
+const rowMed = (A, a, b) => { const hs = A.slice(a, b).filter(fr => fr && fr.bodyH).map(fr => fr.bodyH).sort((x, y) => x - y); return hs.length ? hs[hs.length >> 1] : 0; };
+function bossRowK(id, idx) {
+  const S = BOSS_SHEETS[id], A = S && S.grid && SPR[S.grid];
+  if (!A || idx == null) return 1;
+  if (!S._rk48) { const base = rowMed(A, 0, 8) || 1; S._rk48 = ROW48.map(([a, b], r) => r === 3 ? 1 : clamp(base / (rowMed(A, a, b) || base), 0.75, 1.9)); }
+  const r = idx < 8 ? 0 : idx < 22 ? 1 : idx < 38 ? 2 : 3;
+  return S._rk48[r];
 }
 function bossSheetScale(id, sheet) {
   const S = BOSS_SHEETS[id], H = (BOSS_ART[id] || [0, 180])[1], key = '_sc_' + sheet;
@@ -10062,7 +10212,7 @@ function drawBossSheet(c, b, x, y, o) {
   const P = bossSheetPose(b); if (!P) return false;
   const id = b.id || b.bid, d = b.d || BOSSES[id] || {}, f = b.fsm, rage = (b.phase || 1) >= 2;
   const face = f && b.isBoss ? f.face : (o.face || 1);
-  const sc = (o.h ? o.h / ((BOSS_ART[id] || [0, 180])[1]) : 1) * bossSheetScale(id, P.sheet) * (rage && !o.h ? (d.rageScale || 1.05) : 1);
+  const sc = (o.h ? o.h / ((BOSS_ART[id] || [0, 180])[1]) : 1) * bossSheetScale(id, P.sheet) * (P.sheet === 'grid' ? bossRowK(id, P.i48) : 1) * (rage && !o.h ? (d.rageScale || 1.05) : 1);   // [S4-1]
   let fr = P.fr;
   if (rage && d.rageCol) {
     const col = ((b.phase || 1) >= 3 && d.rageCol3) || d.rageCol, R = (o.h || b.h) * 0.75, cy = y - (o.h || b.h) * 0.5, t = b.anim || 0;
@@ -11741,6 +11891,9 @@ drawCineUI = function (c) { _drawCineUI3(c); drawClearPop(c); };
    so those numbers no longer point at a hand. Empty = the generic body-relative point (muzzle() already falls back).
    After play-testing, add per-frame points again: MUZZLE.b11 = { 27: [x, y], 32: [x, y], 37: [x, y] } (sheet pixels). */
 const MUZZLE = {};
+/* [S4-2] 2026-11-23: b28_48f.png의 잉크 경계에서 읽은 발사점(시트 픽셀). 프레임 22/27/32/37 = 공격 행 4포즈.
+   읽는 법: 셀 256, 프레임 i의 셀 좌상단 = ((i % 8) * 256, Math.floor(i / 8) * 256). */
+const MUZZLE_B28 = { 22: [1704, 678], 27: [958, 938], 32: [240, 1196], 37: [1449, 1191] };
 const COLF = n => 'COL' + n;   // b.fsmForce = COLF(2) shows frame 8 + 2 (attack row, column 2)
 /* where a frame's fire point is in the world right now */
 function muzzle(b, idx) {
@@ -11839,6 +11992,7 @@ Object.assign(MUZZLE, {   // read off shots/muzzle_rows2.png
   b18: { 10: [690, 742], 11: [915, 735] },                                    // where the glaive hits the floor
   b19: { 8: [80, 748], 9: [462, 680], 10: [712, 688], 11: [962, 682] },       // the witch's feet (8, circle) / the wolf's mouth
   b20: { 10: [716, 756], 11: [930, 750] },                                    // the ice sword's tip / where both blades strike
+  b28: MUZZLE_B28,   // [S4-2]
 });
 const NEW_PATS4 = { b16: ['kr_a', 'kr_b'], b17: ['cu_a', 'cu_b'], b18: ['gen_a', 'gen_b'], b19: ['fr_a', 'fr_b'], b20: ['ign_a', 'ign_b'] };
 const RAGE4 = { b16: '200,120,255', b17: '120,220,255', b18: '255,70,50', b19: '150,230,255', b20: '255,160,80' };
@@ -12632,6 +12786,7 @@ function renderKeyHelp() {
   if (bar) bar.innerHTML = [['left', '이동'], ['jump', '점프'], ['z', '공격'], ['x', '스킬'], ['guard', '가드'], ['up', '대화'], ['m_gear', '장비'], ['m_keys', '키 설정']].map(([a, l]) => `<span><kbd>${a === 'left' ? keyOf('left') + ' ' + keyOf('right') : a === 'x' ? keyOf('x') + ' ' + keyOf('c') : keyOf(a)}</kbd> ${l}</span>`).join('');
   if (G.scene === 'play' && G.save) buildSkills();
 }
+function OPT(k) { const o = (G.save && G.save.opt) || {}; return o[k] == null ? true : !!o[k]; }   // [S7-1] 기본은 모두 켜짐
 function keysHtml() {
   let html = '', grp = '';
   for (const [g, a, label] of KEY_ACTIONS) {
@@ -12639,8 +12794,18 @@ function keysHtml() {
     const wait = G.ui.rebind === a;
     html += `<div class="krow"><span>${label}</span><button class="kbtn ${wait ? 'wait' : ''}" data-rebind="${a}">${wait ? '키를 누르세요' : BINDS[a].map(keyName).join(' / ')}</button></div>`;
   }
-  return `<div class="ph"><h3>키 설정</h3><span class="sub">바꿀 칸을 누른 다음 원하는 키를 누른다 · Esc는 취소</span><button class="xbtn" data-close="1">닫기 (${keyOf('m_keys')})</button></div>
+  const sw = (k, name, desc) => `<div class="krow"><span>${name}<br><small style="color:#8a8a88">${desc}</small></span><button class="kbtn" data-opt="${k}">${OPT(k) ? '켜짐' : '꺼짐'}</button></div>`;   // [S7-1]
+  return `<div class="ph"><h3>설정</h3><span class="sub">화면·연출·자동 · 이 세이브에 저장된다</span><button class="xbtn" data-close="1">닫기 (${keyOf('m_keys')})</button></div>
+    <h4>화면 · 연출</h4>
+    ${sw('shake', '화면 흔들림', '강한 타격·보스 패턴의 흔들림')}
+    ${sw('flash', '번쩍임 줄이기', '화면 전체가 밝아지는 연출')}
+    ${sw('nums', '데미지 숫자', '피해·회복 숫자를 띄운다')}
+    ${sw('pet', '쁘띠 표시', '따라다니는 쁘띠를 그린다')}
+    <h4>자동</h4>
+    ${sw('auto', '자동 줍기 강화', '떨어진 것을 더 멀리서 끌어온다')}
+    <h4>소리 · 키</h4>
     <div class="krow" style="margin-bottom:calc(var(--u)*6)"><span>소리 설정 · 배경 음악과 효과음 크기</span><button class="kbtn" data-audio="1">열기</button></div>
+    <h4>키 설정</h4>
     <div class="kgrid">${html}</div>
     <div class="tfoot"><span>같은 키를 다른 동작에 지정하면 원래 동작에서는 빠진다. 이 기기에 저장된다.</span><button class="mini" data-kreset="1">기본값으로</button></div>`;
 }
@@ -12775,11 +12940,33 @@ function renderPanel() {
   const P = G.ui.panel;
   if (isUiWin(P)) { uiRefresh(); return; }
   if (P === 'party') { $('#pBox').innerHTML = partyHtml(); partyPanelFill(); return; }
-  $('#pBox').innerHTML = P === 'guide' ? guideHtml() : P === 'audio' ? audioHtml() : P === 'keys' ? keysHtml() : P === 'travel' ? travelHtml() : traitsHtml();
+  $('#pBox').innerHTML = P === 'guide' ? guideHtml() : P === 'audio' ? audioHtml() : P === 'keys' ? keysHtml() : P === 'travel' ? travelHtml() : P === 'pets' ? petsHtml() : P === 'daily' ? dailyHtml() : traitsHtml();
 }
 const fmtVal = (k, v) => { const u = SLOT_INFO[k].unit; return (k === 'pauldron' || u === '%' ? v.toFixed(1).replace(/\.0$/, '') : nf(v)) + u; };
 const gradeSpan = it => `<span style="color:${GRADES[it.grade].col}">${it.name}</span>`;
-const itemLine = it => it.type === 'soul' ? '보스의 영혼 · 무기에 넣으면 그 보스가 함께 싸운다' : `${GRADES[it.grade].name} · ${SLOT_INFO[it.slot].name} · 아이템 레벨 ${it.ilvl}${it.cls && it.cls !== G.save.char ? ' · ' + CHARS[it.cls].name + ' 전용' : ''}${itemOpts(it).length ? '<br><span style="color:' + GRADES[it.grade].col + '">추가 옵션<br>' + optText(it) + '</span>' : ''}${typeof itemExtra === 'function' ? itemExtra(it) : ''}`;
+const itemLine = it => it.type === 'soul' ? '보스의 영혼 · 도감에 등록하면 그 보스의 쁘띠를 쓴다' : `${GRADES[it.grade].name} · ${SLOT_INFO[it.slot].name} · 아이템 레벨 ${it.ilvl}${it.cls && it.cls !== G.save.char ? ' · ' + CHARS[it.cls].name + ' 전용' : ''}${itemOpts(it).length ? '<br><span style="color:' + GRADES[it.grade].col + '">추가 옵션<br>' + optText(it) + '</span>' : ''}${typeof itemExtra === 'function' ? itemExtra(it) : ''}`;
+/* [S3-7] 2026-11-23 (user): 쁘띠 도감. 등록한 보스의 쁘띠를 자유롭게 끼고 뺀다. */
+function petsHtml() {
+  const s = G.save, pb = petStats(s), keys = [];
+  for (let n = 1; n <= CH_LAST; n++) keys.push('b' + n);
+  const cell = k => {
+    const has = !!(s.pets && s.pets[k]), on = s.pet === k, B = BOSSES[k] || {};
+    const file = 'assets/pets/pet_petite_b' + String(k.slice(1)).padStart(2, '0') + '.png';
+    return `<button class="petc ${has ? '' : 'lock'} ${on ? 'on' : ''}" ${has ? `data-petpick="${k}"` : 'disabled'} title="${has ? (B.name || k) : '미등록'}">
+      <span class="peti" style="background-image:url(${file})"></span><small>${has ? (B.name || k).split(' ').pop() : '???'}</small>${on ? '<u>장착</u>' : ''}</button>`;
+  };
+  return `<div class="ph"><h3>쁘띠 도감</h3><span class="sub">${pb.n} / ${CH_LAST} 등록 · 공격력 +${pb.atkP.toFixed(1)}% · 최대 HP +${pb.hpP.toFixed(1)}% (등록 1마리당 0.4%)</span><button class="xbtn" data-close="1">닫기</button></div>
+    <div class="petgrid">${keys.map(cell).join('')}</div>
+    <div class="tfoot"><span>${s.pet ? '장착한 쁘띠가 따라다니며 10초마다 한 번 때리고, 떨어진 것을 주워 온다. 다시 누르면 내린다.' : '아무 쁘띠도 장착하지 않았다.'}</span></div>`;
+}
+document.head.insertAdjacentHTML('beforeend', `<style>
+.petgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:calc(var(--u)*6);padding:calc(var(--u)*8);max-height:calc(var(--u)*430);overflow:auto}
+.petc{position:relative;display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*2);background:rgba(20,22,30,.85);border:1px solid #3a3c4a;padding:calc(var(--u)*4);cursor:pointer;color:#cfc7b4;font-size:max(8px,calc(var(--u)*10))}
+.petc.on{border-color:#f0c040;box-shadow:0 0 calc(var(--u)*8) rgba(240,192,64,.5);color:#ffe6a8}
+.petc.lock{filter:grayscale(1) brightness(.55);cursor:default}
+.petc u{text-decoration:none;color:#ffe08a}
+.peti{display:block;width:calc(var(--u)*56);height:calc(var(--u)*28);background-size:400% 200%;background-position:0 0;image-rendering:pixelated}
+</style>`);
 function traitsHtml() {
   const s = G.save, list = TRAITS[s.char], ch = CHARS[s.char];
   const cards = list.map(t => {
@@ -12793,8 +12980,19 @@ function traitsHtml() {
       <div class="tfoot"><span></span><button class="gbtn" data-trait="${t.id}" ${next && s.tp >= next.cost ? '' : 'disabled'}>${next ? '올리기 (' + next.cost + ')' : 'MAX'}</button></div></div>`;
   }).join('');
   const total = list.reduce((a, t) => a + t.ranks.reduce((b, r) => b + r.cost, 0), 0);
+  const tsum = (() => {   // [S7-2] 2026-11-23 (user): 지금까지 찍은 특성의 총 증가치(공통 상위 규칙만)
+    const o = { atkP: 0, cdr: 0, crit: 0 };
+    for (const t of list) {
+      const r = s.traits[t.id] || 0; if (!r) continue;
+      if (r >= 4) o.atkP += 15; if (r >= 5) o.atkP += 15; if (r >= 7) o.atkP += 20; if (r >= 9) o.atkP += 25;
+      if (r >= 10) o.atkP += 25; if (r >= 11) o.atkP += 6 * (Math.min(r, 14) - 10);
+      if (r >= 6) o.cdr += 20; if (r >= 8) o.crit += 4;
+    }
+    return o;
+  })();
+  const sumLine = `<div class="tsum">합계 · 공격력 +${tsum.atkP}%${tsum.cdr ? ' · 재사용 대기시간 -' + tsum.cdr + '%' : ''}${tsum.crit ? ' · 치명타 +' + tsum.crit + '%p' : ''} <small>(상위 단계 공통 효과)</small></div>`;
   return `<div class="ph"><h3>특성 · ${ch.name}</h3><span class="sub">레벨업마다 포인트 1 · 3단계에서 스킬이 바뀌고 10단계에서 각성한다</span><button class="xbtn" data-close="1">닫기 (${keyOf('m_traits')})</button></div>
-  <div class="tcols">${cards}</div>
+  ${sumLine}<div class="tcols">${cards}</div>
   <div class="tfoot"><span>남은 포인트 <b>${s.tp}</b> · 두 특성을 모두 끝까지 올리려면 ${total}포인트가 필요하다</span><button class="mini" data-reset="1">특성 초기화 (무료)</button></div>`;
 }
 $('#panel').addEventListener('click', e => {
@@ -12802,6 +13000,9 @@ $('#panel').addEventListener('click', e => {
   if (t.dataset.close) closePanel();
   else if (t.dataset.enh) enhance(t.dataset.enh);
   else if (t.dataset.buy) { const [k, n] = t.dataset.buy.split(':'); buy(k, +n); }
+  else if (t.dataset.petpick) { const k = t.dataset.petpick; G.save.pet = (G.save.pet === k ? null : k); G.pet = null; refreshStats(); writeSave(); renderPanel(); sfx('click'); }   // [S3-7]
+  else if (t.dataset.pouch) openPouch();   // [S6-7]
+  else if (t.dataset.opt) { const o = (G.save.opt = G.save.opt || {}); o[t.dataset.opt] = !OPT(t.dataset.opt); writeSave(); renderPanel(); sfx('click'); }   // [S7-1]
   else if (t.dataset.trait) buyTrait(t.dataset.trait);
   else if (t.dataset.reset) resetTraits();
   else if (t.dataset.dep) { const [k, n] = t.dataset.dep.split(':'); storageMove(k, n, 1); }
@@ -12839,12 +13040,17 @@ function sellItems(uids) {
   s.items = s.items.filter(it => { if (uids.includes(it.uid)) { gold += itemSell(it); n++; return false; } return true; });
   s.gold += gold; G.ui.bagSel = null; sfx('coin'); toast(n + '개를 팔았다 · 골드 ' + nf(gold), 'gold'); updateHud(true); writeSave(); renderPanel();
 }
+/* [S3-4] 2026-11-23 (user): 영혼은 무기에 박지 않는다. 얻으면 도감에 영구 등록되고, 중복은 잠재석 2. */
 function insertSoul(uid) {
-  const s = G.save, w = s.equip.weapon, i = s.items.findIndex(it => it.uid === uid); if (!w || i < 0) return;
-  const it = s.items[i];
-  if (w.soul && G.ui.soulArmed !== uid) { G.ui.soulArmed = uid; toast('지금 든 영혼은 사라진다. 한 번 더 누르면 넣는다', 'bad'); return; }
-  w.soul = it.boss; s.items.splice(i, 1); G.ui.soulArmed = null; G.ui.bagSel = null; G.player.soulT = 0;
-  toast(BOSSES[it.boss].name + '의 영혼이 ' + w.name + '에 깃들었다', 'gold'); sfx('frag'); writeSave(); renderPanel();
+  const s = G.save, i = s.items.findIndex(it => it.uid === uid); if (i < 0) return;
+  const it = s.items[i]; if (it.type !== 'soul') return;
+  s.pets = s.pets || {};
+  const isNew = !s.pets[it.boss];
+  s.pets[it.boss] = 1; s.items.splice(i, 1);
+  if (isNew) { if (!s.pet) s.pet = it.boss; } else { s.mats.pot = (s.mats.pot || 0) + 2; }
+  G.ui.soulArmed = null; G.ui.bagSel = null;
+  toast(isNew ? ('쁘띠 도감에 등록했다 · ' + BOSSES[it.boss].name + '의 쁘띠') : '이미 있던 쁘띠다 · 잠재석 2로 바뀌었다', 'gold');
+  sfx('frag'); refreshStats(); writeSave(); renderPanel();
 }
 function buyItem(k, g) {
   const s = G.save, n = mapChapter(), pr = itemBuy(g, n);
@@ -13289,7 +13495,7 @@ function pixIcon(n) {
 }
 const pimg = (n, cls) => `<img class="pix ${cls || ''}" src="${pixIcon(n)}" alt="">`;
 const itemImg = it => it.type === 'soul' ? pimg('soul') : itemIconSrc(it, G.save.char) ? `<img class="pix" src="${itemIconSrc(it, G.save.char)}" alt="">` : `<span class="glyph">${SLOT_INFO[it.slot].glyph}</span>`;
-const slotImg = (k, it) => { const s = G.save, src = k === 'weapon' ? weaponIconSrc(s.char, s.slotE.weapon.e) : itemIconSrc(it, s.char); return src ? `<img class="pix" src="${src}" alt="">` : ''; };
+const slotImg = (k, it) => { const s = G.save, src = k === 'weapon' ? weaponIconSrc(s.char, s.slotE.weapon.e) : itemIconSrc(it, s.char); return src ? `<img class="pix" src="${src}" alt="">` : (k === 'acc1' ? `<span class="glyph">반</span>` : ''); };
 const gcol = it => GRADES[it.grade || 0].col;
 const fmtPct = v => (Math.round(v * 10) / 10) + '%';
 
@@ -13324,7 +13530,12 @@ function invWin() {
   const s = G.save, st = G.stats, sel = G.ui.bagSel;
   let slots = '';
   for (const [k, r] of Object.entries(EQ_POS)) {
-    if (ACC_NAMES[k]) { slots += `<div class="eq lock" style="${mp(...r)}" data-tipk="acc:${k}">${pimg('lock', 'lk')}<i>${ACC_NAMES[k]}</i></div>`; continue; }
+    if (k === 'acc2') { slots += `<div class="eq lock" style="${mp(...r)}" data-tipk="acc:acc2">${pimg('lock', 'lk')}<i>${ACC_NAMES.acc2}</i></div>`; continue; }   // [S2-4] 목걸이는 계속 잠금
+    if (k === 'acc1') {   // [S2-4] 반지 칸
+      const ir = s.equip.acc1;
+      slots += `<button class="eq ${sel === 'eq:acc1' ? 'on' : ''}" style="${mp(...r)};--gc:${ir ? gcol(ir) : 'transparent'}" data-eqsel="acc1" data-tipk="eq:acc1">${ir ? slotImg('acc1', ir) : pimg('lock', 'lk')}<i>반지</i></button>`;
+      continue;
+    }
     const it = s.equip[k], se = s.slotE[k];
     slots += `<button class="eq ${sel === 'eq:' + k ? 'on' : ''}" style="${mp(...r)};--gc:${it ? gcol(it) : 'transparent'}" data-eqsel="${k}" data-tipk="eq:${k}">${slotImg(k, it)}<em>+${se.e}</em><i>${SLOT_INFO[k].name}</i></button>`;
   }
@@ -13338,7 +13549,7 @@ function invWin() {
     <div class="ucp" style="${mp(212, 128, 488, 184)}"><small>전투력</small><b>${nf(st.cp)}</b></div>
     <canvas class="uprev" id="uwPrev" width="200" height="300" style="${mp(232, 196, 468, 552)}"></canvas>
     ${stats}
-    <div class="usoul" style="${mp(212, 642, 486, 690)}">${s.equip.weapon && s.equip.weapon.soul ? '무기의 영혼 · ' + BOSSES[s.equip.weapon.soul].name : '강화는 대장장이, 판매는 행상에게서'}${newPotLine(st)}</div>
+    <button class="usoul" style="${mp(212, 642, 486, 690)}" data-pets="1">${(() => { const pb = petStats(s); return pb.n ? '쁘띠 도감 ' + pb.n + ' / 30 · 공격력 +' + pb.atkP.toFixed(1) + '% · HP +' + pb.hpP.toFixed(1) + '%' : '쁘띠 도감 · 보스를 쓰러뜨려 모은다'; })()}${newPotLine(st)}</button>
     <div class="ugrid inv" data-keep-scroll="bag" style="${mp(748, 122, 1318, 600)}">${cells}</div>
     ${invDetail()}
     <div class="ubar" style="${mp(756, 624, 1304, 674)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b><span class="dim">계승석 <b>${s.mats.inherit}</b></span><span class="cnt">${s.items.length} / ${BAG_MAX}</span></div>
@@ -13354,7 +13565,7 @@ function invDetail() {
   let body = `<div class="dn" style="color:${gcol(it)}">${it.name}</div><div class="dl">${itemLine(it)}</div>`, btns = '';
   if (it.type === 'soul') {
     const w = s.equip.weapon;
-    body += `<div class="dl">${BOSSES[it.boss].name}. 무기에 깃든 영혼. 쁘띠가 그 보스의 모습으로 함께 싸운다.${w && w.soul ? ' 지금 무기의 영혼은 사라진다.' : ''}</div>`;
+    body += `<div class="dl">${BOSSES[it.boss].name}. 영혼을 도감에 등록하면 그 보스의 쁘띠가 함께 싸운다.${G.save.pets && G.save.pets[it.boss] ? ' 이미 등록된 쁘띠다(잠재석 2).' : ''}</div>`;
     btns = `<button class="ubtn sm" data-soul="${it.uid}" ${w ? '' : 'disabled'}>무기에 넣기</button>`;
   } else if (!eqk) {
     const k = it.slot, se = s.slotE[k], aft = slotStat(k, it, se.e, se.T), now = slotStat(k, s.equip[k], se.e, se.T), d = aft - now;
@@ -13392,7 +13603,11 @@ function smithWin() {
   const gd = max ? inheritGold(se.T) : enhGold(se.e, se.T), canInh = max && se.T < cap && s.mats.inherit > 0 && s.gold >= inheritGold(se.T), can = max ? canInh : s.gold >= gd;
   const rows = SMITH_ROWS.map((r, i) => {
     const y0 = 136 + i * 60, box = mp(742, y0, 1328, y0 + 56);
-    if (ACC_NAMES[r]) return `<div class="srow lock" style="${box}"><span class="si">${pimg('lock', 'lk')}</span><span class="sn">장신구 · ${ACC_NAMES[r]}<small>아직 쓸 수 없다</small></span></div>`;
+    if (r === 'acc2') return `<div class="srow lock" style="${box}"><span class="si">${pimg('lock', 'lk')}</span><span class="sn">장신구 · ${ACC_NAMES.acc2}<small>아직 쓸 수 없다</small></span></div>`;   // [S2-4b]
+    if (r === 'acc1') {   // [S2-4b] 반지는 강화·계승 대상이 아니다
+      const ir = s.equip.acc1;
+      return `<div class="srow" style="${box}"><span class="si" style="--gc:${ir ? gcol(ir) : '#555'}">${ir ? slotImg('acc1', ir) : pimg('lock', 'lk')}</span><span class="sn" style="color:${ir ? gcol(ir) : '#888'}">${ir ? ir.name : '반지 없음'}<small>반지는 강화하지 않는다 · 보스 드랍</small></span></div>`;
+    }
     const t = s.equip[r], e2 = s.slotE[r], m2 = e2.e >= ENH_MAX;
     return `<button class="srow ${r === k ? 'on' : ''}" style="${box}" data-smsel="${r}"><span class="si" style="--gc:${t ? gcol(t) : '#555'}">${slotImg(r, t)}</span><span class="sn" style="color:${t ? gcol(t) : '#888'}">${t ? t.name : SLOT_INFO[r].name}<small>${SLOT_INFO[r].label} ${fmtVal(r, slotStat(r, t, e2.e, e2.T))}</small></span><em>+${e2.e}${e2.T ? ` <u>계승 ${e2.T}</u>` : ''}</em><span class="sc ${!m2 && s.gold >= enhGold(e2.e, e2.T) ? '' : 'no'}">${m2 ? '최대' : nf(enhGold(e2.e, e2.T)) + 'G'}</span></button>`;
   }).join('');
@@ -13850,8 +14065,19 @@ traitsHtml = function () {
       <div class="rks">${next ? `<div class="rk next"><div class="pip"></div><div>다음 ${rk + 1}단계 · ${next.t}<span class="cost">포인트 ${next.cost}</span></div></div>` : '<div class="rk got"><div class="pip"></div><div>모두 올렸다</div></div>'}${miles}</div></div>`;
   }).join('');
   const total = list.reduce((a, t) => a + t.ranks.reduce((b, r) => b + r.cost, 0), 0);
+  const tsum = (() => {   // [S7-2] 2026-11-23 (user, put in the 8-2 trait window that is really shown): 지금까지 찍은 특성의 총 증가치(공통 상위 규칙만)
+    const o = { atkP: 0, cdr: 0, crit: 0 };
+    for (const t of list) {
+      const r = s.traits[t.id] || 0; if (!r) continue;
+      if (r >= 4) o.atkP += 15; if (r >= 5) o.atkP += 15; if (r >= 7) o.atkP += 20; if (r >= 9) o.atkP += 25;
+      if (r >= 10) o.atkP += 25; if (r >= 11) o.atkP += 6 * (Math.min(r, 14) - 10);
+      if (r >= 6) o.cdr += 20; if (r >= 8) o.crit += 4;
+    }
+    return o;
+  })();
+  const sumLine = `<div class="tsum">합계 · 공격력 +${tsum.atkP}%${tsum.cdr ? ' · 재사용 대기시간 -' + tsum.cdr + '%' : ''}${tsum.crit ? ' · 치명타 +' + tsum.crit + '%p' : ''} <small>(상위 단계 공통 효과)</small></div>`;
   return `<div class="ph"><h3>특성 · ${ch.name}</h3><span class="sub">레벨업마다 포인트 1 · 여러 특성을 함께 올릴 수 있다 · 1~5단계 1점, 6~10단계 2점, 11~15단계 3점</span><button class="xbtn" data-close="1">닫기 (${keyOf('m_traits')})</button></div>
-  <div class="tcols t6c">${cards}</div>
+  ${sumLine}<div class="tcols t6c">${cards}</div>
   <div class="tfoot"><span>남은 포인트 <b>${s.tp}</b> · 여섯 특성을 모두 끝까지 올리려면 ${total}포인트</span><button class="mini" data-reset="1">특성 초기화 (무료)</button></div>`;
 };
 
@@ -13928,15 +14154,50 @@ const QUALITY_W = [30, 40, 29.5, 0.5];   // 2026-11-22 QA 2-5 (user: 최상급 0
 const POT = { hpGain: { n: 'HP 획득량', r: [2, 8] }, xpGain: { n: '경험치 획득량', r: [1, 6] }, dmgRed: { n: '받는 피해 감소', r: [1, 4] }, jumpP: { n: '점프력', r: [2, 7] }, spdP: { n: '이동속도', r: [1, 5] },   // 2026-11-22 QA 2-7 (user)
   atkP: { n: '공격력', r: [2, 8] }, crit: { n: '치명타 확률', r: [1, 5] }, critDmg: { n: '치명타 피해', r: [4, 16] }, bossDmg: { n: '보스 피해', r: [3, 12] }, cdr: { n: '재사용 대기시간 감소', r: [2, 7] } };
 const POT_LINES = [1, 1, 2, 3];
+/* 2026-11-23 claude_code_pot_by_slot_prompt.txt (user's table): each slot rolls only from its own options */
+const POT_BY_SLOT = {
+  helm:     ['atkP', 'crit', 'cdr', 'hpGain', 'xpGain', 'dmgRed'],
+  pauldron: ['atkP', 'crit', 'critDmg', 'hpGain', 'dmgRed'],
+  chest:    ['atkP', 'cdr', 'hpGain', 'dmgRed'],
+  legs:     ['atkP', 'cdr', 'hpGain', 'dmgRed'],
+  boots:    ['atkP', 'hpGain', 'xpGain', 'dmgRed', 'jumpP', 'spdP'],
+  weapon:   ['atkP', 'crit', 'critDmg', 'bossDmg', 'cdr'],
+  acc1:     ['atkP', 'critDmg', 'cdr', 'hpGain', 'xpGain'],
+  acc2:     ['atkP', 'crit', 'bossDmg', 'cdr', 'xpGain'],
+};
+const potKeysForSlot = slot => (POT_BY_SLOT[slot] || Object.keys(POT));
 const qualityOf = it => (it && it.q != null ? it.q : 1);
 function rollQuality() { let r = Math.random() * 100; for (let i = 0; i < 4; i++) { r -= QUALITY_W[i]; if (r < 0) return i; } return 1; }
-function rollPot(grade) {
-  const keys = Object.keys(POT), out = [];
-  for (let i = 0; i < POT_LINES[grade || 0]; i++) { const k = keys.splice(Math.floor(Math.random() * keys.length), 1)[0], [lo, hi] = POT[k].r;   // no line twice
-    out.push({ k, v: Math.round((lo + (hi - lo) * Math.random()) * (1 + (grade || 0) * 0.25) * 10) / 10 }); }
+function rollPot(grade, slot, prev, locks) {   // [pot by slot] the slot's own pool; a locked line stays if its option is still in that pool. Same option twice is fine ([S1-1])
+  const pool = potKeysForSlot(slot), cnt = POT_LINES[grade || 0], out = [];
+  for (let i = 0; i < cnt; i++) {
+    if (locks && locks[i] && prev && prev[i] && pool.includes(prev[i].k)) { out.push({ ...prev[i] }); continue; }
+    const k = pool[Math.floor(Math.random() * pool.length)], [lo, hi] = POT[k].r;
+    out.push({ k, v: Math.round((lo + (hi - lo) * Math.random()) * (1 + (grade || 0) * 0.25) * 10) / 10 });
+  }
   return out;
 }
 /* 4차 패치 Q4: the range a line can roll at this grade (what rollPot can give) */
+/* [S1-2] 2026-11-23 (user): 잠재 줄별 잠금 + 잠재석/품질석.
+   잠근 줄은 종류와 수치가 그대로 남고, 나머지 줄만 새로 돌린다. 한 번에 두 줄까지.
+   비용: 잠금 0줄 잠재석 1 · 1줄 2 · 2줄 4 (+200골드). 품질은 품질석 1 (+200골드). */
+const POT_LOCK_MAX = 2;
+const potLockedOf = it => { const L = (it && it.potLock) || [], P = (it && it.pot) || []; return P.map((_, i) => !!L[i]); };
+const lockMult = n => n >= 2 ? 4 : n === 1 ? 2 : 1;
+function togglePotLock(slot, i) {
+  const s = G.save, it = s.equip[slot]; if (!it || !it.pot || !it.pot[i]) return false;
+  const L = it.potLock || (it.potLock = it.pot.map(() => 0));
+  const n = L.filter(Boolean).length;
+  if (!L[i] && n >= POT_LOCK_MAX) { toast('잠글 수 있는 건 두 줄까지다', 'bad'); return false; }
+  L[i] = L[i] ? 0 : 1; sfx('click'); refreshStats(); writeSave();
+  return true;
+}
+function matExchange(kind) {   // 연금 결정 10 -> 잠재석 1 / 품질석 1
+  const s = G.save, has = s.mats.alch || 0; if (has < 10) return false;
+  s.mats.alch = has - 10; s.mats[kind] = (s.mats[kind] || 0) + 1;
+  toast('연금 결정 10 → ' + (kind === 'pot' ? '잠재석' : '품질석') + ' 1', 'gold'); sfx('stone'); writeSave();
+  return true;
+}
 const potRange = (k, g) => { const m = 1 + (g || 0) * 0.25, r1 = v => Math.round(v * m * 10) / 10; return [r1(POT[k].r[0]), r1(POT[k].r[1])]; };
 /* P8 2026-11-23: each potential line shows how good its roll is within that grade's range: top third gold, middle blue, bottom grey */
 const POT_TIERS = [
@@ -13955,12 +14216,12 @@ const potLine = (pl, g) => {
 };
 const potText = it => (it.pot || []).map(pl => potLine(pl, it.grade)).join(', ');
 const _makeItem9 = makeItem;
-makeItem = function (slot, cls, grade, ilvl, save) { const it = _makeItem9(slot, cls, grade, ilvl, save); it.q = rollQuality(); it.pot = rollPot(grade); return it; };
+makeItem = function (slot, cls, grade, ilvl, save) { const it = _makeItem9(slot, cls, grade, ilvl, save); it.q = rollQuality(); it.pot = rollPot(grade, slot); return it; };   // [pot by slot]
 GRADES[3].p *= 1.45;   // legend drops: shops no longer sell gear
 /* the potential lines and quality, everywhere an item is described */
 function itemExtra(it) {   // itemLine (50_ui.js) adds this
-  if (!it || it.type === 'soul') return ''; const q = QUALITY[qualityOf(it)];
-  return `<br><span style="color:${q.col}">품질 ${q.n} (기본 능력치 ×${q.mul})</span>` + (it.pot && it.pot.length ? `<br><span style="color:#c8a8ff">잠재 옵션<br>${(it.pot || []).map(pl => potLine(pl, it.grade)).join('<br>')}</span>` : '');
+  if (!it || it.type === 'soul') return it && it.ring ? ringLine(it) : ''; const q = QUALITY[qualityOf(it)];
+  return `<br><span style="color:${q.col}">품질 ${q.n} (기본 능력치 ×${q.mul})</span>` + (it.pot && it.pot.length ? `<br><span style="color:#c8a8ff">잠재 옵션<br>${(it.pot || []).map((pl, i) => (potLockedOf(it)[i] ? '🔒 ' : '') + potLine(pl, it.grade)).join('<br>')}</span>` : '') + (it.ring ? ringLine(it) : '');
 }
 buyTrait = function (id) {
   const s = G.save, t = TRAITS[s.char].find(x => x.id === id), rk = s.traits[id] || 0, nx = t && t.ranks[rk];
@@ -14020,12 +14281,27 @@ function dismantleGrade(g) {
 }
 /* ---- rerolling at the smith: quality or potentials of an equipped item, for 결정 and gold ---- */
 const REROLL_GOLD = 200;   // 2026-11-23 (user): a small flat gold cost per reroll, quality or potential (was 120 x the chapter gold curve)
-const rerollCost = (it, kind) => ({ alch: (kind === 'q' ? 5 : 10) * (1 + (it.grade || 0)), gold: REROLL_GOLD });
-function reroll(slot, kind) {
-  const s = G.save, it = s.equip[slot]; if (!it) return false; const c = rerollCost(it, kind);
-  if ((s.mats.alch || 0) < c.alch || s.gold < c.gold) return false;
-  s.mats.alch -= c.alch; s.gold -= c.gold;
-  if (kind === 'q') it.q = rollQuality(); else it.pot = rollPot(it.grade || 0);
+function rerollCost(it, kind) {
+  if (kind === 'q') return { mat: 'qual', stone: 1, gold: REROLL_GOLD, mult: 1 };
+  const n = potLockedOf(it).filter(Boolean).length;
+  return { mat: 'pot', stone: 1 * lockMult(n), gold: REROLL_GOLD * lockMult(n), mult: lockMult(n) };   // 2026-11-23 (user): 한 줄 잠글 때마다 잠재석도 골드도 2배
+}
+function reroll(slot, kind, free) {
+  const s = G.save, it = s.equip[slot]; if (!it) return false;
+  if (free) {   // 2026-11-23 (user): 무료 잠재 변경권 1장 = 잠재 1회, 잠금 줄 수와 상관없이 잠재석·골드 없이
+    if (kind !== 'p' || !(s.mats.free > 0) || !it.pot || !it.pot.length) return false;
+    s.mats.free--;
+  } else {
+    const c = rerollCost(it, kind), have = s.mats[c.mat] || 0;
+    if (have < c.stone || s.gold < c.gold) return false;
+    s.mats[c.mat] = have - c.stone; s.gold -= c.gold;
+  }
+  if (kind === 'q') it.q = rollQuality();
+  else {
+    const L = potLockedOf(it);
+    it.pot = rollPot(it.grade || 0, it.slot || slot, it.pot, L);   // [pot by slot] 잠근 줄은 그대로 (그 부위에서 나올 수 있는 옵션일 때)
+    it.potLock = it.pot.map((_, i) => (L[i] ? 1 : 0));
+  }
   refreshStats(); writeSave(); return true;
 }
 
@@ -14039,31 +14315,65 @@ smithWin = function () {
   if (tab === 'dis') return disWin() + smithTabs();
   return _smithWin9() + smithTabs();
 };
+/* [S1-5] 2026-11-23 (user): 줄별 자물쇠 · 잠재석/품질석 · 우측 확률표.
+   1회 품질 = 품질석 1 + 200골드, 1회 잠재 = 잠재석 1×(잠금 배수) + 200골드. */
+function potTableHtml(it) {   // [pot by slot] only the selected slot's options, each 100 / n %, with its range at this grade
+  const g = it ? (it.grade || 0) : 0, lines = POT_LINES[g] || 1, slot = (it && it.slot) || G.ui.smithSel || 'weapon', keys = potKeysForSlot(slot), pct = (100 / keys.length).toFixed(1);
+  const rows = keys.slice().sort((a, b) => POT[b].r[1] - POT[a].r[1]).map(k => {
+    const [lo, hi] = potRange(k, g);
+    return `<div class="ptrow"><b>${POT[k].n}</b><span>${pct}% · ${lo}% ~ ${hi}%</span></div>`;
+  }).join('');
+  return `<div class="ptt"><div class="pth"><b>잠재 옵션 확률표 · ${SLOT_INFO[slot] ? SLOT_INFO[slot].name : slot}</b><small>등급 ${g + 1} · ${lines}줄 · 옵션 ${keys.length}종 · 한 줄마다 각 ${pct}%</small></div>${rows}
+    <div class="ptn">같은 옵션이 두 줄 나와도 된다 (공격력·공격력·공격력).<br>잠근 줄은 다시 돌려도 그대로 남는다 · 한 줄 잠글 때마다 잠재석과 골드가 2배 (1줄 2배, 2줄 4배).</div></div>`;
+}
 function rerollWin() {
-  const s = G.save, k = G.ui.smithSel || 'weapon', it = s.equip[k], alch = s.mats.alch || 0;
+  const s = G.save, k = G.ui.smithSel || 'weapon', it = s.equip[k];
+  const pot = s.mats.pot || 0, qual = s.mats.qual || 0, alch = s.mats.alch || 0, free = s.mats.free || 0;
   const rows = SMITH_ROWS.filter(r => !ACC_NAMES[r]).map((r, i) => { const t = s.equip[r], y0 = 136 + i * 60;
     return `<button class="srow ${r === k ? 'on' : ''}" style="${mp(742, y0, 1328, y0 + 56)}" data-smsel="${r}"><span class="si" style="--gc:${t ? gcol(t) : '#555'}">${slotImg(r, t)}</span><span class="sn" style="color:${t ? gcol(t) : '#888'}">${t ? t.name : SLOT_INFO[r].name + ' 없음'}<small>${t ? '품질 ' + QUALITY[qualityOf(t)].n + (t.pot && t.pot.length ? ' · 잠재 ' + t.pot.length + '줄' : ' · 잠재 없음') : ''}</small></span></button>`; }).join('');
   const cq = it ? rerollCost(it, 'q') : null, cp = it ? rerollCost(it, 'p') : null, q = it ? QUALITY[qualityOf(it)] : null;
-  const okQ = it && alch >= cq.alch && s.gold >= cq.gold, okP = it && alch >= cp.alch && s.gold >= cp.gold;
+  const okQ = it && qual >= cq.stone && s.gold >= cq.gold, okP = it && pot >= cp.stone && s.gold >= cp.gold;
+  const locks = potLockedOf(it || {}), nL = locks.filter(Boolean).length;
+  const pots = it && it.pot && it.pot.length ? it.pot.map((pl, i) =>
+    `<div class="potrow"><button class="lkbtn ${locks[i] ? 'on' : ''}" data-lock="${i}" data-lockk="${k}" title="${locks[i] ? '잠금 풀기' : '이 줄 잠그기'}"><img src="assets/ui/ui_lock_${locks[i] ? 'closed' : 'open'}.png" alt=""></button><b class="pot">${potLine(pl, it.grade)}</b></div>`).join('')
+    : '<span class="muted">잠재 옵션 없음</span>';
   return `<div class="uttl small" style="${mp(538, 14, 838, 70)}">${ttl('옵션 재설정', 'REROLL')}</div>
     <div class="uttl" style="${mp(60, 60, 660, 114)}">${ttl('재설정', 'REROLL')}</div>
-    <div class="uttl" style="${mp(726, 60, 1330, 114)}">${ttl('내 장비', 'MY GEAR')}</div>
+    <div class="uttl" style="${mp(726, 60, 1330, 114)}">${ttl(G.ui.potTbl ? '확률표' : '내 장비', G.ui.potTbl ? 'ODDS' : 'MY GEAR')}</div>
     <div class="sbig" style="${mp(262, 215, 455, 422)};--gc:${it ? gcol(it) : '#555'}">${it ? slotImg(k, it) : ''}</div>
     <div class="sinfo" style="${mp(72, 190, 160, 278)}"><b style="color:${q ? q.col : '#888'}">${q ? q.n : '-'}</b></div><div class="scap" style="${mp(52, 282, 182, 304)}">품질</div>
     <div class="sinfo" style="${mp(552, 190, 638, 278)}"><b>${it && it.pot ? it.pot.length : 0}</b><small>줄</small></div><div class="scap" style="${mp(532, 282, 660, 304)}">잠재 옵션</div>
-    <div class="sinfo" style="${mp(72, 369, 160, 455)}"><b class="gold">${nf(alch)}</b></div><div class="scap" style="${mp(52, 459, 182, 481)}">보유 결정</div>
-    <div class="sinfo" style="${mp(552, 369, 638, 455)}">${pimg('coin')}<b class="${s.gold >= REROLL_GOLD ? 'gold' : 'dn2'}">${nf(REROLL_GOLD)}</b></div><div class="scap" style="${mp(532, 459, 660, 481)}">1회 골드</div>
+    <div class="sinfo" style="${mp(72, 369, 160, 455)}"><b class="gold">${nf(pot)}</b></div><div class="scap" style="${mp(52, 459, 182, 481)}">보유 잠재석</div>
+    <div class="sinfo" style="${mp(552, 369, 638, 455)}">${pimg('coin')}<b class="${s.gold >= (cp ? cp.gold : REROLL_GOLD) ? 'gold' : 'dn2'}">${nf(cp ? cp.gold : REROLL_GOLD)}</b></div><div class="scap" style="${mp(532, 459, 660, 481)}">1회 골드</div>
     <div class="stext rr" style="${mp(84, 503, 631, 606)}">${it ? `<div style="color:${gcol(it)}">${it.name} · 기본 능력치 ×${q.mul}</div>
-      <div>${it.pot && it.pot.length ? it.pot.map(pl => `<b class="pot">${potLine(pl, it.grade)}</b>`).join('') : '<span class="muted">잠재 옵션 없음</span>'}</div>
-      <div class="smsg">${G.ui.rrMsg || `1회에 품질은 결정 ${cq.alch}개 + ${nf(cq.gold)}골드, 잠재는 결정 ${cp.alch}개 + ${nf(cp.gold)}골드 (줄 수는 등급대로)`}</div>` : '<div>장착한 장비를 고르자</div>'}</div>
-    <button class="sgo half hl" style="${mp(150, 632, 353, 718)}" data-rq="${k}" ${okQ ? '' : 'disabled'}>${ttl('품질', cq ? `결정 ${cq.alch} · ${nf(cq.gold)}골드` : '-')}</button>
-    <button class="sgo half hr" style="${mp(353, 632, 556, 718)}" data-rp="${k}" ${okP ? '' : 'disabled'}>${ttl('잠재', cp ? `결정 ${cp.alch} · ${nf(cp.gold)}골드` : '-')}</button>
-    <div class="ulist" data-keep-scroll="smith" style="${mp(736, 130, 1336, 618)}">${rows}</div>
-    <i class="artfix" style="${mp(1249, 621, 1263, 628)};background:#13151b"></i><i class="artfix" style="${mp(1242, 634, 1270, 640)};background:#121016"></i><div class="ubar flat c" style="${mp(744, 642, 936, 672)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b></div>
-    <div class="ubar flat c" style="${mp(958, 642, 1168, 672)}">연금 결정 <b>${nf(alch)}</b></div>
+      <div class="potlist">${pots}</div>
+      <div class="rrfoot"><span class="smsg">${G.ui.rrMsg || `잠금 ${nL}줄 · 연금 결정 ${nf(alch)}`}</span><span class="exch"><button class="mini freeb" data-rpf="${k}" title="무료 잠재 변경권 · 잠금과 상관없이 잠재석·골드 없이 한 번" ${free > 0 && it.pot && it.pot.length ? '' : 'disabled'}><img class="freeic" src="assets/items/item_free_reroll.png" alt="">변경권 ${free}</button><button class="mini" data-exch="pot" ${alch >= 10 ? '' : 'disabled'}>결정 10 → 잠재석</button><button class="mini" data-exch="qual" ${alch >= 10 ? '' : 'disabled'}>결정 10 → 품질석</button></span></div>` : '<div>장착한 장비를 고르자</div>'}</div>
+    <button class="sgo half hl" style="${mp(150, 632, 353, 718)}" data-rq="${k}" ${okQ ? '' : 'disabled'}>${ttl('품질', cq ? `품질석 ${cq.stone} · ${nf(cq.gold)}골드` : '-')}</button>
+    <button class="sgo half hr" style="${mp(353, 632, 556, 718)}" data-rp="${k}" ${okP ? '' : 'disabled'}>${ttl('잠재', cp ? `잠재석 ${cp.stone} · ${nf(cp.gold)}골드` : '-')}</button>
+    <div class="ulist" data-keep-scroll="smith" style="${mp(736, 130, 1336, 618)}">${G.ui.potTbl ? potTableHtml(it) : rows}</div>
+    <i class="artfix" style="${mp(1249, 621, 1263, 628)};background:#13151b"></i><i class="artfix" style="${mp(1242, 634, 1270, 640)};background:#121016"></i>
+    <div class="ubar flat c" style="${mp(744, 642, 890, 672)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b></div>
+    <div class="ubar flat c stn" style="${mp(900, 642, 1046, 672)}" title="잠재석 · 잠재 옵션 재설정"><img class="stone" src="assets/items/item_potential_stone.png" alt="잠재석"><b>${nf(pot)}</b></div>
+    <div class="ubar flat c stn" style="${mp(1052, 642, 1180, 672)}" title="품질석 · 품질 재설정"><img class="stone" src="assets/items/item_quality_stone.png" alt="품질석"><b>${nf(qual)}</b></div>
+    <button class="ubtn bblu" style="${mp(1186, 642, 1330, 676)}" data-potbl="1">${G.ui.potTbl ? '장비 목록' : '확률표'}</button>
     <button class="ubtn bred" style="${mp(733, 688, 862, 735)}" data-close="1">닫기</button>
     <button class="ubtn bblu" style="${mp(1203, 688, 1333, 735)}" data-gear="1">장비 창</button>`;
 }
+document.head.insertAdjacentHTML('beforeend', `<style>
+#uiwin .potlist{display:flex;flex-direction:column;gap:calc(var(--m)*6);align-items:stretch;width:100%}
+#uiwin .potrow{display:flex;align-items:center;gap:calc(var(--m)*8)}
+#uiwin .potrow .pot{flex:1;text-align:left}
+#uiwin .lkbtn{background:none;border:0;padding:0;width:calc(var(--m)*28);height:calc(var(--m)*28);flex:none;opacity:.5}
+#uiwin .lkbtn.on{opacity:1;filter:drop-shadow(0 0 calc(var(--m)*5) #ffd860)}
+#uiwin .lkbtn img{width:100%;height:100%;image-rendering:pixelated}
+#uiwin .exch{display:flex;gap:calc(var(--m)*6);justify-content:center}
+#uiwin .ptt{padding:calc(var(--m)*16);display:flex;flex-direction:column;gap:calc(var(--m)*8);font-size:max(7px,calc(var(--mf)*15));color:#d8d2c2}
+#uiwin .ptt .pth{display:flex;flex-direction:column;gap:calc(var(--m)*2);color:#ffe08a;border-bottom:calc(var(--m)*2) solid #5a5a66;padding-bottom:calc(var(--m)*6)}
+#uiwin .ptt .pth small{color:#9a9384;font-size:.8em}
+#uiwin .ptt .ptrow{display:flex;justify-content:space-between;border-bottom:calc(var(--m)*1) solid #2a2a34;padding:calc(var(--m)*2) 0}
+#uiwin .ptt .ptn{margin-top:calc(var(--m)*8);color:#9a9384;font-size:calc(var(--mf)*12);line-height:1.5}
+#uiwin .ubar img.stone{width:calc(var(--m)*22);height:calc(var(--m)*22);image-rendering:pixelated}
+</style>`);
 function disWin() {
   const s = G.save, alch = s.mats.alch || 0, list = s.items.filter(x => x.type !== 'soul').slice().sort((a, b) => (a.grade - b.grade) || (a.ilvl - b.ilvl));
   const rows = list.slice(0, 150).map(it => `<div class="srow"><span class="si" style="--gc:${gcol(it)}">${itemImg(it)}</span><span class="sn" style="color:${gcol(it)}">${it.name}<small>${GRADES[it.grade].name} · 아이템 레벨 ${it.ilvl} · 품질 ${QUALITY[qualityOf(it)].n}</small></span><button class="mini dis1" data-dis="${it.uid}">분해 +${disYield(it)}</button></div>`).join('') || '<div class="muted" style="padding:12px">가방에 분해할 장비가 없다</div>';
@@ -14106,6 +14416,11 @@ uwClick = function (t, right) {
   if (D.dis) { const y = dismantle(+D.dis); if (y) { G.ui.bagSel = null; G.ui.disMsg = '분해했다 · 연금 결정 +' + y; toast('분해 · 연금 결정 +' + y, 'gold'); sfx('stone'); writeSave(); } uiRefresh(); return; }
   if (D.disall != null) { const [n, y] = dismantleGrade(+D.disall); if (n) { G.ui.disMsg = GRADES[+D.disall].name + ' ' + n + '개를 분해했다 · 연금 결정 +' + y; toast('분해 ' + n + '개 · 연금 결정 +' + y, 'gold'); sfx('stone'); writeSave(); } uiRefresh(); return; }
   if (D.dislow) { let n = 0, y = 0; for (const g of [0, 1]) { const r = dismantleGrade(g); n += r[0]; y += r[1]; } if (n) { G.ui.disMsg = '일반·레어 ' + n + '개를 분해했다 · 연금 결정 +' + y; toast('분해 ' + n + '개 · 연금 결정 +' + y, 'gold'); sfx('stone'); writeSave(); } uiRefresh(); return; }
+  if (D.potbl) { G.ui.potTbl = !G.ui.potTbl; sfx('click'); uiRefresh(); return; }                                    // [S1-6] 확률표 토글
+  if (D.lock != null) { togglePotLock(D.lockk || G.ui.smithSel || 'weapon', +D.lock); uiRefresh(); return; }         // [S1-6] 줄 잠금
+  if (D.exch) { if (matExchange(D.exch)) uiRefresh(); return; }                                                     // [S1-6] 결정 교환
+  if (D.pets) { openPanel('pets'); return; }                                                                        // [S3-7] 쁘띠 도감(STEP 3에서 쓰인다)
+  if (D.rpf) { if (reroll(D.rpf, 'p', true)) { G.ui.rrMsg = '변경권으로 잠재 옵션을 바꿨다'; sfx('quest'); } uiRefresh(); return; }   // 무료 잠재 변경권
   if (D.rq || D.rp) { const k = D.rq || D.rp, kind = D.rq ? 'q' : 'p'; if (reroll(k, kind)) { const it = s.equip[k]; G.ui.rrMsg = kind === 'q' ? '품질이 ' + QUALITY[qualityOf(it)].n + '(으)로 바뀌었다' : '잠재 옵션이 바뀌었다'; sfx('quest'); } uiRefresh(); return; }
   return _uwClick9(t, right);
 };
@@ -14366,8 +14681,8 @@ function gim9(name, b, o) {
   const s = scr9(), p = G.player; o = o || {};
   switch (name) {
     case 'screenShake': shake(7); break;
-    case 'flipScreen': s.flipY = Math.max(s.flipY, o.t || 5.5); toast('화면이 뒤집혔다 · 조작은 그대로', 'bad'); break;
-    case 'mirrorFlip': s.flipX = Math.max(s.flipX, o.t || 5.5); shake(5); toast('화면이 좌우로 뒤집혔다 · 조작은 그대로', 'bad'); break;
+    case 'flipScreen': if ((G.flipCd || 0) > 0) break; G.flipCd = 14; s.flipY = Math.max(s.flipY, o.t || 2.4); toast('화면이 뒤집혔다 · 조작은 그대로', 'bad'); break;   // [S4-8] 14초 쿨
+    case 'mirrorFlip': if ((G.flipCd || 0) > 0) break; G.flipCd = 14; s.flipX = Math.max(s.flipX, o.t || 2.4); shake(5); toast('화면이 좌우로 뒤집혔다 · 조작은 그대로', 'bad'); break;   // [S4-8]
     case 'reverseControls': p.confT = Math.max(p.confT || 0, o.t || 3); toast('조작이 반대로 바뀐다', 'bad'); break;
     case 'inkBlind': s.ink = o.t || 4; s.spots = Array.from({ length: 3 + Math.floor(Math.random() * 3) }, (_, i) => ({ x: rnd(0.12, 0.88), y: rnd(0.15, 0.75), r: rnd(70, 120) })); break;
     case 'freezeGround': s.ice = Math.max(s.ice, o.t || 4.5); break;
@@ -14439,7 +14754,7 @@ renderWorld = function () {
     const a = Math.min(1, s.fog / 0.6), g = c.createRadialGradient(sx, sy, 60, sx, sy, 230);
     g.addColorStop(0, 'rgba(230,240,250,0)'); g.addColorStop(1, `rgba(225,236,248,${0.93 * a})`); c.fillStyle = g; c.fillRect(0, 0, W, H);
   }
-  if (s.flash > 0) { c.fillStyle = `rgba(255,236,190,${Math.min(0.82, s.flash * 1.6)})`; c.fillRect(0, 0, W, H); }   // warm, not pure white (white read as a glitch before)
+  if (s.flash > 0 && !(G.save && G.save.opt && G.save.opt.flash === false)) { c.fillStyle = `rgba(255,236,190,${Math.min(0.82, s.flash * 1.6)})`; c.fillRect(0, 0, W, H); }   // [S7-1]
   c.restore();
 };
 
@@ -14454,18 +14769,16 @@ const dmg9 = (b, n) => Math.round(n * DMG9 * b.atkMul * (b.berserk9 ? (S9[b.id].
 const CELL9_MAP = [[0, 2, 4, 6], [8, 12, 17, 21], [22, 27, 32, 37], [38, 41, 44, 47]];
 const cell9 = (r, c) => CELL9_MAP[Math.max(0, Math.min(3, r | 0))][Math.max(0, Math.min(3, c | 0))];
 /* round robin + distance gate: every skill comes out each cycle; slot 4 (berserk) only once berserk */
-function pick9(b) {
+function pick9(b) {   // [S4-3] 2026-11-23 (user): 순서대로가 아니라 무작위. 셔플 백이라 같은 스킬이 연달아 나오지도 않는다.
   const L = sk9(b), p = G.player, dist = Math.abs(p.x - b.x);
-  for (let i = 0; i < L.length; i++) {
-    const idx = ((b.rr9 || 0) + i) % L.length, s = L[idx];
-    if ((s.berserk || s.ph2) && !b.berserk9) continue;   // ph2: a skill that only opens after the 50% gate (chapters 21-30)
-    if (s.near && dist > s.near) continue;
-    if (s.far && dist < s.far) continue;
-    b.rr9 = (idx + 1) % L.length;
-    return idx;
+  const ok = s => !((s.berserk || s.ph2) && !b.berserk9) && !(s.near && dist > s.near) && !(s.far && dist < s.far);
+  const fill = () => { b.bag9 = L.map((s, i) => i); for (let i = b.bag9.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b.bag9[i], b.bag9[j]] = [b.bag9[j], b.bag9[i]]; } };
+  for (let n = 0; n < L.length * 2; n++) {   // a bag that runs dry mid-search is filled again (the spec popped undefined there)
+    if (!b.bag9 || !b.bag9.length) fill();
+    const idx = b.bag9.pop(); if (ok(L[idx])) return idx;
   }
-  b.rr9 = ((b.rr9 || 0) + 1) % L.length;
-  return L.findIndex(s => !s.berserk);
+  b.bag9 = null;
+  return Math.max(0, L.findIndex(s => !s.berserk && !s.ph2));
 }
 /* poses: a list of [row, col] spread over a time */
 function pose9(b, list, k) { if (!list || !list.length) return; const i = Math.min(list.length - 1, Math.floor(clamp(k, 0, 0.999) * list.length)); b.cell9 = cell9(list[i][0], list[i][1]); }
@@ -14546,7 +14859,7 @@ BOSS_EXT.v9bz = { start() { }, tick(b, dt) {
 
 /* ---- the boss sprite: an exact cell while a v9 skill runs ---- */
 const _bossFsmState9 = bossFsmState;
-bossFsmState = function (b) { if (b.cell9 != null && b.st !== 'die' && (b.st === 'x_v9' || b.st === 'x_v9bz')) return 'CELL' + b.cell9; return _bossFsmState9(b); };
+bossFsmState = function (b) { if (b.cell9 != null && b.st !== 'die') return 'CELL' + b.cell9; return _bossFsmState9(b); };   // [S4-4] idle 평타 포즈도 그린다
 const _gridIndex9 = gridIndex;
 gridIndex = function (S, s, f, t) { if (typeof s === 'string' && s.startsWith('CELL')) return +s.slice(4); return _gridIndex9(S, s, f, t); };
 
@@ -15902,7 +16215,7 @@ const MAGE_KIT = {
   basic: { dur: 0.42, hitAt: 0.18, mult: 1.0, speed: 520, kb: 60, cd: 0 },
   boltX: { dur: 0.5, hitAt: 0.22, mult: 1.9, speed: 620, kb: 40, cd: 4.0, pierce: 3 },
   novaC: { dur: 0.55, hitAt: 0.20, mult: 0.95, hits: 2, r: 96, cd: 6.5 },
-  barrier: { cd: 18, cast: 0.45, pct: 0.35, sec: 8, radius: 260, pulse: { r: 150, push: 90 } },
+  barrier: { cd: 18, cast: 0.45, pct: 0.175, sec: 8, radius: 260, pulse: { r: 150, push: 90 } },   // [S5-1] 2026-11-23 (user): 35% -> 17.5% (특성 배율은 그대로 곱해진다)
   collapse: { cd: 14, cast: 0.50, mult: 2.2, radius: 210, offset: 120, pullT: 0.38, stun: 1.0, bossSlow: 2.0 },
   warp: { cd: 10, cast: 0.42, dist: 220, inv: 0.6, mult: 0.9, kb: 120, r: 90 },
   ult: { dur: 2.2, ticks: 10, each: 1.3, pull: 0.30, bossPull: 0.12, shieldPct: 0.60, shieldSec: 10, inv: 2.2 },
@@ -16070,12 +16383,16 @@ function mageShieldTick(dt) {
 /* ---- Z X C ---- */
 function mageStartAct(id, as) {
   const p = G.player, K = MAGE_KIT;
-  if (id === 'z') { p.act = { id, n: p.combo, t: 0, dur: K.basic.dur / as, hitAt: K.basic.hitAt / as, done: 0, mv: 0.35 }; }
+  if (id === 'z') { if (G.projs.some(q => q.mageB && !q.dead)) return; p.act = { id, n: p.combo, t: 0, dur: K.basic.dur / as, hitAt: K.basic.hitAt / as, done: 0, mv: 0.35 }; }   // [S5-2] 탄이 돌아올 때까지 못 쏜다
   else if (id === 'x') { p.act = { id, t: 0, dur: K.boltX.dur, hitAt: K.boltX.hitAt, done: 0, mv: 0.2, lf: 1 }; p.cd.x = p.cdMax.x = K.boltX.cd; }
   else if (id === 'c') { p.act = { id, t: 0, dur: K.novaC.dur, hitAt: K.novaC.hitAt, hitStep: 0.16, hits: 0, nHits: K.novaC.hits, mv: 0, lf: 1 }; p.cd.c = p.cdMax.c = K.novaC.cd; }
 }
 function mageVoidBolt(mult, o) {
   const p = G.player, f = p.face || 1;
+  if (!o.pierce) {   // [S5-2] 2026-11-23 (user): 법사 평타 = 부메랑. 몸 앞에서 시작해 돌아온다(왕복 2타)
+    proj({ x: p.x + f * 12, y: p.y - 54, vx: f * 470, w: 46, h: 36, mult: mult * MAGE_DMG_K, kind: 'void', maxDist: 420, life: 1.6, boomer: true, mageB: 1, basic: true, mfx: { i: 0, t: 0 } });
+    mageImg('void_bolt'); sfx('void'); return;
+  }
   proj({ x: p.x + f * 28, y: p.y - 54, vx: f * (o.speed || 520), w: o.pierce ? 44 : 40, h: 36, mult: mult * MAGE_DMG_K, kind: 'void', maxDist: 520, life: 1.2,
     pierce: !!o.pierce, pierceN: o.pierce || 0, basic: !o.pierce, mfx: { i: 0, t: 0 } });
   mageImg('void_bolt'); sfx('void');
@@ -16113,7 +16430,8 @@ function mageTickSkill(a, dt) {
   if (a.skill === 'd' && !a.done && a.t >= 0.12) {   // gone on frame 16, out again on 19
     a.done = 1;
     const L = (G.map.arenaL || 0) + 20, R = (G.map.arenaR || G.map.w) - 20;
-    p.x = clamp(a.x0 + a.dir * K.dist, L, R); p.vx = 0;
+    p.x = clamp(p.x + a.dir * K.dist, L, R); p.vx = 0; p.vy = 0;   // [S5-3] 캐스팅 시작점이 아니라 지금 위치에서 + 잔여 낙하 제거
+    a.mv = 0;   // 남은 액트 동안 에어컨트롤로 미끄러지지 않게
     mfxAdd('warp', p.x, feetY(p), { face: a.dir, i: 2 });
     const mult = K.mult * MAGE_DMG_K * (typeof freshMul === 'function' ? freshMul('d') : 1);
     for (const cx of [a.x0, p.x]) {
@@ -17360,7 +17678,11 @@ const PET_CELL = 64, PET_OX = 27, PET_OY = 32, PET_BACK = 50;   // PET_BACK: how
 const PET_CD = 10, PET_RANGE = 520, PET_FR_IDLE = 0.14, PET_FR_ATK = 0.09, PET_FR_HIT = 0.06;
 const PET_SOUL_RE = /^b(?:[1-9]|[12][0-9]|30)$/;   // 2026-11-23: b21-b30 (3막 쁘띠 10종) added; was b1-b20
 const PET_IMG = {};
-const petKey = soul => (soul && PET_SOUL_RE.test(soul)) ? soul : 'default';
+const petKey = () => { const s = G.save; if (!s || !s.pets) return null; return (s.pet && s.pets[s.pet]) ? s.pet : null; };   // [S3-2] 장착한 쁘띠(없으면 null)
+function petStats(save) {   // [S3-2] 도감 수집 보너스: 등록 1마리당 +0.4% / +0.4%
+  const s = save || G.save, n = Object.keys((s && s.pets) || {}).length;
+  return { n, atkP: n * 0.4, hpP: n * 0.4 };
+}
 function petImg(soul) {
   const k = petKey(soul);
   let im = PET_IMG[k];
@@ -17378,7 +17700,7 @@ const petDmg = () => Math.max(1, Math.round(G.stats.atk * 0.001));
 
 /* called from updateSkills (32_skills.js) while the pet is unlocked */
 function petTick(dt) {
-  const s = G.save, p = G.player, w = s.equip.weapon, key = petKey(w && w.soul);
+  const s = G.save, p = G.player, key = petKey(); if (!key) { G.pet = null; return; }   // [S3-3] 도감에서 고른 쁘띠만 따라온다
   petImg(key); petHitImg();
   const pt = G.pet || (G.pet = { x: p.x - p.face * PET_BACK, y: p.y - 42, t: 0, st: 'idle', at: 0, cd: PET_CD, face: p.face, soul: key, target: null, fired: false, hitT: 9, hitX: 0, hitY: 0 });
   if (pt.soul !== key) { pt.soul = key; pt.st = 'idle'; pt.at = 0; pt.target = null; if (typeof NET !== 'undefined') NET.last = ''; }   // a new weapon: that boss's petite at once
@@ -17419,7 +17741,8 @@ function petBlit(c, img, x, y, face, attacking, fr, alpha) {
 }
 function drawPet(c) {
   const pt = G.pet; if (!pt || !G.save.flags.pet) return;
-  const w = G.save.equip.weapon, key = petKey(w && w.soul), img = petImg(key), atk = pt.st === 'attack';
+  if (G.save.opt && G.save.opt.pet === false) return;   // [S3-3] 설정에서 끄면 안 그린다
+  const key = petKey(), img = key ? petImg(key) : null, atk = pt.st === 'attack';
   petBlit(c, img, pt.x, pt.y, pt.face, atk, atk ? Math.min(3, Math.floor(pt.at / PET_FR_ATK)) : Math.floor(pt.t / PET_FR_IDLE) % 4);
   const hi = petHitImg();
   if (pt.hitT < PET_FR_HIT * 4 && petReady(hi)) {
@@ -17433,7 +17756,7 @@ function drawPet(c) {
 /* ---- online: my petite's key rides on my live record; other people's petites follow them on my screen ---- */
 const _netReqP = netReq;
 netReq = function (method, path, body, ...rest) {
-  if (method === 'PUT' && typeof path === 'string' && path.startsWith('live/') && body && body.c !== undefined && G.save && G.save.flags.pet) { const w = G.save.equip.weapon; body.pt = petKey(w && w.soul); }
+  if (method === 'PUT' && typeof path === 'string' && path.startsWith('live/') && body && body.c !== undefined && G.save && G.save.flags.pet) { body.pt = petKey() || ''; }   // [S3-3]
   return _netReqP(method, path, body, ...rest);
 };
 const PET_NET = {};   // peer key -> { x, y, t, face }
@@ -17920,7 +18243,7 @@ const WM_ACTS = [
 const WM = { open: false, ch: 0, zone: null, raf: 0, img: null, hit: [] };
 const wmAct = n => WM_ACTS.find(A => n >= A.a && n <= A.b);
 const wmCleared = n => { const C = CHAPTERS[n]; return !!(C && G.save.flags['boss_' + MAPS[C.arena].boss]); };
-const wmOpenCh = n => n > CH_COUNT ? !!G.save.flags['boss_' + MAPS[CHAPTERS[n - 1].arena].boss] : n === 1 || qs(chBossQ(n - 1)) >= 3;   // 21-30: the floor below is cleared (56z_act3.js)
+const wmOpenCh = n => n > CH_COUNT ? !!G.save.flags['boss_' + MAPS[CHAPTERS[n - 1].arena].boss] : n === 1 || qs(chBossQ(n - 1)) >= 2;   // [S6-4] 21-30: the floor below is cleared (56z_act3.js)
 function wmState(n) { if (G.map && G.map.ch === n) return 'here'; if (wmCleared(n)) return 'clear'; return wmOpenCh(n) ? 'open' : 'lock'; }
 
 /* ---- the overlay ---- */
@@ -18209,10 +18532,7 @@ function wmZoneLock(n, k) {   // the portal into zone k from zone k-1, if it is 
   const pt = (from.portals || []).find(p => { try { return p.to === to || (k === Z.length - 1 &&(p.to === bossEntry(n) || (MAPS[p.to] && MAPS[p.to].gate))); } catch (e) { return false; } });
   try { return pt && !pt.req() ? (pt.lockT || '잠김') : null; } catch (e) { return null; }
 }
-function wmSoul(bid) {
-  const s = G.save, has = it => it && it.type === 'soul' && it.boss === bid;
-  return (s.items || []).some(has) || ((s.store && s.store.items) || []).some(has) || Object.values(s.equip || {}).some(w => w && w.soul === bid);
-}
+function wmSoul(bid) { return !!(G.save && G.save.pets && G.save.pets[bid]); }   // [S3-6] 도감 등록 여부
 function wmDetail(n, keepZone) {
   const D = $('#wmDetail');
   if (!n) { WM.ch = 0; D.classList.remove('show'); setTimeout(() => { if (!WM.ch) D.classList.remove('on'); }, 220); return; }
@@ -18570,8 +18890,8 @@ function awardTrophies(b, fightT, noHit) {
   sfx('trophy');
   if (typeof vfxStrip === 'function') vfxStrip('boss_finisher', b.x, b.y - b.h * 0.35, { dur: 1.0, s: 1.6 });
   const say = () => { if (G.death || G.clearPop) return after(0.5, say); got.forEach(([, name], i) => after(i * 0.7, () => toast('트로피 · ' + name + ' · 영구 능력치 공격력 +' + TROPHY_PER.atkP + '%, 치명타 피해 +' + TROPHY_PER.critDmg + '%', 'gold'))); };
-  after(4.0, say);   // after the death scene and the BOSS CLEAR window, so the lines never sit on top of it
-  after(4.0, () => { refreshStats(); if (trophWinOpen()) trophRender(); });
+  after(0.5, say);   // 죽는 연출이 끝나면 바로 (4초 -> 0.5초)
+  refreshStats(); if (trophWinOpen()) trophRender();   // [S4-9] 2026-11-23 (user): 트로피는 즉시 적용
   writeSave();
   return got;
 }
@@ -19255,11 +19575,11 @@ for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
     const mk = (i, x) => ({ type: 'mob' + n + '_0' + i, x });
     MAPS[field] = {
       id: field, ch: n, name: '성탑 ' + floor + '층 복도', sub: S.t, w: 2400, theme: th, dark: (T.dark || 0.78) - 0.02, music: 'field', artCh: art,
-      plats: [ground(2400), oneway(360, 380, 200), oneway(900, 320, 180), oneway(1500, 360, 220), oneway(1980, 300, 190)],
+      plats: [ground(2400), oneway(360, 380, 200), oneway(900, 380, 180), oneway(1500, 360, 220), oneway(1980, 360, 190)],   // [S6-1] 320->380, 300->360
       lights: [{ x: 400, y: 430, r: 220, col: T.torch, a: 0.55, flick: T.flick }, { x: 1960, y: 430, r: 220, col: T.torch, a: 0.55, flick: T.flick }],
       props: [{ t: T.prop, x: 260, cold: T.cold }, { t: T.deco, x: 2320 }],
       npcs: [], lore: [], start: 120,
-      spawns: [mk(1, 520), mk(1, 1180), mk(1, 1780), mk(1, 2120), mk(2, 760), mk(2, 1420), mk(2, 1980), mk(3, 980), mk(3, 1620), mk(3, 2260), mk(4, 2040)],
+      spawns: [mk(1, 520), mk(1, 900), mk(1, 1180), mk(1, 1480), mk(1, 1780), mk(1, 2120), mk(2, 620), mk(2, 760), mk(2, 1080), mk(2, 1420), mk(2, 1700), mk(2, 1980), mk(3, 980), mk(3, 1300), mk(3, 1620), mk(3, 2260), mk(4, 2040)],   // [S6-2] 11 -> 17기
       portals: [
         { id: 'p_back', x: 70, to: camp, toX: 1320, label: MAPS[camp].name, req: () => true },
         { id: 'p_boss', x: 2330, to: arena, toX: 120, label: place + ' · ' + S.boss,
@@ -19279,6 +19599,76 @@ for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
   }
   // the way up from chapter 20's camp, once its boss is down
   tp.portals.push({ id: 'p_tower', x: 1290, to: 'c' + (CH_COUNT + 1) + '_camp', toX: 260, label: '성탑으로 · ' + (CH_COUNT + 1) + '장', req: () => !!G.save.flags['boss_' + MAPS[CHAPTERS[CH_COUNT].arena].boss], lockT: '봉인됨 · ' + CH_COUNT + '장 보스를 쓰러뜨린 뒤', down: true });
+})();
+/* [S6-5] 2026-11-23 (사용자 #5): 21~30장도 1~20장처럼 A(복도) → B(회랑) → 게이트(문턱) → 보스.
+   같은 배경(chNN_field.png)을 쓰고 발판 배치와 틴트로만 다르게 만든다. 스토리 한 줄씩 보강. */
+const ACT3_B_LINE = {
+  21: ['잔해가 이쪽으로 더 깊게 쏟아져 있다. 사냥개들이 그 아래에 몸을 숨긴다.', '문턱의 빛이 아직 꺼지지 않았다.'],
+  22: ['녹슨 날개가 바닥에 깔려 있다. 밟으면 성가 소리가 난다.', '회랑의 성가대가 문 앞에서 멈춘다.'],
+  23: ['거울 조각이 벽마다 붙어 있다. 같은 복도가 서른 번 겹쳐 보인다.', '문턱에서 내 모습이 먼저 들어간다.'],
+  24: ['부리와 깃펜이 쌓인 길. 숨을 쉬면 역병이 따라온다.', '문에 걸린 종이 흔들린다.'],
+  25: ['바닥이 조금씩 위로 휜다. 발을 디디면 무게가 달라진다.', '문턱의 돌이 공중에 떠 있다.'],
+  26: ['멈춘 초침 소리가 여기서도 들린다. 시계가 복도를 따라간다.', '문 앞에서 시간이 한 번 접힌다.'],
+  27: ['발소리가 나지 않는 길. 그림자가 먼저 걸어간다.', '문틈으로 공허가 새어 나온다.'],
+  28: ['기름 냄새와 톱니 소리. 성기사들이 기름을 바르고 있다.', '은빛 문이 스스로 열린다.'],
+  29: ['붉은 빛이 바닥에 흐른다. 달이 이 층까지 비친다.', '문턱에 월식의 그림자가 드리운다.'],
+  30: ['별이 바닥에 박혀 있다. 밟으면 하나씩 꺼진다.', '옥좌의 문이 별을 삼킨다.'],
+};
+(function act3Split() {
+  for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
+    const C = CHAPTERS[n], A = MAPS[C.a], rng = seeded(n * 6151 + 31), floor = n - CH_COUNT;
+    if (!A) continue;
+    const T = THEME_LIGHT[A.theme] || { torch: '200,200,255', flick: 0.6, prop: 'torch', cold: 0, deco: 'statue' };
+    /* --- B: 발판을 계단식으로 바꾼 회랑 --- */
+    const w = A.w, plats = [ground(w)], tops = [];
+    let x = 300 + rng() * 80;
+    while (x < w - 420) {
+      for (let i = 0; i < 3; i++) { const y = 400 - i * 70, pw = 150 + rng() * 40; plats.push(oneway(Math.round(x), y, Math.round(pw))); tops.push({ x: Math.round(x + pw / 2), y }); x += pw + 44 + rng() * 30; }
+      x += 200 + rng() * 140;
+    }
+    const bSpawns = [], kinds = ['mob' + n + '_01', 'mob' + n + '_02', 'mob' + n + '_03'];
+    for (let i = 0; i < 15; i++) {
+      const t = kinds[i % 3], sx = 380 + (w - 700) * (i + 0.5) / 15;
+      if (i === 1 || i === 4) { const tp = tops[i % tops.length] || { x: sx, y: 380 }; bSpawns.push({ type: t, x: Math.round(tp.x), y: tp.y }); }
+      else bSpawns.push({ type: t, x: Math.round(sx) });
+    }
+    bSpawns.push({ type: 'mob' + n + '_04', x: Math.round(w * 0.8) });
+    const B = {
+      id: C.a + '_b', ch: n, name: '성탑 ' + floor + '층 회랑', sub: A.sub, w, theme: A.theme, artCh: A.artCh,
+      dark: Math.min(0.86, (T.dark || 0.78) + 0.02), music: 'deep', tint9: 'rgba(96,64,150,0.16)',
+      plats, lights: [{ x: 420, y: 430, r: 200, col: T.torch, a: 0.5, flick: T.flick }, { x: w - 420, y: 430, r: 200, col: T.torch, a: 0.5, flick: T.flick }],
+      props: [{ t: T.prop, x: 320, cold: T.cold }, { t: T.deco, x: w - 260 }],
+      npcs: [], lore: [], start: 120, spawns: bSpawns, intro: [ACT3_B_LINE[n][0]],
+      portals: [
+        { id: 'p_back', x: 70, to: C.a, toX: w - 140, label: A.name, req: () => true },
+        { id: 'p_next', x: w - 70, to: C.a + '_g1', toX: 120, label: '문턱', req: () => chArenaOpen(n), lockT: '봉인됨 · 이 층의 의뢰를 마쳐야 열린다' },
+      ],
+    };
+    /* --- 게이트: 전멸시키면 보스방이 열린다 --- */
+    const gid = C.a + '_g1';
+    const G1 = {
+      id: gid, ch: n, name: A.name + ' 문턱', sub: '적을 모두 쓰러뜨리면 길이 열린다', w: 2200, theme: A.theme, artCh: A.artCh,
+      dark: Math.min(0.88, (T.dark || 0.78) + 0.04), music: 'deep', tint9: 'rgba(150,40,40,0.14)',
+      plats: [ground(2200), oneway(330, 380, 200), oneway(900, 380, 200), oneway(1480, 360, 220)],
+      lights: [{ x: 300, y: 430, r: 210, col: T.torch, a: 0.6, flick: T.flick }, { x: 1900, y: 430, r: 210, col: T.torch, a: 0.6, flick: T.flick }],
+      props: [{ t: T.prop, x: 240, cold: T.cold }, { t: T.deco, x: 2000 }],
+      npcs: [], lore: [], start: 120, spawns: [], gate: { n, i: 0, k: 1 }, intro: [ACT3_B_LINE[n][1]],
+      portals: [
+        { id: 'p_back', x: 70, to: C.a + '_b', toX: w - 140, label: '회랑', req: () => true },
+        { id: 'p_next', x: 2130, to: C.arena, toX: 120, label: MAPS[C.arena].name, req: () => gateCleared(gid), lockT: '잠김 · 이곳의 적을 모두 쓰러뜨려야 열린다' },
+      ],
+    };
+    const gk = ['mob' + n + '_01', 'mob' + n + '_02', 'mob' + n + '_03'];
+    for (let i = 0; i < 15; i++) G1.spawns.push({ type: gk[i % 3], x: Math.round(360 + 1500 * (i + 0.5) / 15) });
+    G1.spawns.push({ type: 'mob' + n + '_04', x: 1700 });
+    MAPS[B.id] = B; MAPS[gid] = G1;
+    B.portals[1].label = G1.name;
+    C.b = B.id; C.gates = [gid];
+    /* 도어 체인: 야영지 -> A -> B -> 게이트 -> 보스방 */
+    A.portals = A.portals.filter(pt => pt.id !== 'p_boss');   // [S6-5] A에서 보스방으로 바로 가는 문을 없앤다
+    A.portals.push({ id: 'p_next', x: A.w - 70, to: B.id, toX: 120, label: B.name, req: () => qs(mainId(n, 0)) >= 2, lockT: '봉인됨 · 이 층의 첫 의뢰를 마쳐야 열린다' });
+    for (const pt of MAPS[C.arena].portals) if (pt.id === 'p_back') { pt.to = gid; pt.toX = 2030; pt.label = G1.name; }
+  }
 })();
 /* the BOSS CLEAR window's last line (48b) */
 function clearNext(ch) {
@@ -19315,7 +19705,7 @@ const _drawMap9A3 = drawMap9;
 drawMap9 = function (c) {
   const m = G.map, im = map9Now(); if (!im) return false;
   const gy = m && isAct3(m.ch) && im === MAP9.get(map9Key(m.ch, map9Kind(m))) ? ACT3_GROUND_FIX[map9Key(m.ch, map9Kind(m))] : 0;
-  if (!gy) return _drawMap9A3(c);
+  if (!gy) { const r = _drawMap9A3(c); if (r && G.map && G.map.tint9) { c.save(); c.globalCompositeOperation = 'soft-light'; c.fillStyle = G.map.tint9; c.fillRect(0, 0, W, H); c.restore(); c.fillStyle = 'rgba(0,0,0,0.08)'; c.fillRect(0, 0, W, H); } return r; }   // [S6-5] 회랑·문턱 색감
   const ty = GROUND - gy;
   if (ty > 0) c.drawImage(im, 0, 0, W, 1, 0, 0, W, ty);                       // top band: the picture's first row stretched
   c.drawImage(im, 0, ty, W, H);
@@ -19717,7 +20107,7 @@ const ACT3_Q = {
     const R = { gold: 740 * k.gold, stone: 62 * k.stone, xp: 520 * k.xp };
     const sg = stoneGold(n), rw = (f, extra) => Object.assign({ gold: Math.round((R.gold + R.stone * sg) * f / 5) * 5, xp: Math.round(R.xp * f) }, extra || {});
     const mk = (q, id, extra) => {
-      const Q = Object.assign({}, q, { id, ch: n, mapId: q.map ? M[q.map] : null, need: q.need || 1 }, extra);
+      const Q = Object.assign({}, q, { id, ch: n, mapId: q.map ? M[q.map] : null, need: (q.type === 'kill' || q.type === 'elite') && q.need ? Math.ceil(q.need * 1.25) : (q.need || 1) }, extra);   // [S6-2] 처치 수 소폭 상향
       if (q.type === 'boss') Q.boss = MAPS[M.arena].boss;
       if (!Q.title) Q.title = q.item || (q.type === 'boss' ? BOSSES[Q.boss].name.split(' ').pop() : '부탁');
       if (!Q.obj) Q.obj = defaultObj(Q, S);
@@ -19734,6 +20124,167 @@ const ACT3_Q = {
   }
 })();
 
+/* [S6-6] 2026-11-23 (user): 잉여맵 50곳(보조 사냥터 40 + 3막 회랑 10)에 스토리 NPC와 서브 의뢰.
+   대상 몬스터는 그 맵 스폰에서 자동으로 고른다(정예 제외). */
+const EXTRA_NPC = {
+  c1_a2:  ['묘지기 로웬', '종이 멈춘 밤 이후로 무덤이 스스로 자리를 옮겨요.', '옮겨진 무덤'],
+  c1_b2:  ['종 조각 장수 펠', '종 조각을 모아요. 하나만 더 있으면 다시 울릴 것 같아서.', '마지막 조각'],
+  c2_a2:  ['뱃사공 조수 미라', '이름을 잊은 사람들이 배에 타요. 내리면 다들 웃어요.', '건너간 사람들'],
+  c2_b2:  ['이름 없는 자 카인', '내 이름을 아직 기억해요. 그래서 아직 여기 있어요.', '기억의 값'],
+  c3_a2:  ['목동 아스테르', '꽃이 시들면 양이 길을 잃어요. 꽃을 지켜야 해요.', '시든 길'],
+  c3_b2:  ['꽃을 먹는 자 네아', '이 꽃은 먹으면 안 돼요. 근데 먹어야 해요.', '달콤한 독'],
+  c4_a2:  ['실타래 노파 다나', '실을 풀어 두면 돌아오는 길이 생겨요. 끊기면 끝이고요.', '풀리지 않은 실'],
+  c4_b2:  ['지도 제작자 히스', '지도를 그려도 다음 날이면 길이 바뀌어요. 그래도 그려요.', '틀린 지도'],
+  c5_a2:  ['정원사 오르', '눈을 감고 물을 줘요. 뱀은 눈을 마주치면 굳어요.', '감은 눈'],
+  c5_b2:  ['거울 시종 라미', '거울이 자꾸 다른 얼굴을 보여 줘요. 제 얼굴은 하나인데요.', '닦은 거울'],
+  c6_a2:  ['뱃사공 고른', '노를 고쳐도 강은 안 고쳐져요. 그래도 노는 고쳐야죠.', '고친 노'],
+  c6_b2:  ['동전 세는 자 셈', '동전 한 닢이 목숨 하나예요. 세다 보면 누가 빠졌는지 알죠.', '빠진 동전'],
+  c7_a2:  ['사냥꾼 바람', '바람을 읽으면 절벽이 길이 돼요. 못 읽으면 벽이고요.', '읽지 못한 바람'],
+  c7_b2:  ['등반가 텔', '한 번 미끄러지면 다시 올라가야 해요. 두 번은 안 미끄러져요.', '한 번 더'],
+  c8_a2:  ['견습 풀무 빈', '불을 꺼뜨리면 대장장이가 하루 종일 말을 안 해요.', '꺼진 풀무'],
+  c8_b2:  ['쇠를 삼키는 자 그람', '쇠가 맛있어요. 근데 먹으면 몸이 무거워져요.', '삼킨 쇠'],
+  c9_a2:  ['뼈 학자 오스', '거신의 뼈를 세어요. 세다 보면 하나가 늘어요.', '늘어난 뼈'],
+  c9_b2:  ['도굴꾼 라크', '무덤은 비우라고 있는 거예요. 근데 이건 비울 수가 없어요.', '비우지 못한 무덤'],
+  c10_a2: ['가면 고르는 자 베일', '가면을 쓰면 그 이름이 돼요. 벗으면 아무도 아니고요.', '맞지 않는 가면'],
+  c10_b2: ['이름 상인 로', '이름 하나에 하루가 값이에요. 사시겠어요?', '이름의 값'],
+  c11_a2: ['태엽 시종 코그', '태엽을 감아도 시계는 안 돌아요. 손이 모자라서요.', '멈춘 태엽'],
+  c11_b2: ['시계 아래 아이 미루', '이 시계가 고장 나면 밤이 안 와요. 그래서 안 고쳐요.', '오지 않는 밤'],
+  c12_a2: ['공방 조수 아르', '증류기가 스스로 뭘 만들어요. 제가 만든 건 없어요.', '새어 나온 약'],
+  c12_b2: ['재를 훔치는 자 펜', '타고 남은 재에 이름이 섞여 있어요. 모아서 돌려줘요.', '돌려줄 재'],
+  c13_a2: ['사막 길잡이 사히', '모래 위의 별은 낮에도 보여요. 밤의 별과 달라요.', '낮의 별'],
+  c13_b2: ['석실 기록관 누', '기록을 지우면 방이 좁아져요. 그래서 못 지워요.', '지우지 못한 기록'],
+  c14_a2: ['회계사 골드', '금을 세다 보면 누구 것이 빠졌는지 알게 돼요. 대부분 제 거예요.', '빠진 금'],
+  c14_b2: ['보물고의 쥐 스크', '반짝이는 건 다 모아요. 안 그래도 굴이 좁아요.', '반짝이는 것'],
+  c15_a2: ['유령 선원 몰', '닻을 내려도 배는 안 멈춰요. 물이 없는데도 항해해요.', '내리지 못한 닻'],
+  c15_b2: ['갑판장 하크', '키를 놓으면 배가 제일 가고 싶은 데로 가요. 그게 두려워요.', '잡은 키'],
+  c16_a2: ['물속 사제 오네', '숨을 참은 지 백 년이에요. 아직 기도는 해요.', '참은 숨'],
+  c16_b2: ['산호 심는 자 리브', '산호가 자라면 신전이 다시 떠올라요. 조금씩요.', '자라는 산호'],
+  c17_a2: ['제자 운', '구름은 밟으면 흩어져요. 그래서 안 밟고 걸어요.', '흩어진 구름'],
+  c17_b2: ['도장 청소부 센', '먼지를 쓸면 어제 연습이 지워져요. 그래도 쓸어야 해요.', '쓴 먼지'],
+  c18_a2: ['능의 무관 철', '문을 지키는 게 일이에요. 안에 뭐가 있는지는 안 물어요.', '닫힌 문'],
+  c18_b2: ['석상의 목격자 무', '석상이 밤마다 자리를 바꿔요. 제가 다 봤어요.', '바뀐 자리'],
+  c19_a2: ['얼음 어부 한', '구멍을 뚫으면 아래에서 손이 올라와요. 잡지는 않아요.', '뚫은 구멍'],
+  c19_b2: ['호수 밑의 사람 린', '얼음 위로 목소리가 올라가요. 제 목소리만 안 올라가요.', '올라간 목소리'],
+  c20_a2: ['제단의 서기 아나', '제단에 오르는 이름을 적어요. 오늘은 제 이름이 없네요.', '빠진 이름'],
+  c20_b2: ['균열을 듣는 자 테오', '균열은 소리가 나요. 아주 작게, 계속.', '들린 균열'],
+  c21_field_b: ['잔해를 줍는 자', '떨어진 별 조각을 주워요. 맞추면 하나가 돼요.', '맞추는 조각'],
+  c22_field_b: ['녹을 털어내는 자', '날개에서 녹을 털어요. 털어도 다시 슬어요.', '털어낸 녹'],
+  c23_field_b: ['거울 조각상', '조각을 모아 세워요. 제 얼굴이 몇 개인지 세려고요.', '세는 얼굴'],
+  c24_field_b: ['부리를 세는 자', '까마귀 부리를 세요. 하나가 모자라요.', '모자란 부리'],
+  c25_field_b: ['떨어지지 않는 자', '여기선 떨어져도 안 내려가요. 그래서 무서워요.', '내려가지 않는 몸'],
+  c26_field_b: ['멈춘 초침을 보는 자', '초침이 멈춘 자리를 봐요. 그때 뭔가 있었어요.', '멈춘 자리'],
+  c27_field_b: ['그림자를 파는 자', '그림자를 팔아요. 사면 발소리가 생겨요.', '산 그림자'],
+  c28_field_b: ['기름을 바르는 자', '성기사가 굳지 않게 기름을 발라요. 저도 굳고 싶지 않아요.', '바른 기름'],
+  c29_field_b: ['달을 세는 자', '달이 몇 번 찼는지 세요. 오늘은 안 세고 싶어요.', '세지 못한 달'],
+  c30_field_b: ['별을 붙잡는 자', '떨어지는 별을 붙잡아요. 손이 다 타도 놓지 않아요.', '붙잡은 별'],
+};
+(function extraNpcs() {
+  let made = 0;
+  for (const id in EXTRA_NPC) {
+    const mid = MAPS[id] ? id : ({ c1_a2: 'ruins2', c1_b2: 'under2' })[id], m = MAPS[mid]; if (!m) continue;   // chapter 1's side fields are ruins2 / under2, not c1_a2 / c1_b2
+    const [name, line, qtitle] = EXTRA_NPC[id], nid = 'ex_' + id, qid = 'x' + id;
+    const sp = (m.spawns || []).find(s => MON[s.type] && !MON[s.type].elite) || (m.spawns || [])[0];
+    m.npcs = (m.npcs || []).filter(n => n.id !== nid);
+    m.npcs.push({ id: nid, x: Math.round(m.w * 0.42), name, title: '이곳의 사람', look: 'teo', ch: m.ch, idle: [[name, line]] });
+    if (!sp) continue;
+    const ch = m.ch, k = CHM[ch] || CHM[1];
+    QUESTS[qid] = {
+      id: qid, ch, type: 'kill', giver: nid, gname: name, mon: [sp.type], need: 8, mapId: mid, sub: true, extra: true,
+      title: qtitle, obj: (MON[sp.type].name || sp.type) + ' 8마리 처치',
+      rew: { gold: Math.round(120 * k.gold / 5) * 5, xp: Math.round(90 * k.xp), pot: 2, qual: 1, freeP: 0.25 },   // freeP: 무료 잠재 변경권 25%
+    };
+    DLG[qid] = {
+      offer: [[name, line], [name, '이 근처만 정리해 주면 숨을 놓고 말할 수 있겠어요. 여덟이면 돼요.']],
+      remind: [[name, '아직 서성이요. 여덟이에요, 여덟.']],
+      done: [[name, '숨이 놓이네요.'], [name, '이거 받으세요. 잠재석이랑 품질석, 여기서만 나오는 거예요.']],
+    };
+    if (!SUB_ORDER.includes(qid)) SUB_ORDER.push(qid);
+    made++;
+  }
+  console.info('[S6-6] 잉여맵 NPC ' + made + '명 배치');
+})();
+/* [S6-7] 2026-11-23 (user): 일일 의뢰. 12시에 초기화, 보상은 랜덤 보따리. */
+const DAILY_KINDS = ['kill', 'elite', 'boss'];
+function dailyDay() { const d = new Date(Date.now() - 12 * 3600e3); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+function dailyNeed(ch) { return { kill: 30 + 6 * ch, elite: 2, boss: 1 }; }
+function dailyEnsure(save) {
+  const s = save || G.save; if (!s) return null;
+  const day = dailyDay(), ch = Math.max(1, Math.min(CH_LAST, (G.map && G.map.ch) || 1));
+  if (!s.daily || s.daily.d !== day || !s.daily.q || !s.daily.q.length) {
+    const need = dailyNeed(ch), fresh = !s.daily || s.daily.d !== day;
+    s.daily = { d: day, ch, q: DAILY_KINDS.map(k => ({ k, need: need[k], p: 0, done: 0 })) };
+    s.pouch = s.pouch || 0;
+    if (fresh && G.scene === 'play') setTimeout(() => toast('새 일일 의뢰 3개 · 퀘스트 칸을 누르면 열린다', 'gold'), 1200);
+  }
+  return s.daily;
+}
+function dailyOn(k, n) {
+  const s = G.save; if (!s || !s.daily) return;
+  const q = (s.daily.q || []).find(x => x.k === k); if (!q || q.done) return;
+  q.p = Math.min(q.need, q.p + (n || 1));
+  if (q.p >= q.need) {
+    q.done = 1; s.pouch = (s.pouch || 0) + 1; s.gold += Math.round(260 * (CHM[s.daily.ch] || CHM[1]).gold / 5) * 5;
+    toast('일일 의뢰 완료 · 보따리 1개 (퀘스트 칸)', 'gold'); sfx('quest'); updateHud(true); writeSave();
+  }
+}
+function openPouch() {
+  const s = G.save; if (!s.pouch) return;
+  s.pouch--; const ch = (s.daily && s.daily.ch) || mapChapter(), k = CHM[ch] || CHM[1], r = Math.random(), bits = [];
+  if (r < 0.50) { const g = Math.round((300 + 60 * ch) * k.gold / 5) * 5; s.gold += g; bits.push('골드 ' + nf(g)); }
+  else if (r < 0.68) { s.mats.pot = (s.mats.pot || 0) + 2; bits.push('잠재석 2'); }
+  else if (r < 0.82) { s.mats.qual = (s.mats.qual || 0) + 2; bits.push('품질석 2'); }
+  else if (r < 0.92) { s.mats.free = (s.mats.free || 0) + 1; bits.push('무료 잠재 변경권 1'); }   // 2026-11-23 (user): 보따리에서 10%
+  else { const gr = Math.random() < 0.25 ? 2 : 1, slot = SLOTS[Math.floor(Math.random() * SLOTS.length)], it = makeItem(slot, s.char, gr, ch); if (addItem(it)) bits.push(GRADES[gr].name + ' ' + it.name); else { s.mats.pot += 2; bits.push('잠재석 2'); } }
+  toast('보따리 · ' + bits.join(' · '), 'gold'); sfx('frag'); updateHud(true); writeSave(); renderPanel();
+}
+function dailyHtml() {
+  const s = G.save, D = dailyEnsure(s); if (!D) return '';
+  const rows = D.q.map(q => {
+    const nm = q.k === 'kill' ? '몬스터 처치' : q.k === 'elite' ? '정예 처치' : '보스 처치';
+    const pct = Math.round(q.p / q.need * 100);
+    return `<div class="drow ${q.done ? 'done' : ''}"><b>${nm}</b><span class="dbar"><i style="width:${pct}%"></i></span><small>${q.p} / ${q.need}${q.done ? ' · 완료' : ''}</small></div>`;
+  }).join('');
+  const now = new Date(), t = new Date(now); t.setHours(12, 0, 0, 0); if (t <= now) t.setDate(t.getDate() + 1);
+  const left = Math.floor((t - now) / 3600e3) + '시간 ' + Math.floor(((t - now) % 3600e3) / 60e3) + '분';
+  return `<div class="ph"><h3>일일 의뢰</h3><span class="sub">낮 12시에 새로 나온다 · 다음 초기화까지 ${left}</span><button class="xbtn" data-close="1">닫기</button></div>
+    <div class="dbox2">${rows}</div>
+    <div class="tfoot"><span>보따리 <b>${s.pouch || 0}</b>개 · 완료할 때마다 하나씩</span><button class="mini" data-pouch="1" ${s.pouch ? '' : 'disabled'}><img class="pouchic" src="assets/items/item_daily_pouch.png" alt="">보따리 열기</button></div>`;
+}
+document.head.insertAdjacentHTML('beforeend', `<style>
+.dbox2{display:flex;flex-direction:column;gap:calc(var(--u)*8);padding:calc(var(--u)*12)}
+.drow{display:flex;align-items:center;gap:calc(var(--u)*10);font-size:max(10px,calc(var(--u)*13));color:#ddd8cb}
+.drow.done{color:#8fd48c}.drow b{width:calc(var(--u)*96);flex:none;font-weight:500}
+.dbar{flex:1;height:calc(var(--u)*8);background:#1a1a22;border:1px solid #333}
+.dbar i{display:block;height:100%;background:linear-gradient(90deg,#c08a2a,#ffe08a)}
+.drow small{width:calc(var(--u)*96);text-align:right;color:#9a9384}
+.pouchic{width:calc(var(--u)*18);height:calc(var(--u)*18);image-rendering:pixelated;vertical-align:middle;margin-right:calc(var(--u)*4)}
+#qtrack{cursor:pointer}
+</style>`);
+/* [S7-4] 2026-11-23 (user): 소품끼리 겹치지 않게 한 번 정리한다.
+   소품(props)만 옮기고 NPC·기록석·포탈은 고정. 야영지의 대장장이+모루 연출은 예외. */
+(function declutterProps() {
+  let moved = 0;
+  for (const id in MAPS) {
+    const m = MAPS[id], props = m.props || [];
+    if (!props.length) continue;
+    const fixed = [];
+    for (const n of m.npcs || []) fixed.push({ x: n.x, w: 52, y: GROUND });
+    for (const l of m.lore || []) fixed.push({ x: l.x, w: 30, y: l.y });
+    for (const pt of m.portals || []) fixed.push({ x: pt.x, w: 40, y: GROUND });
+    for (const g of m.gims || []) if (g.t === 'ledge' && g.x != null) fixed.push({ x: g.x + (g.w || 0) / 2, w: g.w || 60, y: g.y });
+    const placed = [];
+    const clash = (xx, foot, y, skipFixed) => placed.some(o => Math.abs(xx - o.x) < (foot + o.w) / 2 + 8 && Math.abs((y == null ? GROUND : y) - (o.y == null ? GROUND : o.y)) < 70)
+      || (!skipFixed && fixed.some(o => Math.abs(xx - o.x) < (foot + o.w) / 2 + 8 && Math.abs((y == null ? GROUND : y) - (o.y == null ? GROUND : o.y)) < 70));
+    for (const p of props) {
+      const isAnvil = p.t === 'anvil', foot = isAnvil ? 30 : 44;
+      let x = p.x, guard = 0;
+      while (clash(x, foot, p.y, isAnvil) && guard++ < 12) x += 68;
+      if (x !== p.x && x < m.w - 80) { p.x = Math.round(x); moved++; }
+      placed.push({ x: p.x, w: foot, y: p.y });
+    }
+  }
+  console.info('[S7-4] 소품 겹침 정리 · 옮긴 소품 ' + moved + '개');
+})();
 /* ---- world map: the bible's three acts, and the tower as a climb on the right edge ---- */
 WM_ACTS.splice(0, WM_ACTS.length,
   { name: '1막 · 가라앉은 왕국', a: 1, b: 10, col: '150,176,212', x: 0.027, y: 0.125 },
@@ -19743,7 +20294,7 @@ WM_ACTS.splice(0, WM_ACTS.length,
    assets/ui/worldmap_act3_nodes.json (kept here as numbers: no fetch, works from a file too). The old right-edge climb is gone. */
 const WM_ACT3_XY = [[0.338, 0.955], [0.334, 0.900], [0.348, 0.795], [0.338, 0.705], [0.352, 0.615], [0.340, 0.528], [0.350, 0.438], [0.336, 0.340], [0.352, 0.252], [0.500, 0.085]];
 const _wmZonesA3 = wmZones;
-wmZones = function (n) { return isAct3(n) ? [CHAPTERS[n].camp, CHAPTERS[n].a, CHAPTERS[n].arena] : _wmZonesA3(n); };   // 2026-11-23: + the floor's hall
+wmZones = function (n) { return isAct3(n) ? [CHAPTERS[n].camp, CHAPTERS[n].a, CHAPTERS[n].b, CHAPTERS[n].arena] : _wmZonesA3(n); };   // [S6-5] A·B 두 곳
 
 /* ============ 2026-11-22 chapters 21-30: ten bosses x six skills (claude_code_boss_21_to_30_prompt.md section 5).
    Same table shape as 56b/56c: poses [row, col] from the spec's motion table, tel/ct/rt = its telegraph/cast/recover ms,
@@ -19857,13 +20408,13 @@ const _renderWorldA3 = renderWorld;
 renderWorld = function () {
   _renderWorldA3();
   if (!(G.dark3 > 0) || !G.boss) return;
-  const c = ctx, p = G.player, b = G.boss, fl = scr9Flip(), a = Math.min(1, G.dark3 / 0.4) * 0.86;
+  const c = ctx, p = G.player, b = G.boss, fl = scr9Flip(), a = Math.min(1, G.dark3 / 0.4) * 0.55;   // [S4-7] 0.86 -> 0.55, 스킬 이펙트가 보이게
   const scr = (x, y) => { const sx = x - G.cam.x + G.cam.sx, sy = y + G.cam.sy; return [fl && fl.x ? W - sx : sx, fl && fl.y ? H - sy : sy]; };
   c.save(); c.setTransform(RS, 0, 0, RS, 0, 0);
   const cv = a3darkCv(); const g = cv.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H); g.fillStyle = `rgba(4,2,8,${a})`; g.fillRect(0, 0, W, H);
   g.globalCompositeOperation = 'destination-out';
   const [px, py] = scr(p.x, p.y - 40), [bx, by] = scr(b.x, b.y - b.h * 0.5);
-  let gr = g.createRadialGradient(px, py, 90, px, py, 160); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  let gr = g.createRadialGradient(px, py, 110, px, py, 210); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);   // [S4-7] 90/160 -> 110/210
   gr = g.createRadialGradient(bx, by, 20, bx, by, b.h * 0.6); gr.addColorStop(0, 'rgba(0,0,0,.55)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   c.drawImage(cv, 0, 0); c.restore();
 };
@@ -19939,9 +20490,9 @@ reg9('b23', {
     { name: '거울 교대', tel: a3s(500), dmg: 0, mt: [1, 0], mc: [[1, 1]], mr: [[0, 0]], ct: a3s(280), rt: a3s(300),
       vfx: 3, vpos: b => [b.x, GROUND], vo: { w: 220, flip: false },
       cast(b, S) { const from = b.x; b.x = clampX(2 * arM() - b.x, b.w / 2 + 6); b.inv3 = 0.4; spark(b.x, b.y - b.h * 0.5, 14, '220,240,255', 220); a3clones(b, 1, 8); const e = G.gimT[G.gimT.length - 1]; if (e) { e.x = clampX(from, 80); e.ph.x = e.x; } sfx('blink'); } },
-    { name: '[광폭화] 깨진 자아', berserk: 1, tel: 0.32, dmg: 0, gim: 'mirrorFlip', gimO: { t: 4 }, mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[3, 0]], ct: a3s(440), rt: a3s(700), heavy: 1,
+    { name: '[광폭화] 깨진 자아', berserk: 1, tel: 0.32, dmg: 0, gim: 'mirrorFlip', gimO: { t: 2.2 }, mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[3, 0]], ct: a3s(440), rt: a3s(700), heavy: 1,
       vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 320, flip: false }, onBerserk(b) { a3clones(b, 2, 14); } },
-    { name: '거울의 회랑', ph2: 1, tel: a3s(850), dmg: a3d(12), gim: 'mirrorFlip', gimO: { t: 4 }, mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 1]], ct: a3s(360), rt: a3s(420),
+    { name: '거울의 회랑', ph2: 1, tel: a3s(850), dmg: a3d(12), gim: 'mirrorFlip', gimO: { t: 2.2 }, mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 1]], ct: a3s(360), rt: a3s(420),
       tele(b, S) { tg9({ kind: 'dash_line', src: b, x: arL() + 40, targetX: arR() - 40, y: GROUND - 120, height: 240, dur: S.tel }); },
       cast(b, S) { for (let i = 0; i < 4; i++) after(i * 0.55, () => { if (G.boss !== b || b.st === 'die') return; walker9(b, { x: arL() + 50, vx: 360, w: 80, h: 240, life: 3.3, n: S.s.dmg, slot: 5, vw: 110, onHit: () => gim9('push', b, { v: 300 }) }); }); } },
   ],
@@ -19989,7 +20540,7 @@ reg9('b25', {
     { name: '룬 석주 낙하', tel: a3s(880), dmg: a3d(16), mt: [2, 1], mc: [[2, 1], [2, 2]], mr: [[0, 1]], ct: a3s(320), rt: a3s(420),
       tele(b, S) { const x = clampX(G.player.x, 60); S.xs = [x - 180, x, x + 180].map(q => clampX(q, 50)); a3cols(b, S, S.xs, 90, 0.12, S.s.dmg); },
       cast(b, S) { S.xs.forEach((x, i) => after(0.12 * i + 0.1, () => { a3fx(b, 2, x, 120); const h = groundHaz(b, x, 90, { h: 60, warn: 0, act: 1.5, multi: false, dmg: dmg9(b, a3d(8)), col: '170,120,255', pat: 'v9', hid9: true, kb: 120, up: 120 }); })); } },
-    { name: '중력 역전', tel: a3s(700), dmg: a3d(8), gim: 'flipScreen', gimO: { t: 4 }, mt: [0, 0], mc: [[0, 1], [0, 2]], mr: [[0, 3]], ct: a3s(320), rt: a3s(380),
+    { name: '중력 역전', tel: a3s(700), dmg: a3d(8), gim: 'flipScreen', gimO: { t: 2.2 }, mt: [0, 0], mc: [[0, 1], [0, 2]], mr: [[0, 3]], ct: a3s(320), rt: a3s(380),
       vfx: 3, vpos: b => [b.x, GROUND], vo: { w: 520, flip: false },
       tele(b, S) { zone9(b, S, b.x, 420, 360, { tone: 'ice' }); } },
     { name: '[광폭화] 특이점 폭주', berserk: 1, tel: 0.32, dmg: 0, mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[3, 0]], ct: a3s(440), rt: a3s(700), heavy: 1,
@@ -20058,20 +20609,20 @@ reg9('b28', {
   files: ['boss_28/b28_s1_halo_laser_ring.png', 'boss_28/b28_s2_cannon_barrage.png', 'boss_28/b28_s3_divine_aegis.png', 'boss_28/b28_s4_heaven_descends.png', 'boss_28/b28_s5_deus_berserk.png', 'boss_28/b28_s6_apocalypse_judgment.png'],
   skills: [
     { name: '광륜 레이저', tel: a3s(800), dmg: a3d(16), gim: 'screenShake', mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 1]], ct: a3s(320), rt: a3s(400),
-      vfx: 0, vpos: b => [b.x, b.y - b.h * 0.45], vo: { w: 640, anchor: 'center', flip: false, step: 0.08 },
+      vfx: 0, vpos: b => [b.x, b.y - b.h * 0.45], vo: { w: 640, anchor: 'center', step: 0.08 },
       tele(b, S) { const o = { x: b.x, y: b.y - b.h * 0.6 }, n = b.berserk9 ? 9 : 6, off = Math.random() * Math.PI / n; for (let i = 0; i < n; i++) { const a = off + i * 2 * Math.PI / n; line9(b, S, o.x, o.y, o.x + Math.cos(a) * 700, o.y + Math.sin(a) * 700, 26, { act: 0.3 }); } } },
     { name: '오버드라이브 캐논', tel: a3s(750), dmg: a3d(10), gim: 'screenShake', mt: [2, 0], mc: [[2, 1]], mr: [[0, 0]], ct: a3s(280), rt: a3s(360),
       tele(b, S) { const x = G.player.x; S.xs = Array.from({ length: 6 }, (_, i) => clampX(x + (i - 2.5) * 110 + rnd(-20, 20), 50)); a3cols(b, S, S.xs, 100, 0.12, S.s.dmg); },
       cast(b, S) { S.xs.forEach((x, i) => after(i * 0.12, () => a3fx(b, 1, x, 120))); } },
     { name: '신성 방벽', tel: a3s(600), dmg: 0, gim: 'shield', gimO: { t: 3 }, mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 2]], ct: a3s(320), rt: a3s(340),
-      vfx: 2, vpos: b => [b.x, GROUND], vo: { w: 300, loop: true, life: 3, flip: false } },
+      vfx: 2, vpos: b => [b.x, GROUND], vo: { w: 300, loop: true, life: 3 } },
     { name: '천강 강림', tel: a3s(950), dmg: a3d(24), gim: 'screenShake', mt: [2, 1], mc: [[2, 3]], mr: [[0, 3]], ct: a3s(360), rt: a3s(480),
       vfx: 3, vpos: (b, S) => [S.x, GROUND], vo: { w: 300, step: 0.09 },
       tele(b, S) { S.x = clampX(G.player.x, 120); zone9(b, S, S.x, 240, 480, { tone: 'danger' }); } },
     { name: '[광폭화] 신기 해방', berserk: 1, tel: 0.32, dmg: 0, gim: 'timeAccel', gimO: { t: 4 }, mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[1, 2]], ct: a3s(440), rt: a3s(700), heavy: 1,
-      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 380, flip: false } },
+      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 380 } },
     { name: '최후의 심판', ph2: 1, tel: a3s(1000), dmg: a3d(30), gim: 'screenShake', mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 3]], ct: a3s(360), rt: a3s(520),
-      vfx: 5, vpos: b => [b.x, GROUND], vo: { w: 760, flip: false, step: 0.09 },
+      vfx: 5, vpos: (b, S) => [a3fwd(b, S, 40), GROUND], vo: { w: 760, step: 0.09 },   // [S4-2] 얼굴 쪽에서 퍼진다
       tele(b, S) { const f = a3face(b, S), x0 = f > 0 ? b.x - 40 : arL(), x1 = f > 0 ? arR() : b.x + 40; zone9(b, S, (x0 + x1) / 2, x1 - x0, 480, { tone: 'danger' }); toast('최후의 심판 · 등 뒤로 돌아가라', 'bad'); } },
   ],
 });
@@ -20121,8 +20672,8 @@ reg9('b30', {
     { name: '성좌 붕괴', tel: a3s(950), dmg: a3d(18), gim: 'screenShake', mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 1]], ct: a3s(360), rt: a3s(460),
       vfx: 3, vpos: b => [b.x, GROUND], vo: { w: 520, flip: false },
       tele(b, S) { S.xs = [-1, 1].flatMap(d => [150, 240, 330, 420].map(r => b.x + d * r)).filter(x => x > arL() + 40 && x < arR() - 40); S.xs.forEach(x => zone9(b, S, x, 80, 200)); } },
-    { name: '[광폭화] 아스트라온의 진식', berserk: 1, tel: 0.32, dmg: 0, gim: 'flipScreen', gimO: { t: 3 }, mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[3, 0]], ct: a3s(440), rt: a3s(750), heavy: 1,
-      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 420, flip: false }, onBerserk(b) { after(3, () => { if (G.boss === b && b.st !== 'die') gim9('mirrorFlip', b, { t: 3 }); }); } },
+    { name: '[광폭화] 아스트라온의 진식', berserk: 1, tel: 0.32, dmg: 0, gim: 'flipScreen', gimO: { t: 2 }, mt: [0, 0], mc: [[0, 1], [0, 2], [0, 3]], mr: [[3, 0]], ct: a3s(440), rt: a3s(750), heavy: 1,
+      vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 420, flip: false }, onBerserk(b) { after(3, () => { if (G.boss === b && b.st !== 'die') gim9('mirrorFlip', b, { t: 2 }); }); } },
     { name: '종막의 초신성', ph2: 1, tel: a3s(1100), dmg: a3d(35), gim: 'screenShake', mt: [2, 1], mc: [[2, 3]], mr: [[0, 3]], ct: a3s(360), rt: a3s(560),
       vfx: 5, vpos: b => [b.x, GROUND], vo: { w: 900, flip: false, step: 0.09 },
       tele(b, S) { b.vx = 0; zone9(b, S, arM(), arR() - arL(), 540, { tone: 'danger' }); toast('종막의 초신성 · 가드(G)로 받아낸다', 'bad'); } },
@@ -20191,6 +20742,8 @@ function devAct(a) {
   if (a === 'tp') { s.tp += 10; writeSave(); return devMsg('특성 포인트 +10'); }
   if (a === 'gold') { s.gold += 1e6; writeSave(); updateHud(true); return devMsg('골드 +1,000,000'); }
   if (a === 'alch') { s.mats.alch = (s.mats.alch || 0) + 100; writeSave(); return devMsg('연금 결정 +100'); }
+  if (a === 'pot') { s.mats.pot = (s.mats.pot || 0) + 9; writeSave(); return devMsg('잠재석 +9'); }     // [S1-7]
+  if (a === 'qual') { s.mats.qual = (s.mats.qual || 0) + 9; writeSave(); return devMsg('품질석 +9'); }
   if (a === 'inh') { s.mats.inherit = (s.mats.inherit || 0) + 5; writeSave(); return devMsg('계승석 +5'); }
   if (a === 'pot') { s.potions = POTION_MAX; s.scrolls = SCROLL_MAX; writeSave(); updateHud(true); return devMsg('연고·주문서를 채웠다'); }
   if (a === 'legend' || a === 'wear') {
@@ -21630,6 +22183,34 @@ tickAct = function (dt) {
 };
 (function () { const t = TRAITS.theron.find(x => x.id === 'th2'); if (t && t.ranks[14]) t.ranks[14].t += ' · C 를 누르고 있으면 최대 3초까지 계속 돌며 최대 1.5배로 커진다'; })();
 
+/* ============ 2026-11-23 claude_code_27_master_prompt.txt: wrappers that must come after every other one ============ */
+const _updateBossExtrasQ = updateBossExtras;   // [S4-6]
+updateBossExtras = function (dt) { _updateBossExtrasQ(dt); moonTick(dt); };
+const _drawArenaBackdropQ = drawArenaBackdrop;   // [S4-6]
+drawArenaBackdrop = function (c) { _drawArenaBackdropQ(c); drawMoon29(c); };
+document.head.insertAdjacentHTML('beforeend', `<style>.tsum{margin:calc(var(--u)*6) 0;padding:calc(var(--u)*6) calc(var(--u)*10);background:rgba(30,26,36,.8);border-left:2px solid var(--accent);font-size:max(9px,calc(var(--u)*12));color:#e8dfc8}</style>`);   // [S7-2]
+/* [S1-5] fit: three potential lines + the message + the exchange buttons inside the text box (they ran over the red buttons) */
+document.head.insertAdjacentHTML('beforeend', `<style>
+#uiwin .stext.rr{justify-content:flex-start;gap:calc(var(--m)*1);padding-top:calc(var(--m)*2);padding-bottom:0;overflow:hidden;font-size:calc(var(--mf)*13);line-height:1.15}
+#uiwin .stext.rr .potlist{gap:calc(var(--m)*1)}
+#uiwin .stext.rr .potrow{font-size:calc(var(--mf)*12.5);line-height:1.1}
+#uiwin .stext.rr .lkbtn{width:calc(var(--m)*17);height:calc(var(--m)*17)}
+#uiwin .stext.rr .smsg{font-size:calc(var(--mf)*12);line-height:1.2}
+#uiwin .stext.rr .rrfoot{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--m)*6);width:100%}
+#uiwin .stext.rr .rrfoot .exch{display:flex;gap:calc(var(--m)*4)}
+#uiwin .stext.rr .exch .mini{font-size:calc(var(--mf)*12);padding:0 calc(var(--m)*8);height:calc(var(--m)*19);line-height:calc(var(--m)*19)}
+</style>`);
+/* the stone counters in the bottom bar: icon + number, never past their cell (2026-11-23 user) */
+document.head.insertAdjacentHTML('beforeend', `<style>
+#uiwin .ubar.stn{gap:calc(var(--m)*6);overflow:hidden;white-space:nowrap;padding:0 calc(var(--m)*8)}
+#uiwin .ubar.stn b{min-width:0;overflow:hidden;text-overflow:ellipsis}
+</style>`);
+/* 무료 잠재 변경권 (the user's dice picture, assets/items/item_free_reroll.png) */
+document.head.insertAdjacentHTML('beforeend', `<style>
+#uiwin .mini.freeb{display:inline-flex;align-items:center;gap:calc(var(--m)*3);color:#ffe08a}
+#uiwin .mini .freeic{width:calc(var(--m)*16);height:calc(var(--m)*16);image-rendering:pixelated}
+</style>`);
+
 /* ============ MAIN LOOP ============ */
 function ambient(dt) {
   const m = G.map, cam = G.cam; G.ambT -= dt; if (G.ambT > 0) return; G.ambT = 0.08;
@@ -21700,6 +22281,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 $('#bMus').addEventListener('click', toggleMusic);
 $('#bMap').addEventListener('click', toggleMinimap);
 $('#bKeys').addEventListener('click', () => togglePanel('keys'));
+$('#qtrack').addEventListener('click', () => { if (G.scene === 'play' && G.save && !G.ui.dialog) togglePanel('daily'); });   // [S6-7] 일일 창
 $('#bNet').addEventListener('click', toggleOnline);
 if (!netAllowed()) $('#bNet').classList.add('off');
 $('#rotOk').addEventListener('click', () => $('#rot').classList.remove('on'));
