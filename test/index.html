@@ -619,10 +619,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1055"></script>
-<script src="assets/js/act3_data.js?v=261123-1055"></script>
+<script src="assets/js/pfx.js?v=261123-1058"></script>
+<script src="assets/js/act3_data.js?v=261123-1058"></script>
 <script>
-const GAME_VER = '261123-1055';
+const GAME_VER = '261123-1058';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -13933,6 +13933,10 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 #uiwin .stab{flex:1;background:rgba(30,26,36,.9);border:calc(var(--m)*3) solid #4a3e30;color:#cbbfa6;font-size:calc(var(--mf)*17);font-weight:700}
 #uiwin .stab.on{background:rgba(90,52,18,.95);border-color:#e8b048;color:#ffe9a0}
 #uiwin .sgo.half .tko{font-size:calc(var(--mf)*28)}#uiwin .sgo.half+.sgo.half{border-left:calc(var(--m)*3) solid rgba(40,8,4,.6)}
+/* 2026-11-23 (user): the two halves of the one red button keep their words off the flames at its ends, each centred in its own half;
+   the small line under each is that reroll's cost */
+#uiwin .sgo.half.hl{border-left:0;padding-left:calc(var(--m)*44)}#uiwin .sgo.half.hr{padding-right:calc(var(--m)*44)}
+#uiwin .sgo.half .ten{letter-spacing:0;font-size:calc(var(--mf)*13);color:#ffe6a8;white-space:nowrap}
 #uiwin .dbox{background:none;border:0;cursor:pointer}#uiwin .dbox:disabled{opacity:.45;cursor:default}#uiwin .dbox:not(:disabled):hover{filter:brightness(1.3)}
 #uiwin .dbig{flex-direction:column;gap:calc(var(--m)*6);color:#ffe08a}#uiwin .dbig b{font-size:calc(var(--mf)*40);text-shadow:calc(var(--m)*3) calc(var(--m)*3) 0 #1a1412}#uiwin .dbig small{font-size:calc(var(--mf)*16);color:#e8d8b0}
 #uiwin [data-keep-scroll="dis"] .srow{height:calc(var(--m)*48)}
@@ -13988,12 +13992,12 @@ function rerollWin() {
     <div class="sinfo" style="${mp(72, 190, 160, 278)}"><b style="color:${q ? q.col : '#888'}">${q ? q.n : '-'}</b></div><div class="scap" style="${mp(52, 282, 182, 304)}">품질</div>
     <div class="sinfo" style="${mp(552, 190, 638, 278)}"><b>${it && it.pot ? it.pot.length : 0}</b><small>줄</small></div><div class="scap" style="${mp(532, 282, 660, 304)}">잠재 옵션</div>
     <div class="sinfo" style="${mp(72, 369, 160, 455)}"><b class="gold">${nf(alch)}</b></div><div class="scap" style="${mp(52, 459, 182, 481)}">보유 결정</div>
-    <div class="sinfo" style="${mp(552, 369, 638, 455)}"><b>${cq ? cq.alch + '·' + cp.alch : '-'}</b></div><div class="scap" style="${mp(532, 459, 660, 481)}">필요 결정</div>
+    <div class="sinfo" style="${mp(552, 369, 638, 455)}">${pimg('coin')}<b class="${s.gold >= REROLL_GOLD ? 'gold' : 'dn2'}">${nf(REROLL_GOLD)}</b></div><div class="scap" style="${mp(532, 459, 660, 481)}">1회 골드</div>
     <div class="stext rr" style="${mp(84, 503, 631, 606)}">${it ? `<div style="color:${gcol(it)}">${it.name} · 기본 능력치 ×${q.mul}</div>
       <div>${it.pot && it.pot.length ? it.pot.map(pl => `<b class="pot">${potLine(pl, it.grade)}</b>`).join('') : '<span class="muted">잠재 옵션 없음</span>'}</div>
-      <div class="smsg">${G.ui.rrMsg || `품질 결정 ${cq.alch}+${nf(cq.gold)}G · 잠재 결정 ${cp.alch}+${nf(cp.gold)}G (줄 수는 등급대로)`}</div>` : '<div>장착한 장비를 고르자</div>'}</div>
-    <button class="sgo half" style="${mp(150, 632, 350, 718)}" data-rq="${k}" ${okQ ? '' : 'disabled'}>${ttl('품질', 'QUALITY')}</button>
-    <button class="sgo half" style="${mp(356, 632, 556, 718)}" data-rp="${k}" ${okP ? '' : 'disabled'}>${ttl('잠재', 'POTENTIAL')}</button>
+      <div class="smsg">${G.ui.rrMsg || `1회에 품질은 결정 ${cq.alch}개 + ${nf(cq.gold)}골드, 잠재는 결정 ${cp.alch}개 + ${nf(cp.gold)}골드 (줄 수는 등급대로)`}</div>` : '<div>장착한 장비를 고르자</div>'}</div>
+    <button class="sgo half hl" style="${mp(150, 632, 353, 718)}" data-rq="${k}" ${okQ ? '' : 'disabled'}>${ttl('품질', cq ? `결정 ${cq.alch} · ${nf(cq.gold)}골드` : '-')}</button>
+    <button class="sgo half hr" style="${mp(353, 632, 556, 718)}" data-rp="${k}" ${okP ? '' : 'disabled'}>${ttl('잠재', cp ? `결정 ${cp.alch} · ${nf(cp.gold)}골드` : '-')}</button>
     <div class="ulist" data-keep-scroll="smith" style="${mp(736, 130, 1336, 618)}">${rows}</div>
     <i class="artfix" style="${mp(1249, 621, 1263, 628)};background:#13151b"></i><i class="artfix" style="${mp(1242, 634, 1270, 640)};background:#121016"></i><div class="ubar flat c" style="${mp(744, 642, 936, 672)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b></div>
     <div class="ubar flat c" style="${mp(958, 642, 1168, 672)}">연금 결정 <b>${nf(alch)}</b></div>
