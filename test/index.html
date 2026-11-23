@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1415"></script>
+<script src="assets/js/pfx.js?v=261123-1417"></script>
 <script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1415';
+const GAME_VER = '261123-1417';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -21413,45 +21413,28 @@ renderWorld = function () {
 
 /* ============ 2026-11-23: 궁수 V 화살 폭풍이 맵 전체를 맞힌다 ============
    ULT12.kallisto 의 화살 폭풍 6번(0.40~0.75초, 공격력 90%씩)에 all: true → ult12Box 가 맵 전체 상자를 돌려준다 (위아래 층 포함, 화면 밖도).
-   마지막 유성 4번(-60~60칸)은 그대로. 멀리서 맞는 게 어색하지 않게 폭풍마다 화면 전체에 별화살이 쏟아진다(그림만, 화면 안 적에게는 한 발씩 조준). */
+   마지막 유성 4번(-60~60칸)은 그대로. 화살비 그림(12장 중 4~7번)을 원래 크기 그대로 400px 간격으로 화면 전체에 이어 그린다 (1415b, 사용자: 선 화살은 어색). */
 ULT12.kallisto.waves.forEach(w => { if (w.at >= 0.39 && w.at <= 0.76) w.all = true; });
 const _ult12BoxKa = ult12Box;
 ult12Box = function (w, p, face) { return w.all ? { x: -1e5, y: -1e5, w: 2e5, h: 2e5 } : _ult12BoxKa(w, p, face); };
-function kaRainWave(face) {
-  const L = G.cam.x, list = G.kaRain || (G.kaRain = []);
-  const shot = x => { const gy = Math.min(GROUND, groundBelow(x, 0)); list.push({ x: x - face * 60, y: rnd(-80, -10), tx: x, ty: gy, t: 0, d: rnd(0.16, 0.26) }); };
-  for (let i = 0; i < 14; i++) shot(L + (i + Math.random()) * W / 14);
-  for (const e of targets()) if (e.hp > 0 && e.x > L - 20 && e.x < L + W + 20) shot(e.x + rnd(-8, 8));
-}
-const _tickUltKa = tickUlt;
-tickUlt = function (dt) {
-  const u = G.ult, v0 = u ? u.vi : 0, r = _tickUltKa.apply(this, arguments);
-  if (u && u.ch === 'kallisto' && G.ult === u && u.vi > v0) for (let i = v0; i < u.vi; i++) if (ULT12.kallisto.waves[i].all) kaRainWave(u.face || 1);
-  return r;
-};
-function kaRainTick(dt) {
-  if (!G.kaRain || !G.kaRain.length) return;
-  for (const a of G.kaRain) {
-    a.t += dt;
-    if (a.t >= a.d && !a.hit) { a.hit = 1; for (let i = 0; i < 4; i++) addPart({ x: a.tx, y: a.ty - 2, vx: rnd(-90, 90), vy: rnd(-160, -40), g: 500, life: rnd(0.2, 0.35), r: rnd(1.5, 2.5), col: '150,226,255', glow: 1 }); }
-  }
-  G.kaRain = G.kaRain.filter(a => a.t < a.d + 0.12);
-}
-function kaRainDraw(c) {
-  if (!G.kaRain || !G.kaRain.length) return;
-  c.save(); c.globalCompositeOperation = 'lighter'; c.lineCap = 'round';
-  for (const a of G.kaRain) {
-    const k = Math.min(1, a.t / a.d), x = a.x + (a.tx - a.x) * k, y = a.y + (a.ty - a.y) * k, dx = a.tx - a.x, dy = a.ty - a.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
-    const fade = a.hit ? 1 - (a.t - a.d) / 0.12 : 1; if (fade <= 0) continue;
-    c.globalAlpha = 0.85 * fade; c.strokeStyle = 'rgb(120,210,255)'; c.lineWidth = 3; c.beginPath(); c.moveTo(x - ux * 34, y - uy * 34); c.lineTo(x, y); c.stroke();
-    c.strokeStyle = 'rgb(235,250,255)'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(x - ux * 22, y - uy * 22); c.lineTo(x, y); c.stroke();
+/* 1415b: the strip's own arrow rain (frames 4-7) laid side by side across the whole screen at its own size (not stretched), on the hero's floor line */
+ULT12.kallisto.rainF = [4, 5, 6, 7]; ULT12.kallisto.rainStep = 400;
+const _ult9DrawKa = ult9Draw;
+ult9Draw = function (c, over) {
+  _ult9DrawKa(c, over);
+  const u = G.ult; if (over || !u || u.phase !== 'act' || u.ch !== 'kallisto') return;
+  const C = ULT12.kallisto, im = ULT12_IMG; if (!C.rainF.includes(u.fi) || !im || !im.complete || !im.naturalWidth) return;
+  const p = G.player, cw = Math.floor(im.naturalWidth / 12), chh = im.naturalHeight, sc = C.scale, dw = Math.round(cw * sc), dh = Math.round(chh * sc);
+  const gy = p.onGround ? p.y : groundBelow(p.x, p.y), dy = Math.round(gy - (chh - ULT12_GROUND) * sc), ax0 = Math.round(p.x + u.face * C.fwd), S = C.rainStep;
+  const L = G.cam.x - dw / 2, R = G.cam.x + W + dw / 2;
+  c.save(); c.imageSmoothingEnabled = false; c.globalCompositeOperation = 'lighter';
+  for (let k = Math.floor((L - ax0) / S); k <= Math.ceil((R - ax0) / S); k++) {
+    if (k === 0) continue;   // the middle one is the original
+    const ax = ax0 + k * S; c.save(); c.translate(ax, 0); if (u.face < 0) c.scale(-1, 1);
+    c.drawImage(im, u.fi * cw, 0, cw, chh, -Math.round(dw / 2), dy, dw, dh); c.restore();
   }
   c.restore();
-}
-const _updateSkillsKa = updateSkills;
-updateSkills = function (dt) { const r = _updateSkillsKa.apply(this, arguments); kaRainTick(dt); return r; };
-const _playerFigKa = playerFig;
-playerFig = function () { const r = _playerFigKa.apply(this, arguments); try { kaRainDraw(ctx); } catch (e) { } return r; };
+};
 
 /* ============ MAIN LOOP ============ */
 function ambient(dt) {

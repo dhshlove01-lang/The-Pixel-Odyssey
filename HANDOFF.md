@@ -69,6 +69,12 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1417  궁수 V 화살비: 선 화살 대신 원래 그림을 화면 전체에   (대상: test/index.html, 정식 미배포)
+바로 아래 1415 의 그림 부분을 바꿈 (사용자: 선 화살 어색, 가운데 원래 화살이 맵 전체를 덮게). 판정(all: true)은 그대로
+- kaRainWave / kaRainTick / kaRainDraw 와 그 tickUlt·updateSkills·playerFig 래퍼 삭제
+- ULT12.kallisto.rainF = [4,5,6,7] (12장 중 화살비 장면), rainStep = 400. ult9Draw 래퍼: 그 장면일 때 원래 그림을 같은 크기·같은 바닥선으로
+  가운데(원래 위치) 기준 400px 간격으로 화면 양끝까지 더 그림 (늘리지 않음, 'lighter')
+
 ### 261123-1415  궁수 V 화살 폭풍이 맵 전체를 맞힘   (대상: test/index.html, 정식 미배포)
 새 블록 '궁수 V 화살 폭풍이 맵 전체를 맞힌다' (MAIN LOOP 배너 바로 위, 도적 X 블록 다음. 원본 PC: 56h_ult12 쪽)
 - ULT12.kallisto.waves 중 at 0.40~0.75 (화살 폭풍 6번, 공격력 90%씩)에 `all: true`. ult12Box 래퍼: all 이면 맵 전체 상자 → 화면 밖·등 뒤·위아래 층 적 모두
