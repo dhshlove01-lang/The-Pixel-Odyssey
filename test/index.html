@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1410"></script>
+<script src="assets/js/pfx.js?v=261123-1412"></script>
 <script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1410';
+const GAME_VER = '261123-1412';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16669,7 +16669,7 @@ const REM_SK = {
     zOld: { file: 'vfx/vfx_warrior_slash.png', cell: [426, 380], w: 61, h: 54, align: 'center', lift: 20, off: 26, ms: [50, 60, 70, 80], hf: 2 },
     x: { file: 'vfx/vfx_warrior_upper.png', cell: [453, 589], w: 120, h: 156, align: 'bottom', foot: 1, lift: 0, off: 112, ms: [60, 70, 90, 110], hf: 2 },   // foot: in the air it rises from the hero's feet, not the floor (user)
     cOld: { file: 'vfx/vfx_warrior_whirlwind.png', cell: [407, 613], w: 72, h: 108, align: 'bottom', lift: 0, off: 0, ms: [55, 55, 90, 120], hf: 1 },
-    a: { file: 'vfx/vfx_warrior_dash_cleave.png', cell: [655, 188], w: 132, h: 38, align: 'center', lift: 24, off: 104, ms: [50, 45, 90, 110], hf: 2 },
+    a: { file: 'vfx/vfx_warrior_dash_cleave.png', cell: [655, 188], w: 132, h: 38, align: 'center', lift: 24, off: 34, nofx: 1, ms: [50, 45, 90, 110], hf: 2 },
     s: { file: 'vfx/vfx_warrior_earth_breaker.png', cell: [443, 474], w: 99, h: 106, align: 'bottom', lift: 0, off: 62, ms: [60, 70, 110, 150], hf: 2 },   // 2026-11-21 user: the rocks bigger (x1.4) and further ahead (spec 71x76 at 28); hit box = drawn box
     v: { file: 'vfx/vfx_warrior_awakening.png', cell: [587, 438], w: 241, h: 180, align: 'bottom', lift: 0, off: 40, ms: [100, 90, 140, 260], hf: 1 } },
   kallisto: {
@@ -16815,7 +16815,7 @@ const REM_SKILL = {
   theron: {
     a(p, a) {   // 돌진 베기: a 60 px dash (0.1 s, invulnerable 0.12 s), one cut in the box (the old 260%)
       const sk = remSk('a');
-      if (!a.vfx) { a.vfx = 1; a.dash = 1; a.dashT = 0.1; a.dashV = 600; a.dir = p.face; p.inv = Math.max(p.inv, 0.12); remFx(sk, { follow: p, hitAt: 0, delay: 0.11 }); sfx('dash'); }   // 1352b: starts with the sword trail frame, past its tip
+      if (!a.vfx) { a.vfx = 1; a.dash = 1; a.dashT = 0.1; a.dashV = 600; a.dir = p.face; p.inv = Math.max(p.inv, 0.12); sfx('dash'); }   // 1410b: no effect strip (user); the cut hits the old box (-32..100 px)
       if (!a.done && a.t >= 0.095) { a.done = 1; remHit(remReach(p, remBox(p, sk)), 2.6, { kb: p.face * 80 }); shake(3); }
     },
     s(p, a) {   // 대지 분쇄: the buff as before (castSkill) and one hit where the rocks rise (user)
@@ -20968,6 +20968,7 @@ function netCastFx(ch, k, x, y, face) {
       return;
     }
     const sk = REM_SK[ch] && REM_SK[ch][k];
+    if (sk && sk.nofx) return;   // 1410b: warrior A has no effect strip
     if (sk && sk.file) { remFx(sk, { box: remBox({ x, y, face, onGround: true }, sk), face }); return; }
     const nm = NET_SKFX[ch] && NET_SKFX[ch][k];
     if (nm) pfx(nm, x + face * 28, y - 40, { flip: face < 0 });

@@ -69,6 +69,11 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1412  전사 A(돌진 베기) 스킬 이펙트 없앰   (대상: test/index.html, 정식 미배포)
+- REM_SKILL.theron.a: remFx 호출 삭제 (돌진·무적·소리·피해 260% 그대로)
+- REM_SK.theron.a: off 104 → 34 (원래 값, 판정 -32~100px), `nofx: 1` 추가
+- netCastFx: `sk.nofx` 면 다른 사람 화면에도 아무것도 안 그림
+
 ### 261123-1410  전사 28~30 흰 칼 궤적 제거 + X 붉은 이펙트 1.5배, A·X 검 끝에서   (대상: test/index.html, 정식 미배포)
 바로 아래 1404 의 전사 부분을 덮어씀 (사용자: 궤적을 지우고 검 끝에서 나가게, 붉은 이펙트 1.5배)
 - 새 상수 `HERO48_ERASE.theron` (HERO48_GROW 아래): 프레임 28/29/30 의 칼날 선 [손잡이 x,y, 검 끝 x,y, 최소 y, 바닥줄 y, 바닥줄 x]
