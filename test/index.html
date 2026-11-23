@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1321"></script>
-<script src="assets/js/act3_data.js?v=261123-1321"></script>
+<script src="assets/js/pfx.js?v=261123-1335"></script>
+<script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1321';
+const GAME_VER = '261123-1335';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -21002,7 +21002,7 @@ addEventListener('keydown', e => { if (e.code === 'Escape') closeNetMenu(); }, t
    The database rules for tradereq/ and trade/ (who may write which side) are the owner's to set.
    tradereq/<to> = { from, n, tid, t }      trade/<tid> = { a: side, b: side, done: { a, b }, t }
    side = { u, n, c, l, g, it: [items], lock: 0|1, ok: 0|1, t } — each player writes only their own side. */
-const TRADE_KEY = () => 'dr-trade:' + G.uid, TRADE_DONE = tid => 'dr-trade-done:' + tid;
+const TRADE_KEY = () => 'dr-trade:' + G.uid, TRADE_DONE = tid => 'dr-trade-done:' + G.uid + ':' + tid;   // per account: two accounts on one PC share this storage (the first test applied one side and skipped the other)
 let TR = null;   // { tid, side, other: { uid, nick }, offered: Set, gold, node, lastNode, seenT, waiting, opened }
 const TRQ = { mir: null, busy: false, t: 0, seen: 0, req: null };
 const trOther = s => s === 'a' ? 'b' : 'a';
@@ -21051,8 +21051,8 @@ function trEscrowRestore(why) {
 }
 function tradeEnd(msg, restore) {
   if (!TR) return; const t = TR; TR = null;
-  if (restore) trEscrowRestore();
-  trReq('PUT', 'trade/' + t.tid + '/' + t.side, null);
+  const w = trReq('PUT', 'trade/' + t.tid + (t.side === 'a' ? '' : '/' + t.side), null);   // the requester takes the whole trade away   // withdraw my side first, then take my things back
+  if (restore) w.then(() => trEscrowRestore());
   if (G.ui.panel === 'trade') closePanel();
   if (msg) toast(msg, restore ? 'bad' : 'gold');
 }
@@ -21064,7 +21064,7 @@ function tradeLock() {
   if (s.items.length - uids.length + (ot.it ? ot.it.length : 0) > BAG_MAX) { toast('가방이 모자라다', 'bad'); return; }
   const items = uids.map(u => s.items.find(x => x.uid === u));
   s.items = s.items.filter(x => !uids.includes(x.uid)); s.gold -= gold;   // out of my bag first
-  try { localStorage.setItem(TRADE_KEY(), JSON.stringify({ tid: TR.tid, gold, items })); } catch (e) { }
+  try { localStorage.setItem(TRADE_KEY(), JSON.stringify({ tid: TR.tid, side: TR.side, gold, items })); } catch (e) { }   // side: so a restart can look the trade up
   writeSave(); updateHud(true);
   trReq('PUT', 'trade/' + TR.tid + '/' + TR.side, Object.assign(trMine(), { g: gold, it: items, lock: 1, ok: 0, t: srvNow() }));
   TR.offered = new Set(); TR.gold = gold; TR.lockedItems = items; renderPanel();
@@ -21080,6 +21080,7 @@ function tradeUnlock() {
 function tradeAccept() {
   if (!TR || !TR.node) return; const me = TR.node[TR.side] || {}, ot = TR.node[trOther(TR.side)] || {};
   if (!me.lock || !ot.lock || me.ok) return;
+  try { const e = JSON.parse(localStorage.getItem(TRADE_KEY()) || 'null'); if (e) { e.ok = 1; localStorage.setItem(TRADE_KEY(), JSON.stringify(e)); } } catch (er) { }   // remembered: after 수락 a restart must ask the server before giving things back
   trReq('PUT', 'trade/' + TR.tid + '/' + TR.side + '/ok', 1); me.ok = 1; renderPanel();
 }
 function tradeApply() {   // both pressed 수락: take the other side's offer, once
@@ -21114,6 +21115,8 @@ function tradeNode(n) {
   const sig = JSON.stringify(ot || null) + (me.lock || 0) + (me.ok || 0);
   if (sig !== t.lastSig) { t.lastSig = sig; t.seenT = performance.now(); }
   t.node = n;
+  if (ot) t.sawOther = true;
+  if (t.sawOther && !ot && !t.applied) { tradeEnd(t.other.nick + '님이 거래를 취소했다 · 내 물건과 골드를 되돌렸다', true); return; }   // the other side withdrew
   if (t.waiting) {
     if (ot) { t.waiting = false; t.opened = true; toast(t.other.nick + '님이 거래를 수락했다', 'gold'); openPanel('trade'); }
     else if (performance.now() - t.seenT > 30000) { tradeEnd('거래 요청에 답이 없다', true); trReq('PUT', 'trade/' + t.tid, null); return; }
@@ -21162,7 +21165,20 @@ for (const fn of ['sellItems', 'equipItem', 'itemToStorage', 'insertSoul']) {
 const _partyTickT = partyTick;
 partyTick = function (dt) { _partyTickT(dt); tradeTick(dt); };
 const _startGameT = startGame;
-startGame = function () { const r = _startGameT.apply(this, arguments); try { trEscrowRestore('끊긴 거래의 물건과 골드를 가방에 되돌렸다'); } catch (e) { } return r; };
+startGame = function () { const r = _startGameT.apply(this, arguments); tradeRecover(); return r; };
+/* a trade cut off by a refresh or a crash: ask the server what became of it before giving anything back.
+   Both sides had pressed 수락 -> it went through: take the other side's offer. Otherwise withdraw my side, then restore.
+   Server out of reach and I had pressed 수락 -> keep the escrow and try again at the next start (restoring could double it). */
+async function tradeRecover() {
+  let e = null; try { e = JSON.parse(localStorage.getItem(TRADE_KEY()) || 'null'); } catch (er) { }
+  if (!e || !e.tid) { if (e) trEscrowRestore('끊긴 거래의 물건과 골드를 가방에 되돌렸다'); return; }
+  let n; try { const r = await fetch(dbUrl('trade/' + e.tid)); n = r.ok ? await r.json() : undefined; } catch (er) { n = undefined; }
+  if (n === undefined) { if (!e.ok) trEscrowRestore('끊긴 거래의 물건과 골드를 가방에 되돌렸다'); return; }
+  const side = e.side || 'a', me = n && n[side], ot = n && n[side === 'a' ? 'b' : 'a'];
+  if (me && me.ok && ot && ot.lock && ot.ok) { TR = { tid: e.tid, side, other: { uid: ot.u, nick: ot.n || ot.u }, offered: new Set(), gold: 0, node: n, seenT: performance.now() }; tradeApply(); TR = null; return; }
+  if (me) await trReq('PUT', 'trade/' + e.tid + '/' + side, null);
+  trEscrowRestore('끊긴 거래의 물건과 골드를 가방에 되돌렸다');
+}
 (function tradeUi() {
   const bar = document.createElement('div'); bar.id = 'tradeBar';
   bar.innerHTML = '<img src="assets/ui/ui_icon_trade.png" alt=""><span id="tradeText"></span><button id="tradeYes" type="button">수락</button><button id="tradeNo" type="button">거절</button>';

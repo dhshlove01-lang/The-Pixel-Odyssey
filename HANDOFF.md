@@ -69,6 +69,14 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1335  거래 실제 검증 후 고친 것 3가지   (대상: test/index.html, 정식 미배포)
+Firebase 규칙에 trade/tradereq (dev_, local_ 포함) 게시 후 테스트 계정 둘로 실제 교환·취소·새로고침 확인. 그 과정에서 고침:
+- TRADE_DONE 키에 아이디 포함 ('dr-trade-done:<id>:<tid>'): 한 PC 두 계정이 같은 저장소를 써서 한쪽 적용이 다른 쪽을 건너뛰게 했음
+- 수락하면 에스크로에 ok:1, 에스크로에 side 저장. 시작 때 trEscrowRestore 대신 tradeRecover(): 서버에서 그 거래를 읽어
+  양쪽 수락이면 상대 물건 받기, 아니면 내 칸 먼저 철회 후 되돌리기, 서버에 못 닿고 내가 수락했으면 에스크로 유지(다음 시작 때 재시도)
+- tradeEnd: 서버에서 먼저 철회한 뒤 되돌리기, 요청자(a)는 거래 노드 통째로 삭제
+- tradeNode: 상대 칸이 한 번 보였다가 사라지면 '○○님이 거래를 취소했다' 로 끝내고 되돌리기 (전엔 '상대를 기다리는 중' 에 멈춤)
+
 ### 261123-1321  3막 의뢰 · 주인공/보스 48프레임 · 멀티 QA 12항목   (대상: test/index.html, 정식 미배포)
 지시서: claude_code_act3_worldmap_quests_48f_prompt.txt, claude_code_multi_qa_12_prompt.txt. 원본 PC에서는 각 조각 파일로 옮길 것.
 - 3막 의뢰(56z_act3.js): 지시서 §2 블록(ACT3_W, ACT3_Q, buildAct3Story)을 그대로 'world map' 주석 앞에. 캠프에 hal(네스토르) 추가,
@@ -95,7 +103,7 @@
 - QA P1: netPlayerAt, #game contextmenu → #netmenu(거래 요청/파티 초대), 롱프레스, 거래(TR, tradereq/trade 노드, 잠금·에스크로·수락·복구).
   **지시서와 다름: 양쪽 다 수락해야 교환, 수락 뒤 잠금 해제 불가** (한쪽 수락 즉시 받으면 복사 틈이 생김).
   거래 요청은 전용 trReq/trGet (거부되면 거래만 막고 토스트 1번, 받은함 폴링 거부는 조용히). ptyReq 를 쓰면 파티·채팅이 통째로 꺼졌음
-  **Firebase 규칙에 trade, tradereq (로컬 테스트용 local_trade, local_tradereq) 가 없어서 실제 교환은 아직 미검증**
+  (규칙 게시 후 실제 교환 검증 완료 — 아래 위쪽 항목 참고)
 - test/assets/ui: ui_icon_trade/party/mvp_crown/bgm_note/sfx_speaker.png, ui_panel_dark_gold.png (9-slice 48)
 
 ### 261123-1104  정식 배포 (test → 루트: 1102·1104 가방 창 버튼)
