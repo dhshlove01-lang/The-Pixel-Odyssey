@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1929"></script>
-<script src="assets/js/act3_data.js?v=261123-1929"></script>
+<script src="assets/js/pfx.js?v=261123-1941"></script>
+<script src="assets/js/act3_data.js?v=261123-1941"></script>
 <script>
-const GAME_VER = '261123-1929';
+const GAME_VER = '261123-1941';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -5558,7 +5558,7 @@ const KEY_ACTIONS = [
   ['기술', 'ka', '각성 기술 A', ['KeyA']], ['기술', 'ks', '각성 기술 S', ['KeyS']], ['기술', 'kd', '각성 기술 D', ['KeyD']], ['기술', 'kv', '궁극기', ['KeyV']], ['기술', 'kf', '레전드 기술', ['KeyF']],
   ['물건', 'pot', '치유 연고', ['Digit1', 'Numpad1']], ['물건', 'scroll', '귀환 주문서', ['Digit2', 'Numpad2']],
   ['메뉴', 'm_gear', '장비 · 가방', ['KeyI']], ['메뉴', 'm_traits', '특성', ['KeyT']], ['메뉴', 'm_map', '미니맵', ['KeyN']], ['메뉴', 'm_music', '음악', ['KeyB']],
-  ['메뉴', 'm_worldmap', '전체 맵', ['KeyM']], ['메뉴', 'm_wm_prev', '전체 맵 이전 페이지', ['KeyQ']], ['메뉴', 'm_wm_next', '전체 맵 다음 페이지', ['KeyE']],['메뉴', 'm_trophy', '트로피 도감', ['KeyY']], ['메뉴', 'm_mute', '소리', ['KeyU']], ['메뉴', 'm_party', '파티 · 닉네임', ['KeyP']], ['메뉴', 'm_help', '가이드 · 조작법', ['KeyH']], ['메뉴', 'm_keys', '키 설정', ['KeyO']],
+  ['메뉴', 'm_worldmap', '전체 맵', ['KeyM']], ['메뉴', 'm_quest', '퀘스트 · 일일 의뢰', ['KeyQ']], ['메뉴', 'm_wm_prev', '전체 맵 이전 페이지', []], ['메뉴', 'm_wm_next', '전체 맵 다음 페이지', ['KeyE']],['메뉴', 'm_trophy', '트로피 도감', ['KeyY']], ['메뉴', 'm_mute', '소리', ['KeyU']], ['메뉴', 'm_party', '파티 · 닉네임', ['KeyP']], ['메뉴', 'm_help', '가이드 · 조작법', ['KeyH']], ['메뉴', 'm_keys', '키 설정', ['KeyO']],
 ];
 const KEYS_STORE = 'devil-renown-keys';
 let BINDS = {}, KEYMAP = {};
@@ -5566,6 +5566,7 @@ function rebuildKeymap() { KEYMAP = { Enter: 'ok' }; for (const a in BINDS) for 
 function loadBinds() {
   let saved = {}; try { saved = JSON.parse(localStorage.getItem(KEYS_STORE) || '{}'); } catch (e) { }
   if (saved.m_mute && saved.m_mute.includes('KeyM') && !(saved.m_worldmap && saved.m_worldmap.length)) { saved.m_mute = ['KeyU']; saved.m_worldmap = ['KeyM']; try { localStorage.setItem(KEYS_STORE, JSON.stringify(saved)); } catch (e) { } }   // 2026-11-21: M is the world map now, sound moved to U (once)
+  if (!(saved.m_quest && saved.m_quest.length) && saved.m_wm_prev && saved.m_wm_prev.includes('KeyQ')) { saved.m_quest = ['KeyQ']; saved.m_wm_prev = saved.m_wm_prev.filter(c => c !== 'KeyQ'); try { localStorage.setItem(KEYS_STORE, JSON.stringify(saved)); } catch (e) { } }   // 2026-11-23: Q opens the quest window (it still turns the world map page while that is open)
   BINDS = {}; for (const [, a, , def] of KEY_ACTIONS) BINDS[a] = (saved[a] && saved[a].length ? saved[a] : def).slice();
   rebuildKeymap();
 }
@@ -5599,6 +5600,7 @@ addEventListener('keydown', e => {
   else if (n === 'm_music') toggleMusic();
   else if (n === 'm_map') toggleMinimap();
   else if (n === 'm_worldmap') toggleWorldMap();
+  else if (n === 'm_quest') { if (typeof WM !== 'undefined' && WM.open) wmPage((WM.page || 0) - 1); else if (G.scene === 'play') toggleQuestWin(); }
   else if (n === 'm_wm_prev' || n === 'm_wm_next') { if (typeof WM !== 'undefined' && WM.open) wmPage((WM.page || 0) + (n === 'm_wm_next' ? 1 : -1)); }   // 2026-11-23: world map pages, nothing while it is shut
   else if (n === 'm_trophy') toggleTrophy();
   else if (n === 'm_keys') togglePanel('keys');
@@ -6661,7 +6663,7 @@ function bossStartPat(b, pat) {
     b.st = 'sweep'; b.t = 0; b.tele = null;
     const dir = sgn(p.x - b.x), gap = 150, startX = b.x + dir * 80;
     const sd = wind(b, 0.9, 0.75);
-    const add = (x0, d0, step) => { let i = 0; for (let x = x0; x > L + 30 && x < R - 30; x += step * gap, i++) addMark({ src: b, x, dur: sd + i * 0.13 + d0, r: 40, dmg: bdmg(b, 'sweep'), ground: true, style: 'pillar', col: b.phase >= 2 ? '255,120,90' : '255,180,120' }); return i; };
+    const add = (x0, d0, step) => { let i = 0; for (let x = x0; x > L + 30 && x < R - 30 && Math.abs(x - x0) < 1100; x += step * gap, i++) addMark({ src: b, x, dur: sd + i * 0.13 + d0, r: 40, dmg: bdmg(b, 'sweep'), ground: true, style: 'pillar', col: b.phase >= 2 ? '255,120,90' : '255,180,120' }); return i; };
     const n1 = add(startX, 0, dir);
     let tot = sd + n1 * 0.13;
     if (b.phase >= 2) { const n2 = add(startX + dir * gap * 0.5, 0.9, dir); tot = Math.max(tot, sd + 0.9 + n2 * 0.13); }
@@ -6997,7 +6999,8 @@ function updateInteract() {
   const p = G.player, m = G.map;
   let best = null, bd = 1e9;
   const consider = (type, obj, x, y, range, text) => { const d = Math.abs(p.x - x); if (d < range && d < bd) { bd = d; best = { type, obj, x, y, text }; } };
-  for (const pt of getPortals()) consider('portal', pt, pt.x, GROUND - 100, 46, pt.req() ? pt.label : '[잠김] ' + (pt.lockT || '닫혀 있다'));
+  const floorOk = p.onGround && p.y > GROUND - 30;   // 2026-11-23 (user): a portal takes you only from the floor, not mid-jump or from a ledge above it
+  if (floorOk) for (const pt of getPortals()) consider('portal', pt, pt.x, GROUND - 100, 46, pt.req() ? pt.label : '[잠김] ' + (pt.lockT || '닫혀 있다'));
   for (const n of visibleNpcs()) consider('npc', n, n.x, GROUND - 112, 60, n.title ? n.title + ' ' + n.name : n.name);
   for (const g of gatherSpotsHere()) if (!g.done) consider('gather', g, g.x, g.y - 40, 42, (g.spot === 'brazier' ? '불 붙이기' : g.spot === 'grave' ? '읽기' : '줍기') + ' · ' + g.item);
   for (const l of m.lore) consider('lore', l, l.x, l.y - 54, 40, '기록 읽기');
@@ -7365,9 +7368,9 @@ function maybeAnon(m) {
 function spawnAnon() {
   const p = G.player, n = G.map.ch || 1, d = anonDef(n);
   BOSSES.anon = d; G.save.anonAt = G.playT;
-  const L = clamp(p.x - 470, 30, G.map.w - 970), R = L + 940;
+  const L = 30, R = G.map.w - 30;   // 2026-11-23 (user): no invisible wall any more, you can run; he fights over the whole map
   G.anon = { prevL: G.map.arenaL, prevR: G.map.arenaR, left: ANON_TIME };
-  G.map.arenaL = L; G.map.arenaR = R; G.fence = { L: L + 10, R: R - 10 };
+  G.map.arenaL = L; G.map.arenaR = R; G.fence = null;
   for (const m of G.mons) if (m.st !== 'die') { m.st = 'die'; m.dead = 0; m.minion = true; spark(m.x, m.y - 20, 6, '200,190,255', 120); }
   spawnBoss('anon');
   const b = G.boss; b.x = clamp(p.x + 300 * (p.x + 300 < R - 60 ? 1 : -1), L + 60, R - 60); b.face = sgn(p.x - b.x);
@@ -12940,7 +12943,7 @@ function renderPanel() {
   const P = G.ui.panel;
   if (isUiWin(P)) { uiRefresh(); return; }
   if (P === 'party') { $('#pBox').innerHTML = partyHtml(); partyPanelFill(); return; }
-  $('#pBox').innerHTML = P === 'guide' ? guideHtml() : P === 'audio' ? audioHtml() : P === 'keys' ? keysHtml() : P === 'travel' ? travelHtml() : P === 'pets' ? petsHtml() : P === 'daily' ? dailyHtml() : traitsHtml();
+  $('#pBox').innerHTML = P === 'guide' ? guideHtml() : P === 'audio' ? audioHtml() : P === 'keys' ? keysHtml() : P === 'travel' ? travelHtml() : P === 'pets' ? petsHtml() : P === 'daily' ? dailyHtml() : P === 'quest' ? questHtml() : traitsHtml();
 }
 const fmtVal = (k, v) => { const u = SLOT_INFO[k].unit; return (k === 'pauldron' || u === '%' ? v.toFixed(1).replace(/\.0$/, '') : nf(v)) + u; };
 const gradeSpan = it => `<span style="color:${GRADES[it.grade].col}">${it.name}</span>`;
@@ -13533,7 +13536,7 @@ function invWin() {
     if (k === 'acc2') { slots += `<div class="eq lock" style="${mp(...r)}" data-tipk="acc:acc2">${pimg('lock', 'lk')}<i>${ACC_NAMES.acc2}</i></div>`; continue; }   // [S2-4] 목걸이는 계속 잠금
     if (k === 'acc1') {   // [S2-4] 반지 칸
       const ir = s.equip.acc1;
-      slots += `<button class="eq ${sel === 'eq:acc1' ? 'on' : ''}" style="${mp(...r)};--gc:${ir ? gcol(ir) : 'transparent'}" data-eqsel="acc1" data-tipk="eq:acc1">${ir ? slotImg('acc1', ir) : pimg('lock', 'lk')}<i>반지</i></button>`;
+      slots += `<button class="eq ${sel === 'eq:acc1' ? 'on' : ''}" style="${mp(...r)};--gc:${ir ? gcol(ir) : 'transparent'}" data-eqsel="acc1" data-tipk="eq:acc1">${ir ? slotImg('acc1', ir) : ''}<i>반지</i></button>`;
       continue;
     }
     const it = s.equip[k], se = s.slotE[k];
@@ -13606,7 +13609,7 @@ function smithWin() {
     if (r === 'acc2') return `<div class="srow lock" style="${box}"><span class="si">${pimg('lock', 'lk')}</span><span class="sn">장신구 · ${ACC_NAMES.acc2}<small>아직 쓸 수 없다</small></span></div>`;   // [S2-4b]
     if (r === 'acc1') {   // [S2-4b] 반지는 강화·계승 대상이 아니다
       const ir = s.equip.acc1;
-      return `<div class="srow" style="${box}"><span class="si" style="--gc:${ir ? gcol(ir) : '#555'}">${ir ? slotImg('acc1', ir) : pimg('lock', 'lk')}</span><span class="sn" style="color:${ir ? gcol(ir) : '#888'}">${ir ? ir.name : '반지 없음'}<small>반지는 강화하지 않는다 · 보스 드랍</small></span></div>`;
+      return `<div class="srow" style="${box}"><span class="si" style="--gc:${ir ? gcol(ir) : '#555'}">${ir ? slotImg('acc1', ir) : ''}</span><span class="sn" style="color:${ir ? gcol(ir) : '#888'}">${ir ? ir.name : '반지 없음'}<small>반지는 강화하지 않는다 · 보스 드랍</small></span></div>`;
     }
     const t = s.equip[r], e2 = s.slotE[r], m2 = e2.e >= ENH_MAX;
     return `<button class="srow ${r === k ? 'on' : ''}" style="${box}" data-smsel="${r}"><span class="si" style="--gc:${t ? gcol(t) : '#555'}">${slotImg(r, t)}</span><span class="sn" style="color:${t ? gcol(t) : '#888'}">${t ? t.name : SLOT_INFO[r].name}<small>${SLOT_INFO[r].label} ${fmtVal(r, slotStat(r, t, e2.e, e2.T))}</small></span><em>+${e2.e}${e2.T ? ` <u>계승 ${e2.T}</u>` : ''}</em><span class="sc ${!m2 && s.gold >= enhGold(e2.e, e2.T) ? '' : 'no'}">${m2 ? '최대' : nf(enhGold(e2.e, e2.T)) + 'G'}</span></button>`;
@@ -15631,7 +15634,7 @@ const NEWS = {
     { icon: 'gold', head: '무료 잠재 변경권', text: '변경권 한 장이면 잠재석·골드 없이 한 번 돌린다. 일일 보따리, 사냥터 사람들의 부탁, 이름 없는 자에게서 얻는다.' },
     { icon: 'bag', head: '보스의 반지', text: '10장, 20장, 30장 보스가 가끔 반지를 떨어뜨린다. I 창의 반지 칸에 낀다.' },
     { icon: 'hero', head: '쁘띠 도감', text: '보스를 처음 쓰러뜨리면 그 보스의 쁘띠가 도감에 들어온다. 모을수록 공격력과 HP가 오르고, 도감에서 골라 데리고 다닌다.' },
-    { icon: 'road', head: '일일 의뢰', text: '퀘스트 칸을 누르면 오늘의 의뢰 세 개가 보인다. 낮 12시에 바뀌고, 하나 끝낼 때마다 보따리를 준다.' },
+    { icon: 'road', head: '일일 의뢰', text: 'Q를 누르면 퀘스트 창이 열리고, 옆으로 넘기면 오늘의 의뢰 세 개가 보인다. 낮 12시에 바뀌고, 하나 끝낼 때마다 보따리를 준다.' },
     { icon: 'npc', head: '사냥터의 사람들', text: '보조 사냥터와 성탑 회랑 50곳에 사람이 생겼다. 부탁을 들어주면 잠재석과 품질석을 준다.' },
     { icon: 'map', head: '성탑의 회랑과 문턱', text: '21장부터 30장도 복도, 회랑, 문턱을 지나야 보스방에 닿는다.' },
     { icon: 'warn', head: '몬스터는 늘고 골드는 줄었다', text: '사냥터 몬스터가 1.5배로 늘었다. 대신 몬스터가 떨어뜨리는 골드는 절반이다.' },
@@ -20218,7 +20221,7 @@ function dailyEnsure(save) {
     const need = dailyNeed(ch), fresh = !s.daily || s.daily.d !== day;
     s.daily = { d: day, ch, q: DAILY_KINDS.map(k => ({ k, need: need[k], p: 0, done: 0 })) };
     s.pouch = s.pouch || 0;
-    if (fresh && G.scene === 'play') setTimeout(() => toast('새 일일 의뢰 3개 · 퀘스트 칸을 누르면 열린다', 'gold'), 1200);
+    if (fresh && G.scene === 'play') setTimeout(() => toast('새 일일 의뢰 3개 · ' + keyOf('m_quest') + ' 퀘스트 창에서 확인', 'gold'), 1200);
   }
   return s.daily;
 }
@@ -20228,7 +20231,7 @@ function dailyOn(k, n) {
   q.p = Math.min(q.need, q.p + (n || 1));
   if (q.p >= q.need) {
     q.done = 1; s.pouch = (s.pouch || 0) + 1; s.gold += Math.round(260 * (CHM[s.daily.ch] || CHM[1]).gold / 5) * 5;
-    toast('일일 의뢰 완료 · 보따리 1개 (퀘스트 칸)', 'gold'); sfx('quest'); updateHud(true); writeSave();
+    toast('일일 의뢰 완료 · 보따리 1개 (' + keyOf('m_quest') + ' 퀘스트 창)', 'gold'); sfx('quest'); updateHud(true); writeSave();
   }
 }
 function openPouch() {
@@ -20262,7 +20265,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .dbar i{display:block;height:100%;background:linear-gradient(90deg,#c08a2a,#ffe08a)}
 .drow small{width:calc(var(--u)*96);text-align:right;color:#9a9384}
 .pouchic{width:calc(var(--u)*18);height:calc(var(--u)*18);image-rendering:pixelated;vertical-align:middle;margin-right:calc(var(--u)*4)}
-#qtrack{cursor:pointer}
+
 </style>`);
 /* [S7-4] 2026-11-23 (user): 소품끼리 겹치지 않게 한 번 정리한다.
    소품(props)만 옮기고 NPC·기록석·포탈은 고정. 야영지의 대장장이+모루 연출은 예외. */
@@ -20965,7 +20968,7 @@ function shAnonJoin(a) {
   SH.anonDone[a.id] = 1;
   const d = anonDef(a.n || G.map.ch || 1); BOSSES.anon = d; G.save.anonAt = G.playT;
   G.anon = { prevL: G.map.arenaL, prevR: G.map.arenaR, left: a.left || ANON_TIME };
-  G.map.arenaL = a.L; G.map.arenaR = a.R; G.fence = { L: a.L + 10, R: a.R - 10 };
+  G.map.arenaL = a.L; G.map.arenaR = a.R; G.fence = null;   // 2026-11-23: no wall (31_bosses.js spawnAnon)
   spawnBoss('anon'); const b = G.boss; b.x = a.x; b.face = sgn(G.player.x - b.x) || -1;
   b.st = 'roar'; b.t = 2.4; showBossBar(true); sfx('roar'); shake(10); G.flashW = 0.6;
   toast(d.wake + ' · 파티가 함께 싸운다', 'bad');
@@ -22213,6 +22216,80 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 document.head.insertAdjacentHTML('beforeend', `<style>
 #uiwin .mini.freeb{display:inline-flex;align-items:center;gap:calc(var(--m)*3);color:#ffe08a}
 #uiwin .mini .freeic{width:calc(var(--m)*16);height:calc(var(--m)*16);image-rendering:pixelated}
+</style>`);
+
+/* ============ 2026-11-23 (user): the quest window. Q opens it: the quests in progress in detail; ← → (or the tabs) turn to the
+   daily quests (dailyHtml, 56z_act3.js). Q was the world map's previous-page key: while the world map is open Q still turns its
+   page, so nothing is lost. The quest tracker at the top left stays a display (it does not take clicks). ============ */
+let QW_TAB = 'now';
+const qwRew = r => {
+  if (!r) return '';
+  const b = [];
+  if (r.gold) b.push('골드 ' + nf(r.gold)); if (r.xp) b.push('경험치 ' + nf(r.xp)); if (r.pot) b.push('잠재석 ' + r.pot); if (r.qual) b.push('품질석 ' + r.qual);
+  if (r.potion) b.push('연고 ' + r.potion); if (r.scroll) b.push('귀환 주문서 ' + r.scroll); if (r.inherit) b.push('계승석 ' + r.inherit); if (r.freeP) b.push('가끔 무료 잠재 변경권');
+  return b.join(' · ');
+};
+function qwCard(id, cur) {
+  const Q = QUESTS[id], q = questOf(id), C = CHAPTERS[Q.ch] || {}, who = giverName(Q);
+  const state = q.s === 0 ? '받기 전' : q.s === 1 ? '진행 중' : q.s === 2 ? '완료 · 보고하면 보상' : '끝';
+  const what = q.s === 0 ? who + '에게 말을 걸면 받는다'
+    : q.s === 2 ? who + '에게 돌아가 보고하자'
+    : Q.type === 'talk' ? '말을 전하러 가자' : (Q.obj || '') + (Q.need > 1 ? ` <b>${q.p} / ${Q.need}</b>` : '');
+  const pct = q.s >= 2 ? 100 : Q.need > 1 ? Math.round(q.p / Q.need * 100) : 0;
+  const where = Q.mapId && MAPS[Q.mapId] ? MAPS[Q.mapId].name : '';
+  return `<div class="qwc ${cur ? 'cur' : ''} ${q.s === 2 ? 'done' : ''}">
+    <div class="qwh"><span class="qwk">${Q.main ? '주요' : Q.extra ? '사냥터' : '부탁'}</span><b>${Q.title}</b><small>${Q.ch}장 · ${C.title || ''} · ${state}</small></div>
+    <div class="qwo">${what}</div>${Q.need > 1 && q.s >= 1 ? `<span class="qwbar"><i style="width:${pct}%"></i></span>` : ''}
+    <div class="qwm">${['맡긴 사람 ' + who, where ? '장소 ' + where : '', qwRew(Q.rew) ? '보상 ' + qwRew(Q.rew) : ''].filter(Boolean).join(' · ')}</div></div>`;
+}
+function questNowHtml() {
+  const s = G.save, cur = currentQuest(), ids = [];
+  if (cur) ids.push(cur);
+  for (const id of QUEST_ORDER) if (id !== cur && QUESTS[id].main && questOf(id).s === 2) ids.push(id);   // done, reward waiting
+  for (const id of SUB_ORDER) { const q = s.quests[id]; if (q && (q.s === 1 || q.s === 2) && !ids.includes(id)) ids.push(id); }
+  return ids.length ? ids.map((id, i) => qwCard(id, i === 0 && id === cur)).join('') : '<div class="qwn">진행 중인 의뢰가 없다. 사냥과 강화를 이어 가자.</div>';
+}
+function questHtml() {
+  const tabs = `<span class="qwtabs"><button type="button" class="${QW_TAB === 'now' ? 'on' : ''}" data-qwtab="now">진행 중</button><button type="button" class="${QW_TAB === 'daily' ? 'on' : ''}" data-qwtab="daily">일일 의뢰${G.save.pouch ? ' · 보따리 ' + G.save.pouch : ''}</button></span>`;
+  if (QW_TAB === 'daily') {   // the daily window's body under the same head
+    const d = dailyHtml().replace(/^<div class="ph">[\s\S]*?<\/div>/, '');
+    return `<div class="ph"><h3>퀘스트</h3>${tabs}<button class="xbtn" data-close="1">닫기 (${keyOf('m_quest')})</button></div>
+      <div class="qwsub">낮 12시에 새로 나온다 · ← → 로 넘긴다</div>${d}`;
+  }
+  return `<div class="ph"><h3>퀘스트</h3>${tabs}<button class="xbtn" data-close="1">닫기 (${keyOf('m_quest')})</button></div>
+    <div class="qwsub">지금 하고 있는 의뢰 · ← → 로 일일 의뢰</div><div class="qwlist">${questNowHtml()}</div>`;
+}
+function toggleQuestWin(tab) {
+  if (tab) QW_TAB = tab;
+  if (G.ui.panel === 'quest' && !tab) { closePanel(); return; }
+  if (G.ui.panel !== 'quest') togglePanel('quest'); else renderPanel();
+}
+document.addEventListener('click', e => {
+  const t = e.target && e.target.closest && e.target.closest('[data-qwtab]'); if (!t) return;
+  e.stopPropagation(); QW_TAB = t.dataset.qwtab; renderPanel(); sfx('click');
+});
+document.addEventListener('keydown', e => {
+  if (!G.ui || G.ui.panel !== 'quest' || (e.code !== 'ArrowLeft' && e.code !== 'ArrowRight')) return;
+  QW_TAB = QW_TAB === 'now' ? 'daily' : 'now'; renderPanel(); sfx('click'); e.preventDefault(); e.stopPropagation();   // the hero does not walk while the window turns
+}, true);
+/* the tracker says where the window is */
+const _updateQuestUiQW = updateQuestUi;
+updateQuestUi = function () { _updateQuestUiQW(); const el = $('#qtrack'); if (el && !el.hidden && G.save) el.insertAdjacentHTML('beforeend', `<small class="qhint">${keyOf('m_quest')} · 자세히 보기 · 일일 의뢰</small>`); };
+document.head.insertAdjacentHTML('beforeend', `<style>
+.qwtabs{display:flex;gap:calc(var(--u)*4);margin-left:calc(var(--u)*12)}
+.qwtabs button{cursor:pointer;background:none;border:1px solid #3a3021;color:#a99c84;padding:calc(var(--u)*3) calc(var(--u)*10);font-size:max(9px,calc(var(--u)*12))}
+.qwtabs button.on{border-color:#b8933f;color:#ffe6a8;background:#241c10}
+.qwsub{color:#9a9184;font-size:max(9px,calc(var(--u)*11));padding:calc(var(--u)*2) calc(var(--u)*12)}
+.qwlist{display:flex;flex-direction:column;gap:calc(var(--u)*6);padding:calc(var(--u)*6) calc(var(--u)*12);max-height:calc(var(--u)*400);overflow:auto}
+.qwc{background:rgba(20,22,30,.85);border:1px solid #3a3c4a;border-left:3px solid #6a5a40;padding:calc(var(--u)*6) calc(var(--u)*10);display:flex;flex-direction:column;gap:calc(var(--u)*3)}
+.qwc.cur{border-left-color:#f0c040}.qwc.done{border-left-color:#8fd48c}
+.qwh{display:flex;align-items:baseline;gap:calc(var(--u)*8)}.qwh b{color:#ffe6a8;font-size:max(10px,calc(var(--u)*14))}.qwh small{margin-left:auto;color:#9a9184;font-size:max(8px,calc(var(--u)*10))}
+.qwk{color:#1a1408;background:#c8a24a;font-size:max(8px,calc(var(--u)*10));padding:0 calc(var(--u)*5)}
+.qwo{color:#e8dfc8;font-size:max(9px,calc(var(--u)*12))}.qwo b{color:#ffe08a}
+.qwm{color:#9a9184;font-size:max(8px,calc(var(--u)*10))}
+.qwbar{display:block;height:calc(var(--u)*5);background:#1a1a22;border:1px solid #333}.qwbar i{display:block;height:100%;background:linear-gradient(90deg,#c08a2a,#ffe08a)}
+.qwn{color:#9a9184;padding:calc(var(--u)*16);text-align:center}
+#qtrack .qhint{display:block;margin-top:calc(var(--u)*3);color:#8a8070;font-size:max(8px,calc(var(--u)*9))}
 </style>`);
 
 /* ============ MAIN LOOP ============ */
