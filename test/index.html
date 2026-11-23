@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1404"></script>
+<script src="assets/js/pfx.js?v=261123-1410"></script>
 <script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1404';
+const GAME_VER = '261123-1410';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16594,6 +16594,9 @@ const HERO48_MIRROR = { lykos: [15, 16, 17, 18, 19, 20, 21] };
 /* 1345b: 도적 이동 8-21 은 대기·공격보다 작은 배율로 그려져 있다 (머리 폭 35 vs 42~47, 갑옷·두건도 같은 비율) → 발밑 기준 1.2배.
    대기는 쪼그린 자세라 키가 작은 게 맞고, 키 차이는 자세로만 남는다 (달리기 키 약 182 vs 대기 140~152). */
 const HERO48_GROW = { lykos: { k: 1.2, f: _h48(8, 14) } };
+/* 1404b: 전사 28-30 의 흰 칼 궤적을 지운다 (사용자: 궤적 대신 스킬 이펙트가 검 끝에서 나가게). 칼날 선 = [손잡이 x, y, 검 끝 x, y],
+   그 선에서 3px 넘게 떨어진 흰색(+옅은 테두리)만 지우고 칼날 선 위에 은색 칼날(2.2px)을 그린다. [4] 이 y 위만, [5][6] 바닥 줄(30번 발밑 궤적) */
+const HERO48_ERASE = { theron: { 28: [211, 232, 281, 291, 0, 999, 0], 29: [214, 219, 289, 291, 0, 999, 0], 30: [213, 248, 251, 277, 236, 279, 150] } };
 function hero48Fix(ch, im) {
   const N = HERO48_CELL, ax = [];
   try {
@@ -16613,6 +16616,23 @@ function hero48Fix(ch, im) {
         c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
         c.translate(x + HERO48_PIVOT, y + HERO48_GROUND); c.scale(G48.k, G48.k); c.drawImage(t, -HERO48_PIVOT, -HERO48_GROUND); c.restore();
       }
+    }
+    const E48 = HERO48_ERASE[ch];
+    if (E48) for (const k in E48) {   // 1404b: the white sword trail out of these frames, a silver blade drawn along the sword line instead
+      const i = +k, s = E48[k], x0 = (i % 8) * N, y0 = ((i / 8) | 0) * N, id = c.getImageData(x0, y0, N, N), d = id.data;
+      const ux = s[2] - s[0], uy = s[3] - s[1], L2 = ux * ux + uy * uy, len = Math.sqrt(L2);
+      for (let y = 100; y < 300; y++) for (let x = 130; x < 310; x++) {
+        const o = (y * N + x) * 4, a = d[o + 3]; if (a < 8) continue;
+        if (!((x >= s[0] + 2 && y >= s[4]) || (y >= s[5] && x >= s[6]))) continue;
+        const t = ((x - s[0]) * ux + (y - s[1]) * uy) / L2, tc = Math.max(0, Math.min(1, t)), dist = Math.hypot(x - (s[0] + tc * ux), y - (s[1] + tc * uy));
+        if (!(t > 1 || dist > 3)) continue;   // the sword itself stays
+        const mx = Math.max(d[o], d[o + 1], d[o + 2]), mn = Math.min(d[o], d[o + 1], d[o + 2]);
+        if ((mn > 140 && mx - mn < 70) || (a < 128 && x >= s[0] + 14)) d[o + 3] = 0;   // white trail, and its faint fringe away from the hands
+      }
+      c.putImageData(id, x0, y0);
+      const nx = uy / len, ny = -ux / len;
+      c.save(); c.strokeStyle = 'rgb(226,230,240)'; c.lineWidth = 2.2; c.beginPath();
+      c.moveTo(x0 + s[0] + ux * 0.1 + nx * 1.6, y0 + s[1] + uy * 0.1 + ny * 1.6); c.lineTo(x0 + s[2] - ux / len * 2 + nx, y0 + s[3] - uy / len * 2 + ny); c.stroke(); c.restore();
     }
     for (let i = 0; i < 22; i++) {
       const x0 = (i % 8) * N, y0 = ((i / 8) | 0) * N, d = c.getImageData(x0, y0 + 120, N, 110).data, mids = [];
@@ -16647,9 +16667,9 @@ classSelectHtml = function () { return _classSelectHtmlR().replace(sp(62, 496, 2
 const REM_SK = {
   theron: {
     zOld: { file: 'vfx/vfx_warrior_slash.png', cell: [426, 380], w: 61, h: 54, align: 'center', lift: 20, off: 26, ms: [50, 60, 70, 80], hf: 2 },
-    x: { file: 'vfx/vfx_warrior_upper.png', cell: [453, 589], w: 80, h: 104, align: 'bottom', foot: 1, lift: 0, off: 80, ms: [60, 70, 90, 110], hf: 2 },   // foot: in the air it rises from the hero's feet, not the floor (user)
+    x: { file: 'vfx/vfx_warrior_upper.png', cell: [453, 589], w: 120, h: 156, align: 'bottom', foot: 1, lift: 0, off: 112, ms: [60, 70, 90, 110], hf: 2 },   // foot: in the air it rises from the hero's feet, not the floor (user)
     cOld: { file: 'vfx/vfx_warrior_whirlwind.png', cell: [407, 613], w: 72, h: 108, align: 'bottom', lift: 0, off: 0, ms: [55, 55, 90, 120], hf: 1 },
-    a: { file: 'vfx/vfx_warrior_dash_cleave.png', cell: [655, 188], w: 132, h: 38, align: 'center', lift: 24, off: 112, ms: [50, 45, 90, 110], hf: 2 },
+    a: { file: 'vfx/vfx_warrior_dash_cleave.png', cell: [655, 188], w: 132, h: 38, align: 'center', lift: 24, off: 104, ms: [50, 45, 90, 110], hf: 2 },
     s: { file: 'vfx/vfx_warrior_earth_breaker.png', cell: [443, 474], w: 99, h: 106, align: 'bottom', lift: 0, off: 62, ms: [60, 70, 110, 150], hf: 2 },   // 2026-11-21 user: the rocks bigger (x1.4) and further ahead (spec 71x76 at 28); hit box = drawn box
     v: { file: 'vfx/vfx_warrior_awakening.png', cell: [587, 438], w: 241, h: 180, align: 'bottom', lift: 0, off: 40, ms: [100, 90, 140, 260], hf: 1 } },
   kallisto: {
