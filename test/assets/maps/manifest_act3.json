@@ -1,0 +1,273 @@
+{
+  "project": "The Pixel Odyssey",
+  "asset_type": "side-scrolling map backgrounds",
+  "act": 3,
+  "act_name_ko": "타락한 별들과 성탑",
+  "canvas": {
+    "width": 960,
+    "height": 540
+  },
+  "style": "16-bit dark fantasy pixel art, flat orthographic side view, no baked text/UI/characters",
+  "count": 20,
+  "ground_line_note": "ground_y measured on each file: y of the flat walkable floor's top edge (1px). 1~20장(75~92%)과 같은 구간.",
+  "worldmap": {
+    "background": "assets/ui/worldmap_act3_bg.png",
+    "size": [
+      1672,
+      941
+    ],
+    "nodes": "assets/ui/worldmap_act3_nodes.json"
+  },
+  "chapters": [
+    {
+      "id": "ch21",
+      "index": 21,
+      "title_ko": "성탑의 첫 계단",
+      "boss": {
+        "name": "Astral Stalker",
+        "name_ko": "별빛 사냥꾼"
+      },
+      "maps": {
+        "field": {
+          "file": "ch21_field.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 743875,
+          "ground_y": 456
+        },
+        "boss": {
+          "file": "ch21_boss.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 800134,
+          "ground_y": 479
+        }
+      }
+    },
+    {
+      "id": "ch22",
+      "index": 22,
+      "title_ko": "녹슨 성좌의 회랑",
+      "boss": {
+        "name": "Rusted Archangel",
+        "name_ko": "녹슨 대천사"
+      },
+      "maps": {
+        "field": {
+          "file": "ch22_field.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 887261,
+          "ground_y": 480
+        },
+        "boss": {
+          "file": "ch22_boss.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 768989,
+          "ground_y": 472
+        }
+      }
+    },
+    {
+      "id": "ch23",
+      "index": 23,
+      "title_ko": "거울로 된 하늘",
+      "boss": {
+        "name": "Mirror Empress",
+        "name_ko": "거울의 여왕"
+      },
+      "maps": {
+        "field": {
+          "file": "ch23_field.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 804622,
+          "ground_y": 481
+        },
+        "boss": {
+          "file": "ch23_boss.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 889238,
+          "ground_y": 463
+        }
+      }
+    },
+    {
+      "id": "ch24",
+      "index": 24,
+      "title_ko": "까마귀가 세는 층",
+      "boss": {
+        "name": "Plague Raven Lord",
+        "name_ko": "역병 까마귀 군주"
+      },
+      "maps": {
+        "field": {
+          "file": "ch24_field.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 714726,
+          "ground_y": 496
+        },
+        "boss": {
+          "file": "ch24_boss.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 788147,
+          "ground_y": 477
+        }
+      }
+    },
+    {
+      "id": "ch25",
+      "index": 25,
+      "title_ko": "무게가 사라진 방",
+      "boss": {
+        "name": "Gravity Colossus",
+        "name_ko": "중력의 거인"
+      },
+      "maps": {
+        "field": {
+          "file": "ch25_field.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 846795,
+          "ground_y": 442
+        },
+        "boss": {
+          "file": "ch25_boss.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 852026,
+          "ground_y": 465
+        }
+      }
+    },
+    {
+      "id": "ch26",
+      "index": 26,
+      "title_ko": "멈춘 시계의 서고",
+      "boss": {
+        "name": "Chrono Archivist",
+        "name_ko": "시간의 서기관"
+      },
+      "maps": {
+        "field": {
+          "file": "ch26_field.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 677011,
+          "ground_y": 470
+        },
+        "boss": {
+          "file": "ch26_boss.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 850322,
+          "ground_y": 460
+        }
+      }
+    },
+    {
+      "id": "ch27",
+      "index": 27,
+      "title_ko": "별을 삼킨 뱀의 우물",
+      "boss": {
+        "name": "Void Leviathan",
+        "name_ko": "공허의 레비아탄"
+      },
+      "maps": {
+        "field": {
+          "file": "ch27_field.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 868881,
+          "ground_y": 482
+        },
+        "boss": {
+          "file": "ch27_boss.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 799774,
+          "ground_y": 449
+        }
+      }
+    },
+    {
+      "id": "ch28",
+      "index": 28,
+      "title_ko": "백은의 제단",
+      "boss": {
+        "name": "Silver Deus",
+        "name_ko": "백은의 기계신 데우스"
+      },
+      "maps": {
+        "field": {
+          "file": "ch28_field.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 827905,
+          "ground_y": 442
+        },
+        "boss": {
+          "file": "ch28_boss.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 892376,
+          "ground_y": 505
+        }
+      }
+    },
+    {
+      "id": "ch29",
+      "index": 29,
+      "title_ko": "월식의 검투장",
+      "boss": {
+        "name": "Blood Eclipse Knight",
+        "name_ko": "핏빛 월식 기사"
+      },
+      "maps": {
+        "field": {
+          "file": "ch29_field.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 754396,
+          "ground_y": 488
+        },
+        "boss": {
+          "file": "ch29_boss.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 653735,
+          "ground_y": 469
+        }
+      }
+    },
+    {
+      "id": "ch30",
+      "index": 30,
+      "title_ko": "별이 꺼지는 옥좌",
+      "boss": {
+        "name": "Astraon, Star Devourer",
+        "name_ko": "별을 삼킨 군주 아스트라온"
+      },
+      "maps": {
+        "field": {
+          "file": "ch30_field.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 672435,
+          "ground_y": 463
+        },
+        "boss": {
+          "file": "ch30_boss.png",
+          "width": 960,
+          "height": 540,
+          "bytes": 639909,
+          "ground_y": 448
+        }
+      }
+    }
+  ]
+}
