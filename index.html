@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1335"></script>
+<script src="assets/js/pfx.js?v=261123-1345"></script>
 <script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1335';
+const GAME_VER = '261123-1345';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -9725,7 +9725,7 @@ function heroPose(ch, p) {
   if (!a && p.onGround) { const br = Math.sin(t * 2.4); sy = 1 + br * 0.018; sx = 1 - br * 0.006; }   // breathing
   if (p.walking && !a) {   // walk/run cycle at the speed of the feet (walkPh, 30_combat.js), with a small rise on the passing frames
     const ph = (p.walkPh || 0) * (A.runK || 1); f = A.run[Math.floor(ph) % A.run.length];   // 2026-11-23 48f: 14 run frames, phase x runK
-    sy = 1 + (Math.floor(ph) % 2 ? 0.015 : -0.01);
+    if (A.bob === 0) { sy = 1; sx = 1; } else sy = 1 + (Math.floor(ph) % 2 ? 0.015 : -0.01);   // 48f: the bounce is in the drawing; no extra squash
   }
   if (!p.onGround && !a) f = p.vy > 120 ? A.fall : A.air;
   if (p.onGround && !a && p.landT > 0) { f = A.land; sy = 0.97; }
@@ -16553,19 +16553,19 @@ const HERO48_CELL = 320, HERO48_GROUND = 292, HERO48_PIVOT = 160;
 const HERO48_IMG = {}, HERO48_TRY = {};
 const _h48 = (a, n) => Array.from({ length: n }, (_, i) => a + i);
 const HERO48_ANIM = {
-  theron: { idle: _h48(0, 8), run: _h48(8, 14), runK: 2.5, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
+  theron: { idle: _h48(0, 8), run: _h48(8, 14), runK: 1.7, bob: 0, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
     z: [{ w: 24, s: 28, f: 33 }, { w: 25, s: 29, f: 34 }, { w: 26, s: 30, f: 35 }],
     x: { w: 23, s: 29, f: 34 },                                 // 상향 일섬
     c: { spin: [28, 33] },                                      // 회전 검풍
     sk_a: { w: 24, s: 29, f: 35 }, sk_s: { w: 22, s: 28, f: 31 }, sk_d: { rise: 23, drop: 30, s: 34 } },
-  kallisto: { idle: _h48(0, 8), run: _h48(8, 14), runK: 2.5, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
+  kallisto: { idle: _h48(0, 8), run: _h48(8, 14), runK: 1.55, bob: 0, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
     shoot: [22, 24, 26, 28, 30, 31, 32], roll: [12, 16], sk_s: { w: 26, s: 30, f: 33 },
     z: { w: 24, s: 30, f: 34 }, x: { w: 24, s: 30, f: 34 }, c: { w: 24, s: 30, f: 34 }, sk_a: { w: 24, s: 30, f: 34 }, sk_d: { w: 24, s: 30, f: 34 } },
-  lykos: { idle: _h48(0, 8), run: _h48(8, 14), runK: 2.5, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
+  lykos: { idle: _h48(0, 8), run: _h48(8, 14), runK: 1.45, bob: 0, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
     z: [{ w: 22, s: 26, f: 35 }, { w: 23, s: 28, f: 36 }, { w: 22, s: 30, f: 37 }],
     x: { w: 22, s: 25, f: 34 }, c: { w: 22, s: 27, f: 34 },
     sk_a: { w: 22, alt: [26, 30], f: 36 }, sk_s: { w: 23, s: 28, f: 35 }, sk_d: { w: 22, alt: [27, 32], f: 37 } },
-  mage: { idle: _h48(0, 8), run: _h48(8, 14), runK: 2.5, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
+  mage: { idle: _h48(0, 8), run: _h48(8, 14), runK: 1.6, bob: 0, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
     z: [{ w: 24, s: 29, f: 33 }, { w: 24, s: 29, f: 33 }, { w: 24, s: 30, f: 34 }],
     x: { w: 24, s: 29, f: 33 }, c: { w: 23, s: 28, f: 33 },
     sk_a: { w: 24, s: 29, f: 33 }, sk_s: { w: 23, s: 29, f: 33 }, sk_d: { w: 24, s: 30, f: 34 } },
@@ -16575,15 +16575,45 @@ function hero48Load(ch) {
   HERO48_TRY[ch] = 1;
   const im = new Image();
   im.onload = () => {
-    const fr = [];
-    for (let i = 0; i < 48; i++) fr.push({ img: im, sx: (i % 8) * HERO48_CELL, sy: ((i / 8) | 0) * HERO48_CELL,
-      w: HERO48_CELL, h: HERO48_CELL, ax: HERO48_PIVOT, ay: HERO48_GROUND, bodyH: C.stand, bodyW: HERO48_CELL, bodyTop: 0 });
+    const fr = [], src = hero48Fix(ch, im);
+    for (let i = 0; i < 48; i++) fr.push({ img: src.img, sx: (i % 8) * HERO48_CELL, sy: ((i / 8) | 0) * HERO48_CELL,
+      w: HERO48_CELL, h: HERO48_CELL, ax: src.ax[i] != null ? src.ax[i] : HERO48_PIVOT, ay: HERO48_GROUND, bodyH: C.stand, bodyW: HERO48_CELL, bodyTop: 0 });
     fr.sc = HERO_H / C.stand * (C.k || 1); fr.sheet48 = ch; fr.crisp = true;   // 지금 리마스터 시트와 같은 픽셀 선명도
     HERO48_IMG[ch] = fr;
     SPR[ch] = fr; HERO_ANIM[ch] = HERO48_ANIM[ch];      // 이 순간부터 이 클래스는 48f로 그려진다
   };
   im.onerror = () => { console.warn('[48f] 주인공 시트를 못 불러왔다:', im.src); };
   im.src = ASSET9 + C.file;
+}
+/* 2026-11-23 걷기 보정: 시트를 캔버스에 옮겨 그리며 두 가지를 고친다.
+   - 도적 이동 15-21은 그림이 왼쪽을 본다 → 그 칸만 좌우 반전 (프레임 번호는 그대로라 다른 사람 화면도 같다)
+   - 대기·이동(0-21)은 프레임마다 몸통 위치가 셀 안에서 146~173으로 흔들려 달릴 때 몸이 앞뒤로 튄다
+     → 몸통 줄(셀 y 120-230)의 가장 긴 불투명 구간 가운데값의 중앙값을 ax로 써서 몸통을 고정한다. 공격·사망은 160 그대로.
+   캔버스를 못 쓰면(보안 오류 등) 원래 그림·축 160으로 그린다. */
+const HERO48_MIRROR = { lykos: [15, 16, 17, 18, 19, 20, 21] };
+function hero48Fix(ch, im) {
+  const N = HERO48_CELL, ax = [];
+  try {
+    const cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight;
+    const c = cv.getContext('2d', { willReadFrequently: true }); c.drawImage(im, 0, 0);
+    for (const i of HERO48_MIRROR[ch] || []) {
+      const x = (i % 8) * N, y = ((i / 8) | 0) * N;
+      c.clearRect(x, y, N, N); c.save(); c.translate(x + N, y); c.scale(-1, 1); c.drawImage(im, x, y, N, N, 0, 0, N, N); c.restore();
+    }
+    for (let i = 0; i < 22; i++) {
+      const x0 = (i % 8) * N, y0 = ((i / 8) | 0) * N, d = c.getImageData(x0, y0 + 120, N, 110).data, mids = [];
+      for (let r = 0; r < 110; r++) {
+        let best = 0, bm = -1, s = -1;
+        for (let x = 0; x <= N; x++) {
+          const on = x < N && d[(r * N + x) * 4 + 3] > 16;
+          if (on && s < 0) s = x; else if (!on && s >= 0) { if (x - s > best) { best = x - s; bm = (s + x - 1) / 2; } s = -1; }
+        }
+        if (best >= 6) mids.push(bm);
+      }
+      if (mids.length > 20) { mids.sort((a, b) => a - b); ax[i] = Math.round(mids[mids.length >> 1]); }
+    }
+    return { img: cv, ax };
+  } catch (e) { console.warn('[48f] 걷기 보정 생략:', e); return { img: im, ax: [] }; }
 }
 
 /* ---- class select: 결정 / 이전 sit on the red face (y 499-528 of the art), two lines, centred, never past the lip ---- */
