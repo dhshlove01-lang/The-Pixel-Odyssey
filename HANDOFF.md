@@ -11,6 +11,25 @@
 5. 옮긴 항목은 "옮김 완료"로 내리고 커밋한다.
 
 ## 옮길 것
+(없음)
+
+<!-- 형식:
+### yymmdd-hhmm  한 줄 제목   (커밋 abc1234, 대상: test/index.html)
+- 원래 파일: 32_skills.js (배너 "SKILLS: awakening skills…")
+- 바꾼 것: 무엇을 왜, 함수/상수 이름
+- 새 파일: test/assets/…
+-->
+
+## 옮김 완료
+### 261123-1815  원본 PC로 옮김 (아래 항목 전부, 기준 ee159b2 → 6f23daf/ee703d6)
+- 방법: ee159b2 의 test/index.html 줄마다 원래 조각 파일·줄을 맞춘 뒤(20,153/20,162줄, 나머지 9줄은 build.py 틀),
+  지금 test/index.html 과의 차이 189덩어리를 그 자리에 넣음 (devil-renown/tools_handoff_map.py). 조각 33개 + 새 조각 `61_patch1123.js`
+  (60_audio.js 와 70_main.js 사이에 들어온 689줄: 멀티 QA P5/P2/P1, 도적·전사·궁수 블록들). build.py: 61_patch1123.js 순서,
+  `<script src="assets/js/act3_data.js?v=…">` 를 pfx.js 다음에, art/handoff1123/assets → assets 복사. 새 그림·소리 119개는
+  art/handoff1123/assets/ 에 같은 경로로, b1~b10 48f 는 art/boss10/assets/boss/ 도 덮어씀. tools/ 두 파일은 devil-renown/tools/ 에도.
+- 확인: build.py 로 다시 만든 test/index.html 이 이 저장소의 것과 버전 표시 3곳(GAME_VER, pfx·act3_data ?v=)만 다르고 나머지 같음.
+  test/assets 는 바뀐 파일 없음. 다시 만든 페이지로 1·7·20·21·30장 맵, 3막 복도 몹 11마리, 보스 b21·b30, 거래·BGM·48f 함수 확인, 에러 없음.
+- 그림 쪽 남은 것: HERO48_MIRROR / HERO48_GROW / HERO48_ERASE 는 시트 그림을 고치면 비울 것(위 항목 메모 그대로).
 
 ### 261123-0901  3막(21~30장) 잡몹 40종 · 층 복도 맵 · 쁘띠 10종 · 실제 BGM 5트랙 · 장비 재료명   (대상: test/index.html)
 지시서: `claude_code_act3_21_to_30_prompt.txt` (기준 ee159b2). 맵 그림 팩(maps_21_to_30_pack)은 아직 안 와서 **맵 그림·3막 월드맵 페이지는 미적용**.
@@ -310,13 +329,3 @@ Firebase 규칙에 trade/tradereq (dev_, local_ 포함) 게시 후 테스트 계
 
 ### 261123-0932  정식 배포 (test → 루트, 위 0930 내용)
 - 루트 index.html = test/index.html 에서 noindex · DEV_TOOLS 두 줄만 뺀 것, 루트 assets/ = test/assets/
-
-<!-- 형식:
-### yymmdd-hhmm  한 줄 제목   (커밋 abc1234, 대상: test/index.html)
-- 원래 파일: 32_skills.js (배너 "SKILLS: awakening skills…")
-- 바꾼 것: 무엇을 왜, 함수/상수 이름
-- 새 파일: test/assets/…
--->
-
-## 옮김 완료
-(아직 없음)
