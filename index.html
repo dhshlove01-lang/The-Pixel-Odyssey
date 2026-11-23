@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1352"></script>
+<script src="assets/js/pfx.js?v=261123-1441"></script>
 <script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1352';
+const GAME_VER = '261123-1441';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -5949,11 +5949,12 @@ function updatePlayer(dt) {
   if (p.charmT > 0) { p.charmT -= dt; dir = G.boss && !G.boss.hide ? sgn(G.boss.x - p.x) * (Math.abs(G.boss.x - p.x) > 70 ? 1 : 0) : 0; }   // charmed: the body walks to her
   const mob = G.save.flags.mobility, ch = G.save.char;
   if (mob && ch === 'theron' && IN.press.shift && p.cd.s <= 0 && p.hurt <= 0) { p.sprint = 2; p.cd.s = p.cdMax.s; sfx('dash'); dust(p.x, p.y, 8); }
-  if (p.onGround) { p.dj = false; p.djShift = false; }
+  if (p.onGround) { p.dj = false; p.djShift = false; p.ljT = 0; }
   const mv = a ? (a.id === 'z' && G.save.char === 'kallisto' && !p.onGround ? 1 : a.mv) : 1, maxV =   // the archer keeps full speed in the air while shooting
     232 * (p.slowT > 0 ? 0.6 : 1) * (1 + S.spd / 100) * (p.sprint > 0 ? 1.6 : 1) * (p.haste > 0 ? 1.4 : 1);
   if (a && a.dash && a.t < a.dashT) p.vx = a.dir * a.dashV;
   else if (mv === 0 || p.hurt > 0) p.vx = approach(p.vx, 0, (p.onGround ? 2600 : 500) * dt * (p.hurt > 0 ? 0.35 : 1) * slipK(p));
+  else if (p.ljT > 0 && !p.onGround && dir !== -sgn(p.vx)) p.ljT -= dt;   // 1425b: the rogue's forward double jump keeps its speed a moment (pushing back cancels it)
   else p.vx = approach(p.vx, dir * maxV * mv, (p.onGround ? 2800 : 1800) * dt * slipK(p));   // slipK: ice floors (48d_bosspat4.js)
   if (dir !== 0 && !(a && a.lf)) p.face = dir;
   if (p.hurt <= 0 && p.jbuf > 0 && (p.onGround || p.coy > 0) && !(a && a.dash) && !(p.rootT > 0 || p.sleepT > 0 || p.petT > 0)) {
@@ -5962,7 +5963,8 @@ function updatePlayer(dt) {
     else { p.vy = -JUMP * Math.sqrt(1 + (S.jumpP || 0) / 100) * (G.map.water && swimming(p) ? SWIM_JUMP : 1); p.onGround = false; p.coy = 0; p.jbuf = 0; sfx('jump'); dust(p.x, p.y, 4); }
   }
   if (mob && ch === 'lykos' && !p.onGround && p.coy <= 0 && !p.dj && p.hurt <= 0 && (p.jbuf > 0 || IN.press.shift) && !(a && a.dash)) {
-    p.vy = -JUMP * Math.sqrt(1 + (S.jumpP || 0) / 100) * 0.88; p.dj = true; p.djShift = !IN.down.jump; p.jbuf = 0; sfx('jump');
+    { const V = JUMP * Math.sqrt(1 + (S.jumpP || 0) / 100) * 0.88, fd = dir || p.face || 1; p.vy = -V; p.vx = fd * V; p.face = fd; p.ljT = 0.4; }   // 1425b: 45 degrees forward (was straight up)
+    p.dj = true; p.djShift = !IN.down.jump; p.jbuf = 0; sfx('jump');
     for (let i = 0; i < 8; i++) addPart({ x: p.x + rnd(-10, 10), y: p.y - rnd(0, 20), vx: rnd(-40, 40), vy: rnd(10, 60), g: 0, life: 0.35, r: rnd(2, 4), col: '70,70,100', glow: 0 });
   }
   // 2026-11-22 QA 2-2 (user: 상시 최고 점프력): no jump cut any more; a tap and a hold give the same arc (it also clipped the rope jump)
@@ -6056,7 +6058,7 @@ function tickAct(dt) {
       slashFx(a.n);
     } else if (a.id === 'x' && !a.done && a.t >= a.hitAt) {
       a.done = 1;
-      const mult = 2.3 * (k1 >= 1 ? 1.25 : 1) * tDmg('th1'), burn = k1 >= 2 ? { t: 3, dps: S.atk * 0.12 } : null;
+      const mult = 1.6 * (k1 >= 1 ? 1.25 : 1) * tDmg('th1'), burn = k1 >= 2 ? { t: 3, dps: S.atk * 0.12 } : null;
       meleeHit({ x: p.face > 0 ? p.x - 8 : p.x - 72, y: p.y - p.h - 84, w: 80, h: p.h + 122 }, mult, { kb: p.face * 60, burn });
       if (k1 >= 3) for (const ang of tAwake('th1') ? [-0.22, 0, 0.22] : [0])
         { proj({ x: p.x + p.face * 22, y: p.y - 26, vx: Math.cos(ang) * p.face * 400, vy: Math.sin(ang) * 400, w: 40, h: 34, mult: 1.3 * tDmg('th1'), pierce: true, kind: 'fire', life: 1, maxDist: 360, burn: { t: 3, dps: S.atk * 0.12 } }); pfxOn(G.projs[G.projs.length - 1], 'projectiles/plasma-shot', { palette: PAL.theron }); }
@@ -16555,7 +16557,7 @@ const _h48 = (a, n) => Array.from({ length: n }, (_, i) => a + i);
 const HERO48_ANIM = {
   theron: { idle: _h48(0, 8), run: _h48(8, 14), runK: 1.7, bob: 0, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
     z: [{ w: 24, s: 28, f: 33 }, { w: 25, s: 29, f: 34 }, { w: 26, s: 30, f: 35 }],
-    x: { w: 23, s: 29, f: 34 },                                 // 상향 일섬
+    x: { w: 23, s: 25, f: 26 },                                 // 상향 일섬 (1418b: 칼을 올려 드는 25·26, 전엔 내려치는 29·34)
     c: { spin: [28, 33] },                                      // 회전 검풍
     sk_a: { w: 24, s: 29, f: 35 }, sk_s: { w: 22, s: 28, f: 31 }, sk_d: { rise: 23, drop: 30, s: 34 } },
   kallisto: { idle: _h48(0, 8), run: _h48(8, 14), runK: 1.55, bob: 0, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
@@ -16594,6 +16596,9 @@ const HERO48_MIRROR = { lykos: [15, 16, 17, 18, 19, 20, 21] };
 /* 1345b: 도적 이동 8-21 은 대기·공격보다 작은 배율로 그려져 있다 (머리 폭 35 vs 42~47, 갑옷·두건도 같은 비율) → 발밑 기준 1.2배.
    대기는 쪼그린 자세라 키가 작은 게 맞고, 키 차이는 자세로만 남는다 (달리기 키 약 182 vs 대기 140~152). */
 const HERO48_GROW = { lykos: { k: 1.2, f: _h48(8, 14) } };
+/* 1404b: 전사 28-30 의 흰 칼 궤적을 지운다 (사용자: 궤적 대신 스킬 이펙트가 검 끝에서 나가게). 칼날 선 = [손잡이 x, y, 검 끝 x, y],
+   그 선에서 3px 넘게 떨어진 흰색(+옅은 테두리)만 지우고 칼날 선 위에 은색 칼날(2.2px)을 그린다. [4] 이 y 위만, [5][6] 바닥 줄(30번 발밑 궤적) */
+const HERO48_ERASE = { theron: { 28: [211, 232, 281, 291, 0, 999, 0], 29: [214, 219, 289, 291, 0, 999, 0], 30: [213, 248, 251, 277, 236, 279, 150] } };
 function hero48Fix(ch, im) {
   const N = HERO48_CELL, ax = [];
   try {
@@ -16613,6 +16618,23 @@ function hero48Fix(ch, im) {
         c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
         c.translate(x + HERO48_PIVOT, y + HERO48_GROUND); c.scale(G48.k, G48.k); c.drawImage(t, -HERO48_PIVOT, -HERO48_GROUND); c.restore();
       }
+    }
+    const E48 = HERO48_ERASE[ch];
+    if (E48) for (const k in E48) {   // 1404b: the white sword trail out of these frames, a silver blade drawn along the sword line instead
+      const i = +k, s = E48[k], x0 = (i % 8) * N, y0 = ((i / 8) | 0) * N, id = c.getImageData(x0, y0, N, N), d = id.data;
+      const ux = s[2] - s[0], uy = s[3] - s[1], L2 = ux * ux + uy * uy, len = Math.sqrt(L2);
+      for (let y = 100; y < 300; y++) for (let x = 130; x < 310; x++) {
+        const o = (y * N + x) * 4, a = d[o + 3]; if (a < 8) continue;
+        if (!((x >= s[0] + 2 && y >= s[4]) || (y >= s[5] && x >= s[6]))) continue;
+        const t = ((x - s[0]) * ux + (y - s[1]) * uy) / L2, tc = Math.max(0, Math.min(1, t)), dist = Math.hypot(x - (s[0] + tc * ux), y - (s[1] + tc * uy));
+        if (!(t > 1 || dist > 3)) continue;   // the sword itself stays
+        const mx = Math.max(d[o], d[o + 1], d[o + 2]), mn = Math.min(d[o], d[o + 1], d[o + 2]);
+        if ((mn > 140 && mx - mn < 70) || (a < 128 && x >= s[0] + 14)) d[o + 3] = 0;   // white trail, and its faint fringe away from the hands
+      }
+      c.putImageData(id, x0, y0);
+      const nx = uy / len, ny = -ux / len;
+      c.save(); c.strokeStyle = 'rgb(226,230,240)'; c.lineWidth = 2.2; c.beginPath();
+      c.moveTo(x0 + s[0] + ux * 0.1 + nx * 1.6, y0 + s[1] + uy * 0.1 + ny * 1.6); c.lineTo(x0 + s[2] - ux / len * 2 + nx, y0 + s[3] - uy / len * 2 + ny); c.stroke(); c.restore();
     }
     for (let i = 0; i < 22; i++) {
       const x0 = (i % 8) * N, y0 = ((i / 8) | 0) * N, d = c.getImageData(x0, y0 + 120, N, 110).data, mids = [];
@@ -16647,9 +16669,9 @@ classSelectHtml = function () { return _classSelectHtmlR().replace(sp(62, 496, 2
 const REM_SK = {
   theron: {
     zOld: { file: 'vfx/vfx_warrior_slash.png', cell: [426, 380], w: 61, h: 54, align: 'center', lift: 20, off: 26, ms: [50, 60, 70, 80], hf: 2 },
-    x: { file: 'vfx/vfx_warrior_upper.png', cell: [453, 589], w: 80, h: 104, align: 'bottom', foot: 1, lift: 0, off: 24, ms: [60, 70, 90, 110], hf: 2 },   // foot: in the air it rises from the hero's feet, not the floor (user)
+    x: { file: 'vfx/vfx_warrior_upper.png', cell: [453, 589], w: 80, h: 104, align: 'bottom', foot: 1, lift: 0, off: 64, tip: [64, -66], piv: [0.25, 0.95], rot: 0.44, ms: [60, 70, 90, 110], hf: 2 },   // foot: in the air it rises from the hero's feet, not the floor (user)
     cOld: { file: 'vfx/vfx_warrior_whirlwind.png', cell: [407, 613], w: 72, h: 108, align: 'bottom', lift: 0, off: 0, ms: [55, 55, 90, 120], hf: 1 },
-    a: { file: 'vfx/vfx_warrior_dash_cleave.png', cell: [655, 188], w: 132, h: 38, align: 'center', lift: 24, off: 34, ms: [50, 45, 90, 110], hf: 2 },
+    a: { file: 'vfx/vfx_warrior_dash_cleave.png', cell: [655, 188], w: 132, h: 38, align: 'center', lift: 24, off: 34, nofx: 1, ms: [50, 45, 90, 110], hf: 2 },
     s: { file: 'vfx/vfx_warrior_earth_breaker.png', cell: [443, 474], w: 99, h: 106, align: 'bottom', lift: 0, off: 62, ms: [60, 70, 110, 150], hf: 2 },   // 2026-11-21 user: the rocks bigger (x1.4) and further ahead (spec 71x76 at 28); hit box = drawn box
     v: { file: 'vfx/vfx_warrior_awakening.png', cell: [587, 438], w: 241, h: 180, align: 'bottom', lift: 0, off: 40, ms: [100, 90, 140, 260], hf: 1 } },
   kallisto: {
@@ -16675,6 +16697,7 @@ const remGround = p => p.onGround ? p.y : Math.min(GROUND, groundBelow(p.x, p.y 
 /* the box at the hero now (k: trait growth of the area, both sides kept in proportion) */
 function remBox(p, sk, k) {
   const w = Math.round(sk.w * (k || 1)), h = Math.round(sk.h * (k || 1)), f = p.face || 1;
+  if (sk.tip) { const fx = f > 0 ? sk.piv[0] : 1 - sk.piv[0]; return { x: Math.round(p.x + f * sk.tip[0] - w * fx), y: Math.round(p.y + sk.tip[1] - h * sk.piv[1]), w, h }; }   // 1418b: the strip's piv point on the sword tip
   const bottom = sk.align === 'bottom' ? (sk.foot ? p.y : remGround(p)) : p.y - sk.lift;
   return { x: Math.round(p.x + f * sk.off - w / 2), y: Math.round(bottom - h), w, h };
 }
@@ -16697,6 +16720,7 @@ function remDrawBox(c, sk, frame, box, face, alpha) {
   const im = remImg(sk.file); if (!im.complete || !im.naturalWidth) return;
   const cw = Math.floor(im.naturalWidth / 4), chh = im.naturalHeight;
   c.save(); c.imageSmoothingEnabled = false; c.globalCompositeOperation = 'lighter'; if (alpha != null) c.globalAlpha *= alpha;
+  if (sk.rot) { const px = box.x + box.w * (face < 0 ? 1 - sk.piv[0] : sk.piv[0]), py = box.y + box.h * sk.piv[1]; c.translate(px, py); c.rotate(face < 0 ? -sk.rot : sk.rot); c.translate(-px, -py); }   // 1418b: turned to the blade's angle
   if (face < 0) { c.translate(Math.round(box.x + box.w), Math.round(box.y)); c.scale(-1, 1); c.drawImage(im, frame * cw, 0, cw, chh, 0, 0, box.w, box.h); }
   else c.drawImage(im, frame * cw, 0, cw, chh, Math.round(box.x), Math.round(box.y), box.w, box.h);
   c.restore();
@@ -16709,6 +16733,8 @@ function remFxDraw(c) {
   }
   for (const tr of G.traps || []) if (tr.rem) remDrawBox(c, REM_SK.kallisto.s, 0, tr.box, tr.face, tr.t > tr.arm ? 0.55 + 0.2 * Math.sin(G.t * 6) : 0.3);   // an armed snare glints
 }
+/* 1352b: warrior X / A effects start past the sword trail drawn in the 48f frames (tip ~62-67 px ahead): the hit covers the sword (from just behind the hero) out to the effect's far edge */
+function remReach(p, box) { const f = p.face || 1, x0 = f > 0 ? Math.min(box.x, p.x - 8) : box.x, x1 = f > 0 ? box.x + box.w : Math.max(box.x + box.w, p.x + 8); return { x: x0, y: box.y, w: x1 - x0, h: box.h }; }
 const remHit = (box, mult, o) => { if (G.devHit) (G.dbgHits = G.dbgHits || []).push(Object.assign({ t: 0.3 }, box)); (G.remHits = G.remHits || []).push(Object.assign({}, box)); return meleeHit(box, mult, o || {}); };
 
 /* ---- Z X C ---- */
@@ -16716,13 +16742,13 @@ const REM_TICK = {
   theron(p, a) {
     const k1 = traitRank('th1'), k2 = traitRank('th2'), S = G.stats;
     if (a.id === 'x') {   // 베기 (Z) and 회전참 (C) went back to the old code (user, 2026-11-20): see tickAct below
-      if (!a.vfx) { a.vfx = 1; remFx(remSk('x'), { follow: p, hitAt: 2, delay: a.hitAt }); }
+      if (!a.vfx) { a.vfx = 1; }   // 1418d: the flame is drawn along the blade itself (thBladeFx), not as a box at the tip
       if (!a.done && a.t >= a.hitAt) {
         a.done = 1;
-        const mult = 2.3 * (k1 >= 1 ? 1.25 : 1) * tDmg('th1'), burn = k1 >= 2 ? { t: 3, dps: S.atk * 0.12 } : null;
-        remHit(remBox(p, remSk('x')), mult, { kb: p.face * 60, burn }); G.hitstop = Math.max(G.hitstop, 0.06); shake(3);
+        const mult = 1.6 * (k1 >= 1 ? 1.25 : 1) * tDmg('th1'), burn = k1 >= 2 ? { t: 3, dps: S.atk * 0.12 } : null;
+        { const r = remReach(p, remBox(p, remSk('x'))); r.h = p.y + 4 - r.y; remHit(r, mult, { kb: p.face * 60, burn }); }   // 1418b: from the flame's top down to the floor G.hitstop = Math.max(G.hitstop, 0.06); shake(3);
         if (k1 >= 3) for (const ang of tAwake('th1') ? [-0.22, 0, 0.22] : [0])
-          { proj({ x: p.x + p.face * 22, y: p.y - 26, vx: Math.cos(ang) * p.face * 400, vy: Math.sin(ang) * 400, w: 40, h: 34, mult: 1.3 * tDmg('th1'), pierce: true, kind: 'fire', life: 1, maxDist: 360, burn: { t: 3, dps: S.atk * 0.12 } }); pfxOn(G.projs[G.projs.length - 1], 'projectiles/plasma-shot', { palette: PAL.theron }); }
+          { proj({ x: p.x + p.face * 66, y: p.y - 26, vx: Math.cos(ang) * p.face * 400, vy: Math.sin(ang) * 400, w: 40, h: 34, mult: 1.3 * tDmg('th1'), pierce: true, kind: 'fire', life: 1, maxDist: 360, burn: { t: 3, dps: S.atk * 0.12 } }); pfxOn(G.projs[G.projs.length - 1], 'projectiles/plasma-shot', { palette: PAL.theron }); }
       }
     }
   },
@@ -16793,8 +16819,8 @@ const REM_SKILL = {
   theron: {
     a(p, a) {   // 돌진 베기: a 60 px dash (0.1 s, invulnerable 0.12 s), one cut in the box (the old 260%)
       const sk = remSk('a');
-      if (!a.vfx) { a.vfx = 1; a.dash = 1; a.dashT = 0.1; a.dashV = 600; a.dir = p.face; p.inv = Math.max(p.inv, 0.12); remFx(sk, { follow: p, hitAt: 2, delay: 0.095 }); sfx('dash'); }
-      if (!a.done && a.t >= 0.095) { a.done = 1; remHit(remBox(p, sk), 2.6, { kb: p.face * 80 }); shake(3); }
+      if (!a.vfx) { a.vfx = 1; a.dash = 1; a.dashT = 0.1; a.dashV = 600; a.dir = p.face; p.inv = Math.max(p.inv, 0.12); sfx('dash'); }   // 1410b: no effect strip (user); the cut hits the old box (-32..100 px)
+      if (!a.done && a.t >= 0.095) { a.done = 1; remHit(remReach(p, remBox(p, sk)), 2.6, { kb: p.face * 80 }); shake(3); }
     },
     s(p, a) {   // 대지 분쇄: the buff as before (castSkill) and one hit where the rocks rise (user)
       const sk = remSk('s');
@@ -20946,6 +20972,7 @@ function netCastFx(ch, k, x, y, face) {
       return;
     }
     const sk = REM_SK[ch] && REM_SK[ch][k];
+    if (sk && sk.nofx) return;   // 1410b: warrior A has no effect strip
     if (sk && sk.file) { remFx(sk, { box: remBox({ x, y, face, onGround: true }, sk), face }); return; }
     const nm = NET_SKFX[ch] && NET_SKFX[ch][k];
     if (nm) pfx(nm, x + face * 28, y - 40, { flip: face < 0 });
@@ -21273,6 +21300,305 @@ startAct = function (id) { const r = _startActN.apply(this, arguments); const a 
 const _castSkillN = castSkill;
 castSkill = function (key) { const p = G.player, cd0 = p ? JSON.stringify(p.cd) : ''; const r = _castSkillN.apply(this, arguments); if (p && JSON.stringify(p.cd) !== cd0) netCast(key); return r; };
 if (typeof startUlt === 'function') { const _startUltN = startUlt; startUlt = function () { const u0 = G.ult; const r = _startUltN.apply(this, arguments); if (G.ult && G.ult !== u0) netCast('v'); return r; }; }
+
+/* ============ 2026-11-23: 도적 X 그림자 걸음 = 순간이동 + 그림자 추격 ============
+   - X: 앞으로 돌진하던 거리(900px/s x 0.2s = 180px)만큼 즉시 순간이동. 벽(solid)·경기장 끝에 닿으면 그 앞에서 멈춘다.
+   - 떠난 자리에 검은 그림자가 남아 0.5초 동안 도적을 따라온다(처음엔 느리게, 점점 빠르게). 그림자가 지나간 자리의 적은
+     한 번씩 맞는다 (피해·넉백 = 예전 X: 210%, 특성 ly1 +30%, ly1 2랭크 치명 버프는 순간이동 때). 잔상(3랭크 0.4초, 각성 0.7초)은
+     그림자가 도착한 뒤 지나온 구간 전체를 한 번 더 벤다.
+   - 순간이동하는 순간 도적 본인 화면만 하얀 섬광(0.15초, 바로 사라짐). 다른 사람에겐 위치 이동 + 원래 X 효과(netCast)만 보인다.
+   ============ */
+const LY_TP = { dist: 180, shadowT: 0.5, flashT: 0.15 };
+function lyTpTarget(p, dir) {
+  const hw = p.w / 2, plats = G.map.plats, lo = (G.map.arenaL || 0) + hw + 6, hi = (G.map.arenaR || G.map.w) - hw - 6;
+  let x = p.x;
+  for (let d = 6; d <= LY_TP.dist; d += 6) {
+    const nx = clamp(p.x + dir * d, lo, hi);
+    let bad = false;
+    for (const pl of plats) { if (pl.t !== 'solid' || pl === plats[0] || pl.off) continue; if (ov(nx - hw, p.y - p.h, p.w, p.h - 2, pl.x, pl.y, pl.w, pl.h)) { bad = true; break; } }
+    if (bad) break; x = nx; if (nx === lo || nx === hi) break;
+  }
+  return x;
+}
+function lyTeleport(p, a) {
+  const dir = a.dir || p.face || 1, x0 = p.x, y0 = p.y, k1 = traitRank('ly1');
+  for (let i = 0; i < 14; i++) addPart({ x: x0 + rnd(-10, 10), y: y0 - rnd(4, 60), vx: rnd(-40, 40), vy: rnd(-60, 0), g: 0, life: rnd(0.3, 0.55), r: rnd(2, 5), col: '40,40,70', glow: 0 });
+  p.x = lyTpTarget(p, dir); p.vx = 0; p.face = dir; if (!p.onGround) p.vy = Math.min(p.vy, 0);   // in the air: a short hang
+  for (let i = 0; i < 10; i++) addPart({ x: p.x + rnd(-10, 10), y: p.y - rnd(4, 60), vx: rnd(-60, 60), vy: rnd(-80, 0), g: 0, life: rnd(0.25, 0.45), r: rnd(1.5, 3.5), col: '150,160,230', glow: 1 });
+  a.dash = 0; a.dashT = 0; a.done = 1; a.dur = 0.22; a.tele = 1;   // no dash, no hit at the end of the act: the shadow does the cutting
+  if (k1 >= 2) p.critBuff = 2;
+  G.lyShade = { map: G.map, x0, y0, x: x0, y: y0, px: x0, py: y0, dir, t: 0, trail: [], hit: new Set(), mult: 2.1 * (k1 >= 1 ? 1.3 : 1) * tDmg('ly1'), k1 };
+  G.lyFlash = LY_TP.flashT; if (REM_SK.lykos && REM_SK.lykos.x) remImg(REM_SK.lykos.x.file);
+  sfx('dash');
+}
+function lyShadeTick(dt) {
+  if (G.lyFlash > 0) G.lyFlash = Math.max(0, G.lyFlash - dt);
+  const s = G.lyShade, p = G.player; if (!s) return;
+  if (!p || p.dead > 0 || G.map !== s.map) { G.lyShade = null; return; }
+  s.t += dt;
+  const k = Math.min(1, s.t / LY_TP.shadowT), e = k * k * (3 - 2 * k);
+  s.px = s.x; s.py = s.y; s.x = s.x0 + (p.x - s.x0) * e; s.y = s.y0 + (p.y - s.y0) * e;
+  s.trail.unshift({ x: s.x, y: s.y }); if (s.trail.length > 7) s.trail.pop();
+  if (Math.random() < 0.8) addPart({ x: s.x + rnd(-8, 8), y: s.y - rnd(6, 56), vx: -s.dir * rnd(10, 40), vy: rnd(-24, 0), g: 0, life: rnd(0.25, 0.45), r: rnd(2, 4), col: '40,40,70', glow: 0 });
+  // what the shadow swept this tick: each enemy once
+  const xa = Math.min(s.px, s.x) - 14, xb = Math.max(s.px, s.x) + 14, ya = Math.min(s.py, s.y) - p.h - 10, r = { x: xa, y: ya, w: xb - xa, h: Math.abs(s.y - s.py) + p.h + 40 };
+  let n = 0;
+  for (const t of targets()) {
+    if (s.hit.has(t)) continue; const b = hurtbox(t);
+    if (ov(r.x, r.y, r.w, r.h, b.x, b.y, b.w, b.h)) { s.hit.add(t); dealDamage(t, s.mult, { kb: s.dir * 90 }); n++; }
+  }
+  if (n) { sfx('stab', 1); if (G.t - (G.hsT || -9) > 0.25) { G.hitstop = Math.max(G.hitstop, 0.04); G.hsT = G.t; } }
+  if (k >= 1) {   // arrived: the shadow melts into her; the echo cuts (traits) go over the whole way it came
+    G.lyShade = null;
+    const sk = remSk('x', 'lykos'); if (sk) remFx(sk, { box: remBox(p, sk), face: s.dir });
+    const x0 = Math.min(s.x0, p.x) - 14, x1 = Math.max(s.x0, p.x) + 14, rect = { x: x0, y: Math.min(s.y0, p.y) - p.h - 10, w: x1 - x0, h: Math.abs(p.y - s.y0) + p.h + 40 }, mult = s.mult, dir = s.dir;
+    const echo = d => after(d, () => { if (G.player.dead > 0) return; meleeHit(rect, mult * 0.6, { kb: dir * 40 }); if (sk) remFx(sk, { box: remBox(G.player, sk), face: dir, alpha: 0.7 }); sfx('stab', 2); });
+    if (s.k1 >= 3) echo(0.4);
+    if (tAwake('ly1')) echo(0.7);
+  }
+}
+function lyShadeDraw(c) {
+  const s = G.lyShade; if (!s || G.map !== s.map) return;
+  const A = HERO_ANIM.lykos; if (!A || !A.run) return;
+  const f = A.run[Math.floor(s.t * 28) % A.run.length], pose = { f, sx: 1, sy: 1, tilt: 0, dx: 0, flip: 1 }, dummy = { anim: G.t, onGround: true, vx: 0, act: null, hurt: 0, dead: 0, guard: 0, parryFx: 0 };
+  const fadeIn = Math.min(1, s.t / 0.06);
+  const sk = REM_SK.lykos && REM_SK.lykos.x, me = G.player;   // 1425b: the old purple shadow-step streak joins her and the shadow (user)
+  if (sk && me) {
+    const x0 = Math.min(s.x, me.x), x1 = Math.max(s.x, me.x);
+    if (x1 - x0 > 10) {
+      const yc = (s.y + me.y) / 2 - (sk.lift || 26), al = 0.9 * fadeIn * Math.max(0, 1 - Math.max(0, s.t - 0.32) / 0.18);
+      if (al > 0) remDrawBox(c, sk, 1 + (Math.floor(s.t * 14) % 2), { x: x0, y: Math.round(yc - 18), w: x1 - x0, h: 36 }, s.dir, al);
+    }
+  }
+  const one = (x, y, al) => { c.save(); c.globalAlpha = al * fadeIn; c.filter = 'brightness(0.12) saturate(0)'; drawHeroSprite(c, 'lykos', dummy, x, y, s.dir, { crisp: true, pose }); c.restore(); };
+  if (s.trail[3]) one(s.trail[3].x, s.trail[3].y, 0.22);
+  if (s.trail[6]) one(s.trail[6].x, s.trail[6].y, 0.1);
+  one(s.x, s.y, 0.72);
+}
+const _startActLy = startAct;
+startAct = function (id) {
+  const p = G.player, a0 = p && p.act, r = _startActLy.apply(this, arguments), a = p && p.act;
+  if (G.save.char === 'lykos' && id === 'x' && a && a !== a0 && a.id === 'x' && a.dash) { lyTeleport(p, a); lyChUse(p); }
+  return r;
+};
+/* 충전형: X 최대 2회. 한 칸이 차는 시간 = 원래 X 재사용 대기(4.5초 x 특성·쿨감 그대로). 남은 횟수가 있으면 0.2초 뒤 바로 다시 쓸 수 있고,
+   0회일 때만 버튼이 어두워지며 다음 칸까지 남은 시간이 보인다. 게임의 p.cd.x 를 매 틱 이 값으로 맞춘다 (X 입력 판정은 그대로 cd.x <= 0). */
+const LY_CH = { max: 2, gap: 0.2 };
+function lyCh() { if (!G.lyCh || G.lyCh.save !== G.save) G.lyCh = { save: G.save, q: LY_CH.max, t: 0, full: 4.5, gap: 0 }; return G.lyCh; }
+function lyChApply(p) { const S = lyCh(); p.cdMax.x = S.q > 0 ? Math.max(LY_CH.gap, 0.01) : S.full; p.cd.x = S.q > 0 ? S.gap : S.t; }
+function lyChUse(p) {
+  const S = lyCh(); if (p.cd.x > 0.5) S.full = p.cd.x;   // what the game just set for this cast (traits, cooldown reduction)
+  S.q = Math.max(0, S.q - 1); if (S.t <= 0) S.t = S.full; S.gap = LY_CH.gap; lyChApply(p);
+}
+function lyChTick(dt) {
+  const p = G.player; if (!p || !G.save || G.save.char !== 'lykos') return;
+  const S = lyCh(); S.gap = Math.max(0, S.gap - dt);
+  if (G.devNoCd) { S.q = LY_CH.max; S.t = 0; }
+  if (S.q < LY_CH.max) { S.t -= dt; if (S.t <= 0) { S.q++; S.t = S.q < LY_CH.max ? S.full : 0; } }
+  lyChApply(p);
+}
+function lyChBadge() {
+  const on = !!(G.save && G.save.char === 'lykos'), q = on ? lyCh().q : -1;
+  if (HUDC.lyq === q) return; HUDC.lyq = q;
+  for (const el of [document.getElementById('sk1'), document.querySelector('#touch .tb[data-k="x"]')]) {
+    if (!el) continue; let b = el.querySelector('.lyq');
+    if (!on) { if (b) b.remove(); continue; }
+    if (!b) { b = document.createElement('span'); b.className = 'lyq'; b.style.cssText = 'position:absolute;right:2px;top:1px;font-size:10px;font-weight:700;line-height:1;color:#d6dcff;text-shadow:0 0 2px #000,0 0 2px #000,0 0 2px #000;pointer-events:none;z-index:5'; el.appendChild(b); }
+    b.textContent = q;
+  }
+}
+const _updateHudLy = updateHud;
+updateHud = function () { const r = _updateHudLy.apply(this, arguments); try { lyChBadge(); } catch (e) { } return r; };
+const _updateSkillsLy = updateSkills;
+updateSkills = function (dt) { const r = _updateSkillsLy.apply(this, arguments); lyShadeTick(dt); lyChTick(dt); return r; };
+const _playerFigLy = playerFig;
+playerFig = function () { try { lyShadeDraw(ctx); } catch (e) { } return _playerFigLy.apply(this, arguments); };   // behind the hero
+const _renderWorldLy = renderWorld;
+renderWorld = function () {
+  const r = _renderWorldLy.apply(this, arguments);
+  if (G.lyFlash > 0) {   // 섬광: 터지는 순간 거의 흰색, 제곱으로 빠르게 빠진다
+    const k = G.lyFlash / LY_TP.flashT;
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 0.9 * k * k; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); ctx.restore();
+  }
+  return r;
+};
+
+/* ============ 2026-11-23: 궁수 V 화살 폭풍이 맵 전체를 맞힌다 ============
+   ULT12.kallisto 의 화살 폭풍 6번(0.40~0.75초, 공격력 90%씩)에 all: true → ult12Box 가 맵 전체 상자를 돌려준다 (위아래 층 포함, 화면 밖도).
+   마지막 유성 4번(-60~60칸)은 그대로. 화살비 장면(12장 중 4~7번)은 그림 한 장을 비율 그대로 키워 화면 전체를 덮는다 (1418c, 사용자). */
+ULT12.kallisto.waves.forEach(w => { if (w.at >= 0.39 && w.at <= 0.76) w.all = true; });
+const _ult12BoxKa = ult12Box;
+ult12Box = function (w, p, face) { return w.all ? { x: -1e5, y: -1e5, w: 2e5, h: 2e5 } : _ult12BoxKa(w, p, face); };
+/* 1418c: the strip's arrow rain (frames 4-7): ONE picture, its drawn part (cell x 56-552) scaled evenly (width and height together, not stretched)
+   to span the whole screen, on the hero's floor line. The middle original is not drawn on those frames, so nothing doubles or shows a seam (user). */
+ULT12.kallisto.rainF = [4, 5, 6, 7]; ULT12.kallisto.rainSrc = [56, 552];
+const _ult9DrawKa = ult9Draw;
+ult9Draw = function (c, over) {
+  const u = G.ult, C = ULT12.kallisto, im = ULT12_IMG;
+  const rain = !over && u && u.phase === 'act' && u.ch === 'kallisto' && C.rainF.includes(u.fi) && im && im.complete && im.naturalWidth;
+  if (!rain) return _ult9DrawKa(c, over);
+  const p = G.player, cw = Math.floor(im.naturalWidth / 12), chh = im.naturalHeight, sw = C.rainSrc[1] - C.rainSrc[0];
+  const dw = W + 80, s = dw / sw, dh = Math.round(chh * s), gy = p.onGround ? p.y : groundBelow(p.x, p.y), dy = Math.round(gy - (chh - ULT12_GROUND) * s);
+  c.save(); c.imageSmoothingEnabled = false; c.globalCompositeOperation = 'lighter';
+  c.translate(Math.round(G.cam.x + W / 2), 0); if (u.face < 0) c.scale(-1, 1);
+  c.drawImage(im, u.fi * cw + C.rainSrc[0], 0, sw, chh, -Math.round(dw / 2), dy, dw, dh);
+  c.restore();
+};
+
+/* ============ 2026-11-23 (1418b): 전사 X 상향 일섬 = 공중에서 쓰면 한 번 더 뛰어오른다 ============
+   점프 중 X: 점프 한 번만큼 위로 (점프력 보너스 포함), 착지할 때까지 1회. 공중에서는 좌우 이동 85%. 피해는 230% → 160% (특성 배율은 그대로) */
+const _startActTh = startAct;
+startAct = function (id) {
+  const p = G.player, a0 = p && p.act, air = p && !p.onGround, r = _startActTh.apply(this, arguments), a = p && p.act;   // in the air before X (the X itself lifts her a little)
+  if (G.save.char === 'theron' && id === 'x' && a && a !== a0 && a.id === 'x' && air && !p.thXJ) {
+    p.thXJ = 1; p.vy = -JUMP * Math.sqrt(1 + (G.stats.jumpP || 0) / 100); a.mv = 0.85;
+    sfx('jump'); for (let i = 0; i < 8; i++) addPart({ x: p.x + rnd(-12, 12), y: p.y - rnd(0, 8), vx: rnd(-60, 60), vy: rnd(20, 90), g: 0, life: 0.3, r: rnd(2, 3.5), col: '255,190,120', glow: 1 });
+  }
+  return r;
+};
+/* 1418d: 불꽃이 칼날을 따라 붙는다 (사용자: 칼날의 손 쪽부터 검 끝 조금 너머까지, 움직이는 각도대로).
+   프레임별 칼날 선 [손잡이 x, y, 검 끝 x, y] (셀 좌표). 이펙트 1번 장면의 불꽃 줄기(밑동 113,558 → 끝 420,235)를 손잡이 → 검 끝 +20% 에 맞춰 늘려 그린다.
+   25(올려벤 순간)는 진하게, 26(머리 위 마무리)은 각도를 따라가며 사라진다. */
+const TH_BLADE = { 23: [152, 223, 245, 261], 25: [203, 183, 288, 156], 26: [146, 118, 54, 142] };
+const TH_STREAK = { f: 1, b: [113, 558], e: [420, 235] };
+function thBladeFx(c) {
+  const p = G.player, a = p && p.act; if (!a || a.id !== 'x' || G.save.char !== 'theron') return;
+  const set = SPR.theron; if (!set || !set.sheet48) return;
+  const sk = REM_SK.theron.x, im = remImg(sk.file); if (!im.complete || !im.naturalWidth) return;
+  const ps = heroPose('theron', p), L = TH_BLADE[ps.f]; if (!L || ps.f === 23) return;
+  const fr = set[ps.f], face = p.face || 1, sc = set.sc;
+  const wx = (cx, cy) => [p.x + (ps.dx || 0) * face + face * (cx - fr.ax) * sc * (ps.sx || 1), p.y + (cy - fr.ay) * sc * (ps.sy || 1)];
+  const h = wx(L[0], L[1]), tp = wx(L[2] + (L[2] - L[0]) * 0.2, L[3] + (L[3] - L[1]) * 0.2);
+  const len = Math.hypot(tp[0] - h[0], tp[1] - h[1]), ang = Math.atan2(tp[1] - h[1], tp[0] - h[0]);
+  const S = TH_STREAK, sdx = S.e[0] - S.b[0], sdy = S.e[1] - S.b[1], slen = Math.hypot(sdx, sdy), sang = Math.atan2(sdy, sdx);
+  const kL = len / slen, kT = kL * 2.4 * (face < 0 ? -1 : 1);   // a little thicker than true length would give, flames kept on the top side
+  const fade = ps.f === 26 ? Math.max(0, 1 - Math.max(0, a.t - 0.2) / Math.max(0.05, a.dur - 0.2)) : 1; if (fade <= 0) return;
+  const cw = Math.floor(im.naturalWidth / 4), chh = im.naturalHeight;
+  c.save(); c.imageSmoothingEnabled = false; c.globalCompositeOperation = 'lighter'; c.globalAlpha *= fade;
+  c.translate(h[0], h[1]); c.rotate(ang); c.scale(kL, kT); c.rotate(-sang); c.translate(-S.b[0], -S.b[1]);
+  c.drawImage(im, S.f * cw, 0, cw, chh, 0, 0, cw, chh);
+  c.restore();
+}
+const _playerFigTh = playerFig;
+playerFig = function () { const r = _playerFigTh.apply(this, arguments); try { thBladeFx(ctx); } catch (e) { } return r; };
+const _updateSkillsTh = updateSkills;
+updateSkills = function (dt) { const r = _updateSkillsTh.apply(this, arguments); const p = G.player; if (p && p.onGround) p.thXJ = 0; return r; };
+
+/* ============ 2026-11-23 (1425b): 도적 D 그림자 감옥 = 바닥 설치 장판 / A 그림자 은신 ============
+   D: 순간이동 없음. 가장 가까운 바닥(공중이면 발밑의 바닥)에 장판을 30초 설치. 원래 D 의 그림자 촉수(pfx shadow/shadow-tendrils)가 장판 위로 계속 솟고,
+      안의 적은 1초마다 공격력의 40% (특성 배율 freshMul('d')). 설치돼 있을 때 D 를 다시 누르면 걷힌다 (재사용 대기 중에도).
+      특성 ly_d: 5랭크 범위 +20%, 10랭크 감옥 안의 적 느려짐(slowT), 15랭크 0.7초마다.
+   A: 반투명 은신. 잡몹(updateMon)·보스(updateBoss)가 도는 동안 G.player 를 아무도 없는 가짜로 바꿔 쫓지도 때리지도 못하게 (netWithAim 과 같은 방식,
+      가짜에 쓴 피해·넉백은 진짜에 안 감). Z X C·다른 스킬·각성기를 쓰면 풀린다. 이미 날아온 투사체·바닥 위험은 그대로 맞는다.
+      특성 ly_a = 기습: 은신이 풀린 뒤 1초(5랭크 1.5, 15랭크 2.5) 동안 주는 피해 x freshMul('a'), 10랭크는 은신 순간 체력 5% 회복. */
+const LY_ZONE = { w: 240, h: 130, life: 30, tick: 1.0, mult: 0.4 };
+const lyCdK = key => freshCd(key) * (1 - (G.stats.cdr || 0) / 100);
+function lyZoneOff(msg) { if (!G.lyZone) return; G.lyZone = null; if (msg) toast(msg); sfx('stab', 2); }
+function lyZonePlace(p) {
+  const tier = skillTier('d'), gy = remGround(p);
+  G.lyZone = { map: G.map, x: p.x, y: gy, w: Math.round(LY_ZONE.w * (tier >= 1 ? 1.2 : 1)), h: LY_ZONE.h, t: 0, next: 0.25, fxT: 0, tier };
+  p.cd.kd = p.cdMax.kd = SKILLS.lykos.d.cd * lyCdK('d');
+  p.act = { skill: 'd', id: 'sk_d', t: 0, dur: 0.25, mv: 0.3, lf: 1, done: 1, hits: 6 };   // a short cast pose; hits 6 = the old stabs never run
+  sfx('skill'); dust(p.x, gy, 10, '60,60,90');
+}
+function lyZoneTick(dt) {
+  const z = G.lyZone; if (!z) return;
+  if (G.map !== z.map || G.save.char !== 'lykos') { G.lyZone = null; return; }
+  z.t += dt; if (z.t >= LY_ZONE.life) { lyZoneOff(); return; }
+  z.fxT -= dt;
+  if (z.fxT <= 0) { z.fxT = 0.55; const n = z.w > 260 ? 3 : 2; for (let i = 0; i < n; i++) pfx('shadow/shadow-tendrils', z.x + (i - (n - 1) / 2) * (z.w / n) + rnd(-12, 12), z.y, {}); }
+  z.next -= dt; if (z.next > 0) return;
+  z.next = z.tier >= 3 ? 0.7 : LY_ZONE.tick;
+  const r = { x: z.x - z.w / 2, y: z.y - z.h, w: z.w, h: z.h + 6 }, m = LY_ZONE.mult * freshMul('d'); let n = 0;
+  for (const e of targets()) {
+    if (e.hp <= 0 || e.st === 'die') continue; const hb = hurtbox(e); if (!ov(r.x, r.y, r.w, r.h, hb.x, hb.y, hb.w, hb.h)) continue;
+    dealDamage(e, m, { kb: 0 }); n++; if (z.tier >= 2) e.slowT = Math.max(e.slowT || 0, 1.2);
+  }
+  if (n) sfx('stab', 1);
+}
+function lyZoneDraw(c) {
+  const z = G.lyZone; if (!z || G.map !== z.map) return;
+  const left = LY_ZONE.life - z.t, a = Math.min(1, z.t / 0.2) * (left < 2 ? left / 2 : 1), pulse = 0.5 + 0.5 * Math.sin(G.t * 4);
+  c.save(); c.globalAlpha = 0.5 * a;
+  const g = c.createRadialGradient(z.x, z.y, 4, z.x, z.y, z.w / 2); g.addColorStop(0, 'rgba(70,40,110,0.9)'); g.addColorStop(0.75, 'rgba(40,20,70,0.55)'); g.addColorStop(1, 'rgba(20,10,40,0)');
+  c.fillStyle = g; c.beginPath(); c.ellipse(z.x, z.y, z.w / 2, 12, 0, 0, Math.PI * 2); c.fill();
+  c.globalAlpha = (0.35 + 0.25 * pulse) * a; c.strokeStyle = 'rgb(170,120,255)'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(z.x, z.y, z.w / 2, 12, 0, 0, Math.PI * 2); c.stroke();
+  c.restore();
+}
+/* A: stealth */
+function lyStealthOn(p) {
+  p.stealth = 1; p.cd.ka = p.cdMax.ka = SKILLS.lykos.a.cd * lyCdK('a');
+  if (skillTier('a') >= 2) p.hp = Math.min(p.mhp, p.hp + p.mhp * 0.05);
+  for (let i = 0; i < 12; i++) addPart({ x: p.x + rnd(-14, 14), y: p.y - rnd(4, 70), vx: rnd(-50, 50), vy: rnd(-60, 0), g: 0, life: rnd(0.3, 0.6), r: rnd(2, 5), col: '50,40,80', glow: 0 });
+  sfx('dash');
+}
+function lyStealthOff(p) {
+  if (!p || !p.stealth) return; p.stealth = 0;
+  const tr = traitOf('lykos', 'a'), r = tr ? traitRank(tr.id) : 0, tier = trTier(r);
+  if (r > 0) { p.ambushT = 1 + (tier >= 1 ? 0.5 : 0) + (tier >= 3 ? 1 : 0); p.ambushK = freshMul('a'); }
+}
+const _dealDamageLy = dealDamage;
+dealDamage = function (e, mult, o) { const p = G.player; if (p && p.ambushT > 0 && G.save.char === 'lykos') mult *= p.ambushK || 1; return _dealDamageLy(e, mult, o); };
+const LY_GHOST = m => { const real = G.player; return Object.assign(Object.create(real), { x: m.x, y: m.y - 1e6, vx: 0, vy: 0, onGround: true, dead: 1 }); };   // nobody to see: 'dead' turns every mob's sight off
+const _updateMonLy = updateMon;
+updateMon = function (m, dt) {
+  const real = G.player; if (!real || !real.stealth) return _updateMonLy(m, dt);
+  if (m.st === 'chase' || m.st === 'wind') { m.st = 'patrol'; m.lost = 0; m.t = 0; }   // lose her at once
+  const mx = m.x, my = m.y; G.player = LY_GHOST(m);
+  try { return _updateMonLy(m, dt); } finally { G.player = real; if (!(Math.abs(m.x) < 1e5) || !(Math.abs(m.y) < 1e5)) { m.x = mx; m.y = my; } }   // a mob that jumps to the player stays put
+};
+const _updateBossLy = updateBoss;
+updateBoss = function (dt) {
+  const real = G.player, b = G.boss; if (!real || !real.stealth || !b) return _updateBossLy(dt);
+  b.cd = Math.max(b.cd || 0, 0.3);   // no new move while she is hidden
+  G.player = Object.assign(Object.create(real), { x: b.x, y: -1e6, vx: 0, vy: 0 });   // right on the boss, far above: it neither walks nor aims at her
+  const bx = b.x, by = b.y;
+  try { return _updateBossLy(dt); } finally { G.player = real; if (!(Math.abs(b.x) < 1e5) || !(Math.abs(b.y) < 1e5)) { b.x = bx; b.y = by; } }
+};
+/* skills: A and D for the rogue; anything used ends the stealth */
+const _skillInputLy = skillInput;
+skillInput = function () {
+  const p = G.player;
+  if (G.save.char === 'lykos' && IN.press.kd && G.lyZone && !(p.silT > 0)) { lyZoneOff('그림자 감옥을 걷었다'); IN.press.kd = false; }   // re-press: off, even on cooldown
+  return _skillInputLy.apply(this, arguments);
+};
+const _castSkillLy = castSkill;
+castSkill = function (key) {
+  const p = G.player;
+  if (G.save.char === 'lykos' && key === 'a') { lyStealthOn(p); return; }
+  if (p) lyStealthOff(p);
+  if (G.save.char === 'lykos' && key === 'd') { lyZonePlace(p); return; }
+  return _castSkillLy.apply(this, arguments);
+};
+const _startActLyS = startAct;
+startAct = function (id) { if (G.player) lyStealthOff(G.player); return _startActLyS.apply(this, arguments); };
+const _startUltLy = startUlt;
+startUlt = function () { if (G.player) lyStealthOff(G.player); return _startUltLy.apply(this, arguments); };
+if (typeof castLegend === 'function') { const _castLegendLy = castLegend; castLegend = function () { if (G.player) lyStealthOff(G.player); return _castLegendLy.apply(this, arguments); }; }
+const _updateSkillsLyZ = updateSkills;
+updateSkills = function (dt) {
+  const r = _updateSkillsLyZ.apply(this, arguments), p = G.player;
+  lyZoneTick(dt);
+  if (p) { if (p.ambushT > 0) p.ambushT -= dt; if (p.stealth && (G.save.char !== 'lykos' || p.dead > 0)) p.stealth = 0; }
+  return r;
+};
+const _drawHeroSpriteLy = drawHeroSprite;
+drawHeroSprite = function (c, ch, p, x, y, face, o) {
+  if (p && p === G.player && p.stealth && !(o && o.pose)) { o = Object.assign({}, o || {}); o.alpha = (o.alpha == null ? 1 : o.alpha) * 0.35; }
+  return _drawHeroSpriteLy(c, ch, p, x, y, face, o);
+};
+const _playerFigLyZ = playerFig;
+playerFig = function () { try { lyZoneDraw(ctx); } catch (e) { } return _playerFigLyZ.apply(this, arguments); };   // the floor mark under everyone
+/* names, descriptions, traits */
+Object.assign(SKILLS.lykos.a, { name: '그림자 은신', desc: '몸이 반투명해지며 그림자에 숨는다. 잡몹과 보스가 쫓거나 공격하지 못한다. 공격이나 다른 스킬을 쓰면 풀린다' });
+Object.assign(SKILLS.lykos.d, { name: '그림자 감옥', desc: '가장 가까운 바닥에 그림자 감옥을 30초 동안 설치한다. 안의 적은 1초마다 공격력의 40% 피해. 설치된 채로 다시 누르면 걷힌다' });
+(function () {
+  const ta = TRAITS.lykos.find(t => t.id === 'ly_a'), td = TRAITS.lykos.find(t => t.id === 'ly_d');
+  if (ta) { ta.name = '숨죽인 발'; ta.skill = 'A 그림자 은신';
+    ta.ranks.forEach((r, i) => { r.t = i === 4 ? '[증폭] 기습 피해 +5% · 기습 0.5초 더 길게' : i === 9 ? '[각성] 기습 피해 +5%, 재사용 대기시간 -15% · 숨는 순간 체력 5% 회복' : i === 14 ? '[초월] 기습 피해 +25% · 기습 1초 더 길게' : '기습(은신이 풀린 뒤 1초) 피해 +5%, 재사용 대기시간 -1%'; }); }
+  if (td) { td.name = '그림자 감옥'; td.skill = 'D 그림자 감옥';
+    td.ranks.forEach((r, i) => { r.t = i === 4 ? '[증폭] 그림자 감옥 피해 +5% · 범위 20% 넓게' : i === 9 ? '[각성] 그림자 감옥 피해 +5%, 재사용 대기시간 -15% · 감옥 안의 적이 느려진다' : i === 14 ? '[초월] 그림자 감옥 피해 +25% · 0.7초마다 벤다' : '그림자 감옥 피해 +5%, 재사용 대기시간 -1%'; }); }
+})();
 
 /* ============ MAIN LOOP ============ */
 function ambient(dt) {

@@ -69,6 +69,9 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1441  정식 배포 (test → 루트: 1404~1441 — 도적 X·D·A·더블 점프, 전사 A·X, 궁수 V)
+- 루트 index.html = test/index.html 에서 noindex · DEV_TOOLS 두 줄만 뺀 것. 새 그림 없음
+
 ### 261123-1441  도적 D 설치 장판 · A 은신 · 더블 점프 45° · X 보라 연결 / 전사 공중 X 판정 수정   (대상: test/index.html)
 새 블록 '도적 D 그림자 감옥 = 바닥 설치 장판 / A 그림자 은신' (MAIN LOOP 배너 바로 위, 전사 X 블록 다음. 원본 PC: 32_skills·56n_remaster 쪽)
 - **D 그림자 감옥**: castSkill 래퍼에서 도적 D 는 원래 코드(가까운 적 뒤로 순간이동 + 6연타)를 부르지 않고 `lyZonePlace`:
