@@ -69,6 +69,10 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-0957  업데이트 확인을 더 빨리 + 정식 배포
+- 56e(업데이트 강제 새로고침): `setTimeout(updCheck, 8000)` → `1500` (배포 직후 10분 캐시로 옛 html 을 받은 사람이 로그인 전에 넘어가게)
+- 루트 = test 에서 noindex · DEV_TOOLS 두 줄만 뺀 것
+
 ### 261123-0932  정식 배포 (test → 루트, 위 0930 내용)
 - 루트 index.html = test/index.html 에서 noindex · DEV_TOOLS 두 줄만 뺀 것, 루트 assets/ = test/assets/
 
