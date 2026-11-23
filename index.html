@@ -622,7 +622,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2008"></script>
 <script src="assets/js/act3_data.js?v=261123-2008"></script>
 <script>
-const GAME_VER = '261123-2008';
+const GAME_VER = '261123-2016';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -6356,7 +6356,23 @@ function updateProjs(dt) {
       if (best != null) { const sp = Math.hypot(q.vx, q.vy), cur = Math.atan2(q.vy, q.vx); let da = best - cur; while (da > Math.PI) da -= 6.283; while (da < -Math.PI) da += 6.283; const na = cur + clamp(da, -7 * dt, 7 * dt); q.vx = Math.cos(na) * sp; q.vy = Math.sin(na) * sp; }
     }
     bossProjTick(q, dt);
-    if (q.boomer && !q.turned && q.dist >= q.maxDist * 0.5) { q.turned = true; q.vx = -q.vx; q.vy = -q.vy; q.hits = []; }
+    if (q.boomer && !q.turned && q.dist >= q.maxDist * 0.5) {   // [S5-4] 반환 시작: 속도 1.4배(발사 속도 기준), 타격 목록 초기화(왕복 2타)
+      q.turned = true;
+      const sp = Math.hypot(q.vx, q.vy) * (q.retK || 1), an = Math.atan2(-q.vy, -q.vx);
+      q.vx = Math.cos(an) * sp; q.vy = Math.sin(an) * sp;
+      if (q.home) q.rsp = sp;
+      q.hits = [];
+    }
+    if (q.boomer && q.turned && q.home && q.from === 'p' && p.dead <= 0) {   // [S5-4] 회수 궤적: 매 프레임 캐릭터 중앙 (p.x, p.y - p.h/2) 을 향해 굽는다
+      const hx = p.x, hy = p.y - p.h * 0.5, dx = hx - q.x, dy = hy - q.y, dd = Math.hypot(dx, dy), sp = q.rsp || Math.hypot(q.vx, q.vy) || 1;
+      if (dd <= (q.pick || 26)) { q.dead = true; q.picked = 1; spark(q.x, q.y, 5, '190,150,255', 150); }
+      else {
+        const cur = Math.atan2(q.vy, q.vx), want = Math.atan2(dy, dx);
+        let da = want - cur; while (da > Math.PI) da -= 6.283185307; while (da < -Math.PI) da += 6.283185307;
+        const step = 16 * dt, na = Math.abs(da) <= step ? want : cur + Math.sign(da) * step;
+        q.vx = Math.cos(na) * sp; q.vy = Math.sin(na) * sp;
+      }
+    }
     if (q.from === 'p') {
       for (const e of targets()) {
         if (q.hits.includes(e)) continue;
@@ -6378,7 +6394,7 @@ function updateProjs(dt) {
       q.dead = true; spark(q.x, q.gy, 4, '255,225,160', 140);
       for (const e of targets()) { if (q.hits.includes(e)) continue; const hb = hurtbox(e); if (ov(q.x - 26, q.gy - 60, 52, 64, hb.x, hb.y, hb.w, hb.h)) { dealDamage(e, q.mult * 0.7, { kb: 0 }); break; } }
     }
-    if (q.x < -60 || q.x > G.map.w + 60 || q.y > H + 40 || q.y < -200 || q.dist > q.maxDist || q.life <= 0) q.dead = true;
+    if (q.x < -60 || q.x > G.map.w + 60 || q.y > H + 40 || q.y < -200 || (q.dist > q.maxDist && !(q.turned && q.home)) || q.life <= 0) q.dead = true;   // [S5-4] 회수 중에는 사거리로 끊지 않는다
     if (!q.dead && (q.kind === 'arrow' || q.kind === 'orb' || q.kind === 'knife' || q.kind === 'tag') && q.y > GROUND - 2) { q.dead = true; spark(q.x, GROUND, 3, '200,200,190', 120); }
     if (!q.dead && Math.random() < 0.5 && (q.kind === 'fire' || q.kind === 'pbolt' || q.kind === 'orb')) addPart({ x: q.x, y: q.y + rnd(-4, 4), vx: rnd(-20, 20), vy: rnd(-30, 10), g: 0, life: rnd(.15, .35), r: rnd(1.5, 3), col: q.kind === 'fire' ? '255,140,70' : q.kind === 'orb' ? q.col : '255,225,160', glow: 1 });
   }
@@ -16228,7 +16244,7 @@ const MAGE_DMG_K = 0.96;   // every mage hit except V. dps9.js, chapters 2-20 me
 const MAGE_KIT = {
   basic: { dur: 0.42, hitAt: 0.18, mult: 1.0, speed: 520, kb: 60, cd: 0 },
   boltX: { dur: 0.5, hitAt: 0.22, mult: 1.9, speed: 620, kb: 40, cd: 4.0, pierce: 3 },
-  novaC: { dur: 0.55, hitAt: 0.20, mult: 0.95, hits: 2, r: 96, cd: 6.5 },
+  novaC: { dur: 0.55, hitAt: 0.20, mult: 0.95, hits: 2, r: 96, sx: 3, sy: 3, cd: 6.5 },   // [S5-4] 2026-11-23 (user): C 범위 가로·세로 3배
   barrier: { cd: 18, cast: 0.45, pct: 0.175, sec: 8, radius: 260, pulse: { r: 150, push: 90 } },   // [S5-1] 2026-11-23 (user): 35% -> 17.5% (특성 배율은 그대로 곱해진다)
   collapse: { cd: 14, cast: 0.50, mult: 2.2, radius: 210, offset: 120, pullT: 0.38, stun: 1.0, bossSlow: 2.0 },
   warp: { cd: 10, cast: 0.42, dist: 220, inv: 0.6, mult: 0.9, kb: 120, r: 90 },
@@ -16322,7 +16338,7 @@ function mfxTick(dt) {
   for (const r of G.mpulse || []) r.t += dt; if (G.mpulse) G.mpulse = G.mpulse.filter(r => r.t < r.dur);
 }
 /* a ring of 4 px squares (the shock of the barrier, the warp and 공허 파열), as wide as what it hits */
-function mpulse(x, y, R, col, dur) { (G.mpulse = G.mpulse || []).push({ x, y, R, col, t: 0, dur: dur || 0.3 }); }
+function mpulse(x, y, R, col, dur, RY) { (G.mpulse = G.mpulse || []).push({ x, y, R, ry: RY || R * 0.45, col, t: 0, dur: dur || 0.3 }); }
 /* barriers go over the body they protect (user: the warrior looked outside his, drawn behind him), placed again at draw
    time so they never lag a jump by a frame. Mine and test allies after my figure, other players' after theirs. */
 const MAGE_BARRIER_ALPHA = 0.7;   // over the body: the one inside stays easy to see
@@ -16336,9 +16352,9 @@ function mageBarrierDraw(c, peers) {
 function mageFxDraw(c) {
   for (const f of G.mfx || []) if (!f.body) mageStrip(c, f.k, f.i, f.x, f.y, f.face, f.alpha, f.sc);   // barriers are drawn over the bodies (mageBarrierDraw)
   for (const r of G.mpulse || []) {
-    const k = r.t / r.dur, R = r.R * (0.55 + 0.45 * k), n = Math.max(16, Math.round(R / 5));
+    const k = r.t / r.dur, R = r.R * (0.55 + 0.45 * k), RY = (r.ry || r.R * 0.45) * (0.55 + 0.45 * k), n = Math.max(16, Math.round(R / 5));
     c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(${r.col},${(0.85 * (1 - k)).toFixed(2)})`;
-    for (let i = 0; i < n; i++) { const a = i / n * 6.283; c.fillRect(Math.round((r.x + Math.cos(a) * R) / 4) * 4 - 2, Math.round((r.y + Math.sin(a) * R * 0.45) / 4) * 4 - 2, 4, 4); }
+    for (let i = 0; i < n; i++) { const a = i / n * 6.283; c.fillRect(Math.round((r.x + Math.cos(a) * R) / 4) * 4 - 2, Math.round((r.y + Math.sin(a) * RY) / 4) * 4 - 2, 4, 4); }
     c.restore();
   }
 }
@@ -16404,7 +16420,7 @@ function mageStartAct(id, as) {
 function mageVoidBolt(mult, o) {
   const p = G.player, f = p.face || 1;
   if (!o.pierce) {   // [S5-2] 2026-11-23 (user): 법사 평타 = 부메랑. 몸 앞에서 시작해 돌아온다(왕복 2타)
-    proj({ x: p.x + f * 12, y: p.y - 54, vx: f * 470, w: 46, h: 36, mult: mult * MAGE_DMG_K, kind: 'void', maxDist: 420, life: 1.6, boomer: true, mageB: 1, basic: true, mfx: { i: 0, t: 0 } });
+    proj({ x: p.x + f * 12, y: p.y - 54, vx: f * 470, w: 46, h: 36, mult: mult * MAGE_DMG_K, kind: 'void', maxDist: 420, life: 1.8, boomer: true, retK: 1.4, rsp: 470 * 1.4, home: 1, pick: 26, pierce: true, mageB: 1, basic: true, mfx: { i: 0, t: 0 } });   // [S5-4] 2026-11-23 (user): 돌아올 때 1.4배 · 캐릭터 중앙으로 회수 · 몹 관통
     mageImg('void_bolt'); sfx('void'); return;
   }
   proj({ x: p.x + f * 28, y: p.y - 54, vx: f * (o.speed || 520), w: o.pierce ? 44 : 40, h: 36, mult: mult * MAGE_DMG_K, kind: 'void', maxDist: 520, life: 1.2,
@@ -16420,9 +16436,11 @@ function mageTickAct(a, dt) {
     a.done = 1; mageVoidBolt(K.boltX.mult, { pierce: K.boltX.pierce, speed: K.boltX.speed }); shake(1.5);
   } else if (a.id === 'c') {
     while (a.hits < a.nHits && a.t >= a.hitAt + a.hits * a.hitStep) {
-      a.hits++; const R = K.novaC.r;
-      meleeHit({ x: p.x - R, y: p.y - p.h - 16, w: R * 2, h: p.h + 48 }, K.novaC.mult * MAGE_DMG_K, { kb: 40, radial: true });
-      mfxAdd('void_bolt', p.x, p.y - 40, { i: 2, face: a.hits % 2 ? p.face : -p.face, sc: 1 / 4 });   // the burst at 1/4 (128 px) so it covers the 96 px reach mpulse(p.x, p.y - 30, R, '186,120,255', 0.25);
+      a.hits++; const KC = K.novaC, R = KC.r, SX = KC.sx || 1, SY = KC.sy || 1;
+      const bw = R * 2 * SX, bh = (p.h + 48) * SY, bcy = p.y - p.h - 16 + (p.h + 48) / 2;   // [S5-4] 같은 중심 그대로 가로·세로 3배
+      meleeHit({ x: p.x - bw / 2, y: bcy - bh / 2, w: bw, h: bh }, KC.mult * MAGE_DMG_K, { kb: 40, radial: true });
+      mfxAdd('void_bolt', p.x, p.y - 40, { i: 2, face: a.hits % 2 ? p.face : -p.face, sc: (1 / 4) * SX });   // the burst 3x too (128 px -> 384 px)
+      mpulse(p.x, p.y - 30, R * SX, '186,120,255', 0.25, R * 0.45 * SY);
       sfx('void');
     }
   }
