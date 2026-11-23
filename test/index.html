@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1451"></script>
+<script src="assets/js/pfx.js?v=261123-1519"></script>
 <script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1451';
+const GAME_VER = '261123-1519';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -787,7 +787,7 @@ const TRAITS = {
     { id: 'th1', name: '잿불 검기', skill: 'X 올려베기', ranks: traitRanks([
       { cost: 1, t: '올려베기 피해 +25%' },
       { cost: 1, t: '올려베기에 맞은 적이 3초간 화상 (초당 공격력의 12%)' },
-      { cost: 2, t: '[변경] 올려베기가 앞으로 불꽃 파동을 함께 날린다' }], '올려베기', '불꽃 파동이 세 갈래로 퍼진다') },
+      { cost: 2, t: '[변경] 불꽃 파동이 1.3배 멀리 날아간다' }], '올려베기', '불꽃 파동이 세 갈래로 퍼진다') },
     { id: 'th2', name: '불굴의 자세', skill: 'C 회전참', ranks: traitRanks([
       { cost: 1, t: '회전참 중 받는 피해 -40%' },
       { cost: 1, t: '회전참 범위 +30%, 재사용 대기시간 -1.5초' },
@@ -6000,8 +6000,7 @@ function startAct(id) {
       sfx('swing', n);
     } else if (id === 'x') {
       p.act = { id, t: 0, dur: 0.44, hitAt: 0.1, done: 0, mv: 0.25, lf: 1 };
-      p.cd.x = p.cdMax.x = 3.5 * tCd('th1');
-      if (p.onGround) { p.vy = -300; p.onGround = false; }
+      p.cd.x = p.cdMax.x = 3.5 * tCd('th1');   // 1451b: no hop any more (user: X 점프 안되게)
       sfx('swing', 3);
     } else if (id === 'c') {
       const n = k2 >= 3 ? 6 : 3;
@@ -6060,8 +6059,8 @@ function tickAct(dt) {
       a.done = 1;
       const mult = 1.6 * (k1 >= 1 ? 1.25 : 1) * tDmg('th1'), burn = k1 >= 2 ? { t: 3, dps: S.atk * 0.12 } : null;
       meleeHit({ x: p.face > 0 ? p.x - 8 : p.x - 72, y: p.y - p.h - 84, w: 80, h: p.h + 122 }, mult, { kb: p.face * 60, burn });
-      if (k1 >= 3) for (const ang of tAwake('th1') ? [-0.22, 0, 0.22] : [0])
-        { proj({ x: p.x + p.face * 22, y: p.y - 26, vx: Math.cos(ang) * p.face * 400, vy: Math.sin(ang) * 400, w: 40, h: 34, mult: 1.3 * tDmg('th1'), pierce: true, kind: 'fire', life: 1, maxDist: 360, burn: { t: 3, dps: S.atk * 0.12 } }); pfxOn(G.projs[G.projs.length - 1], 'projectiles/plasma-shot', { palette: PAL.theron }); }
+      for (const ang of tAwake('th1') ? [-0.22, 0, 0.22] : [0])
+        { proj({ x: p.x + p.face * 22, y: p.y - 26, vx: Math.cos(ang) * p.face * 400, vy: Math.sin(ang) * 400, w: 40, h: 34, mult: 1.3 * tDmg('th1'), pierce: true, kind: 'fire', life: 1, maxDist: k1 >= 3 ? 470 : 360, burn: { t: 3, dps: S.atk * 0.12 } }); pfxOn(G.projs[G.projs.length - 1], 'projectiles/plasma-shot', { palette: PAL.theron }); }
       slashFx(3);
     } else if (a.id === 'c') {
       while (a.hits < a.nHits && a.t >= a.hitAt + a.hits * a.hitStep) {
@@ -16743,8 +16742,8 @@ const REM_TICK = {
         a.done = 1;
         const mult = 1.6 * (k1 >= 1 ? 1.25 : 1) * tDmg('th1'), burn = k1 >= 2 ? { t: 3, dps: S.atk * 0.12 } : null;
         { const r = remReach(p, remBox(p, remSk('x'))); r.h = p.y + 4 - r.y; remHit(r, mult, { kb: p.face * 60, burn }); }   // 1418b: from the flame's top down to the floor G.hitstop = Math.max(G.hitstop, 0.06); shake(3);
-        if (k1 >= 3) for (const ang of tAwake('th1') ? [-0.22, 0, 0.22] : [0])
-          { proj({ x: p.x + p.face * 66, y: p.y - 26, vx: Math.cos(ang) * p.face * 400, vy: Math.sin(ang) * 400, w: 40, h: 34, mult: 1.3 * tDmg('th1'), pierce: true, kind: 'fire', life: 1, maxDist: 360, burn: { t: 3, dps: S.atk * 0.12 } }); pfxOn(G.projs[G.projs.length - 1], 'projectiles/plasma-shot', { palette: PAL.theron }); }
+        for (const ang of tAwake('th1') ? [-0.22, 0, 0.22] : [0])
+          { proj({ x: p.x + p.face * 66, y: p.y - 26, vx: Math.cos(ang) * p.face * 400, vy: Math.sin(ang) * 400, w: 40, h: 34, mult: 1.3 * tDmg('th1'), pierce: true, kind: 'fire', life: 1, maxDist: k1 >= 3 ? 470 : 360, burn: { t: 3, dps: S.atk * 0.12 } }); pfxOn(G.projs[G.projs.length - 1], 'projectiles/plasma-shot', { palette: PAL.theron }); }
       }
     }
   },
@@ -21443,10 +21442,11 @@ ult9Draw = function (c, over) {
 
 /* ============ 2026-11-23 (1418b): 전사 X 상향 일섬 = 공중에서 쓰면 한 번 더 뛰어오른다 ============
    점프 중 X: 점프 한 번만큼 위로 (점프력 보너스 포함), 착지할 때까지 1회. 공중에서는 좌우 이동 85%. 피해는 230% → 160% (특성 배율은 그대로) */
+const TH_XJUMP = false;   // 1451b: the air second jump is off (user: 전사 X 점프 안되게). true brings it back
 const _startActTh = startAct;
 startAct = function (id) {
   const p = G.player, a0 = p && p.act, air = p && !p.onGround, r = _startActTh.apply(this, arguments), a = p && p.act;   // in the air before X (the X itself lifts her a little)
-  if (G.save.char === 'theron' && id === 'x' && a && a !== a0 && a.id === 'x' && air && !p.thXJ) {
+  if (TH_XJUMP && G.save.char === 'theron' && id === 'x' && a && a !== a0 && a.id === 'x' && air && !p.thXJ) {
     p.thXJ = 1; p.vy = -JUMP * Math.sqrt(1 + (G.stats.jumpP || 0) / 100); a.mv = 0.85;
     sfx('jump'); for (let i = 0; i < 8; i++) addPart({ x: p.x + rnd(-12, 12), y: p.y - rnd(0, 8), vx: rnd(-60, 60), vy: rnd(20, 90), g: 0, life: 0.3, r: rnd(2, 3.5), col: '255,190,120', glow: 1 });
   }

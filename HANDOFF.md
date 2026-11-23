@@ -69,6 +69,12 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1519  전사 X 점프 없앰 + 불꽃 파동 1렙부터   (대상: test/index.html, 정식 미배포)
+- 30_combat startAct theron x: `if (p.onGround) { p.vy = -300; p.onGround = false; }` (땅에서 살짝 뜨던 것) 삭제
+- 전사 X 공중 2단 점프 블록: `TH_XJUMP = false` 로 끔 (1425 의 startAct 래퍼는 남김, true 면 되살아남)
+- 불꽃 파동: `if (k1 >= 3)` 조건 삭제 → 특성 없어도 가운데 1개 (각성 tAwake('th1') = 10랭크부터 3갈래 그대로). REM_TICK·옛 tickAct 둘 다.
+  th1 3랭크 [변경] 문구 '불꽃 파동을 함께 날린다' → '불꽃 파동이 1.3배 멀리 날아간다', maxDist 3랭크 이상 360 → 470
+
 ### 261123-1451  정식 배포 (test → 루트: 새 소식 261123b)
 - 루트 index.html = test/index.html 에서 noindex · DEV_TOOLS 두 줄만 뺀 것. 새 그림 없음
 
