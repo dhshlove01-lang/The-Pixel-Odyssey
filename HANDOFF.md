@@ -69,6 +69,10 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1104  자동 장착 버튼 한 줄   (대상: test/index.html)
+- P15 invWin: 작은 줄을 '전투력 +N' 만 (몇 칸은 뺌, 툴팁에는 그대로). CSS .ubtn.auto: flex-direction row, gap 12, nowrap, 글씨 17/14
+  (두 줄일 때 좁은 화면에서 위아래로 버튼 밖으로 나왔음)
+
 ### 261123-1102  가방 창 아래 버튼 3개(닫기·자동 장착·등급순)를 창 안으로   (대상: test/index.html)
 - invWin(가방): 닫기 mp(744,691,860,727) · 등급순 mp(1196,691,1322,727), 클래스 `ubtn bagb`. 그림의 회색 받침 두 개가 아래 테두리를
   뚫고 그려져 있어서 `<i class="artfix bagstrip">` 2개로 덮음 — 같은 그림(UIART.inventory)의 x 900 / 1000 같은 줄을 배경으로 복사
