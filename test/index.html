@@ -675,7 +675,7 @@ const RINGS = {
   20: { name: '이그니스의 불꽃 인장',   file: 'ring_ch20', col: '#ff9a5a', atkP: 5, critDmg: 12 },
   30: { name: '아스트론의 성좌 반지',   file: 'ring_ch30', col: '#b48aff', atkP: 7, cdr: 5 },
 };
-const RING_DROP = { 10: 0.12, 20: 0.15, 30: 0.20 };   // 보스 처치 1회당 (사용자: 12·15·20%)
+const RING_DROP = { 10: 0.05, 20: 0.05, 30: 0.05 };   // 보스 처치 1회당 (사용자: 12·15·20%)
 function makeRing(ch, save) {
   const s = save || G.save, R = RINGS[ch]; s.nextUid = (s.nextUid || 1) + 1;
   return { uid: s.nextUid, slot: 'acc1', ring: 1, ch, grade: 3, ilvl: ch, q: 1, pot: [], name: R.name };
