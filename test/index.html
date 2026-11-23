@@ -6905,7 +6905,7 @@ function bossDie() {
     const kills = (G.save.troph[b.id] && G.save.troph[b.id].k) || 0;
     if (own) {
       if (Math.random() < rate) { G.save.mats.pot = (G.save.mats.pot || 0) + 3; G.save.mats.inherit = (G.save.mats.inherit || 0) + 2; after(2.6, () => toast('이미 가진 반지다 · 잠재석 3 · 계승석 2로 바뀌었다', 'gold')); }
-    } else if (Math.random() < rate || kills >= 6) {   // 6번째 처치부터는 확정(운 나쁜 세이브 보호)
+    } else if (Math.random() < rate) {   // 확정 드랍 없음
       const it = makeRing(ch);
       if (addItem(it)) after(2.2, () => toast(RINGS[ch].name + ' 을(를) 얻었다 · I 창의 반지 칸에 낀다'.replace(' 을(를)', josa(RINGS[ch].name, '을', '를')), 'gold'));
       else { G.save.mats.pot = (G.save.mats.pot || 0) + 3; after(2.2, () => toast('가방이 가득 찼다 · 반지 대신 잠재석 3', 'bad')); }
