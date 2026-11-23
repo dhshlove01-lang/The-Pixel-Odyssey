@@ -538,17 +538,16 @@ button{font-family:inherit;color:inherit}
       <div class="hud-tr">
         <div class="res"><span class="ri gold"></span><b id="rGold">0</b><span class="rl">전투력</span><b id="rCp" class="cpv">0</b></div>
         <div class="hbtns">
-          <button class="hbtn" id="bGear" title="장비 · 가방"><svg viewBox="0 0 16 16"><path d="M3 9.5a5 5 0 0 1 10 0V13H3z"/><path d="M6.2 13v-2.6h3.6V13M8 4.5V2.5"/></svg><kbd data-k="m_gear"></kbd></button>
-          <button class="hbtn" id="bTrait" title="특성"><svg viewBox="0 0 16 16"><path d="M8 1.6l1.9 4 4.4.5-3.3 3 .9 4.3L8 11.2l-3.9 2.2.9-4.3-3.3-3 4.4-.5z"/></svg><kbd data-k="m_traits"></kbd></button>
-          <button class="hbtn" id="bMap" title="미니맵"><svg viewBox="0 0 16 16"><path d="M1.6 3.6l4-1.5 4.8 1.5 4-1.5v10.3l-4 1.5-4.8-1.5-4 1.5z"/><path d="M5.6 2.1v10.3M10.4 3.6v10.3"/></svg><kbd data-k="m_map"></kbd></button>
-          <button class="hbtn" id="bWorld" title="전체 맵"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M8 2.6l1.4 5.4L8 13.4 6.6 8z"/></svg><kbd data-k="m_worldmap"></kbd></button>
-          <button class="hbtn" id="bMus" title="음악"><svg viewBox="0 0 16 16"><path d="M6 12.4a2 2 0 1 1-2-2 2 2 0 0 1 2 2V3.2l7-1.6v8.8"/><path d="M13 10.4a2 2 0 1 1-2-2 2 2 0 0 1 2 2"/></svg><kbd data-k="m_music"></kbd><span id="musT" hidden></span></button>
-          <button class="hbtn" id="bMute" title="소리"><svg viewBox="0 0 16 16"><path d="M2 6h3l4-3v10l-4-3H2z"/><path d="M11.4 5.6a3.4 3.4 0 0 1 0 4.8M13 3.8a6 6 0 0 1 0 8.4"/></svg><kbd data-k="m_mute"></kbd><span id="muteT" hidden></span></button>
-          <button class="hbtn" id="bParty" title="파티 · 닉네임"><svg viewBox="0 0 16 16"><circle cx="5.5" cy="5.5" r="2.3"/><circle cx="11" cy="6.2" r="1.9"/><path d="M1.6 13.4c.4-2.6 2-3.9 3.9-3.9s3.5 1.3 3.9 3.9M9.4 10.2c.5-.5 1-.7 1.6-.7 1.6 0 2.9 1.1 3.2 3.4"/></svg><kbd data-k="m_party">P</kbd></button>
-          <button class="hbtn" id="bChat" title="채팅 (Enter)"><svg viewBox="0 0 16 16"><path d="M2 3.2h12v7.4H7.2L4 13.2v-2.6H2z"/></svg></button>
-          <button class="hbtn" id="bNet" title="온라인 (다른 사람과 함께)"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c-2.2 2-2.2 10.4 0 12.4M8 1.8c2.2 2 2.2 10.4 0 12.4"/></svg></button>
+          <button class="hbtn" id="bGear" title="장비 · 가방"><img class="hico" src="assets/ui/btn_gear_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><path d="M3 9.5a5 5 0 0 1 10 0V13H3z"/><path d="M6.2 13v-2.6h3.6V13M8 4.5V2.5"/></svg><kbd data-k="m_gear"></kbd></button>
+          <button class="hbtn" id="bTrait" title="특성"><img class="hico" src="assets/ui/btn_trait_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><path d="M8 1.6l1.9 4 4.4.5-3.3 3 .9 4.3L8 11.2l-3.9 2.2.9-4.3-3.3-3 4.4-.5z"/></svg><kbd data-k="m_traits"></kbd></button>
+          <button class="hbtn" id="bMap" title="미니맵"><img class="hico" src="assets/ui/btn_minimap_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><path d="M1.6 3.6l4-1.5 4.8 1.5 4-1.5v10.3l-4 1.5-4.8-1.5-4 1.5z"/><path d="M5.6 2.1v10.3M10.4 3.6v10.3"/></svg><kbd data-k="m_map"></kbd></button>
+          <button class="hbtn" id="bWorld" title="전체 맵"><img class="hico" src="assets/ui/btn_worldmap_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M8 2.6l1.4 5.4L8 13.4 6.6 8z"/></svg><kbd data-k="m_worldmap"></kbd></button>
+          <button class="hbtn" id="bMute" title="음향 설정"><img class="hico" src="assets/ui/btn_audio_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><path d="M2 6h3l4-3v10l-4-3H2z"/><path d="M11.4 5.6a3.4 3.4 0 0 1 0 4.8M13 3.8a6 6 0 0 1 0 8.4"/></svg><kbd data-k="m_mute"></kbd><span id="muteT" hidden></span></button>
+          <button class="hbtn" id="bParty" title="파티 · 닉네임"><img class="hico" src="assets/ui/btn_party_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><circle cx="5.5" cy="5.5" r="2.3"/><circle cx="11" cy="6.2" r="1.9"/><path d="M1.6 13.4c.4-2.6 2-3.9 3.9-3.9s3.5 1.3 3.9 3.9M9.4 10.2c.5-.5 1-.7 1.6-.7 1.6 0 2.9 1.1 3.2 3.4"/></svg><kbd data-k="m_party">P</kbd></button>
+          <button class="hbtn" id="bChat" title="채팅 (Enter)"><img class="hico" src="assets/ui/btn_chat_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><path d="M2 3.2h12v7.4H7.2L4 13.2v-2.6H2z"/></svg></button>
+          <button class="hbtn" id="bNet" title="온라인 (다른 사람과 함께)"><img class="hico" src="assets/ui/btn_online_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c-2.2 2-2.2 10.4 0 12.4M8 1.8c2.2 2 2.2 10.4 0 12.4"/></svg></button>
           <button class="hbtn" id="bTrophy" title="보스 트로피"><img class="hico" src="assets/ui/btn_trophy_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><path d="M4.6 2h6.8v3.2a3.4 3.4 0 0 1-6.8 0z"/><path d="M4.6 3.2H2.4v1.3c0 1.2 1 2.2 2.2 2.2M11.4 3.2h2.2v1.3c0 1.2-1 2.2-2.2 2.2M8 8.6v3.1M5.4 14h5.2l-.6-2.3H6z"/></svg><kbd data-k="m_trophy">Y</kbd></button>
-          <button class="hbtn" id="bKeys" title="키 설정"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="1.2"/><path d="M4 6.6h.6M6.6 6.6h.6M9.2 6.6h.6M11.8 6.6h.6M4.4 9.4h7.2"/></svg><kbd data-k="m_keys"></kbd></button>
+          <button class="hbtn" id="bKeys" title="키 설정"><img class="hico" src="assets/ui/btn_keys_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="1.2"/><path d="M4 6.6h.6M6.6 6.6h.6M9.2 6.6h.6M11.8 6.6h.6M4.4 9.4h7.2"/></svg><kbd data-k="m_keys"></kbd></button>
           <button class="hbtn" id="bHelp" title="가이드 · 조작법"><img class="hico" src="assets/ui/btn_help_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.4"/><path d="M6.1 6.2a1.9 1.9 0 1 1 2.6 1.8c-.4.2-.7.5-.7 1v.6M8 11.5v.1"/></svg><kbd data-k="m_help"></kbd></button>
         </div>
         <canvas id="mini" width="400" height="112"></canvas>
@@ -623,7 +622,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-1955"></script>
 <script src="assets/js/act3_data.js?v=261123-1955"></script>
 <script>
-const GAME_VER = '261123-1955';
+const GAME_VER = '261123-2001';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -21147,16 +21146,21 @@ function makeReverb(c, secs) {          // dark, smooth impulse response: decayi
   }
   const cv = c.createConvolver(); cv.buffer = ir; return cv;
 }
+function syncAudioBtn() {          // the one HUD sound button: dark + slashed only when every sound is off
+  const b = $('#bMute'); if (!b) return;
+  b.classList.toggle('off', !!AU.muted); b.title = AU.muted ? '음향 설정 · 모든 소리 꺼짐' : '음향 설정';
+  const mt = $('#muteT'); if (mt) mt.textContent = AU.muted ? '음향 끔' : '음향 켬';
+}
 function toggleMute() {
   AU.muted = !AU.muted;
   if (AU.master) AU.master.gain.setTargetAtTime(AU.muted ? 0 : 0.6, AU.ctx.currentTime, 0.05);
-  $('#muteT').textContent = AU.muted ? '소리 끔' : '소리 켬'; $('#bMute').classList.toggle('off', AU.muted);
+  syncAudioBtn();
   audioInit();
 }
 function toggleMusic() {
   AU.musicOn = !AU.musicOn;
   if (AU.musGain) AU.musGain.gain.setTargetAtTime(AU.musicOn ? AU.vol.mus : 0, AU.ctx.currentTime, 0.3);
-  const el = $('#musT'); if (el) el.textContent = AU.musicOn ? '음악 켬' : '음악 끔'; $('#bMus').classList.toggle('off', !AU.musicOn);
+  const el = $('#musT'); if (el) el.textContent = AU.musicOn ? '음악 켬' : '음악 끔'; $('#bMus')?.classList.toggle('off', !AU.musicOn); syncAudioBtn();
   audioInit();
 }
 
@@ -22378,7 +22382,7 @@ $('#bGear').addEventListener('click', () => togglePanel('gear'));
 $('#bTrait').addEventListener('click', () => togglePanel('traits'));
 $('#bHelp').addEventListener('click', () => toggleTutBook());   // master spec STEP 4: the ? button opens the guide book (the old #help stays in the code)
 $('#bTrophy').addEventListener('click', () => toggleTrophy());
-$('#bMute').addEventListener('click', toggleMute);
+$('#bMute').addEventListener('click', () => { if (G.scene === 'play') openPanel('audio'); });   // 통합 음향 버튼: 왼쪽 클릭 = 음향 설정 창 (2026-11-23)
 /* P12 2026-11-23: 소리 설정 (O 창의 첫 줄, or right-click the HUD sound buttons) */
 function audioHtml() {
   const row = (k, icon, name) => { const v = Math.round(AU.vol[k] * 100), off = k === 'mus' && !AU.musicOn;
@@ -22393,7 +22397,8 @@ $('#panel').addEventListener('input', e => {
   AU.vol[k] = v; applyVol(); saveVol();
   const lab = $('#vol' + k.toUpperCase()); if (lab) lab.textContent = Math.round(v * 100) + '%';
 });
-for (const id of ['#bMute', '#bMus']) $(id).addEventListener('contextmenu', e => { e.preventDefault(); if (G.scene === 'play') openPanel('audio'); });
+$('#bMute')?.addEventListener('contextmenu', e => { e.preventDefault(); if (G.scene === 'play') openPanel('audio'); });   // #bMus merged into #bMute
+syncAudioBtn();
 document.head.insertAdjacentHTML('beforeend', `<style>
 .avbox{display:flex;flex-direction:column;gap:calc(var(--u)*12);padding:calc(var(--u)*16) calc(var(--u)*20);margin-top:calc(var(--u)*8);border:calc(var(--u)*24) solid transparent;border-image:url(assets/ui/ui_panel_dark_gold.png) 48 fill / calc(var(--u)*24) stretch}
 .avrow{display:flex;align-items:center;gap:calc(var(--u)*12);font-size:max(11px,calc(var(--u)*14))}
@@ -22401,7 +22406,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .avn{width:calc(var(--u)*80);flex:none}.avrow input{flex:1;accent-color:var(--accent);height:calc(var(--u)*18)}.avrow b{width:calc(var(--u)*44);text-align:right;color:var(--accent2)}
 .avbtns{display:flex;gap:calc(var(--u)*10);justify-content:flex-end}
 </style>`);
-$('#bMus').addEventListener('click', toggleMusic);
+/* #bMus was merged into #bMute (2026-11-23): music toggling stays in the audio panel, in-game B key and m_music */
 $('#bMap').addEventListener('click', toggleMinimap);
 $('#bKeys').addEventListener('click', () => togglePanel('keys'));
 $('#qtrack').addEventListener('click', () => { if (G.scene === 'play' && G.save && !G.ui.dialog) togglePanel('daily'); });   // [S6-7] 일일 창
