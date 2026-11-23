@@ -619,10 +619,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1955"></script>
-<script src="assets/js/act3_data.js?v=261123-1955"></script>
+<script src="assets/js/pfx.js?v=261123-2008"></script>
+<script src="assets/js/act3_data.js?v=261123-2008"></script>
 <script>
-const GAME_VER = '261123-2001';
+const GAME_VER = '261123-2008';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -12955,7 +12955,7 @@ function petsHtml() {
     const has = !!(s.pets && s.pets[k]), on = s.pet === k, B = BOSSES[k] || {};
     const file = 'assets/pets/pet_petite_b' + String(k.slice(1)).padStart(2, '0') + '.png';
     return `<button class="petc ${has ? '' : 'lock'} ${on ? 'on' : ''}" ${has ? `data-petpick="${k}"` : 'disabled'} title="${has ? (B.name || k) : '미등록'}">
-      <span class="peti" style="background-image:url(${file})"></span><small>${has ? (B.name || k).split(' ').pop() : '???'}</small>${on ? '<u>장착</u>' : ''}</button>`;
+      <span class="peti" style="background-image:url(${file})${typeof PET_FLIP !== 'undefined' && PET_FLIP.has(k) ? ';transform:scaleX(-1)' : ''}"></span><small>${has ? (B.name || k).split(' ').pop() : '???'}</small>${on ? '<u>장착</u>' : ''}</button>`;
   };
   return `<div class="ph"><h3>쁘띠 도감</h3><span class="sub">${pb.n} / ${CH_LAST} 등록 · 공격력 +${pb.atkP.toFixed(1)}% · 최대 HP +${pb.hpP.toFixed(1)}% (등록 1마리당 0.4%)</span><button class="xbtn" data-close="1">닫기</button></div>
     <div class="petgrid">${keys.map(cell).join('')}</div>
@@ -17692,16 +17692,17 @@ const PET_CELL = 64, PET_OX = 27, PET_OY = 32, PET_BACK = 50;   // PET_BACK: how
 const PET_CD = 10, PET_RANGE = 520, PET_FR_IDLE = 0.14, PET_FR_ATK = 0.09, PET_FR_HIT = 0.06;
 const PET_SOUL_RE = /^b(?:[1-9]|[12][0-9]|30)$/;   // 2026-11-23: b21-b30 (3막 쁘띠 10종) added; was b1-b20
 const PET_IMG = {};
-const petKey = () => { const s = G.save; if (!s || !s.pets) return null; return (s.pet && s.pets[s.pet]) ? s.pet : null; };   // [S3-2] 장착한 쁘띠(없으면 null)
+const PET_FLIP = new Set(['b4', 'b15']);   // 2026-11-23 (user): these two sheets are drawn facing left; every petite faces right (codex) and its way (world)
+const petKey = () => { const s = G.save; if (!s) return null; return (s.pet && s.pets && s.pets[s.pet]) ? s.pet : 'default'; };   // [S3-2] 장착한 쁘띠; 2026-11-23 (user): 도감이 비었거나 안 골랐으면 보라 후드 정령(default)
 function petStats(save) {   // [S3-2] 도감 수집 보너스: 등록 1마리당 +0.4% / +0.4%
   const s = save || G.save, n = Object.keys((s && s.pets) || {}).length;
   return { n, atkP: n * 0.4, hpP: n * 0.4 };
 }
-function petImg(soul) {
-  const k = petKey(soul);
+function petImg(soul) {   // 2026-11-23: the key asked for (another player's pt too); was always my own petite
+  const k = soul === 'default' || PET_SOUL_RE.test(soul || '') ? soul : (petKey() || 'default');
   let im = PET_IMG[k];
   if (!im) {
-    im = PET_IMG[k] = new Image();
+    im = PET_IMG[k] = new Image(); im.flip = PET_FLIP.has(k);
     im.onerror = () => { if (!petImg.warned) { petImg.warned = 1; console.warn('[쁘띠] 그림을 못 불러왔다:', im.src); } };
     im.src = PET_DIR + (k === 'default' ? 'pet_petite_default.png' : 'pet_petite_b' + k.slice(1).padStart(2, '0') + '.png');
   }
@@ -17749,7 +17750,7 @@ function petBlit(c, img, x, y, face, attacking, fr, alpha) {
   if (!petReady(img)) return;   // not loaded yet: nothing at all
   const cw = img.naturalWidth / 4, ch = img.naturalHeight / 2;
   c.save(); c.imageSmoothingEnabled = false; c.globalCompositeOperation = 'source-over'; if (alpha != null) c.globalAlpha = alpha;
-  c.translate(Math.round(x - PET_OX) + PET_CELL / 2, Math.round(y - PET_OY)); c.scale(face < 0 ? -1 : 1, 1);
+  c.translate(Math.round(x - PET_OX) + PET_CELL / 2, Math.round(y - PET_OY)); c.scale((face < 0 ? -1 : 1) * (img.flip ? -1 : 1), 1);
   c.drawImage(img, fr * cw, attacking ? ch : 0, cw, ch, -PET_CELL / 2, 0, PET_CELL, PET_CELL);
   c.restore();
 }
@@ -17780,11 +17781,42 @@ drawNetPlayers = function (c) {
     const o = NET.others[k], r = o && o.r; if (!r || !r.pt || r.d) { delete PET_NET[k]; continue; }
     const face = r.fc || 1, gx = o.x - face * PET_BACK, gy = o.y - 42;
     const q = PET_NET[k] || (PET_NET[k] = { x: gx, y: gy, t: Math.random() * 3, face, lt: G.t });
-    const dt = Math.max(0, Math.min(0.05, G.t - q.lt)); q.lt = G.t; q.t += dt;   // game time, so a paused game holds them still q.x += (gx - q.x) * Math.min(1, dt * 5); q.y += (gy + Math.sin(q.t * 4) * 3 - q.y) * Math.min(1, dt * 5);
+    const dt = Math.max(0, Math.min(0.05, G.t - q.lt)); q.lt = G.t; q.t += dt; q.x += (gx - q.x) * Math.min(1, dt * 5);   // game time, so a paused game holds them still (2026-11-23: this comment used to swallow the line, so other players' petites never moved)
+    q.y += (gy + Math.sin(q.t * 4) * 3 - q.y) * Math.min(1, dt * 5);
     if (Math.abs(gx - q.x) > 2) q.face = sgn(gx - q.x);
     petBlit(c, petImg(r.pt), q.x, q.y, q.face, false, Math.floor(q.t / PET_FR_IDLE) % 4, 0.92);
   }
   return _drawNetPlayersP(c);
+};
+
+/* ---- 2026-11-23 (user: cw071111 펫 2개 날아감, 펫이 안 뜸): moving to the codex only read the EQUIPPED weapon's soul (20_core.js
+   fixSave). Souls set in weapons lying in the bag or the storage were left out, so they come back here, for everyone, each start.
+   The one account that reported it gets a notice once ('펫 복구'); its id is kept only as a hash. ---- */
+function petSoulsBack(save) {
+  if (!save) return [];
+  save.pets = save.pets || {}; const got = [];
+  const look = list => { for (const w of list || []) if (w && w.soul && PET_SOUL_RE.test(w.soul)) { if (!save.pets[w.soul]) { save.pets[w.soul] = 1; got.push(w.soul); } delete w.soul; } };
+  look(save.items); look(Object.values(save.equip || {}));
+  try { const st = storeNow(); if (st && st.storage) look(st.storage.items); } catch (e) { }
+  if (got.length && !(save.pet && save.pets[save.pet])) save.pet = got[0];
+  return got;
+}
+const PET_FIX_IDS = ['17v6k9m'];
+const petIdHash = id => { let x = 2166136261; for (const c of String(id || '').trim().toLowerCase()) { x ^= c.charCodeAt(0); x = Math.imul(x, 16777619) >>> 0; } return x.toString(36); };
+const _startGamePF = startGame;
+startGame = function (save, isNew) {
+  const got = isNew ? [] : petSoulsBack(save);
+  const r = _startGamePF(save, isNew);
+  const s = G.save, who = (typeof AUTH !== 'undefined' && AUTH.id) || G.uid;
+  const pq = Object.keys(QUESTS).find(id => QUESTS[id].unlock === 'pet');   // the pet unlocks on reporting that quest; a save that went on without reporting it still gets the pet
+  if (s && !isNew && s.flags && !s.flags.pet && pq && s.quests && s.quests[pq] && s.quests[pq].s >= 2) { s.flags.pet = true; writeSave(); }
+  if (got.length) { refreshStats(); writeSave(); setTimeout(() => toast('무기에 남아 있던 영혼 ' + got.length + '개를 쁘띠 도감에 되돌렸다', 'gold'), 2400); }
+  if (s && !isNew && s.flags && !s.flags.petFix1123 && PET_FIX_IDS.includes(petIdHash(who))) {
+    s.flags.petFix1123 = 1; s.pets = s.pets || {}; const gift = !s.pets.b20; s.pets.b20 = 1; if (!(s.pet && s.pets[s.pet])) s.pet = 'b20'; refreshStats(); writeSave();   // 2026-11-23 (user): 이 계정에 이그니스 쁘띠 하나
+    const n = Object.keys(s.pets || {}).length, giftT = gift ? ' 이그니스 쁘띠도 함께 넣었다.' : '';
+    setTimeout(() => { if (G.scene === 'play' && !G.ui.dialog) openChoice('펫 복구', got.length ? '옮기는 중에 빠졌던 쁘띠 ' + got.length + '마리를 도감에 되돌렸다.' + giftT + ' 지금 도감 ' + n + '마리 · 쁘띠 도감에서 고를 수 있다.' : '쁘띠가 다시 따라다니게 고쳤다.' + giftT + ' 지금 도감 ' + n + '마리 · 쁘띠 도감에서 고를 수 있다.', [['확인', () => { }]]); }, 3200);
+  }
+  return r;
 };
 
 /* ============ 소품 10종 픽셀 그림 (2026-11-21 지시서 art/props/props_pack/claude_code_props_prompt.md) ============
@@ -22336,6 +22368,63 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 #uiwin .eq:has(img[src*="assets/equip/"]){padding:calc(var(--m)*8)}
 #uiwin .cell:has(img[src*="assets/equip/"]){padding:calc(var(--m)*12)}
 #uiwin .srow .si:has(img[src*="assets/equip/"]){padding:calc(var(--m)*2)}
+</style>`);
+
+/* ============ 2026-11-23 (user): the trophy book (Y) turns to a second page, the petite codex: same window and rows, each petite's
+   face a little zoomed in, the ones not registered yet shown dark. ← → or the two tabs turn the page. A registered row picks that
+   petite (again: back to the default spirit), like 50_ui.js petsHtml.
+   PET_FACE: [x, y, side] of a square around the head in the first idle cell (128 px) of assets/pets/pet_petite_bNN.png, worked out
+   from the top 38% of each drawing (tools: the pixels, not a guess). ============ */
+const PET_FACE = {b1:[14,11,71], b2:[19,10,67], b3:[22,14,65], b4:[15,10,65], b5:[21,7,70], b6:[20,4,73], b7:[23,12,65], b8:[26,9,73], b9:[19,11,67], b10:[39,3,75], b11:[17,10,68], b12:[12,10,71], b13:[25,9,63], b14:[19,6,73], b15:[17,1,76], b16:[18,12,65], b17:[24,11,68], b18:[7,3,73], b19:[15,6,69], b20:[21,3,75], b21:[22,8,68], b22:[27,6,71], b23:[22,6,67], b24:[30,8,67], b25:[22,10,69], b26:[6,1,76], b27:[17,8,68], b28:[24,12,67], b29:[31,11,67], b30:[23,2,75]};
+let TR_TAB = 'trophy';
+const petFaceStyle = k => {
+  const [x, y, side] = PET_FACE[k] || [0, 0, 128], f = n => (n / side).toFixed(4);
+  return `background-image:url(${PET_DIR}pet_petite_b${k.slice(1).padStart(2, '0')}.png);background-size:calc(var(--pb)*${f(512)}) calc(var(--pb)*${f(256)});background-position:calc(var(--pb)*-${f(x)}) calc(var(--pb)*-${f(y)})`;
+};
+const trTabs = () => `<span class="trtabs"><button type="button" class="${TR_TAB === 'trophy' ? 'on' : ''}" data-trtab="trophy">보스 트로피</button><button type="button" class="${TR_TAB === 'pets' ? 'on' : ''}" data-trtab="pets">쁘띠 도감</button></span>`;
+function petBookHtml() {
+  const s = G.save, pb = petStats(s), list = trophList();
+  const rows = list.map(b => {
+    const k = 'b' + b.n, has = !!(s.pets && s.pets[k]), on = has && s.pet === k;
+    return `<div class="trow pbr${has ? ' has' : ' lock'}${on ? ' on' : ''}" ${has ? `data-trpet="${k}"` : ''}><b class="tno">${b.n}</b><span class="pface${PET_FLIP.has(k) ? ' flip' : ''}" style="${petFaceStyle(k)}"></span>
+      <span class="tnm">${b.name}<small>${has ? '쁘띠' : '아직 등록하지 않았다'}</small></span>
+      <span class="pst">${on ? '<b>함께 다니는 중</b>' : has ? '고르기' : '미등록'}</span></div>`;
+  }).join('');
+  return `<div class="twx"><div class="twh"><h3>쁘띠 도감</h3>${trTabs()}<span class="twsum">${pb.n} / ${list.length}</span><span class="twst">공격력 +${pb.atkP.toFixed(1)}% · 최대 HP +${pb.hpP.toFixed(1)}%</span><button type="button" class="xbtn" data-tutclose="trophy">닫기 (${keyOf('m_trophy')})</button></div>
+    <div class="twl">${rows}</div>
+    <div class="twf">보스의 영혼을 얻으면 그 보스의 쁘띠가 도감에 등록된다. 한 마리마다 공격력과 최대 HP가 0.4%씩 영구히 오른다. 등록한 줄을 누르면 그 쁘띠가 함께 다니고, 고른 게 없으면 보라 후드 정령이 따라온다. ← → 로 넘긴다.</div></div>`;
+}
+const _trophHtmlPB = trophHtml;
+trophHtml = function () {
+  if (TR_TAB === 'pets') return petBookHtml();
+  return _trophHtmlPB().replace('<h3>보스 트로피</h3>', '<h3>보스 트로피</h3>' + trTabs());
+};
+document.addEventListener('click', e => {
+  const t = e.target; if (!t || !t.closest) return;
+  const tab = t.closest('#trophyBook [data-trtab]');
+  if (tab) { e.stopPropagation(); TR_TAB = tab.dataset.trtab; trophRender(); sfx('click'); return; }
+  const row = t.closest('#trophyBook [data-trpet]');
+  if (row && G.save) { e.stopPropagation(); const k = row.dataset.trpet; G.save.pet = G.save.pet === k ? null : k; G.pet = null; refreshStats(); writeSave(); trophRender(); sfx('click'); }
+});
+document.addEventListener('keydown', e => {
+  if ((e.code !== 'ArrowLeft' && e.code !== 'ArrowRight') || !trophWinOpen()) return;
+  TR_TAB = TR_TAB === 'trophy' ? 'pets' : 'trophy'; trophRender(); sfx('click'); e.preventDefault(); e.stopPropagation();
+}, true);
+document.head.insertAdjacentHTML('beforeend', `<style>
+#trophyBook .trtabs{display:flex;gap:calc(var(--u)*4)}
+#trophyBook .trtabs button{cursor:pointer;background:none;border:1px solid #3a3021;color:#a99c84;padding:calc(var(--u)*3) calc(var(--u)*10);font-size:max(9px,calc(var(--u)*11))}
+#trophyBook .trtabs button.on{border-color:#b8933f;color:#ffe6a8;background:#241c10}
+#trophyBook .pbr{--pb:calc(var(--u)*40)}
+#trophyBook .pbr[data-trpet]{cursor:pointer}#trophyBook .pbr[data-trpet]:hover{background:rgba(184,147,63,.08)}
+#trophyBook .pbr.on{background:rgba(184,147,63,.14)}
+#trophyBook .pface{flex:none;width:var(--pb);height:var(--pb);background-repeat:no-repeat;image-rendering:pixelated;background-color:#171420;border:1px solid #322c3e}
+#trophyBook .pbr.has .pface{border-color:#6a5a30}#trophyBook .pbr.on .pface{border-color:#e8c060;box-shadow:0 0 calc(var(--u)*6) rgba(232,192,96,.5)}
+#trophyBook .pface.flip{transform:scaleX(-1)}
+#trophyBook .pbr.lock .pface{filter:brightness(.18) grayscale(.7)}
+#trophyBook .pbr.lock .tnm{color:#6e6558}
+#trophyBook .pbr .tnm small{display:block;color:#7d7262;font-size:max(7px,calc(var(--u)*9))}
+#trophyBook .pst{white-space:nowrap;color:#a99c84;font-size:max(8px,calc(var(--u)*11))}#trophyBook .pst b{color:#ffe6a8}
+#trophyBook .pbr.lock .pst{color:#4e4740}
 </style>`);
 
 /* ============ MAIN LOOP ============ */
