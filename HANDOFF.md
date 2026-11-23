@@ -69,6 +69,9 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1058  정식 배포 (test → 루트: 1043·1055·1058 내용)
+- 루트 index.html = test/index.html 에서 noindex · DEV_TOOLS 두 줄만 뺀 것
+
 ### 261123-1058  재설정 탭: 품질·잠재 버튼 정렬, 200골드 표시   (대상: test/index.html)
 - rerollWin: 두 버튼 `sgo half hl` / `sgo half hr`, 경계 x 353(가운데). CSS: hl 은 왼쪽, hr 은 오른쪽 안쪽 44 art px (빨간 버튼 양 끝 불꽃을 피해 글자가 대칭으로),
   hl 의 border-left 없앰. 작은 줄(.ten)을 영어 대신 1회 비용 `결정 N · 200골드`
