@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1425"></script>
+<script src="assets/js/pfx.js?v=261123-1441"></script>
 <script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1425';
+const GAME_VER = '261123-1441';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -5949,11 +5949,12 @@ function updatePlayer(dt) {
   if (p.charmT > 0) { p.charmT -= dt; dir = G.boss && !G.boss.hide ? sgn(G.boss.x - p.x) * (Math.abs(G.boss.x - p.x) > 70 ? 1 : 0) : 0; }   // charmed: the body walks to her
   const mob = G.save.flags.mobility, ch = G.save.char;
   if (mob && ch === 'theron' && IN.press.shift && p.cd.s <= 0 && p.hurt <= 0) { p.sprint = 2; p.cd.s = p.cdMax.s; sfx('dash'); dust(p.x, p.y, 8); }
-  if (p.onGround) { p.dj = false; p.djShift = false; }
+  if (p.onGround) { p.dj = false; p.djShift = false; p.ljT = 0; }
   const mv = a ? (a.id === 'z' && G.save.char === 'kallisto' && !p.onGround ? 1 : a.mv) : 1, maxV =   // the archer keeps full speed in the air while shooting
     232 * (p.slowT > 0 ? 0.6 : 1) * (1 + S.spd / 100) * (p.sprint > 0 ? 1.6 : 1) * (p.haste > 0 ? 1.4 : 1);
   if (a && a.dash && a.t < a.dashT) p.vx = a.dir * a.dashV;
   else if (mv === 0 || p.hurt > 0) p.vx = approach(p.vx, 0, (p.onGround ? 2600 : 500) * dt * (p.hurt > 0 ? 0.35 : 1) * slipK(p));
+  else if (p.ljT > 0 && !p.onGround && dir !== -sgn(p.vx)) p.ljT -= dt;   // 1425b: the rogue's forward double jump keeps its speed a moment (pushing back cancels it)
   else p.vx = approach(p.vx, dir * maxV * mv, (p.onGround ? 2800 : 1800) * dt * slipK(p));   // slipK: ice floors (48d_bosspat4.js)
   if (dir !== 0 && !(a && a.lf)) p.face = dir;
   if (p.hurt <= 0 && p.jbuf > 0 && (p.onGround || p.coy > 0) && !(a && a.dash) && !(p.rootT > 0 || p.sleepT > 0 || p.petT > 0)) {
@@ -5962,7 +5963,8 @@ function updatePlayer(dt) {
     else { p.vy = -JUMP * Math.sqrt(1 + (S.jumpP || 0) / 100) * (G.map.water && swimming(p) ? SWIM_JUMP : 1); p.onGround = false; p.coy = 0; p.jbuf = 0; sfx('jump'); dust(p.x, p.y, 4); }
   }
   if (mob && ch === 'lykos' && !p.onGround && p.coy <= 0 && !p.dj && p.hurt <= 0 && (p.jbuf > 0 || IN.press.shift) && !(a && a.dash)) {
-    p.vy = -JUMP * Math.sqrt(1 + (S.jumpP || 0) / 100) * 0.88; p.dj = true; p.djShift = !IN.down.jump; p.jbuf = 0; sfx('jump');
+    { const V = JUMP * Math.sqrt(1 + (S.jumpP || 0) / 100) * 0.88, fd = dir || p.face || 1; p.vy = -V; p.vx = fd * V; p.face = fd; p.ljT = 0.4; }   // 1425b: 45 degrees forward (was straight up)
+    p.dj = true; p.djShift = !IN.down.jump; p.jbuf = 0; sfx('jump');
     for (let i = 0; i < 8; i++) addPart({ x: p.x + rnd(-10, 10), y: p.y - rnd(0, 20), vx: rnd(-40, 40), vy: rnd(10, 60), g: 0, life: 0.35, r: rnd(2, 4), col: '70,70,100', glow: 0 });
   }
   // 2026-11-22 QA 2-2 (user: 상시 최고 점프력): no jump cut any more; a tap and a hold give the same arc (it also clipped the rope jump)
@@ -21326,7 +21328,7 @@ function lyTeleport(p, a) {
   a.dash = 0; a.dashT = 0; a.done = 1; a.dur = 0.22; a.tele = 1;   // no dash, no hit at the end of the act: the shadow does the cutting
   if (k1 >= 2) p.critBuff = 2;
   G.lyShade = { map: G.map, x0, y0, x: x0, y: y0, px: x0, py: y0, dir, t: 0, trail: [], hit: new Set(), mult: 2.1 * (k1 >= 1 ? 1.3 : 1) * tDmg('ly1'), k1 };
-  G.lyFlash = LY_TP.flashT;
+  G.lyFlash = LY_TP.flashT; if (REM_SK.lykos && REM_SK.lykos.x) remImg(REM_SK.lykos.x.file);
   sfx('dash');
 }
 function lyShadeTick(dt) {
@@ -21360,6 +21362,14 @@ function lyShadeDraw(c) {
   const A = HERO_ANIM.lykos; if (!A || !A.run) return;
   const f = A.run[Math.floor(s.t * 28) % A.run.length], pose = { f, sx: 1, sy: 1, tilt: 0, dx: 0, flip: 1 }, dummy = { anim: G.t, onGround: true, vx: 0, act: null, hurt: 0, dead: 0, guard: 0, parryFx: 0 };
   const fadeIn = Math.min(1, s.t / 0.06);
+  const sk = REM_SK.lykos && REM_SK.lykos.x, me = G.player;   // 1425b: the old purple shadow-step streak joins her and the shadow (user)
+  if (sk && me) {
+    const x0 = Math.min(s.x, me.x), x1 = Math.max(s.x, me.x);
+    if (x1 - x0 > 10) {
+      const yc = (s.y + me.y) / 2 - (sk.lift || 26), al = 0.9 * fadeIn * Math.max(0, 1 - Math.max(0, s.t - 0.32) / 0.18);
+      if (al > 0) remDrawBox(c, sk, 1 + (Math.floor(s.t * 14) % 2), { x: x0, y: Math.round(yc - 18), w: x1 - x0, h: 36 }, s.dir, al);
+    }
+  }
   const one = (x, y, al) => { c.save(); c.globalAlpha = al * fadeIn; c.filter = 'brightness(0.12) saturate(0)'; drawHeroSprite(c, 'lykos', dummy, x, y, s.dir, { crisp: true, pose }); c.restore(); };
   if (s.trail[3]) one(s.trail[3].x, s.trail[3].y, 0.22);
   if (s.trail[6]) one(s.trail[6].x, s.trail[6].y, 0.1);
@@ -21439,8 +21449,8 @@ ult9Draw = function (c, over) {
    점프 중 X: 점프 한 번만큼 위로 (점프력 보너스 포함), 착지할 때까지 1회. 공중에서는 좌우 이동 85%. 피해는 230% → 160% (특성 배율은 그대로) */
 const _startActTh = startAct;
 startAct = function (id) {
-  const p = G.player, a0 = p && p.act, r = _startActTh.apply(this, arguments), a = p && p.act;
-  if (G.save.char === 'theron' && id === 'x' && a && a !== a0 && a.id === 'x' && !p.onGround && !p.thXJ) {
+  const p = G.player, a0 = p && p.act, air = p && !p.onGround, r = _startActTh.apply(this, arguments), a = p && p.act;   // in the air before X (the X itself lifts her a little)
+  if (G.save.char === 'theron' && id === 'x' && a && a !== a0 && a.id === 'x' && air && !p.thXJ) {
     p.thXJ = 1; p.vy = -JUMP * Math.sqrt(1 + (G.stats.jumpP || 0) / 100); a.mv = 0.85;
     sfx('jump'); for (let i = 0; i < 8; i++) addPart({ x: p.x + rnd(-12, 12), y: p.y - rnd(0, 8), vx: rnd(-60, 60), vy: rnd(20, 90), g: 0, life: 0.3, r: rnd(2, 3.5), col: '255,190,120', glow: 1 });
   }
@@ -21473,6 +21483,122 @@ const _playerFigTh = playerFig;
 playerFig = function () { const r = _playerFigTh.apply(this, arguments); try { thBladeFx(ctx); } catch (e) { } return r; };
 const _updateSkillsTh = updateSkills;
 updateSkills = function (dt) { const r = _updateSkillsTh.apply(this, arguments); const p = G.player; if (p && p.onGround) p.thXJ = 0; return r; };
+
+/* ============ 2026-11-23 (1425b): 도적 D 그림자 감옥 = 바닥 설치 장판 / A 그림자 은신 ============
+   D: 순간이동 없음. 가장 가까운 바닥(공중이면 발밑의 바닥)에 장판을 30초 설치. 원래 D 의 그림자 촉수(pfx shadow/shadow-tendrils)가 장판 위로 계속 솟고,
+      안의 적은 1초마다 공격력의 40% (특성 배율 freshMul('d')). 설치돼 있을 때 D 를 다시 누르면 걷힌다 (재사용 대기 중에도).
+      특성 ly_d: 5랭크 범위 +20%, 10랭크 감옥 안의 적 느려짐(slowT), 15랭크 0.7초마다.
+   A: 반투명 은신. 잡몹(updateMon)·보스(updateBoss)가 도는 동안 G.player 를 아무도 없는 가짜로 바꿔 쫓지도 때리지도 못하게 (netWithAim 과 같은 방식,
+      가짜에 쓴 피해·넉백은 진짜에 안 감). Z X C·다른 스킬·각성기를 쓰면 풀린다. 이미 날아온 투사체·바닥 위험은 그대로 맞는다.
+      특성 ly_a = 기습: 은신이 풀린 뒤 1초(5랭크 1.5, 15랭크 2.5) 동안 주는 피해 x freshMul('a'), 10랭크는 은신 순간 체력 5% 회복. */
+const LY_ZONE = { w: 240, h: 130, life: 30, tick: 1.0, mult: 0.4 };
+const lyCdK = key => freshCd(key) * (1 - (G.stats.cdr || 0) / 100);
+function lyZoneOff(msg) { if (!G.lyZone) return; G.lyZone = null; if (msg) toast(msg); sfx('stab', 2); }
+function lyZonePlace(p) {
+  const tier = skillTier('d'), gy = remGround(p);
+  G.lyZone = { map: G.map, x: p.x, y: gy, w: Math.round(LY_ZONE.w * (tier >= 1 ? 1.2 : 1)), h: LY_ZONE.h, t: 0, next: 0.25, fxT: 0, tier };
+  p.cd.kd = p.cdMax.kd = SKILLS.lykos.d.cd * lyCdK('d');
+  p.act = { skill: 'd', id: 'sk_d', t: 0, dur: 0.25, mv: 0.3, lf: 1, done: 1, hits: 6 };   // a short cast pose; hits 6 = the old stabs never run
+  sfx('skill'); dust(p.x, gy, 10, '60,60,90');
+}
+function lyZoneTick(dt) {
+  const z = G.lyZone; if (!z) return;
+  if (G.map !== z.map || G.save.char !== 'lykos') { G.lyZone = null; return; }
+  z.t += dt; if (z.t >= LY_ZONE.life) { lyZoneOff(); return; }
+  z.fxT -= dt;
+  if (z.fxT <= 0) { z.fxT = 0.55; const n = z.w > 260 ? 3 : 2; for (let i = 0; i < n; i++) pfx('shadow/shadow-tendrils', z.x + (i - (n - 1) / 2) * (z.w / n) + rnd(-12, 12), z.y, {}); }
+  z.next -= dt; if (z.next > 0) return;
+  z.next = z.tier >= 3 ? 0.7 : LY_ZONE.tick;
+  const r = { x: z.x - z.w / 2, y: z.y - z.h, w: z.w, h: z.h + 6 }, m = LY_ZONE.mult * freshMul('d'); let n = 0;
+  for (const e of targets()) {
+    if (e.hp <= 0 || e.st === 'die') continue; const hb = hurtbox(e); if (!ov(r.x, r.y, r.w, r.h, hb.x, hb.y, hb.w, hb.h)) continue;
+    dealDamage(e, m, { kb: 0 }); n++; if (z.tier >= 2) e.slowT = Math.max(e.slowT || 0, 1.2);
+  }
+  if (n) sfx('stab', 1);
+}
+function lyZoneDraw(c) {
+  const z = G.lyZone; if (!z || G.map !== z.map) return;
+  const left = LY_ZONE.life - z.t, a = Math.min(1, z.t / 0.2) * (left < 2 ? left / 2 : 1), pulse = 0.5 + 0.5 * Math.sin(G.t * 4);
+  c.save(); c.globalAlpha = 0.5 * a;
+  const g = c.createRadialGradient(z.x, z.y, 4, z.x, z.y, z.w / 2); g.addColorStop(0, 'rgba(70,40,110,0.9)'); g.addColorStop(0.75, 'rgba(40,20,70,0.55)'); g.addColorStop(1, 'rgba(20,10,40,0)');
+  c.fillStyle = g; c.beginPath(); c.ellipse(z.x, z.y, z.w / 2, 12, 0, 0, Math.PI * 2); c.fill();
+  c.globalAlpha = (0.35 + 0.25 * pulse) * a; c.strokeStyle = 'rgb(170,120,255)'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(z.x, z.y, z.w / 2, 12, 0, 0, Math.PI * 2); c.stroke();
+  c.restore();
+}
+/* A: stealth */
+function lyStealthOn(p) {
+  p.stealth = 1; p.cd.ka = p.cdMax.ka = SKILLS.lykos.a.cd * lyCdK('a');
+  if (skillTier('a') >= 2) p.hp = Math.min(p.mhp, p.hp + p.mhp * 0.05);
+  for (let i = 0; i < 12; i++) addPart({ x: p.x + rnd(-14, 14), y: p.y - rnd(4, 70), vx: rnd(-50, 50), vy: rnd(-60, 0), g: 0, life: rnd(0.3, 0.6), r: rnd(2, 5), col: '50,40,80', glow: 0 });
+  sfx('dash');
+}
+function lyStealthOff(p) {
+  if (!p || !p.stealth) return; p.stealth = 0;
+  const tr = traitOf('lykos', 'a'), r = tr ? traitRank(tr.id) : 0, tier = trTier(r);
+  if (r > 0) { p.ambushT = 1 + (tier >= 1 ? 0.5 : 0) + (tier >= 3 ? 1 : 0); p.ambushK = freshMul('a'); }
+}
+const _dealDamageLy = dealDamage;
+dealDamage = function (e, mult, o) { const p = G.player; if (p && p.ambushT > 0 && G.save.char === 'lykos') mult *= p.ambushK || 1; return _dealDamageLy(e, mult, o); };
+const LY_GHOST = m => { const real = G.player; return Object.assign(Object.create(real), { x: m.x, y: m.y - 1e6, vx: 0, vy: 0, onGround: true, dead: 1 }); };   // nobody to see: 'dead' turns every mob's sight off
+const _updateMonLy = updateMon;
+updateMon = function (m, dt) {
+  const real = G.player; if (!real || !real.stealth) return _updateMonLy(m, dt);
+  if (m.st === 'chase' || m.st === 'wind') { m.st = 'patrol'; m.lost = 0; m.t = 0; }   // lose her at once
+  const mx = m.x, my = m.y; G.player = LY_GHOST(m);
+  try { return _updateMonLy(m, dt); } finally { G.player = real; if (!(Math.abs(m.x) < 1e5) || !(Math.abs(m.y) < 1e5)) { m.x = mx; m.y = my; } }   // a mob that jumps to the player stays put
+};
+const _updateBossLy = updateBoss;
+updateBoss = function (dt) {
+  const real = G.player, b = G.boss; if (!real || !real.stealth || !b) return _updateBossLy(dt);
+  b.cd = Math.max(b.cd || 0, 0.3);   // no new move while she is hidden
+  G.player = Object.assign(Object.create(real), { x: b.x, y: -1e6, vx: 0, vy: 0 });   // right on the boss, far above: it neither walks nor aims at her
+  const bx = b.x, by = b.y;
+  try { return _updateBossLy(dt); } finally { G.player = real; if (!(Math.abs(b.x) < 1e5) || !(Math.abs(b.y) < 1e5)) { b.x = bx; b.y = by; } }
+};
+/* skills: A and D for the rogue; anything used ends the stealth */
+const _skillInputLy = skillInput;
+skillInput = function () {
+  const p = G.player;
+  if (G.save.char === 'lykos' && IN.press.kd && G.lyZone && !(p.silT > 0)) { lyZoneOff('그림자 감옥을 걷었다'); IN.press.kd = false; }   // re-press: off, even on cooldown
+  return _skillInputLy.apply(this, arguments);
+};
+const _castSkillLy = castSkill;
+castSkill = function (key) {
+  const p = G.player;
+  if (G.save.char === 'lykos' && key === 'a') { lyStealthOn(p); return; }
+  if (p) lyStealthOff(p);
+  if (G.save.char === 'lykos' && key === 'd') { lyZonePlace(p); return; }
+  return _castSkillLy.apply(this, arguments);
+};
+const _startActLyS = startAct;
+startAct = function (id) { if (G.player) lyStealthOff(G.player); return _startActLyS.apply(this, arguments); };
+const _startUltLy = startUlt;
+startUlt = function () { if (G.player) lyStealthOff(G.player); return _startUltLy.apply(this, arguments); };
+if (typeof castLegend === 'function') { const _castLegendLy = castLegend; castLegend = function () { if (G.player) lyStealthOff(G.player); return _castLegendLy.apply(this, arguments); }; }
+const _updateSkillsLyZ = updateSkills;
+updateSkills = function (dt) {
+  const r = _updateSkillsLyZ.apply(this, arguments), p = G.player;
+  lyZoneTick(dt);
+  if (p) { if (p.ambushT > 0) p.ambushT -= dt; if (p.stealth && (G.save.char !== 'lykos' || p.dead > 0)) p.stealth = 0; }
+  return r;
+};
+const _drawHeroSpriteLy = drawHeroSprite;
+drawHeroSprite = function (c, ch, p, x, y, face, o) {
+  if (p && p === G.player && p.stealth && !(o && o.pose)) { o = Object.assign({}, o || {}); o.alpha = (o.alpha == null ? 1 : o.alpha) * 0.35; }
+  return _drawHeroSpriteLy(c, ch, p, x, y, face, o);
+};
+const _playerFigLyZ = playerFig;
+playerFig = function () { try { lyZoneDraw(ctx); } catch (e) { } return _playerFigLyZ.apply(this, arguments); };   // the floor mark under everyone
+/* names, descriptions, traits */
+Object.assign(SKILLS.lykos.a, { name: '그림자 은신', desc: '몸이 반투명해지며 그림자에 숨는다. 잡몹과 보스가 쫓거나 공격하지 못한다. 공격이나 다른 스킬을 쓰면 풀린다' });
+Object.assign(SKILLS.lykos.d, { name: '그림자 감옥', desc: '가장 가까운 바닥에 그림자 감옥을 30초 동안 설치한다. 안의 적은 1초마다 공격력의 40% 피해. 설치된 채로 다시 누르면 걷힌다' });
+(function () {
+  const ta = TRAITS.lykos.find(t => t.id === 'ly_a'), td = TRAITS.lykos.find(t => t.id === 'ly_d');
+  if (ta) { ta.name = '숨죽인 발'; ta.skill = 'A 그림자 은신';
+    ta.ranks.forEach((r, i) => { r.t = i === 4 ? '[증폭] 기습 피해 +5% · 기습 0.5초 더 길게' : i === 9 ? '[각성] 기습 피해 +5%, 재사용 대기시간 -15% · 숨는 순간 체력 5% 회복' : i === 14 ? '[초월] 기습 피해 +25% · 기습 1초 더 길게' : '기습(은신이 풀린 뒤 1초) 피해 +5%, 재사용 대기시간 -1%'; }); }
+  if (td) { td.name = '그림자 감옥'; td.skill = 'D 그림자 감옥';
+    td.ranks.forEach((r, i) => { r.t = i === 4 ? '[증폭] 그림자 감옥 피해 +5% · 범위 20% 넓게' : i === 9 ? '[각성] 그림자 감옥 피해 +5%, 재사용 대기시간 -15% · 감옥 안의 적이 느려진다' : i === 14 ? '[초월] 그림자 감옥 피해 +25% · 0.7초마다 벤다' : '그림자 감옥 피해 +5%, 재사용 대기시간 -1%'; }); }
+})();
 
 /* ============ MAIN LOOP ============ */
 function ambient(dt) {
