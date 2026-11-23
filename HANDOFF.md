@@ -69,6 +69,18 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1043  월드맵: 길 선 없앰, 호버 이동 버튼, 동그라미 1.5배, 성탑은 층이 버튼 + 정식 배포
+- 55x_worldmap: wmDraw 를 새로 씀 (예전 wmDraw 를 통째로 교체).
+  - 노란 길(Catmull-Rom 선, 성탑 층 사이 선) 그리기 삭제
+  - 1~20장: 동그라미 반지름 max(9, h*0.016) × 1.5. 호버 시 1.15배(부드럽게), 누르면 180ms 동안 살짝 들어갔다 나옴
+  - 3막 페이지: 동그라미 없음. `WM_ACT3_FLOORS`(탑 안쪽 x 0.312~0.686, 층별 y 구간 — 그림에서 측정)로 층마다 버튼 영역,
+    층 가운데에 'CH.nn · 제목' 이름판 + 상태(✓ 클리어 / ◎ 현재 위치 / 잠김). 호버 시 그 층 그림을 1.035배로 다시 그려 떠오르게, 누르면 들어갔다 나옴
+  - 호버(터치는 첫 탭) → `#wmPop` 버튼 2개(야영지로 가기 / 보스로 가기). 동그라미·층을 클릭하면 야영지로 이동.
+    이동 규칙 `wmGo(n, kind)`: 열린 장 + 야영지에 있을 때만, 보스는 1~20 chArenaOpen / 3막은 열린 층이면 됨. 안 되면 버튼 꺼짐(title 에 이유)
+  - 새 함수: wmGo, wmHitAt, wmPopPlace, wmPopShow, wmPopHide, wmPopHideSoon, wmPress. WM.hov / WM.pop / WM.sc / WM.press
+  - wmBuild: #wmPop 요소·CSS, 캔버스 click/mousemove/mouseleave 를 새 규칙으로 (지도에서 장 상세창 wmDetail 은 더 안 엶),
+    범례를 선 모양 → 동그라미 상태로, toggleWorldMap 닫을 때·wmPage 에서 팝업 닫기
+
 ### 261123-0957  업데이트 확인을 더 빨리 + 정식 배포
 - 56e(업데이트 강제 새로고침): `setTimeout(updCheck, 8000)` → `1500` (배포 직후 10분 캐시로 옛 html 을 받은 사람이 로그인 전에 넘어가게)
 - 루트 = test 에서 noindex · DEV_TOOLS 두 줄만 뺀 것

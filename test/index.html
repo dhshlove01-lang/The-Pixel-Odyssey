@@ -611,10 +611,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-0957"></script>
-<script src="assets/js/act3_data.js?v=261123-0957"></script>
+<script src="assets/js/pfx.js?v=261123-1043"></script>
+<script src="assets/js/act3_data.js?v=261123-1043"></script>
 <script>
-const GAME_VER = '261123-0957';
+const GAME_VER = '261123-1043';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -17743,7 +17743,12 @@ function wmState(n) { if (G.map && G.map.ch === n) return 'here'; if (wmCleared(
 .wmx{border:1px solid #806327;background:rgba(30,24,14,.9);color:#e8dfc8;font:600 max(9px,calc(var(--u)*11))/1.2 var(--font-ui);padding:calc(var(--u)*5) calc(var(--u)*10);cursor:pointer}
 .wmx:hover{border-color:#d6b25e;color:#f2da92}
 #wmLegend{position:absolute;left:30%;bottom:2.6%;display:flex;gap:calc(var(--u)*16);align-items:center;padding:calc(var(--u)*6) calc(var(--u)*14);background:rgba(13,11,20,.82);border:1px solid #4c4754;font-size:max(8px,calc(var(--u)*10));color:#bcc4d2;pointer-events:none}
-#wmLegend i{display:inline-block;width:calc(var(--u)*18);height:0;border-top:3px solid #d6b25e;vertical-align:middle;margin-right:5px}#wmLegend i.d{border-top:3px dashed #f2da92}#wmLegend i.o{border-top:2px solid #bcc4d2}#wmLegend i.l{border-top:2px dashed #7c7484}
+#wmLegend i{display:inline-block;width:calc(var(--u)*11);height:calc(var(--u)*11);border-radius:50%;background:#2a2016;border:2px solid #d6b25e;vertical-align:middle;margin-right:5px}#wmLegend i.o{background:#141a2a;border-color:#bcc4d2}#wmLegend i.l{background:#0c0b10;border-color:#4c4754}
+#wmPop{position:absolute;z-index:3;display:none;flex-direction:column;gap:calc(var(--u)*5);padding:calc(var(--u)*6);background:rgba(13,11,20,.94);border:1px solid #806327;box-shadow:0 4px 14px rgba(0,0,0,.55);transform-origin:left center;animation:wmPopIn .12s ease-out}
+#wmPop.on{display:flex}#wmPop .wmx{white-space:nowrap;min-width:calc(var(--u)*92);text-align:center}#wmPop .wmx[disabled]{opacity:.4;cursor:default}
+#wmPop.no{animation:wmPopNo .3s}
+@keyframes wmPopIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+@keyframes wmPopNo{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 #wmDetail{position:absolute;inset:2.6% 3.2%;display:none;flex-direction:column;background:rgba(13,11,20,.96);border:1px solid #806327;padding:calc(var(--u)*10) calc(var(--u)*14);transform:translateX(4%);opacity:0;transition:transform .22s ease-out,opacity .22s ease-out}
 #wmDetail.on{display:flex}#wmDetail.show{transform:none;opacity:1}
 #wmDetail .dh{display:flex;align-items:flex-start;gap:calc(var(--u)*12);border-bottom:1px solid #3a3020;padding-bottom:calc(var(--u)*7);margin-bottom:calc(var(--u)*8)}
@@ -17776,18 +17781,33 @@ function wmState(n) { if (G.map && G.map.ch === n) return 'here'; if (wmCleared(
     <div class="cur"><div><em>현재 위치</em><span id="wmCur"></span></div><div class="ticks" id="wmTicks"></div></div>
     <button class="wmx" id="wmPg0" type="button" data-pg="0">1–20</button><button class="wmx" id="wmPg1" type="button" data-pg="1">21–30</button>
     <button class="wmx" id="wmClose" type="button">Esc · 닫기</button></div>
-  <div id="wmLegend"><span><i></i>클리어</span><span><i class="d"></i>진행</span><span><i class="o"></i>열림</span><span><i class="l"></i>잠김</span><span style="color:#f2da92">◎ 현재 위치</span></div>
+  <div id="wmLegend"><span><i></i>클리어</span><span><i class="o"></i>열림</span><span><i class="l"></i>잠김</span><span style="color:#f2da92">◎ 현재 위치</span><span style="color:#9a8f7a">올리면 이동 버튼 · 누르면 야영지로</span></div>
+  <div id="wmPop"><button class="wmx" type="button" data-go="camp">야영지로 가기</button><button class="wmx" type="button" data-go="boss">보스로 가기</button></div>
   <div id="wmDetail"></div>`;
   const game = $('#game'); game.appendChild(el);
   $('#wmClose').addEventListener('click', e => { e.stopPropagation(); toggleWorldMap(false); });
   for (const b of [$('#wmPg0'), $('#wmPg1')]) b.addEventListener('click', e => { e.stopPropagation(); wmPage(+b.dataset.pg); });
   const pageAt = (x, y) => (WM.pageHit || []).find(q => x >= q.x && x <= q.x + q.w && y >= q.y && y <= q.y + q.h);
+  const cvXY = e => { const r = $('#wmCv').getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  /* 2026-11-23: a circle / floor: hover shows the two buttons; a click on it goes to its camp (the first tap on a touch screen
+     only shows the buttons). The chapter window (wmDetail) is no longer opened from the map. */
   $('#wmCv').addEventListener('click', e => {
-    const r = $('#wmCv').getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-    const pg = pageAt(x, y); if (pg) { wmPage(pg.page); return; }   // the act badge that turns the page
-    const h = WM.hit.find(h => (x - h.x) ** 2 + (y - h.y) ** 2 <= (h.r + 6) ** 2); if (h) { sfx('click'); wmDetail(h.n); }
+    const [x, y] = cvXY(e);
+    const pg = pageAt(x, y); if (pg) { wmPopHide(); wmPage(pg.page); return; }   // the act badge that turns the page
+    const h = wmHitAt(x, y); if (!h) { WM.hov = null; wmPopHide(); return; }
+    if (WM.pop !== h.n) { WM.hov = h.n; wmPopShow(h.n); return; }
+    wmPress(h.n, 'camp');
   });
-  $('#wmCv').addEventListener('mousemove', e => { const r = $('#wmCv').getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; $('#wmCv').style.cursor = pageAt(x, y) || WM.hit.some(h => (x - h.x) ** 2 + (y - h.y) ** 2 <= (h.r + 6) ** 2) ? 'pointer' : 'default'; });
+  $('#wmCv').addEventListener('mousemove', e => {
+    const [x, y] = cvXY(e), h = wmHitAt(x, y);
+    $('#wmCv').style.cursor = pageAt(x, y) || h ? 'pointer' : 'default';
+    WM.hov = h ? h.n : null; if (h) wmPopShow(h.n); else if (WM.pop) wmPopHideSoon();
+  });
+  $('#wmCv').addEventListener('mouseleave', () => { WM.hov = null; if (WM.pop) wmPopHideSoon(); });
+  const pop = $('#wmPop');
+  pop.addEventListener('mouseenter', () => { WM.popHover = true; clearTimeout(WM.popT); });
+  pop.addEventListener('mouseleave', () => { WM.popHover = false; wmPopHideSoon(); });
+  pop.addEventListener('click', e => { const b = e.target.closest('[data-go]'); e.stopPropagation(); if (b && WM.pop && !b.disabled) wmPress(WM.pop, b.dataset.go); });
   $('#wmDetail').addEventListener('click', e => {
     const t = e.target.closest('[data-wm]'); if (!t) return; e.stopPropagation();
     const a = t.dataset.wm;
@@ -17810,7 +17830,7 @@ function toggleWorldMap(force) {
     WM.page = G.map && G.map.ch > CH_COUNT ? 1 : 0;   // open on the page of the chapter you are in
     wmDetail(0); wmHeader(); wmPageUi(); wmLoop(); sfx('click');
   } else {
-    WM.open = false; G.ui.worldmap = false; el.classList.remove('show'); cancelAnimationFrame(WM.raf);
+    WM.open = false; G.ui.worldmap = false; el.classList.remove('show'); cancelAnimationFrame(WM.raf); WM.hov = null; wmPopHide();
     setTimeout(() => { if (!WM.open) el.classList.remove('on'); }, 190);
   }
 }
@@ -17830,47 +17850,76 @@ function wmPageUi() {
 }
 function wmPage(p) {
   if (!WM.open) return;
-  p = clamp(p | 0, 0, 1); if (WM.ch) wmDetail(0);
+  p = clamp(p | 0, 0, 1); if (WM.ch) wmDetail(0); wmPopHide(); WM.hov = null;
   if (p === (WM.page || 0)) return;
   WM.page = p; wmPageUi(); sfx('click');
 }
 /* ---- stage 1: the map ---- */
 function wmLoop() { cancelAnimationFrame(WM.raf); const f = () => { if (!WM.open) return; if (!WM.ch) wmDraw(); WM.raf = requestAnimationFrame(f); }; f(); }
+/* 2026-11-23 (user): no roads. Chapters 1-20 are circles 1.5x bigger; the tower (21-30) has no circles, each floor of the art is
+   the button with its name in the middle. Hover (or a first tap on a touch screen) grows it a little and shows two buttons,
+   야영지로 가기 / 보스로 가기 (#wmPop); clicking the circle or the floor itself presses it in and goes to its camp.
+   The travel rules are the old chapter window's: from a camp only, to chapters that are open (wmGo). */
+const WM_ACT3_FLOORS = { x0: 0.312, x1: 0.686,   // the tower's inside on worldmap_act3_bg.png; floors measured on the art (dividers at y 140 236 336 426 512 600 686 772 862 of 941)
+  y: { 30: [0.015, 0.147], 29: [0.151, 0.249], 28: [0.255, 0.355], 27: [0.363, 0.451], 26: [0.457, 0.542], 25: [0.548, 0.636], 24: [0.642, 0.727], 23: [0.733, 0.816], 22: [0.827, 0.914], 21: [0.920, 0.984] } };
+function wmGo(n, kind) {   // where the button goes, or why it can not
+  const C = CHAPTERS[n]; if (!C) return { why: '없는 장' };
+  if (!wmOpenCh(n)) return { why: '아직 열리지 않은 장' };
+  if (!G.map || !G.map.safe) return { why: '장 이동은 야영지에서 할 수 있다' };
+  if (kind === 'camp') return G.mapId === C.camp ? { why: '지금 여기' } : { id: C.camp, x: 760 };
+  let open = isAct3(n); if (!open) { try { open = chArenaOpen(n); } catch (e) { open = false; } }
+  if (!open) return { why: '보스 방이 아직 닫혀 있다' };
+  const id = bossEntry(n); return G.mapId === id ? { why: '지금 여기' } : { id, x: 120 };
+}
+function wmHitAt(x, y) {
+  return (WM.hit || []).find(h => h.rect ? x >= h.rect.x && x <= h.rect.x + h.rect.w && y >= h.rect.y && y <= h.rect.y + h.rect.h : (x - h.x) ** 2 + (y - h.y) ** 2 <= (h.r + 6) ** 2) || null;
+}
+function wmPopPlace() {
+  const el = $('#wmPop'), h = WM.pop && (WM.hit || []).find(q => q.n === WM.pop); if (!el || !h) return;
+  const W2 = $('#wmCv').clientWidth, pw = el.offsetWidth, ph = el.offsetHeight;
+  let x = h.ax + 10, y = h.ay - ph / 2; if (x + pw > W2 - 6) x = h.bx - 10 - pw;
+  el.style.left = Math.round(Math.max(6, x)) + 'px'; el.style.top = Math.round(Math.max(6, y)) + 'px';
+}
+function wmPopShow(n) {
+  const el = $('#wmPop'); if (!el) return; clearTimeout(WM.popT);
+  if (WM.pop !== n) {
+    WM.pop = n;
+    for (const b of el.querySelectorAll('[data-go]')) { const g = wmGo(n, b.dataset.go); b.disabled = !!g.why; b.title = g.why || ''; }
+    el.classList.add('on');
+  }
+  wmPopPlace();
+}
+function wmPopHide() { clearTimeout(WM.popT); WM.pop = null; WM.popHover = false; const el = $('#wmPop'); if (el) el.classList.remove('on', 'no'); }
+function wmPopHideSoon() { clearTimeout(WM.popT); WM.popT = setTimeout(() => { if (!WM.popHover && WM.hov == null) wmPopHide(); }, 260); }
+function wmPress(n, kind) {   // the circle or floor dips in, then the trip
+  WM.press = { n, t0: performance.now() }; sfx('click');
+  const g = wmGo(n, kind);
+  if (g.why) { wmPopShow(n); const el = $('#wmPop'); if (el) { el.classList.remove('no'); void el.offsetWidth; el.classList.add('no'); } return; }
+  setTimeout(() => { if (!WM.open) return; wmPopHide(); toggleWorldMap(false); travel(g.id, g.x); }, 190);
+}
 function wmDraw() {
   const cv = $('#wmCv'), r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
   const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
   const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, r.width, r.height);
-  // the art: 16:9, letterboxed into the frame
-  // the tower page sits between the head bar and the legend (its top floor and first landing are at the art's very top and bottom)
-  const TP = WM.page ? 0.12 : 0, TH = WM.page ? 0.79 : 1;
-  const ar = 1672 / 941; let mw = r.width, mh = mw / ar; if (mh > r.height * TH) { mh = r.height * TH; mw = mh * ar; }
-  const M = { x: (r.width - mw) / 2, y: WM.page ? r.height * TP : (r.height - mh) / 2, w: mw, h: mh };
-  // 2026-11-23 (3막 지시서 4-6): two pages. 0 = chapters 1-20 on worldmap_bg.png, 1 = the tower (21-30) on worldmap_act3_bg.png
+  // the art: 16:9, letterboxed; the tower page sits between the head bar and the legend
   const PG = WM.page || 0, N0 = PG ? CH_COUNT + 1 : 1, N1 = PG ? CH_LAST : CH_COUNT, bg = PG ? WM.img2 : WM.img;
-  if (bg && bg.complete && bg.naturalWidth) { c.imageSmoothingEnabled = false; c.drawImage(bg, M.x, M.y, M.w, M.h); }
+  const ar = 1672 / 941, TH = PG ? 0.79 : 1; let mw = r.width, mh = mw / ar; if (mh > r.height * TH) { mh = r.height * TH; mw = mh * ar; }
+  const M = { x: (r.width - mw) / 2, y: PG ? r.height * 0.12 : (r.height - mh) / 2, w: mw, h: mh };
+  const ready = bg && bg.complete && bg.naturalWidth;
+  if (ready) { c.imageSmoothingEnabled = false; c.drawImage(bg, M.x, M.y, M.w, M.h); }
   else { c.fillStyle = '#1a1622'; c.fillRect(M.x, M.y, M.w, M.h); }
-  const P = (PG ? WM_ACT3_XY : WM_XY.slice(0, CH_COUNT)).map(([x, y]) => ({ x: M.x + x * M.w, y: M.y + y * M.h })), R = PG ? Math.max(9, M.h * 0.028) : Math.max(9, M.h * 0.016), st = [];
-  const at = n => P[n - N0];
-  for (let n = 1; n <= CH_LAST; n++) st[n] = wmState(n);
-  const small = r.width < 700, t = performance.now() / 1000;
-  // the road: Catmull-Rom between nodes, each piece styled by what it leads to (the tower: the stairs are in the art, so only a short line floor to floor)
-  const seg = (i) => { const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)], pts = [];
-    if (PG) { const dx = p2.x - p1.x, dy = p2.y - p1.y, d = Math.hypot(dx, dy) || 1, k = Math.min(R * 1.15, d * 0.4); return [{ x: p1.x + dx / d * k, y: p1.y + dy / d * k }, { x: p2.x - dx / d * k, y: p2.y - dy / d * k }]; }
-    for (let k = 0; k <= 16; k++) { const u = k / 16, u2 = u * u, u3 = u2 * u; pts.push({ x: 0.5 * (2 * p1.x + (-p0.x + p2.x) * u + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * u2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * u3), y: 0.5 * (2 * p1.y + (-p0.y + p2.y) * u + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * u2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * u3) }); }
-    return pts; };
-  for (let i = 0; i < P.length - 1; i++) {
-    const a = N0 + i, b = a + 1, pts = seg(i), done = wmCleared(a) && (wmCleared(b) || st[b] === 'here'), next = !done && (st[b] !== 'lock' || st[a] === 'here');   // from where you are to the next: the dashed gold 'go on'
-    c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
-    const path = () => { c.beginPath(); pts.forEach((p, k) => k ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); };
-    if (done) { path(); c.strokeStyle = 'rgba(20,14,6,.85)'; c.lineWidth = R * 0.55 + 3; c.stroke(); path(); c.strokeStyle = '#d6b25e'; c.lineWidth = R * 0.5; c.shadowColor = 'rgba(214,178,94,.5)'; c.shadowBlur = 6; c.stroke(); }
-    else if (next) { path(); c.setLineDash([11, 6]); c.lineDashOffset = -t * 14; c.strokeStyle = '#f2da92'; c.lineWidth = Math.max(2, R * 0.32); c.stroke(); }
-    else { path(); c.setLineDash([4, 6]); c.strokeStyle = '#7c7484'; c.lineWidth = 2; c.stroke(); }
-    c.restore();
-  }
-  // act badges (fixed spots on empty ground)
+  const st = []; for (let n = 1; n <= CH_LAST; n++) st[n] = wmState(n);
+  const small = r.width < 700, t = performance.now() / 1000, now = performance.now();
+  WM.sc = WM.sc || {};
+  const grow = PG ? 1.035 : 1.15, dip = PG ? 0.05 : 0.12;
+  const scl = n => {   // eased hover growth, times the press dip (180 ms)
+    const k = WM.sc[n] = (WM.sc[n] || 1) + ((WM.hov === n ? grow : 1) - (WM.sc[n] || 1)) * 0.3;
+    let p = 1; if (WM.press && WM.press.n === n) { const u = (now - WM.press.t0) / 180; if (u < 1) p = 1 - dip * Math.sin(u * Math.PI); else WM.press = null; }
+    return k * p;
+  };
+  // act badges (fixed spots on empty ground); page 0: the tower's badge turns the page; page 1: the tower's badge and the way back
   const rects = [];
   c.font = `600 ${Math.max(9, M.h * 0.019)}px 'Noto Sans KR',sans-serif`;
-  // page 0: the acts on the old map, the tower's badge turns the page; page 1: the tower's badge and the way back (top left)
   const A3 = WM_ACTS.find(A => A.a > CH_COUNT);
   const badges = PG ? [Object.assign({}, A3, { x: 0.012, y: 0.02 }), { name: '◀ 1막 · 2막 지도', a: 1, b: CH_COUNT, col: '214,178,94', x: 0.012, y: 0.115, go: 0 }]
     : WM_ACTS.map(A => A === A3 ? Object.assign({}, A, { name: A.name + '  ▶', go: 1 }) : A);
@@ -17885,42 +17934,69 @@ function wmDraw() {
     rects.push({ x, y, w: wd, h: hd });
     if (A.go != null) WM.pageHit.push({ x, y, w: wd, h: hd, page: A.go });
   }
-  // nodes
   WM.hit = [];
-  for (let n = N0; n <= N1; n++) rects.push({ x: at(n).x - R - 2, y: at(n).y - R - 2, w: 2 * R + 4, h: 2 * R + 4 });
-  for (let n = N0; n <= N1; n++) {
-    const p = at(n), s = st[n], A = wmAct(n);
-    if (s === 'here') {   // two breathing rings and an arrow above
-      const k = (Math.sin(t * Math.PI * 2 / 1.6) + 1) / 2;
-      c.strokeStyle = `rgba(242,218,146,${0.35 + 0.4 * k})`; c.lineWidth = 1;
-      for (const rr of [R * 1.95, R * 1.4]) { c.beginPath(); c.arc(p.x, p.y, rr + k * 3, 0, 6.283); c.stroke(); }
-      c.fillStyle = '#f2da92'; c.beginPath(); const ay = p.y - R * 2.4 - k * 3; c.moveTo(p.x - R * 0.45, ay); c.lineTo(p.x + R * 0.45, ay); c.lineTo(p.x, ay + R * 0.6); c.fill();
+  if (PG) {
+    // ---- the tower: every floor of the picture is a button, its name in the middle ----
+    const F = WM_ACT3_FLOORS, IW = 1672, IH = 941;
+    for (let n = N0; n <= N1; n++) {
+      const [y0, y1] = F.y[n], s = st[n], k = scl(n), hov = WM.hov === n;
+      const B = { x: M.x + F.x0 * M.w, y: M.y + y0 * M.h, w: (F.x1 - F.x0) * M.w, h: (y1 - y0) * M.h };
+      const dw = B.w * k, dh = B.h * k, dx = B.x + (B.w - dw) / 2, dy = B.y + (B.h - dh) / 2;
+      if (ready && Math.abs(k - 1) > 0.002) { c.save(); c.shadowColor = 'rgba(0,0,0,.7)'; c.shadowBlur = 14; c.drawImage(bg, F.x0 * IW, y0 * IH, (F.x1 - F.x0) * IW, (y1 - y0) * IH, dx, dy, dw, dh); c.restore(); }
+      if (s === 'lock') { c.fillStyle = 'rgba(6,5,12,.55)'; c.fillRect(dx, dy, dw, dh); }
+      if (hov || s === 'here') { c.save(); c.strokeStyle = hov ? '#f2da92' : 'rgba(242,218,146,.75)'; c.lineWidth = hov ? 2 : 1.5; if (!hov) c.setLineDash([6, 4]); c.strokeRect(dx + 1, dy + 1, dw - 2, dh - 2); c.restore(); }
+      // the name plate
+      const C = CHAPTERS[n], fs = clamp(B.h * 0.24, 9, 17) * k, l1 = `CH.${n} · ${C ? C.title : ''}`;
+      const tag = s === 'clear' ? '✓ 클리어' : s === 'here' ? '◎ 현재 위치' : s === 'lock' ? '잠김' : '';
+      c.font = `700 ${fs}px 'Noto Sans KR',sans-serif`; const tw1 = c.measureText(l1).width;
+      c.font = `600 ${fs * 0.78}px 'Noto Sans KR',sans-serif`; const tw2 = tag ? c.measureText(tag).width : 0;
+      const pw = Math.max(tw1, tw2) + fs * 1.6, ph = tag ? fs * 2.55 : fs * 1.6, px = B.x + B.w / 2 - pw / 2, py = B.y + B.h / 2 - ph / 2;
+      c.fillStyle = hov ? 'rgba(26,18,8,.86)' : 'rgba(12,9,14,.72)'; c.fillRect(px, py, pw, ph);
+      c.fillStyle = s === 'here' ? '#d6b25e' : `rgb(${(wmAct(n) || A3).col})`; c.fillRect(px, py, 3, ph);
+      c.strokeStyle = hov ? 'rgba(242,218,146,.8)' : 'rgba(214,178,94,.35)'; c.lineWidth = 1; c.strokeRect(px + .5, py + .5, pw - 1, ph - 1);
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillStyle = s === 'lock' ? '#8a8292' : '#f2e6c8'; c.font = `700 ${fs}px 'Noto Sans KR',sans-serif`; c.fillText(l1, B.x + B.w / 2, py + (tag ? fs * 0.85 : ph / 2));
+      if (tag) { c.fillStyle = s === 'clear' ? '#d6b25e' : s === 'here' ? '#f2da92' : '#8a8292'; c.font = `600 ${fs * 0.78}px 'Noto Sans KR',sans-serif`; c.fillText(tag, B.x + B.w / 2, py + fs * 1.85); }
+      WM.hit.push({ n, rect: B, ax: B.x + B.w, ay: B.y + B.h / 2, bx: B.x });
     }
-    c.beginPath(); c.arc(p.x, p.y, R, 0, 6.283);
-    c.fillStyle = s === 'here' ? '#d6b25e' : s === 'clear' ? '#2a2016' : s === 'open' ? '#141a2a' : '#0c0b10'; c.fill();
-    c.lineWidth = s === 'here' || s === 'clear' ? 3 : 2; c.strokeStyle = s === 'here' ? '#f2da92' : s === 'clear' ? '#d6b25e' : s === 'open' ? '#bcc4d2' : '#4c4754'; c.stroke();
-    c.fillStyle = s === 'here' ? '#1a1408' : s === 'lock' ? '#6a6472' : '#e8dfc8'; c.font = `700 ${R * 0.95}px 'Noto Sans KR',sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillText(String(n).padStart(2, '0'), p.x, p.y + 1);
-    if (s === 'clear') { c.fillStyle = '#d6b25e'; c.beginPath(); c.arc(p.x + R * 0.75, p.y + R * 0.75, R * 0.38, 0, 6.283); c.fill(); c.strokeStyle = '#1a1408'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(p.x + R * 0.58, p.y + R * 0.76); c.lineTo(p.x + R * 0.72, p.y + R * 0.9); c.lineTo(p.x + R * 0.95, p.y + R * 0.6); c.stroke(); }
-    if (s === 'lock') { const lx = p.x + R * 0.7, ly = p.y - R * 0.8; c.fillStyle = '#9a8f7a'; c.fillRect(lx - R * 0.28, ly, R * 0.56, R * 0.42); c.strokeStyle = '#9a8f7a'; c.lineWidth = 1.4; c.beginPath(); c.arc(lx, ly, R * 0.2, Math.PI, 0); c.stroke(); }
-    WM.hit.push({ n, x: p.x, y: p.y, r: R });
-    // the label: below, above, left, right; the first spot that touches nothing
-    const C = CHAPTERS[n], fs = Math.max(8, M.h * 0.0165), l1 = small ? '' : `CH.${String(n).padStart(2, '0')}`, l2 = C ? C.title : '';
-    c.font = `600 ${fs}px 'Noto Sans KR',sans-serif`; const lw = Math.max(c.measureText(l2).width, l1 ? c.measureText(l1).width * 0.8 : 0) + 14, lh = l1 ? fs * 2.35 : fs * 1.5;
-    let cand = [[p.x - lw / 2, p.y + R + 5], [p.x - lw / 2, p.y - R - 5 - lh], [p.x - R - 6 - lw, p.y - lh / 2], [p.x + R + 6, p.y - lh / 2], [p.x - lw / 2, p.y + R + 5 + lh * 0.9]];
-    if (PG) cand = n === CH_LAST ? [cand[3], cand[2], cand[0]] : [cand[2], cand[3], cand[0], cand[1]];   // the tower: labels out in the void on the left (the throne: right), as the pack's labelSide says
-    const ok = ([x, y]) => x >= M.x + M.w * 0.015 && y >= M.y + M.h * (PG ? 0.015 : 0.12) &&x + lw <= M.x + M.w * 0.975 && y + lh <= M.y + M.h * 0.97 && !rects.some(q => x < q.x + q.w && x + lw > q.x && y < q.y + q.h && y + lh > q.y);
-    const pos = cand.find(ok); if (!pos && small) continue;
-    const [lx, ly] = pos || cand[0]; rects.push({ x: lx, y: ly, w: lw, h: lh });
-    c.globalAlpha = s === 'lock' ? 0.6 : 1;
-    c.fillStyle = 'rgba(16,12,10,.78)'; c.fillRect(lx, ly, lw, lh); c.fillStyle = `rgb(${A.col})`; c.fillRect(lx, ly, 3, lh);
-    c.textAlign = 'left'; c.textBaseline = 'top';
-    if (l1) { c.fillStyle = '#9a8f7a'; c.font = `${fs * 0.75}px 'Noto Sans KR',sans-serif`; c.fillText(l1, lx + 8, ly + 2); }
-    c.fillStyle = s === 'lock' ? '#9a8f7a' : '#e8dfc8'; c.font = `600 ${fs}px 'Noto Sans KR',sans-serif`; c.fillText(l2, lx + 8, ly + (l1 ? fs * 1.05 : fs * 0.22));
-    c.globalAlpha = 1;
+  } else {
+    // ---- chapters 1-20: circles (1.5x the old size), names beside them ----
+    const P = WM_XY.slice(0, CH_COUNT).map(([x, y]) => ({ x: M.x + x * M.w, y: M.y + y * M.h })), R = Math.max(9, M.h * 0.016) * 1.5, at = n => P[n - N0];
+    for (let n = N0; n <= N1; n++) rects.push({ x: at(n).x - R - 2, y: at(n).y - R - 2, w: 2 * R + 4, h: 2 * R + 4 });
+    for (let n = N0; n <= N1; n++) {
+      const p = at(n), s = st[n], A = wmAct(n), k = scl(n), Rk = R * k, hov = WM.hov === n;
+      if (s === 'here') {   // two breathing rings and an arrow above
+        const q = (Math.sin(t * Math.PI * 2 / 1.6) + 1) / 2;
+        c.strokeStyle = `rgba(242,218,146,${0.35 + 0.4 * q})`; c.lineWidth = 1;
+        for (const rr of [Rk * 1.7, Rk * 1.3]) { c.beginPath(); c.arc(p.x, p.y, rr + q * 3, 0, 6.283); c.stroke(); }
+        c.fillStyle = '#f2da92'; c.beginPath(); const ay = p.y - Rk * 2.1 - q * 3; c.moveTo(p.x - Rk * 0.4, ay); c.lineTo(p.x + Rk * 0.4, ay); c.lineTo(p.x, ay + Rk * 0.5); c.fill();
+      }
+      c.save(); if (hov) { c.shadowColor = 'rgba(242,218,146,.65)'; c.shadowBlur = 14; }
+      c.beginPath(); c.arc(p.x, p.y, Rk, 0, 6.283);
+      c.fillStyle = s === 'here' ? '#d6b25e' : s === 'clear' ? '#2a2016' : s === 'open' ? '#141a2a' : '#0c0b10'; c.fill();
+      c.lineWidth = s === 'here' || s === 'clear' || hov ? 3 : 2; c.strokeStyle = hov ? '#f2da92' : s === 'here' ? '#f2da92' : s === 'clear' ? '#d6b25e' : s === 'open' ? '#bcc4d2' : '#4c4754'; c.stroke(); c.restore();
+      c.fillStyle = s === 'here' ? '#1a1408' : s === 'lock' ? '#6a6472' : '#e8dfc8'; c.font = `700 ${Rk * 0.9}px 'Noto Sans KR',sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(String(n).padStart(2, '0'), p.x, p.y + 1);
+      if (s === 'clear') { c.fillStyle = '#d6b25e'; c.beginPath(); c.arc(p.x + Rk * 0.75, p.y + Rk * 0.75, Rk * 0.36, 0, 6.283); c.fill(); c.strokeStyle = '#1a1408'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(p.x + Rk * 0.58, p.y + Rk * 0.76); c.lineTo(p.x + Rk * 0.72, p.y + Rk * 0.9); c.lineTo(p.x + Rk * 0.95, p.y + Rk * 0.6); c.stroke(); }
+      if (s === 'lock') { const lx = p.x + Rk * 0.7, ly = p.y - Rk * 0.8; c.fillStyle = '#9a8f7a'; c.fillRect(lx - Rk * 0.26, ly, Rk * 0.52, Rk * 0.4); c.strokeStyle = '#9a8f7a'; c.lineWidth = 1.4; c.beginPath(); c.arc(lx, ly, Rk * 0.18, Math.PI, 0); c.stroke(); }
+      WM.hit.push({ n, x: p.x, y: p.y, r: R * grow, ax: p.x + R * grow, ay: p.y, bx: p.x - R * grow });
+      // the label: below, above, left, right; the first spot that touches nothing
+      const C = CHAPTERS[n], fs = Math.max(8, M.h * 0.0165), l1 = small ? '' : `CH.${String(n).padStart(2, '0')}`, l2 = C ? C.title : '';
+      c.font = `600 ${fs}px 'Noto Sans KR',sans-serif`; const lw = Math.max(c.measureText(l2).width, l1 ? c.measureText(l1).width * 0.8 : 0) + 14, lh = l1 ? fs * 2.35 : fs * 1.5;
+      const cand = [[p.x - lw / 2, p.y + R + 5], [p.x - lw / 2, p.y - R - 5 - lh], [p.x - R - 6 - lw, p.y - lh / 2], [p.x + R + 6, p.y - lh / 2], [p.x - lw / 2, p.y + R + 5 + lh * 0.9]];
+      const ok = ([x, y]) => x >= M.x + M.w * 0.015 && y >= M.y + M.h * 0.12 && x + lw <= M.x + M.w * 0.975 && y + lh <= M.y + M.h * 0.97 && !rects.some(q => x < q.x + q.w && x + lw > q.x && y < q.y + q.h && y + lh > q.y);
+      const pos = cand.find(ok); if (!pos && small) continue;
+      const [lx, ly] = pos || cand[0]; rects.push({ x: lx, y: ly, w: lw, h: lh });
+      c.globalAlpha = s === 'lock' ? 0.6 : 1;
+      c.fillStyle = 'rgba(16,12,10,.78)'; c.fillRect(lx, ly, lw, lh); c.fillStyle = `rgb(${A.col})`; c.fillRect(lx, ly, 3, lh);
+      c.textAlign = 'left'; c.textBaseline = 'top';
+      if (l1) { c.fillStyle = '#9a8f7a'; c.font = `${fs * 0.75}px 'Noto Sans KR',sans-serif`; c.fillText(l1, lx + 8, ly + 2); }
+      c.fillStyle = s === 'lock' ? '#9a8f7a' : '#e8dfc8'; c.font = `600 ${fs}px 'Noto Sans KR',sans-serif`; c.fillText(l2, lx + 8, ly + (l1 ? fs * 1.05 : fs * 0.22));
+      c.globalAlpha = 1;
+    }
   }
+  if (WM.pop) wmPopPlace();
 }
-
 /* ---- stage 2: one chapter ---- */
 function wmZones(n) { const C = CHAPTERS[n]; return [C.camp, C.a, C.b, C.arena]; }
 function wmZoneLock(n, k) {   // the portal into zone k from zone k-1, if it is shut: its words
