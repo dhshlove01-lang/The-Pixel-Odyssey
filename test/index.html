@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1345"></script>
+<script src="assets/js/pfx.js?v=261123-1352"></script>
 <script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1345';
+const GAME_VER = '261123-1352';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16591,6 +16591,9 @@ function hero48Load(ch) {
      → 몸통 줄(셀 y 120-230)의 가장 긴 불투명 구간 가운데값의 중앙값을 ax로 써서 몸통을 고정한다. 공격·사망은 160 그대로.
    캔버스를 못 쓰면(보안 오류 등) 원래 그림·축 160으로 그린다. */
 const HERO48_MIRROR = { lykos: [15, 16, 17, 18, 19, 20, 21] };
+/* 1345b: 도적 이동 8-21 은 대기·공격보다 작은 배율로 그려져 있다 (머리 폭 35 vs 42~47, 갑옷·두건도 같은 비율) → 발밑 기준 1.2배.
+   대기는 쪼그린 자세라 키가 작은 게 맞고, 키 차이는 자세로만 남는다 (달리기 키 약 182 vs 대기 140~152). */
+const HERO48_GROW = { lykos: { k: 1.2, f: _h48(8, 14) } };
 function hero48Fix(ch, im) {
   const N = HERO48_CELL, ax = [];
   try {
@@ -16599,6 +16602,17 @@ function hero48Fix(ch, im) {
     for (const i of HERO48_MIRROR[ch] || []) {
       const x = (i % 8) * N, y = ((i / 8) | 0) * N;
       c.clearRect(x, y, N, N); c.save(); c.translate(x + N, y); c.scale(-1, 1); c.drawImage(im, x, y, N, N, 0, 0, N, N); c.restore();
+    }
+    const G48 = HERO48_GROW[ch];
+    if (G48) {   // 1345b: frames drawn at a smaller scale than the rest -> enlarged around the feet (cell x 160, ground 292)
+      const t = document.createElement('canvas'); t.width = N; t.height = N; const tc = t.getContext('2d');
+      for (const i of G48.f) {
+        const x = (i % 8) * N, y = ((i / 8) | 0) * N;
+        tc.clearRect(0, 0, N, N); tc.drawImage(cv, x, y, N, N, 0, 0, N, N);
+        c.clearRect(x, y, N, N); c.save(); c.beginPath(); c.rect(x, y, N, N); c.clip();
+        c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+        c.translate(x + HERO48_PIVOT, y + HERO48_GROUND); c.scale(G48.k, G48.k); c.drawImage(t, -HERO48_PIVOT, -HERO48_GROUND); c.restore();
+      }
     }
     for (let i = 0; i < 22; i++) {
       const x0 = (i % 8) * N, y0 = ((i / 8) | 0) * N, d = c.getImageData(x0, y0 + 120, N, 110).data, mids = [];
