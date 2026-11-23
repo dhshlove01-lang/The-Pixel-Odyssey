@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1441"></script>
+<script src="assets/js/pfx.js?v=261123-1444"></script>
 <script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1441';
+const GAME_VER = '261123-1444';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -6066,7 +6066,7 @@ function tickAct(dt) {
     } else if (a.id === 'c') {
       while (a.hits < a.nHits && a.t >= a.hitAt + a.hits * a.hitStep) {
         a.hits++;
-        const R = 80 * (k2 >= 2 ? 1.3 : 1);
+        const R = 80 * (k2 >= 2 ? 1.3 : 1) * (a.chargeK || 1);   // 1441c: held spin grows (th2 rank 15)
         meleeHit({ x: p.x - R, y: p.y - p.h - 16, w: R * 2, h: p.h + 48 }, 0.95 * tDmg('th2'), { kb: tAwake('th2') ? -110 : 80, radial: true });
         slashFx(4); sfx('swing', 1);
       }
@@ -13871,7 +13871,7 @@ pfx = function (name, x, y, o) {
   if (!tier && !basic) return _pfx9(name, x, y, o);
   if (G.pfx.length >= PFX_MAX) { const old = G.pfx.findIndex(e => !e.follow); if (old >= 0) G.pfx.splice(old, 1); else return null; }
   o = Object.assign({}, o); const follow = o.follow; delete o.follow;
-  const sc = (imp ? PFX_SMALL : 1) * TIER_SC[tier] * (basic ? 0.5 : 1), S = PFX_S * sc, fx = PFX.core.createFx(PFX.fx[name], Object.assign(o, { x: x / S, y: y / S }));
+  const sc = (imp ? PFX_SMALL : 1) * TIER_SC[tier] * (basic ? 0.5 : 1) * (imp ? 1 : (G.fxK || 1)), S = PFX_S * sc, fx = PFX.core.createFx(PFX.fx[name], Object.assign(o, { x: x / S, y: y / S }));
   const e = { fx, sc, name, follow, small: imp }; G.pfx.push(e);
   // the extra touch of a trait tier
   const ps = sc;
@@ -21599,6 +21599,40 @@ Object.assign(SKILLS.lykos.d, { name: '그림자 감옥', desc: '가장 가까�
   if (td) { td.name = '그림자 감옥'; td.skill = 'D 그림자 감옥';
     td.ranks.forEach((r, i) => { r.t = i === 4 ? '[증폭] 그림자 감옥 피해 +5% · 범위 20% 넓게' : i === 9 ? '[각성] 그림자 감옥 피해 +5%, 재사용 대기시간 -15% · 감옥 안의 적이 느려진다' : i === 14 ? '[초월] 그림자 감옥 피해 +25% · 0.7초마다 벤다' : '그림자 감옥 피해 +5%, 재사용 대기시간 -1%'; }); }
 })();
+
+/* ============ 2026-11-23 (1441b): 도적 V 이펙트가 화면 전체를 덮는다 ============
+   ult_lykos_12f 의 매 장면을 셀 폭(772)이 화면 폭+80px 이 되게 가로세로 같은 비율로 키워 화면 가운데·주인공 바닥선에 그린다 (늘리지 않음).
+   밝은 장면을 주인공 위에 한 번 더 겹치는 것(over)도 같은 크기로. 피해 범위(waves)는 그대로. */
+const _ult9DrawLyV = ult9Draw;
+ult9Draw = function (c, over) {
+  const u = G.ult; if (!u || u.phase !== 'act' || u.ch !== 'lykos') return _ult9DrawLyV(c, over);
+  const C = ULT12.lykos, im = ULT12_IMG; if (!C || !im || !im.complete || !im.naturalWidth) return;
+  if (over && u.fi !== C.over) return;
+  const p = G.player, cw = Math.floor(im.naturalWidth / 12), chh = im.naturalHeight, dw = W + 80, s = dw / cw, dh = Math.round(chh * s);
+  const gy = p.onGround ? p.y : groundBelow(p.x, p.y), dy = Math.round(gy - (chh - ULT12_GROUND) * s);
+  c.save(); c.imageSmoothingEnabled = false; c.globalCompositeOperation = 'lighter'; if (over) c.globalAlpha = 0.55;
+  c.translate(Math.round(G.cam.x + W / 2), 0); if (u.face < 0) c.scale(-1, 1);
+  c.drawImage(im, u.fi * cw, 0, cw, chh, -Math.round(dw / 2), dy, dw, dh);
+  c.restore();
+};
+
+/* ============ 2026-11-23 (1441c): 전사 C 회전참 특성 15랭크 = 누르고 있으면 최대 3초까지 돌며 1.5배로 커진다 ============
+   th2 15랭크: C 를 누르고 있는 동안 회전을 계속(타수가 hitStep 마다 늘어남, 최대 3초), 범위 R 과 이펙트(G.fxK, pfx 등급 래퍼)가 0→3초에 1→1.5배.
+   떼면 그때 돌던 한 바퀴로 끝. 짧게 누르면 원래 그대로. */
+const TH_C = { max: 3, grow: 0.5 };
+const _tickActThC = tickAct;
+tickAct = function (dt) {
+  const p = G.player, a = p && p.act;
+  if (!a || a.skill || a.id !== 'c' || G.save.char !== 'theron' || traitRank('th2') < 15) return _tickActThC.apply(this, arguments);
+  if (IN.down.c && !a.rel && a.t < TH_C.max) {
+    a.chargeK = 1 + TH_C.grow * Math.min(1, a.t / TH_C.max);
+    const need = Math.floor((a.t - a.hitAt) / a.hitStep) + 2; if (need > a.nHits) a.nHits = need;
+    a.dur = Math.max(a.dur, a.t + a.hitStep + 0.12);
+  } else a.rel = 1;
+  G.fxK = a.chargeK || 1;
+  try { return _tickActThC.apply(this, arguments); } finally { G.fxK = 1; }
+};
+(function () { const t = TRAITS.theron.find(x => x.id === 'th2'); if (t && t.ranks[14]) t.ranks[14].t += ' · C 를 누르고 있으면 최대 3초까지 계속 돌며 최대 1.5배로 커진다'; })();
 
 /* ============ MAIN LOOP ============ */
 function ambient(dt) {

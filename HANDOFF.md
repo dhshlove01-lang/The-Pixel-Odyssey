@@ -69,6 +69,13 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1444  도적 V 이펙트 화면 전체 / 전사 C 특성 15랭크 누르고 있기   (대상: test/index.html, 정식 미배포)
+- **도적 V** 새 블록 '도적 V 이펙트가 화면 전체를 덮는다' (MAIN LOOP 위): ult9Draw 래퍼, ult_lykos_12f 매 장면을 셀 폭 772 → 화면 폭+80 으로
+  가로세로 같은 비율(약 1.35, 원래 0.72)로 키워 화면 가운데·주인공 바닥선에. over(밝은 장면 겹치기)도 같은 크기. 피해 범위는 그대로
+- **전사 C 회전참 th2 15랭크** 새 블록 (MAIN LOOP 위): tickAct 래퍼 — C 를 누르고 있으면(떼기 전, 3초 전) nHits 를 hitStep 마다 늘리고 dur 연장,
+  a.chargeK = 1 + 0.5 × (t/3). 옛 tickAct 의 `R = 80 × (th2 2랭크 1.3)` 에 × chargeK, pfx 등급 래퍼의 sc 에 × G.fxK (impacts 제외, 래퍼가 tickAct 동안만 세팅).
+  th2 15랭크 문구에 '· C 를 누르고 있으면 최대 3초까지 계속 돌며 최대 1.5배로 커진다' 추가
+
 ### 261123-1441  정식 배포 (test → 루트: 1404~1441 — 도적 X·D·A·더블 점프, 전사 A·X, 궁수 V)
 - 루트 index.html = test/index.html 에서 noindex · DEV_TOOLS 두 줄만 뺀 것. 새 그림 없음
 
