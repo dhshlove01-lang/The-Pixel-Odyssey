@@ -69,6 +69,13 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1415  궁수 V 화살 폭풍이 맵 전체를 맞힘   (대상: test/index.html, 정식 미배포)
+새 블록 '궁수 V 화살 폭풍이 맵 전체를 맞힌다' (MAIN LOOP 배너 바로 위, 도적 X 블록 다음. 원본 PC: 56h_ult12 쪽)
+- ULT12.kallisto.waves 중 at 0.40~0.75 (화살 폭풍 6번, 공격력 90%씩)에 `all: true`. ult12Box 래퍼: all 이면 맵 전체 상자 → 화면 밖·등 뒤·위아래 층 적 모두
+  (전엔 앞쪽 0~3칸에서 2.5~8.5칸, 칸=64px). 마지막 유성 4번은 그대로
+- 그림: tickUlt 래퍼가 all 웨이브마다 `kaRainWave` — 화면 폭에 별화살 14발 + 화면 안 적마다 1발 (G.kaRain, 0.16~0.26초에 떨어져 불꽃 4개).
+  updateSkills 래퍼에서 진행, playerFig 래퍼에서 'lighter' 로 그림. 피해와는 무관(그림만)
+
 ### 261123-1412  전사 A(돌진 베기) 스킬 이펙트 없앰   (대상: test/index.html, 정식 미배포)
 - REM_SKILL.theron.a: remFx 호출 삭제 (돌진·무적·소리·피해 260% 그대로)
 - REM_SK.theron.a: off 104 → 34 (원래 값, 판정 -32~100px), `nofx: 1` 추가
