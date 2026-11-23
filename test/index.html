@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1417"></script>
+<script src="assets/js/pfx.js?v=261123-1419"></script>
 <script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1417';
+const GAME_VER = '261123-1419';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -21418,20 +21418,29 @@ ULT12.kallisto.waves.forEach(w => { if (w.at >= 0.39 && w.at <= 0.76) w.all = tr
 const _ult12BoxKa = ult12Box;
 ult12Box = function (w, p, face) { return w.all ? { x: -1e5, y: -1e5, w: 2e5, h: 2e5 } : _ult12BoxKa(w, p, face); };
 /* 1415b: the strip's own arrow rain (frames 4-7) laid side by side across the whole screen at its own size (not stretched), on the hero's floor line */
-ULT12.kallisto.rainF = [4, 5, 6, 7]; ULT12.kallisto.rainStep = 400;
+ULT12.kallisto.rainF = [4, 5, 6, 7]; ULT12.kallisto.rainStep = 260;
 const _ult9DrawKa = ult9Draw;
 ult9Draw = function (c, over) {
   _ult9DrawKa(c, over);
   const u = G.ult; if (over || !u || u.phase !== 'act' || u.ch !== 'kallisto') return;
-  const C = ULT12.kallisto, im = ULT12_IMG; if (!C.rainF.includes(u.fi) || !im || !im.complete || !im.naturalWidth) return;
-  const p = G.player, cw = Math.floor(im.naturalWidth / 12), chh = im.naturalHeight, sc = C.scale, dw = Math.round(cw * sc), dh = Math.round(chh * sc);
-  const gy = p.onGround ? p.y : groundBelow(p.x, p.y), dy = Math.round(gy - (chh - ULT12_GROUND) * sc), ax0 = Math.round(p.x + u.face * C.fwd), S = C.rainStep;
-  const L = G.cam.x - dw / 2, R = G.cam.x + W + dw / 2;
+  const C = ULT12.kallisto, im = ULT12_IMG; if (!im || !im.complete || !im.naturalWidth) return;
+  const ms = C.ms, t0 = ms.slice(0, C.rainF[0]).reduce((a, b) => a + b, 0), t1 = t0 + C.rainF.reduce((a, f) => a + ms[f], 0);
+  if (u.t * 1000 < t0 || u.t * 1000 > t1 + 160) return;
+  const p = G.player, cw = Math.floor(im.naturalWidth / 12), chh = im.naturalHeight, sc = C.scale;
+  const gy = p.onGround ? p.y : groundBelow(p.x, p.y), ax0 = Math.round(p.x + u.face * C.fwd), S = C.rainStep;
+  const hr = (k, n) => { const v = Math.sin(k * 12.9898 + n * 78.233) * 43758.5453; return v - Math.floor(v); };   // fixed per tile: no flicker
+  const L = G.cam.x - 300, R = G.cam.x + W + 300, D0 = 56, D1 = 552;   // the drawn part of a rain frame (cell x)
   c.save(); c.imageSmoothingEnabled = false; c.globalCompositeOperation = 'lighter';
-  for (let k = Math.floor((L - ax0) / S); k <= Math.ceil((R - ax0) / S); k++) {
+  for (let k = Math.floor((L - ax0) / S) - 1; k <= Math.ceil((R - ax0) / S) + 1; k++) {
     if (k === 0) continue;   // the middle one is the original
-    const ax = ax0 + k * S; c.save(); c.translate(ax, 0); if (u.face < 0) c.scale(-1, 1);
-    c.drawImage(im, u.fi * cw, 0, cw, chh, -Math.round(dw / 2), dy, dw, dh); c.restore();
+    const lt = u.t * 1000 - hr(k, 1) * 120; if (lt < t0) continue;   // each tile starts a little later than the last
+    let f = C.rainF[C.rainF.length - 1], acc = t0; for (const fr of C.rainF) { acc += ms[fr]; if (lt < acc) { f = fr; break; } }
+    const fade = lt > t1 ? Math.max(0, 1 - (lt - t1) / 160) : 1; if (fade <= 0) continue;
+    const s = sc * (0.8 + hr(k, 2) * 0.28), sw = Math.round((D1 - D0) * (0.5 + hr(k, 3) * 0.3)), sx = D0 + Math.round(hr(k, 4) * (D1 - D0 - sw));   // a different slice of the rain, a different size
+    const ax = ax0 + k * S + (hr(k, 5) - 0.5) * 140, dw = Math.round(sw * s), dh = Math.round(chh * s), dy = Math.round(gy - (chh - ULT12_GROUND) * s);
+    if (ax + dw / 2 < L || ax - dw / 2 > R) continue;
+    c.save(); c.globalAlpha = fade * (0.7 + hr(k, 6) * 0.3); c.translate(ax, 0); if (u.face < 0) c.scale(-1, 1);
+    c.drawImage(im, f * cw + sx, 0, sw, chh, -Math.round(dw / 2), dy, dw, dh); c.restore();
   }
   c.restore();
 };
