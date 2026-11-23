@@ -69,6 +69,35 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1321  3막 의뢰 · 주인공/보스 48프레임 · 멀티 QA 12항목   (대상: test/index.html, 정식 미배포)
+지시서: claude_code_act3_worldmap_quests_48f_prompt.txt, claude_code_multi_qa_12_prompt.txt. 원본 PC에서는 각 조각 파일로 옮길 것.
+- 3막 의뢰(56z_act3.js): 지시서 §2 블록(ACT3_W, ACT3_Q, buildAct3Story)을 그대로 'world map' 주석 앞에. 캠프에 hal(네스토르) 추가,
+  복도 p_boss 문 req = chArenaOpen(n) || boss 플래그, lockT. wmGo 보스 규칙 = chArenaOpen 또는 이미 잡은 층. NEWS 문구 '의뢰는 나중에' → '층마다 네스토르의…'.
+  **10_data/11_chapters: chMaps(n) 가 21~30장이면 CHAPTERS[n] 의 실제 맵(camp / c21_field / arena)을 돌려주게** (지시서 빌더가 chMaps 를 쓰는데 3막 복도는 c21_field)
+- 주인공 48f: 지시서 §3-B 그대로 (HERO48 표·hero48Load 를 remRopeFrame 다음에, heroPose deadMs/idle%/runK, MAGE_SEQ 가드, startGame·drawHeroSprite 에서 로드).
+  test/assets/heroes/hero_{theron,kallisto,lykos,mage}_48f.png. 무기 강화 빛은 사용자 동의로 꺼짐
+- 보스 48f: 지시서 §3-A 그대로 (cutBossSheet 8x6, BOSS_SHEET_BASE 전부 240, BS48+gridIndex, moveN/idleN, cell9 CELL9_MAP, COL 래퍼, MUZZLE={},
+  BOSS_SHEET_FILE b7·b11~b20, ACT3_BOSS.file48 + 등록 줄, 폴백 3곳, GIANT_CELLS 블록 삭제, newsIcon giant).
+  test/assets/boss: b1~b10 같은 이름으로 덮어씀(옛 4x4 는 git 에), b11~b30_48f.png 새로
+- QA P4: PARTY_XP_BONUS 0.15 (58_share gainXp 훅), bossDie 에 보스 처치 경험치(퀘스트 XP 절반, b._xpGiven, 변수 이름 qx — 함수 안 qid 와 겹쳐서)
+- QA P6: 도적 Z dur [0.17,0.17,0.27] (실측 3.83 → 4.67회/초, 지시서 목표 4.9 미달 — 60fps 반올림)
+- QA P7: onewayUnder(p) 추가, 점프 블록에서 ↓면 언제나 아래로 (p.drop 0.28, vy≥90)
+- QA P8: POT_TIERS/potTier, potLine 색 (상 금 / 중 파 / 하 회)
+- QA P9: **사용자 결정으로 안 함** (월드맵 야영지·보스 두 버튼 유지)
+- QA P10: 궁수 S 덫 y = remGround, 래퍼에서 tr.x/y = 박스 발밑, drawSkillFx 옛 타원은 tr.rem 이면 건너뜀
+- QA P11: sideFields p_side 가 기록석·다른 포탈과 90px 이상 (c13_b/c14_b 1950→1870, c15_b/c16_b 2000→2080)
+- QA P12: AU.vol, VOL_KEY/loadVol/saveVol/applyVol, musGain·sfxBus 초기값, toggleMusic·musicHush 의 MUS_VOL → AU.vol.mus,
+  'audio' 패널(audioHtml, #panel input 리스너), 키 설정 첫 줄 '소리 설정 열기', #bMus/#bMute 우클릭, 도움말 B/U/M 문구
+- QA P3: NET_HZ 6/8/10, rec.vx(+s), 즉시 전송 조건(24px·방향·멈춤/출발·점프·캐스트), 수신 보간 지연 0.7step+40+지터×2 · 200ms 외삽
+  (실측: 야영지 지연 ~670ms → ~390ms 중앙값, 끊김 프레임 77 → 16 / 164; 남은 ~200ms 는 서버 왕복)
+- QA P5: netCast/NET_SKFX/netCastFx, startAct·castSkill(쿨다운 변화 시)·startUlt 래퍼, 수신은 netTick peers 루프 (연출만)
+- QA P2: netBossDamage 호스트도 집계, fid 리셋 2곳, 게스트 d 에 n/c/l, 새 판에 r 지움, 게스트가 raid.r 보면 G.mvpPending, bossDie 래퍼 → netMvpHost, #mvp 팝업
+- QA P1: netPlayerAt, #game contextmenu → #netmenu(거래 요청/파티 초대), 롱프레스, 거래(TR, tradereq/trade 노드, 잠금·에스크로·수락·복구).
+  **지시서와 다름: 양쪽 다 수락해야 교환, 수락 뒤 잠금 해제 불가** (한쪽 수락 즉시 받으면 복사 틈이 생김).
+  거래 요청은 전용 trReq/trGet (거부되면 거래만 막고 토스트 1번, 받은함 폴링 거부는 조용히). ptyReq 를 쓰면 파티·채팅이 통째로 꺼졌음
+  **Firebase 규칙에 trade, tradereq (로컬 테스트용 local_trade, local_tradereq) 가 없어서 실제 교환은 아직 미검증**
+- test/assets/ui: ui_icon_trade/party/mvp_crown/bgm_note/sfx_speaker.png, ui_panel_dark_gold.png (9-slice 48)
+
 ### 261123-1104  정식 배포 (test → 루트: 1102·1104 가방 창 버튼)
 - 루트 index.html = test/index.html 에서 noindex · DEV_TOOLS 두 줄만 뺀 것
 
