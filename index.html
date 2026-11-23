@@ -622,7 +622,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261123-2104';
+const GAME_VER = '261123-2126';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -6839,8 +6839,8 @@ function updateBoss(dt) {
 /* [S4-4] 2026-11-23 (user): 스킬 사이 공백에 즉발 평타. 전조(!) 없이 모션만 보고 피한다.
    가까우면 몸으로 치고, 멀면 낮게 나가는 충격파. 피해는 스킬의 32%.
    48f(3막) 보스 = cell9 포즈, 1~20장 보스 = b.st='aa' (FSM이 ATTACK1_ACTIVE 포즈를 그린다). */
-function bossAA(b) {
-  const p = G.player, dist = Math.abs(p.x - b.x), far = dist > 150, s48 = !!sk9(b);
+function bossAA(b, farHint) {
+  const p = G.player, dist = Math.abs(p.x - b.x), far = farHint != null ? !!farHint : dist > 150, s48 = !!sk9(b);   // farHint: the online host's choice, replayed on the other screens
   b.aa = 0.5; b.aaCd = 2.2 + Math.random() * 0.9; b.vx = 0;
   if (s48) {
     b.cell9 = cell9(2, 0);
@@ -7743,7 +7743,7 @@ const NET = {
   map: null, es: {}, mirror: { live: null, raid: null }, others: {}, sendT: 0, last: '', join: 0, fid: 0, patN: 0, seenN: 0,
   dmg: 0, dmgSent: -1, dmgT: 0, applied: {}, scaled: false, denied: false, errs: 0, bytesOut: 0, bytesIn: 0, hostWas: null,
 };
-const NET_STALE = 10000, NET_MAX = 6, NET_HZ_FIGHT = 10, NET_HZ_CAMP = 6;   // P3 2026-11-23: was 8 / 3 (hunting grounds 6 -> 8 in netTick)
+const NET_STALE = 10000, NET_MAX = 6, NET_HZ_FIGHT = 20, NET_HZ_CAMP = 10;   // 2026-11-23 hotfix: was 10 / 6 (a side-by-side pair felt every 100 ms), hunting grounds 12 in netTick
 /* the server's clock. A PC's own clock can be off by a minute (one here ran 47s fast and nobody could see the others), and
    every "is this still alive" check compares a time written on another PC, so shared times use the database's clock:
    the online heartbeat asks the server to stamp it ({".sv":"timestamp"}) and the reply gives the difference. */
@@ -7849,7 +7849,7 @@ function netTick(dt) {
   if (NET.scopeT <= 0) { NET.scopeT = 1; const sc = G.mapId && netOn() ? netScope(G.mapId) : null; if (sc !== (NET.map ? NET.scope : null)) { if (sc) netEnterMap(G.mapId); else netLeave(); } }
   if (!NET.map) return;
   if (!netOn()) { netLeave(); return; }
-  const p = G.player, inRaid = netInRaid(), hz = inRaid ? NET_HZ_FIGHT : netField() ? 8 : NET_HZ_CAMP;
+  const p = G.player, inRaid = netInRaid(), hz = inRaid ? NET_HZ_FIGHT : netField() ? 12 : NET_HZ_CAMP;
   NET.sendT -= dt;
   // my record: only when something visible changed, or a heartbeat every 4s.
   // P3 2026-11-23: + vx (the receiver guesses up to 200 ms ahead with it); a turn, a stop or start, a jump or landing, a step of
@@ -7857,7 +7857,7 @@ function netTick(dt) {
   const mv = Math.abs(p.vx || 0) > 5 ? 1 : 0;
   const rec = { t: 0, j: NET.join, n: myNick(), c: G.save.char, l: G.save.level, x: Math.round(p.x), y: Math.round(p.y), f: p.netF || 0, fc: p.face, e: G.save.slotE.weapon.e, d: p.dead > 0 ? 1 : 0, vx: mv ? Math.round(p.vx) : 0, s: NET.cast || undefined };
   const sig = [rec.x, rec.y, rec.f, rec.fc, rec.e, rec.d, rec.c, rec.n, mv, NET.cast ? NET.cast.t : 0].join(',');
-  if (NET.lastX != null && (Math.abs(rec.x - NET.lastX) >= 24 || rec.fc !== NET.lastFc || mv !== NET.lastMv || !!p.onGround !== NET.lastG || (NET.cast ? NET.cast.t : 0) !== NET.lastCast)) NET.sendT = Math.min(NET.sendT, 0);
+  if (NET.lastX != null && (Math.abs(rec.x - NET.lastX) >= 12 || rec.fc !== NET.lastFc || mv !== NET.lastMv || !!p.onGround !== NET.lastG || (NET.cast ? NET.cast.t : 0) !== NET.lastCast)) NET.sendT = Math.min(NET.sendT, 0);
   if (NET.sendT <= 0 && (sig !== NET.last || NET.sendT < -4)) { rec.t = srvNow(); NET.last = sig; NET.sendT = 1 / hz; NET.lastX = rec.x; NET.lastFc = rec.fc; NET.lastMv = mv; NET.lastG = !!p.onGround; NET.lastCast = NET.cast ? NET.cast.t : 0; netReq('PUT', 'live/' + NET.scope + '/' + netSelf(), rec); }
   // others: replayed a moment late, sliding between the two updates around that moment. Times are when each update arrived
   // here, so the other PC's clock does not matter. Updates come 3 times a second in camps, and easing straight to the newest
@@ -7874,9 +7874,9 @@ function netTick(dt) {
       if (nowL - last.at > step * 1.6) o.buf.push({ x: last.x, y: last.y, at: nowL - step });   // was standing: start walking from here now, not from back then
       o.buf.push({ x: r.x, y: r.y, at: nowL, vx: r.vx || 0 }); if (o.buf.length > 8) o.buf.splice(0, o.buf.length - 8);
     }
-    const rt = nowL - (o.n >= 5 ? step * 0.7 + 40 + Math.min(120, o.jit * 2) : step + 90), lb = o.buf[o.buf.length - 1];
+    const rt = nowL - (o.n >= 5 ? step * 0.5 + 22 + Math.min(70, o.jit * 1.2) : step + 45), lb = o.buf[o.buf.length - 1];
     let nx, ny;
-    if (rt > lb.at) { nx = lb.x + (lb.vx || 0) * Math.min(200, rt - lb.at) / 1000; ny = lb.y; if (G.map) nx = clamp(nx, 20, G.map.w - 20); }
+    if (rt > lb.at) { nx = lb.x + (lb.vx || 0) * Math.min(260, rt - lb.at) / 1000; ny = lb.y; if (G.map) nx = clamp(nx, 20, G.map.w - 20); }
     else {
       let a = o.buf[0], b = a;
       for (let i = o.buf.length - 1; i >= 0; i--) if (o.buf[i].at <= rt) { a = o.buf[i]; b = o.buf[i + 1] || a; break; }
@@ -22531,6 +22531,158 @@ function campClear(m) {
 }
 const _loadMapCC = loadMap;
 loadMap = function (...a) { const r = _loadMapCC(...a); try { campClear(G.map); } catch (e) { console.warn('[campClear]', e); } return r; };
+
+/* ============ 2026-11-23 MULTI BOSS HOTFIX (user): ① the boss's effects/telegraphs missing on one screen
+   ② the boss aiming at a single player ③ separate boss health bars ④ a heavy sync delay.
+   1) raid/<room>/b now carries the whole fight — state, hp, max hp, phase, berserk, the pattern id and its counter,
+      and the target — so a lost packet is repaired by the next one (50 ms) instead of a guest losing that skill's
+      telegraph, strip effect and projectiles for the rest of the fight. The host's plain attack (bossAA) was never
+      sent at all; it rides the same pattern counter now.
+   2) A guest no longer moves the shared boss's hp with its own hits: they show numbers, go to the host as damage, and
+      the hp from the host's snapshot is what the bar draws (before, both screens ran their own bar and could even
+      finish the boss on different frames).
+   3) The boss picks its target among everyone alive in the room (local player and party peers): nearer is likelier,
+      but it rotates so nobody stays the fixed target.
+   4) 20 packets a second in a fight, a shorter replay delay, snappier guest boss tracking, damage sent at once. */
+const MB = { tgtKey: '', dmgT: 0 };
+/* where the boss is aiming right now: the chosen player's live position (the key survives the packet queue) */
+function netTgtPos() {
+  const me = decodeURIComponent(netSelf());
+  if (MB.tgtKey && MB.tgtKey !== me) { const r = netPeers().find(r => decodeURIComponent(r.id) === MB.tgtKey); if (r && !r.d) return { tx: r.x, ty: r.y }; }
+  return { tx: G.player.x, ty: G.player.y };
+}
+const netTgtKey = c => (c && c.me) ? decodeURIComponent(netSelf()) : (c && c.id ? decodeURIComponent(c.id) : '');
+/* the host's snapshot of the fight (the death frame goes out the moment it happens: the death scene stops netTick) */
+function netBossSnap(b, st) {
+  const { tx, ty } = netTgtPos();
+  return { t: srvNow(), fid: NET.fid, x: Math.round(b.x), f: b.face, s: st || b.st, h: Math.max(0, Math.round(b.hp)), m: Math.round(b.mhp),
+    n: NET.patN, p: b.last, ph: b.phase, bz: b.berserk9 ? 1 : 0, tx: Math.round(tx), ty: Math.round(ty) };
+}
+const _bossDieMB = bossDie;
+bossDie = function () {
+  const b = G.boss, r = _bossDieMB.apply(this, arguments);
+  try { if (b && netInRaid() && !netGuest() && NET.fid) netReq('PUT', 'raid/' + NET.scope + '/b', netBossSnap(b, 'die')); } catch (e) { }
+  return r;
+};
+/* ---- the host's pattern packet (also used for the plain attack) ---- */
+function netPatSend(b, pat, tx, ty) {
+  if (!netInRaid() || !NET.fid || netGuest()) return;
+  netReq('PUT', 'raid/' + NET.scope + '/p', { fid: NET.fid, n: NET.patN, p: pat, x: Math.round(b.x), tx: Math.round(tx), ty: Math.round(ty), f: b.face, t: srvNow() });
+}
+/* ---- the host picks a move and its target ---- */
+bossPattern = function () {
+  const b = G.boss;
+  if (netGuest()) { b.cd = 0.2; return; }   // guests wait for the host's move
+  const tgt = netInRaid() ? netPickTarget(b) : null;
+  netWithAim(tgt && !tgt.me ? tgt : null, () => bossPatternLocal());
+  if (netInRaid() && NET.fid) { NET.patN++; const { tx, ty } = netTgtPos(); netPatSend(b, b.last, tx, ty); }
+};
+/* ---- everyone alive in this room is a candidate; distance only leans the odds ---- */
+netPickTarget = function (b) {
+  const me = { x: G.player.x, y: G.player.y, vx: G.player.vx || 0, me: true, dead: G.player.dead > 0 };
+  const cand = [me].concat(netPeers().map(r => ({ id: r.id, x: r.x, y: r.y, vx: 0, dead: !!r.d }))).filter(c => !c.dead);
+  if (!cand.length) return null;
+  if (cand.length === 1) { MB.tgtKey = netTgtKey(cand[0]); return cand[0]; }
+  let best = null, bw = -1;
+  for (const c of cand) {
+    const d = Math.abs(c.x - b.x), key = netTgtKey(c);
+    let w = 1 / (150 + d * 0.55);                 // nearer is likelier ...
+    w *= (key === MB.tgtKey) ? 0.5 : 1.4;         // ... but never the same one twice running
+    w *= rnd(0.7, 1.4);                           // and some luck, so the fight moves around
+    if (w > bw) { bw = w; best = c; }
+  }
+  MB.tgtKey = netTgtKey(best);
+  return best;
+};
+/* guests: the boss follows the host's position quickly between moves */
+netGuestIdle = function (b, dt) {
+  const s = (NET.mirror.raid || {}).b; b.vx = 0;
+  if (!s) return;
+  if (s.f) b.face = s.f;
+  const k = Math.min(1, dt * 16);
+  b.x += (s.x - b.x) * k;
+  if (Math.abs(s.x - b.x) < 0.5) b.x = s.x;
+};
+/* ---- replaying the host's move (wide enough for every pattern the game can pick) ---- */
+netPlayPattern = function (b, P) {
+  if (!P || !P.p) return;
+  if (P.p === 'aa') return netPlayAA(b, P);
+  const known = !!BOSS_EXT[P.p] || ['slam', 'rocks', 'dash', 'sweep', 'fan', 'leap', 'gaze', 'summon'].includes(P.p);
+  if (!known) return;
+  b.x = P.x; b.vx = 0; b.yOff = 0; b.hide = false; b.tele = null; b.waves = []; b.t = 0; b.s9 = null; b.cell9 = null;
+  b.last2 = b.last; b.last = P.p;
+  netWithAim(P.tx == null ? null : { x: P.tx, y: P.ty, vx: 0 }, () => bossStartPat(b, P.p));
+};
+function netPlayAA(b, P) {
+  if (b.st === 'die' || b.s9 || b.aa > 0) return;
+  b.face = P.f || b.face || 1;
+  const far = P.tx == null ? null : Math.abs(P.tx - b.x) > 150;   // the host's choice (close hit or shock wave)
+  netWithAim(null, () => _bossAAMB(b, far));
+}
+/* ---- the host's plain attack goes out with the same counter ---- */
+const _bossAAMB = bossAA;
+bossAA = function (b, farHint) {
+  if (!netGuest() && netInRaid() && b === G.boss) {
+    b.last2 = b.last; b.last = 'aa';   // the snapshot's pattern and its counter must tell the same story
+    NET.patN++; const { tx, ty } = netTgtPos(); netPatSend(b, 'aa', tx, ty);
+  }
+  return farHint == null ? _bossAAMB(b) : _bossAAMB(b, farHint);
+};
+/* ---- a guest's own hits never move the shared health bar ---- */
+const _hitEntityMB = hitEntity;
+hitEntity = function (e, dmg, crit, o) {
+  if (e && e.isBoss && e.st !== 'die' && typeof netGuest === 'function' && netGuest()) {
+    const hp = e.hp;
+    e.hp = Math.max(hp, e.mhp || 0, 1e9);   // numbers, sparks and the host's damage tally, but never a local kill
+    try { return _hitEntityMB(e, dmg, crit, o); } finally { e.hp = hp; updateBossBar(); }
+  }
+  return _hitEntityMB(e, dmg, crit, o);
+};
+/* ---- the fight's snapshot, both directions ---- */
+netRaid = function (dt) {
+  const b = G.boss, raid = NET.mirror.raid || {}, now = srvNow(), host = !netGuest(), peers = netPeers();
+  if (host) {
+    if (NET.hostWas === false && raid.b && raid.b.fid) { NET.fid = raid.b.fid; NET.patN = raid.b.n || 0; }   // took over: keep their fight going
+    NET.hostWas = true;
+    if (b.st !== 'wait' && !NET.fid) { NET.fid = now; NET.myDmg = 0; for (const k of ['b', 'p', 'd', 'r']) netReq('PUT', 'raid/' + NET.scope + '/' + k, null); }
+    if (b.st === 'roar' && !NET.scaled && b.phase === 1 && NET.fid) {
+      NET.scaled = true; const n = Math.min(NET_MAX, 1 + peers.filter(r => !r.d).length);
+      if (n > 1) { const f = 1 + 0.6 * (n - 1); b.mhp = Math.round(b.mhp * f); b.hp = Math.round(b.hp * f); toast('함께 싸운다 · ' + n + '명 (보스 HP ' + f.toFixed(1) + '배)', 'gold'); }
+    }
+    for (const k in raid.d || {}) {
+      const v = raid.d[k]; if (!v || v.f !== NET.fid || decodeURIComponent(k) === decodeURIComponent(netSelf())) continue;
+      const add = (v.v || 0) - (NET.applied[k] || 0);
+      if (add > 0 && b.st !== 'die' && b.st !== 'wait') { NET.applied[k] = v.v; b.hp -= add; b.hit = 0.08; if (b.hp <= 0 && b.st !== 'die') bossDie(); }
+    }
+    NET.dmgT -= dt;
+    if (NET.dmgT <= 0 && NET.fid) {
+      NET.dmgT = 1 / NET_HZ_FIGHT;
+      netReq('PUT', 'raid/' + NET.scope + '/b', netBossSnap(b));
+    }
+  } else {
+    NET.hostWas = false;
+    { const R = raid.r; if (R && R.fid && R.fid === NET.fid && NET.mvpSeen !== R.fid) { NET.mvpSeen = R.fid; G.mvpPending = Object.assign({}, R, { mine: decodeURIComponent(netSelf()) }); } }
+    const s = raid.b;
+    if (s && s.fid && now - s.t < 5000 && (NET.fid === s.fid || (s.s !== 'die' && s.h > 0))) {   // join only a fight that is still on
+      if (NET.fid !== s.fid) { NET.fid = s.fid; NET.dmg = 0; NET.dmgSent = -1; NET.seenN = s.n || 0; NET.myDmg = 0; }
+      if (s.m) b.mhp = s.m;
+      if (typeof s.h === 'number') b.hp = s.h;                                  // the host's bar is the only bar
+      if (s.ph && b.phase !== s.ph) b.phase = s.ph;
+      if (!!s.bz !== !!b.berserk9) b.berserk9 = !!s.bz;
+      if (b.st === 'wait' && s.s !== 'wait') { b.st = 'idle'; b.cd = 0.3; showBossBar(true); }
+      if ((s.s === 'die' || s.h <= 0) && b.st !== 'die') bossDie();
+      if (s.n > NET.seenN) {                                                     // the move itself (p may have been lost)
+        NET.seenN = s.n;
+        if (s.p && b.st !== 'die' && s.s !== 'wait') netPlayPattern(b, { p: s.p, x: s.x, tx: s.tx, ty: s.ty, f: s.f });
+      }
+      const P = raid.p;   // the host's move, straight away (the b packet repeats it 20 times a second)
+      if (P && P.fid === s.fid && P.n > NET.seenN && b.st !== 'die') { NET.seenN = P.n; netPlayPattern(b, P); }
+    }
+    NET.dmgT -= dt;
+    if (NET.dmgT <= 0 && NET.dmg !== NET.dmgSent && NET.fid) { NET.dmgT = 0.06; NET.dmgSent = NET.dmg; netReq('PUT', 'raid/' + NET.scope + '/d/' + netSelf(), { f: NET.fid, v: Math.round(NET.dmg), n: myNick(), c: G.save.char, l: G.save.level }); }
+  }
+  updateBossBar();
+};
 
 /* ============ MAIN LOOP ============ */
 function ambient(dt) {
