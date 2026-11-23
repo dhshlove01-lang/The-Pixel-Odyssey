@@ -619,10 +619,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1058"></script>
-<script src="assets/js/act3_data.js?v=261123-1058"></script>
+<script src="assets/js/pfx.js?v=261123-1104"></script>
+<script src="assets/js/act3_data.js?v=261123-1104"></script>
 <script>
-const GAME_VER = '261123-1058';
+const GAME_VER = '261123-1104';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -13297,8 +13297,9 @@ function invWin() {
     <div class="ugrid inv" data-keep-scroll="bag" style="${mp(748, 122, 1318, 600)}">${cells}</div>
     ${invDetail()}
     <div class="ubar" style="${mp(756, 624, 1304, 674)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b><span class="dim">계승석 <b>${s.mats.inherit}</b></span><span class="cnt">${s.items.length} / ${BAG_MAX}</span></div>
-    <button class="ubtn" style="${mp(767, 694, 862, 739)}" data-close="1">닫기</button>
-    <button class="ubtn" style="${mp(1195, 694, 1287, 739)}" data-sort="1">${SORTS.find(x => x[0] === (G.ui.bagSort || 'grade'))[1]}</button>`;
+    <i class="artfix bagstrip" style="${mp(764, 684, 868, 748)};background-position:calc(var(--m)*-900) calc(var(--m)*-684)"></i><i class="artfix bagstrip" style="${mp(1188, 684, 1292, 748)};background-position:calc(var(--m)*-1000) calc(var(--m)*-684)"></i>
+    <button class="ubtn bagb" style="${mp(744, 691, 860, 727)}" data-close="1">닫기</button>
+    <button class="ubtn bagb" style="${mp(1196, 691, 1322, 727)}" data-sort="1">${SORTS.find(x => x[0] === (G.ui.bagSort || 'grade'))[1]}</button>`;
 }
 function invDetail() {
   const s = G.save, sel = G.ui.bagSel; if (sel == null) return '';
@@ -15739,8 +15740,8 @@ function autoEquipApply(plan) {
 const _invWinP15 = invWin;
 invWin = function () {
   const plan = autoPlan();
-  const btn = `<button class="ubtn auto" style="${mp(876, 694, 1186, 739)}" data-auto="1" data-tipk="auto" ${plan.n ? '' : 'disabled'}><span class="tko">자동 장착</span><span class="ten">${plan.n ? plan.n + '칸 · 전투력 +' + nf(plan.gain) : '바꿀 장비 없음'}</span></button>`;
-  return _invWinP15().replace(/(<button class="ubtn" style="[^"]*" data-sort="1">)/, btn + '$1');
+  const btn = `<button class="ubtn auto" style="${mp(868, 691, 1188, 727)}" data-auto="1" data-tipk="auto" ${plan.n ? '' : 'disabled'}><span class="tko">자동 장착</span><span class="ten">${plan.n ? '전투력 +' + nf(plan.gain) : '바꿀 장비 없음'}</span></button>`;   // 2026-11-23 (user): one line, no slot count
+  return _invWinP15().replace(/(<button class="ubtn[^"]*" style="[^"]*" data-sort="1">)/, btn + '$1');   // 2026-11-23: the sort button's class is 'ubtn bagb' now
 };
 const _uwClickP15 = uwClick;
 uwClick = function (t, right) { if (t.dataset && t.dataset.auto) { autoEquipApply(autoPlan()); uiRefresh(); return; } return _uwClickP15(t, right); };
@@ -15756,6 +15757,15 @@ document.head.insertAdjacentHTML('beforeend', `<style>
   box-shadow:inset calc(var(--m)*2) calc(var(--m)*2) 0 #6e7480,inset calc(var(--m)*-2) calc(var(--m)*-2) 0 #23252b;border-radius:calc(var(--m)*4);color:#ffe9a0}
 #uiwin .ubtn.auto .tko{font-size:calc(var(--mf)*19)}#uiwin .ubtn.auto .ten{color:#cfe6a8;font-size:calc(var(--mf)*14)}
 #uiwin .ubtn.auto:disabled{filter:grayscale(.6) brightness(.75)}#uiwin .ubtn.auto:not(:disabled):hover{filter:brightness(1.15);color:#fff3c0}
+/* 2026-11-23 (user): the bag's three bottom buttons sit inside the window. The art's two grey bumps under 닫기 / 등급순 broke through
+   the bottom border; they are covered with the plain strip from the same picture (art x 900 / 1000, the same rows), and 닫기 ·
+   자동 장착 · 등급순 are one row in the dark recess (art y 691-727), all the same face. */
+#uiwin .bagstrip{background-image:url('${UIART.inventory}');background-size:calc(var(--m)*1376) calc(var(--m)*768);image-rendering:pixelated}
+#uiwin .ubtn.auto{flex-direction:row;gap:calc(var(--m)*12);line-height:1;white-space:nowrap;padding:0 calc(var(--m)*8);border-width:calc(var(--m)*2)}
+#uiwin .ubtn.auto .tko{font-size:calc(var(--mf)*17)}#uiwin .ubtn.auto .ten{font-size:calc(var(--mf)*14);margin-top:0}
+#uiwin .ubtn.bagb{background:linear-gradient(180deg,#5a5f6a,#3a3d46 46%,#2c2f36);border:calc(var(--m)*2) solid #1a1412;border-radius:calc(var(--m)*4);
+  box-shadow:inset calc(var(--m)*2) calc(var(--m)*2) 0 #6e7480,inset calc(var(--m)*-2) calc(var(--m)*-2) 0 #23252b;font-size:calc(var(--mf)*17);white-space:nowrap}
+#uiwin .ubtn.bagb:not(:disabled):hover{filter:brightness(1.15)}
 #uiwin .stext .cp{font-size:calc(var(--mf)*17)}
 </style>`);
 

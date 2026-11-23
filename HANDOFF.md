@@ -69,6 +69,9 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1104  정식 배포 (test → 루트: 1102·1104 가방 창 버튼)
+- 루트 index.html = test/index.html 에서 noindex · DEV_TOOLS 두 줄만 뺀 것
+
 ### 261123-1104  자동 장착 버튼 한 줄   (대상: test/index.html)
 - P15 invWin: 작은 줄을 '전투력 +N' 만 (몇 칸은 뺌, 툴팁에는 그대로). CSS .ubtn.auto: flex-direction row, gap 12, nowrap, 글씨 17/14
   (두 줄일 때 좁은 화면에서 위아래로 버튼 밖으로 나왔음)
