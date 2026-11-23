@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1352"></script>
+<script src="assets/js/pfx.js?v=261123-1404"></script>
 <script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1352';
+const GAME_VER = '261123-1404';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16647,9 +16647,9 @@ classSelectHtml = function () { return _classSelectHtmlR().replace(sp(62, 496, 2
 const REM_SK = {
   theron: {
     zOld: { file: 'vfx/vfx_warrior_slash.png', cell: [426, 380], w: 61, h: 54, align: 'center', lift: 20, off: 26, ms: [50, 60, 70, 80], hf: 2 },
-    x: { file: 'vfx/vfx_warrior_upper.png', cell: [453, 589], w: 80, h: 104, align: 'bottom', foot: 1, lift: 0, off: 24, ms: [60, 70, 90, 110], hf: 2 },   // foot: in the air it rises from the hero's feet, not the floor (user)
+    x: { file: 'vfx/vfx_warrior_upper.png', cell: [453, 589], w: 80, h: 104, align: 'bottom', foot: 1, lift: 0, off: 80, ms: [60, 70, 90, 110], hf: 2 },   // foot: in the air it rises from the hero's feet, not the floor (user)
     cOld: { file: 'vfx/vfx_warrior_whirlwind.png', cell: [407, 613], w: 72, h: 108, align: 'bottom', lift: 0, off: 0, ms: [55, 55, 90, 120], hf: 1 },
-    a: { file: 'vfx/vfx_warrior_dash_cleave.png', cell: [655, 188], w: 132, h: 38, align: 'center', lift: 24, off: 34, ms: [50, 45, 90, 110], hf: 2 },
+    a: { file: 'vfx/vfx_warrior_dash_cleave.png', cell: [655, 188], w: 132, h: 38, align: 'center', lift: 24, off: 112, ms: [50, 45, 90, 110], hf: 2 },
     s: { file: 'vfx/vfx_warrior_earth_breaker.png', cell: [443, 474], w: 99, h: 106, align: 'bottom', lift: 0, off: 62, ms: [60, 70, 110, 150], hf: 2 },   // 2026-11-21 user: the rocks bigger (x1.4) and further ahead (spec 71x76 at 28); hit box = drawn box
     v: { file: 'vfx/vfx_warrior_awakening.png', cell: [587, 438], w: 241, h: 180, align: 'bottom', lift: 0, off: 40, ms: [100, 90, 140, 260], hf: 1 } },
   kallisto: {
@@ -16709,6 +16709,8 @@ function remFxDraw(c) {
   }
   for (const tr of G.traps || []) if (tr.rem) remDrawBox(c, REM_SK.kallisto.s, 0, tr.box, tr.face, tr.t > tr.arm ? 0.55 + 0.2 * Math.sin(G.t * 6) : 0.3);   // an armed snare glints
 }
+/* 1352b: warrior X / A effects start past the sword trail drawn in the 48f frames (tip ~62-67 px ahead): the hit covers the sword (from just behind the hero) out to the effect's far edge */
+function remReach(p, box) { const f = p.face || 1, x0 = f > 0 ? Math.min(box.x, p.x - 8) : box.x, x1 = f > 0 ? box.x + box.w : Math.max(box.x + box.w, p.x + 8); return { x: x0, y: box.y, w: x1 - x0, h: box.h }; }
 const remHit = (box, mult, o) => { if (G.devHit) (G.dbgHits = G.dbgHits || []).push(Object.assign({ t: 0.3 }, box)); (G.remHits = G.remHits || []).push(Object.assign({}, box)); return meleeHit(box, mult, o || {}); };
 
 /* ---- Z X C ---- */
@@ -16716,13 +16718,13 @@ const REM_TICK = {
   theron(p, a) {
     const k1 = traitRank('th1'), k2 = traitRank('th2'), S = G.stats;
     if (a.id === 'x') {   // 베기 (Z) and 회전참 (C) went back to the old code (user, 2026-11-20): see tickAct below
-      if (!a.vfx) { a.vfx = 1; remFx(remSk('x'), { follow: p, hitAt: 2, delay: a.hitAt }); }
+      if (!a.vfx) { a.vfx = 1; remFx(remSk('x'), { follow: p, hitAt: 0, delay: 0.09 }); }   // 1352b: from the first frame, as the drawn sword trail (frames 28-30) shows, past its tip
       if (!a.done && a.t >= a.hitAt) {
         a.done = 1;
         const mult = 2.3 * (k1 >= 1 ? 1.25 : 1) * tDmg('th1'), burn = k1 >= 2 ? { t: 3, dps: S.atk * 0.12 } : null;
-        remHit(remBox(p, remSk('x')), mult, { kb: p.face * 60, burn }); G.hitstop = Math.max(G.hitstop, 0.06); shake(3);
+        remHit(remReach(p, remBox(p, remSk('x'))), mult, { kb: p.face * 60, burn }); G.hitstop = Math.max(G.hitstop, 0.06); shake(3);
         if (k1 >= 3) for (const ang of tAwake('th1') ? [-0.22, 0, 0.22] : [0])
-          { proj({ x: p.x + p.face * 22, y: p.y - 26, vx: Math.cos(ang) * p.face * 400, vy: Math.sin(ang) * 400, w: 40, h: 34, mult: 1.3 * tDmg('th1'), pierce: true, kind: 'fire', life: 1, maxDist: 360, burn: { t: 3, dps: S.atk * 0.12 } }); pfxOn(G.projs[G.projs.length - 1], 'projectiles/plasma-shot', { palette: PAL.theron }); }
+          { proj({ x: p.x + p.face * 66, y: p.y - 26, vx: Math.cos(ang) * p.face * 400, vy: Math.sin(ang) * 400, w: 40, h: 34, mult: 1.3 * tDmg('th1'), pierce: true, kind: 'fire', life: 1, maxDist: 360, burn: { t: 3, dps: S.atk * 0.12 } }); pfxOn(G.projs[G.projs.length - 1], 'projectiles/plasma-shot', { palette: PAL.theron }); }
       }
     }
   },
@@ -16793,8 +16795,8 @@ const REM_SKILL = {
   theron: {
     a(p, a) {   // 돌진 베기: a 60 px dash (0.1 s, invulnerable 0.12 s), one cut in the box (the old 260%)
       const sk = remSk('a');
-      if (!a.vfx) { a.vfx = 1; a.dash = 1; a.dashT = 0.1; a.dashV = 600; a.dir = p.face; p.inv = Math.max(p.inv, 0.12); remFx(sk, { follow: p, hitAt: 2, delay: 0.095 }); sfx('dash'); }
-      if (!a.done && a.t >= 0.095) { a.done = 1; remHit(remBox(p, sk), 2.6, { kb: p.face * 80 }); shake(3); }
+      if (!a.vfx) { a.vfx = 1; a.dash = 1; a.dashT = 0.1; a.dashV = 600; a.dir = p.face; p.inv = Math.max(p.inv, 0.12); remFx(sk, { follow: p, hitAt: 0, delay: 0.11 }); sfx('dash'); }   // 1352b: starts with the sword trail frame, past its tip
+      if (!a.done && a.t >= 0.095) { a.done = 1; remHit(remReach(p, remBox(p, sk)), 2.6, { kb: p.face * 80 }); shake(3); }
     },
     s(p, a) {   // 대지 분쇄: the buff as before (castSkill) and one hit where the rocks rise (user)
       const sk = remSk('s');
@@ -21273,6 +21275,120 @@ startAct = function (id) { const r = _startActN.apply(this, arguments); const a 
 const _castSkillN = castSkill;
 castSkill = function (key) { const p = G.player, cd0 = p ? JSON.stringify(p.cd) : ''; const r = _castSkillN.apply(this, arguments); if (p && JSON.stringify(p.cd) !== cd0) netCast(key); return r; };
 if (typeof startUlt === 'function') { const _startUltN = startUlt; startUlt = function () { const u0 = G.ult; const r = _startUltN.apply(this, arguments); if (G.ult && G.ult !== u0) netCast('v'); return r; }; }
+
+/* ============ 2026-11-23: 도적 X 그림자 걸음 = 순간이동 + 그림자 추격 ============
+   - X: 앞으로 돌진하던 거리(900px/s x 0.2s = 180px)만큼 즉시 순간이동. 벽(solid)·경기장 끝에 닿으면 그 앞에서 멈춘다.
+   - 떠난 자리에 검은 그림자가 남아 0.5초 동안 도적을 따라온다(처음엔 느리게, 점점 빠르게). 그림자가 지나간 자리의 적은
+     한 번씩 맞는다 (피해·넉백 = 예전 X: 210%, 특성 ly1 +30%, ly1 2랭크 치명 버프는 순간이동 때). 잔상(3랭크 0.4초, 각성 0.7초)은
+     그림자가 도착한 뒤 지나온 구간 전체를 한 번 더 벤다.
+   - 순간이동하는 순간 도적 본인 화면만 하얀 섬광(0.15초, 바로 사라짐). 다른 사람에겐 위치 이동 + 원래 X 효과(netCast)만 보인다.
+   ============ */
+const LY_TP = { dist: 180, shadowT: 0.5, flashT: 0.15 };
+function lyTpTarget(p, dir) {
+  const hw = p.w / 2, plats = G.map.plats, lo = (G.map.arenaL || 0) + hw + 6, hi = (G.map.arenaR || G.map.w) - hw - 6;
+  let x = p.x;
+  for (let d = 6; d <= LY_TP.dist; d += 6) {
+    const nx = clamp(p.x + dir * d, lo, hi);
+    let bad = false;
+    for (const pl of plats) { if (pl.t !== 'solid' || pl === plats[0] || pl.off) continue; if (ov(nx - hw, p.y - p.h, p.w, p.h - 2, pl.x, pl.y, pl.w, pl.h)) { bad = true; break; } }
+    if (bad) break; x = nx; if (nx === lo || nx === hi) break;
+  }
+  return x;
+}
+function lyTeleport(p, a) {
+  const dir = a.dir || p.face || 1, x0 = p.x, y0 = p.y, k1 = traitRank('ly1');
+  for (let i = 0; i < 14; i++) addPart({ x: x0 + rnd(-10, 10), y: y0 - rnd(4, 60), vx: rnd(-40, 40), vy: rnd(-60, 0), g: 0, life: rnd(0.3, 0.55), r: rnd(2, 5), col: '40,40,70', glow: 0 });
+  p.x = lyTpTarget(p, dir); p.vx = 0; p.face = dir; if (!p.onGround) p.vy = Math.min(p.vy, 0);   // in the air: a short hang
+  for (let i = 0; i < 10; i++) addPart({ x: p.x + rnd(-10, 10), y: p.y - rnd(4, 60), vx: rnd(-60, 60), vy: rnd(-80, 0), g: 0, life: rnd(0.25, 0.45), r: rnd(1.5, 3.5), col: '150,160,230', glow: 1 });
+  a.dash = 0; a.dashT = 0; a.done = 1; a.dur = 0.22; a.tele = 1;   // no dash, no hit at the end of the act: the shadow does the cutting
+  if (k1 >= 2) p.critBuff = 2;
+  G.lyShade = { map: G.map, x0, y0, x: x0, y: y0, px: x0, py: y0, dir, t: 0, trail: [], hit: new Set(), mult: 2.1 * (k1 >= 1 ? 1.3 : 1) * tDmg('ly1'), k1 };
+  G.lyFlash = LY_TP.flashT;
+  sfx('dash');
+}
+function lyShadeTick(dt) {
+  if (G.lyFlash > 0) G.lyFlash = Math.max(0, G.lyFlash - dt);
+  const s = G.lyShade, p = G.player; if (!s) return;
+  if (!p || p.dead > 0 || G.map !== s.map) { G.lyShade = null; return; }
+  s.t += dt;
+  const k = Math.min(1, s.t / LY_TP.shadowT), e = k * k * (3 - 2 * k);
+  s.px = s.x; s.py = s.y; s.x = s.x0 + (p.x - s.x0) * e; s.y = s.y0 + (p.y - s.y0) * e;
+  s.trail.unshift({ x: s.x, y: s.y }); if (s.trail.length > 7) s.trail.pop();
+  if (Math.random() < 0.8) addPart({ x: s.x + rnd(-8, 8), y: s.y - rnd(6, 56), vx: -s.dir * rnd(10, 40), vy: rnd(-24, 0), g: 0, life: rnd(0.25, 0.45), r: rnd(2, 4), col: '40,40,70', glow: 0 });
+  // what the shadow swept this tick: each enemy once
+  const xa = Math.min(s.px, s.x) - 14, xb = Math.max(s.px, s.x) + 14, ya = Math.min(s.py, s.y) - p.h - 10, r = { x: xa, y: ya, w: xb - xa, h: Math.abs(s.y - s.py) + p.h + 40 };
+  let n = 0;
+  for (const t of targets()) {
+    if (s.hit.has(t)) continue; const b = hurtbox(t);
+    if (ov(r.x, r.y, r.w, r.h, b.x, b.y, b.w, b.h)) { s.hit.add(t); dealDamage(t, s.mult, { kb: s.dir * 90 }); n++; }
+  }
+  if (n) { sfx('stab', 1); if (G.t - (G.hsT || -9) > 0.25) { G.hitstop = Math.max(G.hitstop, 0.04); G.hsT = G.t; } }
+  if (k >= 1) {   // arrived: the shadow melts into her; the echo cuts (traits) go over the whole way it came
+    G.lyShade = null;
+    const sk = remSk('x', 'lykos'); if (sk) remFx(sk, { box: remBox(p, sk), face: s.dir });
+    const x0 = Math.min(s.x0, p.x) - 14, x1 = Math.max(s.x0, p.x) + 14, rect = { x: x0, y: Math.min(s.y0, p.y) - p.h - 10, w: x1 - x0, h: Math.abs(p.y - s.y0) + p.h + 40 }, mult = s.mult, dir = s.dir;
+    const echo = d => after(d, () => { if (G.player.dead > 0) return; meleeHit(rect, mult * 0.6, { kb: dir * 40 }); if (sk) remFx(sk, { box: remBox(G.player, sk), face: dir, alpha: 0.7 }); sfx('stab', 2); });
+    if (s.k1 >= 3) echo(0.4);
+    if (tAwake('ly1')) echo(0.7);
+  }
+}
+function lyShadeDraw(c) {
+  const s = G.lyShade; if (!s || G.map !== s.map) return;
+  const A = HERO_ANIM.lykos; if (!A || !A.run) return;
+  const f = A.run[Math.floor(s.t * 28) % A.run.length], pose = { f, sx: 1, sy: 1, tilt: 0, dx: 0, flip: 1 }, dummy = { anim: G.t, onGround: true, vx: 0, act: null, hurt: 0, dead: 0, guard: 0, parryFx: 0 };
+  const fadeIn = Math.min(1, s.t / 0.06);
+  const one = (x, y, al) => { c.save(); c.globalAlpha = al * fadeIn; c.filter = 'brightness(0.12) saturate(0)'; drawHeroSprite(c, 'lykos', dummy, x, y, s.dir, { crisp: true, pose }); c.restore(); };
+  if (s.trail[3]) one(s.trail[3].x, s.trail[3].y, 0.22);
+  if (s.trail[6]) one(s.trail[6].x, s.trail[6].y, 0.1);
+  one(s.x, s.y, 0.72);
+}
+const _startActLy = startAct;
+startAct = function (id) {
+  const p = G.player, a0 = p && p.act, r = _startActLy.apply(this, arguments), a = p && p.act;
+  if (G.save.char === 'lykos' && id === 'x' && a && a !== a0 && a.id === 'x' && a.dash) { lyTeleport(p, a); lyChUse(p); }
+  return r;
+};
+/* 충전형: X 최대 2회. 한 칸이 차는 시간 = 원래 X 재사용 대기(4.5초 x 특성·쿨감 그대로). 남은 횟수가 있으면 0.2초 뒤 바로 다시 쓸 수 있고,
+   0회일 때만 버튼이 어두워지며 다음 칸까지 남은 시간이 보인다. 게임의 p.cd.x 를 매 틱 이 값으로 맞춘다 (X 입력 판정은 그대로 cd.x <= 0). */
+const LY_CH = { max: 2, gap: 0.2 };
+function lyCh() { if (!G.lyCh || G.lyCh.save !== G.save) G.lyCh = { save: G.save, q: LY_CH.max, t: 0, full: 4.5, gap: 0 }; return G.lyCh; }
+function lyChApply(p) { const S = lyCh(); p.cdMax.x = S.q > 0 ? Math.max(LY_CH.gap, 0.01) : S.full; p.cd.x = S.q > 0 ? S.gap : S.t; }
+function lyChUse(p) {
+  const S = lyCh(); if (p.cd.x > 0.5) S.full = p.cd.x;   // what the game just set for this cast (traits, cooldown reduction)
+  S.q = Math.max(0, S.q - 1); if (S.t <= 0) S.t = S.full; S.gap = LY_CH.gap; lyChApply(p);
+}
+function lyChTick(dt) {
+  const p = G.player; if (!p || !G.save || G.save.char !== 'lykos') return;
+  const S = lyCh(); S.gap = Math.max(0, S.gap - dt);
+  if (G.devNoCd) { S.q = LY_CH.max; S.t = 0; }
+  if (S.q < LY_CH.max) { S.t -= dt; if (S.t <= 0) { S.q++; S.t = S.q < LY_CH.max ? S.full : 0; } }
+  lyChApply(p);
+}
+function lyChBadge() {
+  const on = !!(G.save && G.save.char === 'lykos'), q = on ? lyCh().q : -1;
+  if (HUDC.lyq === q) return; HUDC.lyq = q;
+  for (const el of [document.getElementById('sk1'), document.querySelector('#touch .tb[data-k="x"]')]) {
+    if (!el) continue; let b = el.querySelector('.lyq');
+    if (!on) { if (b) b.remove(); continue; }
+    if (!b) { b = document.createElement('span'); b.className = 'lyq'; b.style.cssText = 'position:absolute;right:2px;top:1px;font-size:10px;font-weight:700;line-height:1;color:#d6dcff;text-shadow:0 0 2px #000,0 0 2px #000,0 0 2px #000;pointer-events:none;z-index:5'; el.appendChild(b); }
+    b.textContent = q;
+  }
+}
+const _updateHudLy = updateHud;
+updateHud = function () { const r = _updateHudLy.apply(this, arguments); try { lyChBadge(); } catch (e) { } return r; };
+const _updateSkillsLy = updateSkills;
+updateSkills = function (dt) { const r = _updateSkillsLy.apply(this, arguments); lyShadeTick(dt); lyChTick(dt); return r; };
+const _playerFigLy = playerFig;
+playerFig = function () { try { lyShadeDraw(ctx); } catch (e) { } return _playerFigLy.apply(this, arguments); };   // behind the hero
+const _renderWorldLy = renderWorld;
+renderWorld = function () {
+  const r = _renderWorldLy.apply(this, arguments);
+  if (G.lyFlash > 0) {   // 섬광: 터지는 순간 거의 흰색, 제곱으로 빠르게 빠진다
+    const k = G.lyFlash / LY_TP.flashT;
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 0.9 * k * k; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); ctx.restore();
+  }
+  return r;
+};
 
 /* ============ MAIN LOOP ============ */
 function ambient(dt) {

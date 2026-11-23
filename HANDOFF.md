@@ -69,6 +69,23 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1404  도적 X 순간이동·그림자·섬광·2회 충전 / 전사 A·X 이펙트를 칼 궤적 끝으로   (대상: test/index.html, 정식 미배포)
+**도적 X 그림자 걸음** (새 블록 '도적 X 그림자 걸음 = 순간이동 + 그림자 추격', MAIN LOOP 배너 바로 위. 원본 PC: 35_net 끝 또는 새 조각 파일)
+- startAct 래퍼: 도적 X 가 시작되면 `lyTeleport`: 돌진(900x0.2 = 180px) 대신 즉시 순간이동. `lyTpTarget` 이 6px씩 앞으로 보며
+  solid 벽(plats[0] 제외)·arenaL/R 에 닿기 직전에서 멈춤. 공중이면 vy 를 0 이하로(잠깐 멈칫). act 는 dur 0.22, done=1 (끝 베기 없음)
+- `G.lyShade`: 떠난 자리의 그림자가 0.5초(smoothstep) 동안 도적의 현재 위치로 따라옴. 매 틱 지나간 구간에 닿은 적은 한 번씩
+  dealDamage (210% x ly1 1랭크 1.3 x tDmg, 넉백 90). ly1 2랭크 치명 버프는 순간이동 때. 잔상(3랭크 0.4초·각성 0.7초)은 그림자 도착 후 지나온 구간 전체에 60%.
+  그림: drawHeroSprite 를 filter brightness(0.12) 로 검게, 달리기 프레임, 잔상 2개. playerFig 래퍼로 주인공 뒤에 그림
+- `G.lyFlash`: 순간이동 순간 도적 본인 화면만 흰 섬광 (0.15초, alpha 0.9 x k²). renderWorld 래퍼에서 setTransform 초기화 후 캔버스 전체
+- 2회 충전: `G.lyCh` {q, t, full, gap}. 한 칸 = 그 시전 때 게임이 정한 X 쿨(특성·쿨감 포함). 남은 칸이 있으면 0.2초 뒤 다시 사용.
+  updateSkills 래퍼에서 매 틱 p.cd.x / cdMax.x 를 이 값으로 맞춤 (X 입력 판정은 그대로 cd.x <= 0). devNoCd 면 가득. HUD #sk1·터치 X 버튼 오른쪽 위에 남은 횟수 숫자(.lyq)
+- 다른 사람 화면: 위치가 바로 바뀌고 원래 X 효과(netCast)만. 그림자·섬광은 본인만
+**전사 A·X** (48f 공격 28~30(31) 프레임에 흰 칼 궤적이 그려져 있고 끝이 주인공 앞 62~67px. 이펙트가 그 위에 겹쳐 나오던 것)
+- REM_SK.theron.x off 24 → 80, REM_SK.theron.a off 34 → 112 (이펙트가 칼 궤적 끝에서 시작)
+- 이펙트 시작: X `hitAt: 0, delay: 0.09`, A `hitAt: 0, delay: 0.11` (전엔 hitAt 2 라 시전 직후부터 미리 나옴) → 궤적 프레임이 보일 때 첫 장면
+- 새 `remReach(p, box)` (remHit 위): 판정 = 주인공 뒤 8px ~ 이펙트 끝. X·A 의 remHit 에 사용. **사거리 늘어남**: X 64 → 120px, A 100 → 178px
+- X 3랭크 불꽃 파동 발사 위치 p.x+22 → +66 (칼 끝)
+
 ### 261123-1352  정식 배포 (test → 루트: 1352 도적 이동 크기)
 - 루트 index.html = test/index.html 에서 noindex · DEV_TOOLS 두 줄만 뺀 것. 새 그림 없음
 
