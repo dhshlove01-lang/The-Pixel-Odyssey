@@ -619,10 +619,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-2022"></script>
-<script src="assets/js/act3_data.js?v=261123-2022"></script>
+<script src="assets/js/pfx.js?v=261123-2039"></script>
+<script src="assets/js/act3_data.js?v=261123-2039"></script>
 <script>
-const GAME_VER = '261123-2022';
+const GAME_VER = '261123-2039';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -671,18 +671,24 @@ const SLOT_INFO = {
 };
 /* [S2-1] 2026-11-23 (user): 10·20·30장 보스 전용 반지. acc1 한 칸, acc2(목걸이)는 계속 잠금. */
 const RINGS = {
-  10: { name: '키루르고스의 수술 반지', file: 'ring_ch10', col: '#7ad0a0', atkP: 4, bossDmg: 6 },
-  20: { name: '이그니스의 불꽃 인장',   file: 'ring_ch20', col: '#ff9a5a', atkP: 5, critDmg: 12 },
-  30: { name: '아스트론의 성좌 반지',   file: 'ring_ch30', col: '#b48aff', atkP: 7, cdr: 5 },
+  10: { name: '키루르고스의 수술 반지', file: 'ring_ch10', col: '#7ad0a0', atkP: 4 },   // 2026-11-23 (user, 표): 고정 효과는 공격력만,
+  20: { name: '이그니스의 불꽃 인장',   file: 'ring_ch20', col: '#ff9a5a', atkP: 5 },   // 보스 피해·치명타 피해·재사용은 지우고 그 대신
+  30: { name: '아스트론의 성좌 반지',   file: 'ring_ch30', col: '#b48aff', atkP: 7 },   // 잠재 옵션(반지 칸 표: 공격력·치피·재사용·HP·경험치)
 };
-const RING_DROP = { 10: 0.05, 20: 0.05, 30: 0.05 };   // 보스 처치 1회당 (사용자: 12·15·20%)
+const RING_DROP = { 10: 0.05, 20: 0.05, 30: 0.05 };   // 보스 처치 1회당 (사용자: 깃허브에서 5%로, 2026-11-23)
 function makeRing(ch, save) {
   const s = save || G.save, R = RINGS[ch]; s.nextUid = (s.nextUid || 1) + 1;
-  return { uid: s.nextUid, slot: 'acc1', ring: 1, ch, grade: 3, ilvl: ch, q: 1, pot: [], name: R.name };
+  return { uid: s.nextUid, slot: 'acc1', ring: 1, ch, grade: 3, ilvl: ch, q: 1, pot: typeof rollPot === 'function' ? rollPot(3, 'acc1') : [], name: R.name };   // legend: 3 potential lines from the ring pool
 }
+/* 2026-11-23 (user): the ring slot is enhanced like the others (+0 ~ +15, same gold and odds, no 계승); every +1 adds 0.5% to
+   the ring's 공격력 (user: +1강마다 0.5퍼; +15 = +7.5%). The fixed effects themselves stay as they are. */
+const RING_ENH = 0.5;
+const ringE = save => { const s = save || G.save; return (s && s.slotE && s.slotE.acc1 && s.slotE.acc1.e) || 0; };
+const ringV = (v, save) => Math.round((v + RING_ENH * ringE(save)) * 10) / 10;
 const ringLine = it => {
   const R = it && it.ring && RINGS[it.ch]; if (!R) return '';
-  const bits = [R.atkP ? '공격력 +' + R.atkP + '%' : '', R.bossDmg ? '보스 피해 +' + R.bossDmg + '%' : '', R.critDmg ? '치명타 피해 +' + R.critDmg + '%' : '', R.cdr ? '재사용 대기시간 -' + R.cdr + '%' : ''].filter(Boolean);
+  const e = (G.save && G.save.slotE && G.save.slotE.acc1 && G.save.slotE.acc1.e) || 0;
+  const bits = [R.atkP ? '공격력 +' + ringV(R.atkP) + '%' : '', e ? '(반지 칸 +' + e + ')' : ''].filter(Boolean);
   return `<br><span style="color:${R.col}">반지의 힘 · ${bits.join(' · ')}</span>`;
 };
 const ENH_MAX = 15, TIER_EVERY = 5;   // TIER_EVERY only shapes the gold economy curve (chapterCost)
@@ -5787,16 +5793,16 @@ function calcStats(save) {
   if (s.char === 'kallisto' && tr('ka1') >= 6) st.aspd += 10;
   for (const t of TRAITS[s.char]) if (!t.fresh && tr(t.id) >= 8) st.crit += 4;
   const pot = { atkP: 0, crit: 0, critDmg: 0, bossDmg: 0, cdr: 0, hpGain: 0, xpGain: 0, dmgRed: 0, jumpP: 0, spdP: 0 };   // potential lines (55_growth.js)
-  for (const k of SLOTS) for (const pl of ((s.equip[k] && s.equip[k].pot) || [])) pot[pl.k] += pl.v;
+  for (const k of SLOTS.concat(['acc1'])) for (const pl of ((s.equip[k] && s.equip[k].pot) || [])) pot[pl.k] += pl.v;   // 2026-11-23: the ring's potentials count too
   st.atk *= 1 + pot.atkP / 100; st.crit += pot.crit;
   // 2026-11-22 QA 2-7: the five new lines, capped (six slots x three lines can stack a lot); not in 전투력
   st.hpGain = Math.min(40, pot.hpGain); st.xpGain = Math.min(60, pot.xpGain); st.dmgRed = Math.min(30, pot.dmgRed); st.jumpP = Math.min(25, pot.jumpP); st.spd += Math.min(40, pot.spdP);
   const cls = CHARS[s.char].mod; st.hp *= cls.hp; st.def *= cls.def; st.crit += cls.crit || 0;
   st.critOver = Math.max(0, st.crit - 100); st.crit = Math.min(st.crit, 100);   // 4차 패치 Q5 (user: the spec as written): every 100% over 100 becomes +1% crit damage (was +2% per 1%)
   st.critOverDmg = Math.round(st.critOver / 100 * 100) / 100; st.critDmg = pot.critDmg + st.critOverDmg; st.bossDmg += pot.bossDmg; st.cdr = Math.min(40, pot.cdr);
-  if (s.equip.acc1 && s.equip.acc1.ring && RINGS[s.equip.acc1.ch]) {   // [S2-2] 반지: 고정 효과(강화·품질 없음)
+  if (s.equip.acc1 && s.equip.acc1.ring && RINGS[s.equip.acc1.ch]) {   // [S2-2] 반지: 고정 효과, 2026-11-23 반지 칸 강화 +1마다 공격력 +0.5%
     const R = RINGS[s.equip.acc1.ch];
-    st.atk *= 1 + R.atkP / 100; st.bossDmg += R.bossDmg || 0; st.critDmg += R.critDmg || 0; st.cdr = Math.min(40, st.cdr + (R.cdr || 0));
+    st.atk *= 1 + ringV(R.atkP, s) / 100;   // 2026-11-23 (user): 공격력만 고정, 나머지는 잠재 옵션(위 pot 합계)
   }
   if (typeof petStats === 'function') { const pb = petStats(s); if (pb.n) { st.atk *= 1 + pb.atkP / 100; st.hp *= 1 + pb.hpP / 100; } }   // [S3-2] 펫 도감 컬렉션
   if (typeof trophStats === 'function') { const tb = trophStats(s); if (tb.n) { st.atk *= 1 + tb.atkP / 100; st.critDmg += tb.critDmg; } }   // trophies: permanent, tiny
@@ -6905,7 +6911,7 @@ function bossDie() {
     const kills = (G.save.troph[b.id] && G.save.troph[b.id].k) || 0;
     if (own) {
       if (Math.random() < rate) { G.save.mats.pot = (G.save.mats.pot || 0) + 3; G.save.mats.inherit = (G.save.mats.inherit || 0) + 2; after(2.6, () => toast('이미 가진 반지다 · 잠재석 3 · 계승석 2로 바뀌었다', 'gold')); }
-    } else if (Math.random() < rate) {   // 확정 드랍 없음
+    } else if (Math.random() < rate) {   // 확정 드랍 없음 (사용자: 깃허브에서 뺌, 2026-11-23)
       const it = makeRing(ch);
       if (addItem(it)) after(2.2, () => toast(RINGS[ch].name + ' 을(를) 얻었다 · I 창의 반지 칸에 낀다'.replace(' 을(를)', josa(RINGS[ch].name, '을', '를')), 'gold'));
       else { G.save.mats.pot = (G.save.mats.pot || 0) + 3; after(2.2, () => toast('가방이 가득 찼다 · 반지 대신 잠재석 3', 'bad')); }
@@ -13116,7 +13122,7 @@ $('#help').addEventListener('click', e => { if (e.target.dataset.close || e.targ
 
 function enhance(k) {
   const s = G.save, se = s.slotE[k];
-  if (se.e >= ENH_MAX || !G.map.safe) return;
+  if (se.e >= ENH_MAX || !G.map.safe || (k === 'acc1' && !s.equip.acc1)) return;
   const gd = enhGold(se.e, se.T), rate = ENH_RATE[se.e];
   if (s.gold < gd) { toast('골드가 모자란다', 'bad'); return; }
   const cp0 = G.stats.cp;   // QA 2-11
@@ -13124,7 +13130,7 @@ function enhance(k) {
   const g = se.gauge || 0, sure = g >= 100, ok = sure || Math.random() * 100 < rate, nm = SLOT_INFO[k].name;
   if (ok) {
     se.e++; se.gauge = 0;
-    G.ui.enhMsg = `<span style="color:#e2c27a">${nm} 칸 +${se.e} 강화 성공${sure ? ' (장인의 기운 소모)' : ''}${se.e === ENH_MAX ? ' · 최대 강화. 계승석이 있으면 다음 단계로 올릴 수 있다' : ''}</span>`;
+    G.ui.enhMsg = `<span style="color:#e2c27a">${nm} 칸 +${se.e} 강화 성공${sure ? ' (장인의 기운 소모)' : ''}${se.e === ENH_MAX ? (k === 'acc1' ? ' · 최대 강화' : ' · 최대 강화. 계승석이 있으면 다음 단계로 올릴 수 있다') : ''}</span>`;
     sfx('enh_ok');
   } else {
     const add = rate * GAUGE_RATE; se.gauge = Math.min(100, g + add);
@@ -13137,6 +13143,7 @@ function enhance(k) {
 }
 function inherit(k) {
   const s = G.save, se = s.slotE[k], gd = inheritGold(se.T);
+  if (k === 'acc1') return;   // 2026-11-23: 반지 칸은 계승하지 않는다
   if (!G.map.safe || se.e < ENH_MAX || se.T >= tierCap(s) || s.mats.inherit < 1 || s.gold < gd) return;
   const cp0 = G.stats.cp;
   s.mats.inherit--; s.gold -= gd; se.T++; se.e = 0; se.gauge = 0;
@@ -13551,7 +13558,7 @@ function invWin() {
     if (k === 'acc2') { slots += `<div class="eq lock" style="${mp(...r)}" data-tipk="acc:acc2">${pimg('lock', 'lk')}<i>${ACC_NAMES.acc2}</i></div>`; continue; }   // [S2-4] 목걸이는 계속 잠금
     if (k === 'acc1') {   // [S2-4] 반지 칸
       const ir = s.equip.acc1;
-      slots += `<button class="eq ${sel === 'eq:acc1' ? 'on' : ''}" style="${mp(...r)};--gc:${ir ? gcol(ir) : 'transparent'}" data-eqsel="acc1" data-tipk="eq:acc1">${ir ? slotImg('acc1', ir) : ''}<i>반지</i></button>`;
+      slots += `<button class="eq ${sel === 'eq:acc1' ? 'on' : ''}" style="${mp(...r)};--gc:${ir ? gcol(ir) : 'transparent'}" data-eqsel="acc1" data-tipk="eq:acc1">${ir ? slotImg('acc1', ir) : ''}${s.slotE.acc1 && s.slotE.acc1.e ? `<em>+${s.slotE.acc1.e}</em>` : ''}<i>반지</i></button>`;
       continue;
     }
     const it = s.equip[k], se = s.slotE[k];
@@ -13616,20 +13623,21 @@ function smithCpLine(k, se, max, cap) {
   return `<div class="cp">${cp1 > cp0 ? `전투력 <b>${nf(cp0)}</b> → <b class="up">${nf(cp1)}</b> <span class="up">(+${nf(cp1 - cp0)})</span>` : `전투력 <b>${nf(cp0)}</b>`}</div>`;
 }
 function smithWin() {
-  const s = G.save, k = G.ui.smithSel || 'weapon', it = s.equip[k], se = s.slotE[k], max = se.e >= ENH_MAX, cap = tierCap(s);
+  const s = G.save, k = G.ui.smithSel === 'acc1' && !s.equip.acc1 ? 'weapon' : (G.ui.smithSel || 'weapon'), it = s.equip[k], se = s.slotE[k], max = se.e >= ENH_MAX, ring = k === 'acc1', cap = ring ? 0 : tierCap(s);
   const cur = slotStat(k, it, se.e, se.T), nxt = max ? cur : slotStat(k, it, se.e + 1, se.T), rate = max ? 0 : ENH_RATE[se.e], g = Math.min(100, se.gauge || 0), sure = g >= 100;
   const gd = max ? inheritGold(se.T) : enhGold(se.e, se.T), canInh = max && se.T < cap && s.mats.inherit > 0 && s.gold >= inheritGold(se.T), can = max ? canInh : s.gold >= gd;
   const rows = SMITH_ROWS.map((r, i) => {
     const y0 = 136 + i * 60, box = mp(742, y0, 1328, y0 + 56);
     if (r === 'acc2') return `<div class="srow lock" style="${box}"><span class="si">${pimg('lock', 'lk')}</span><span class="sn">장신구 · ${ACC_NAMES.acc2}<small>아직 쓸 수 없다</small></span></div>`;   // [S2-4b]
-    if (r === 'acc1') {   // [S2-4b] 반지는 강화·계승 대상이 아니다
-      const ir = s.equip.acc1;
-      return `<div class="srow" style="${box}"><span class="si" style="--gc:${ir ? gcol(ir) : '#555'}">${ir ? slotImg('acc1', ir) : ''}</span><span class="sn" style="color:${ir ? gcol(ir) : '#888'}">${ir ? ir.name : '반지 없음'}<small>반지는 강화하지 않는다 · 보스 드랍</small></span></div>`;
+    if (r === 'acc1') {   // [S2-4b] 2026-11-23 (user): 반지 칸도 강화한다(계승은 없음). 반지가 없으면 고를 수 없다
+      const ir = s.equip.acc1, e2 = s.slotE.acc1, m2 = e2.e >= ENH_MAX;
+      if (!ir) return `<div class="srow" style="${box}"><span class="si" style="--gc:#555"></span><span class="sn" style="color:#888">반지 없음<small>10·20·30장 보스 드랍</small></span><em>+${e2.e}</em></div>`;
+      return `<button class="srow ${r === k ? 'on' : ''}" style="${box}" data-smsel="acc1"><span class="si" style="--gc:${gcol(ir)}">${slotImg('acc1', ir)}</span><span class="sn" style="color:${gcol(ir)}">${ir.name}<small>반지 공격력 +${ringV(RINGS[ir.ch].atkP, s)}%${ir.pot && ir.pot.length ? ' · 잠재 ' + ir.pot.length + '줄' : ''}</small></span><em>+${e2.e}</em><span class="sc ${!m2 && s.gold >= enhGold(e2.e, 0) ? '' : 'no'}">${m2 ? '최대' : nf(enhGold(e2.e, 0)) + 'G'}</span></button>`;
     }
     const t = s.equip[r], e2 = s.slotE[r], m2 = e2.e >= ENH_MAX;
     return `<button class="srow ${r === k ? 'on' : ''}" style="${box}" data-smsel="${r}"><span class="si" style="--gc:${t ? gcol(t) : '#555'}">${slotImg(r, t)}</span><span class="sn" style="color:${t ? gcol(t) : '#888'}">${t ? t.name : SLOT_INFO[r].name}<small>${SLOT_INFO[r].label} ${fmtVal(r, slotStat(r, t, e2.e, e2.T))}</small></span><em>+${e2.e}${e2.T ? ` <u>계승 ${e2.T}</u>` : ''}</em><span class="sc ${!m2 && s.gold >= enhGold(e2.e, e2.T) ? '' : 'no'}">${m2 ? '최대' : nf(enhGold(e2.e, e2.T)) + 'G'}</span></button>`;
   }).join('');
-  const msg = G.ui.enhMsg || (max ? (se.T < cap ? `최대 강화. 계승석 1개와 골드 ${nf(inheritGold(se.T))}로 계승 ${se.T + 1}단계 +0이 된다.` : `최대 강화. ${INHERIT_CH[se.T] ? '다음 계승은 ' + INHERIT_CH[se.T] + '장 보스를 잡은 뒤.' : '계승은 ' + INHERIT_CH.length + '번까지다.'}`) : '실패해도 골드는 들고, 장인의 기운이 찬다. 기운이 가득하면 반드시 성공한다.');
+  const msg = G.ui.enhMsg || (max && ring ? '최대 강화. 반지는 계승하지 않는다.' : max ? (se.T < cap ? `최대 강화. 계승석 1개와 골드 ${nf(inheritGold(se.T))}로 계승 ${se.T + 1}단계 +0이 된다.` : `최대 강화. ${INHERIT_CH[se.T] ? '다음 계승은 ' + INHERIT_CH[se.T] + '장 보스를 잡은 뒤.' : '계승은 ' + INHERIT_CH.length + '번까지다.'}`) : '실패해도 골드는 들고, 장인의 기운이 찬다. 기운이 가득하면 반드시 성공한다.');
   return `<div class="uttl small" style="${mp(538, 14, 838, 70)}">${ttl('장비 강화', 'BLACKSMITH')}</div>
     <div class="uttl" style="${mp(60, 60, 660, 114)}">${ttl('강화', 'ENHANCE')}</div>
     <div class="uttl" style="${mp(726, 60, 1330, 114)}">${ttl('내 장비', 'MY GEAR')}</div>
@@ -13637,8 +13645,8 @@ function smithWin() {
     <div class="sinfo" style="${mp(72, 190, 160, 278)}">${pimg('coin')}<b>${nf(gd)}</b></div><div class="scap" style="${mp(52, 282, 182, 304)}">필요 골드</div>
     <div class="sinfo" style="${mp(552, 190, 638, 278)}"><b class="${sure ? 'gold' : ''}">${max ? '-' : sure ? '100%' : rate + '%'}</b></div><div class="scap" style="${mp(532, 282, 660, 304)}">성공 확률</div>
     <div class="sinfo" style="${mp(72, 369, 160, 455)}"><b>${max ? '-' : Math.floor(g) + '%'}</b><span class="gbar"><i style="width:${max ? 0 : g}%"></i></span></div><div class="scap" style="${mp(52, 459, 182, 481)}">장인의 기운</div>
-    <div class="sinfo" style="${mp(552, 369, 638, 455)}"><b>${se.T}</b><small>/ ${INHERIT_CH.length}</small></div><div class="scap" style="${mp(532, 459, 660, 481)}">계승 단계</div>
-    <div class="stext" style="${mp(84, 503, 631, 606)}"><div>${SLOT_INFO[k].label} <b>${fmtVal(k, cur)}</b>${max ? '' : ` → <b class="up">${fmtVal(k, nxt)}</b>`}</div>${smithCpLine(k, se, max, cap)}<div>${max ? '계승' : '필요 골드'} <b class="gold">${nf(gd)}</b> · 보유 <b class="${s.gold >= gd ? '' : 'dn2'}">${nf(s.gold)}</b></div><div class="smsg">${msg}</div></div>
+    <div class="sinfo" style="${mp(552, 369, 638, 455)}"><b>${ring ? '-' : se.T}</b>${ring ? '' : `<small>/ ${INHERIT_CH.length}</small>`}</div><div class="scap" style="${mp(532, 459, 660, 481)}">계승 단계</div>
+    <div class="stext" style="${mp(84, 503, 631, 606)}"><div>${ring ? `반지 공격력 <b>+${(RINGS[it.ch].atkP + RING_ENH * se.e).toFixed(1)}%</b>${max ? '' : ` → <b class="up">+${(RINGS[it.ch].atkP + RING_ENH * (se.e + 1)).toFixed(1)}%</b>`}` : `${SLOT_INFO[k].label} <b>${fmtVal(k, cur)}</b>${max ? '' : ` → <b class="up">${fmtVal(k, nxt)}</b>`}`}</div>${smithCpLine(k, se, max, cap)}<div>${max ? '계승' : '필요 골드'} <b class="gold">${nf(gd)}</b> · 보유 <b class="${s.gold >= gd ? '' : 'dn2'}">${nf(s.gold)}</b></div><div class="smsg">${msg}</div></div>
     <button class="sgo" style="${mp(150, 632, 556, 718)}" ${G.map.safe && can ? '' : 'disabled'} data-${max ? 'inh' : 'enh'}="${k}">${max ? ttl('계승', 'INHERIT') : ttl('강화', 'ENHANCE')}</button>
     <div class="ulist" data-keep-scroll="smith" style="${mp(736, 130, 1336, 618)}">${rows}</div>
     <i class="artfix" style="${mp(1249, 621, 1263, 628)};background:#13151b"></i><i class="artfix" style="${mp(1242, 634, 1270, 640)};background:#121016"></i><div class="ubar flat c" style="${mp(744, 642, 936, 672)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b></div>
@@ -14239,8 +14247,8 @@ makeItem = function (slot, cls, grade, ilvl, save) { const it = _makeItem9(slot,
 GRADES[3].p *= 1.45;   // legend drops: shops no longer sell gear
 /* the potential lines and quality, everywhere an item is described */
 function itemExtra(it) {   // itemLine (50_ui.js) adds this
-  if (!it || it.type === 'soul') return it && it.ring ? ringLine(it) : ''; const q = QUALITY[qualityOf(it)];
-  return `<br><span style="color:${q.col}">품질 ${q.n} (기본 능력치 ×${q.mul})</span>` + (it.pot && it.pot.length ? `<br><span style="color:#c8a8ff">잠재 옵션<br>${(it.pot || []).map((pl, i) => (potLockedOf(it)[i] ? '🔒 ' : '') + potLine(pl, it.grade)).join('<br>')}</span>` : '') + (it.ring ? ringLine(it) : '');
+  if (!it || it.type === 'soul') return ''; const q = QUALITY[qualityOf(it)];
+  return (it.ring ? '' : `<br><span style="color:${q.col}">품질 ${q.n} (기본 능력치 ×${q.mul})</span>`) + (it.pot && it.pot.length ? `<br><span style="color:#c8a8ff">잠재 옵션<br>${(it.pot || []).map((pl, i) => (potLockedOf(it)[i] ? '🔒 ' : '') + potLine(pl, it.grade)).join('<br>')}</span>` : '') + (it.ring ? ringLine(it) : '');
 }
 buyTrait = function (id) {
   const s = G.save, t = TRAITS[s.char].find(x => x.id === id), rk = s.traits[id] || 0, nx = t && t.ranks[rk];
@@ -14321,7 +14329,7 @@ function reroll(slot, kind, free) {
     if (have < c.stone || s.gold < c.gold) return false;
     s.mats[c.mat] = have - c.stone; s.gold -= c.gold;
   }
-  if (kind === 'q') it.q = rollQuality();
+  if (kind === 'q') { if (it.ring) return false; it.q = rollQuality(); }   // a ring has no quality
   else {
     const L = potLockedOf(it);
     it.pot = rollPot(it.grade || 0, it.slot || slot, it.pot, L);   // [pot by slot] 잠근 줄은 그대로 (그 부위에서 나올 수 있는 옵션일 때)
@@ -14354,12 +14362,12 @@ function potTableHtml(it) {   // [pot by slot] only the selected slot's options,
 /* 2026-11-23 (user): the two stone counters sit inside the art's two small boxes, 품질석 left and 잠재석 right like the red button */
 const STN_BOX = [mp(956, 642, 1052, 672), mp(1062, 642, 1172, 672)];
 function rerollWin() {
-  const s = G.save, k = G.ui.smithSel || 'weapon', it = s.equip[k];
+  const s = G.save, k = G.ui.smithSel === 'acc2' || (G.ui.smithSel === 'acc1' && !s.equip.acc1) ? 'weapon' : (G.ui.smithSel || 'weapon'), it = s.equip[k];   // 2026-11-23: the ring rerolls its potentials (no quality)
   const pot = s.mats.pot || 0, qual = s.mats.qual || 0, free = s.mats.free || 0;
-  const rows = SMITH_ROWS.filter(r => !ACC_NAMES[r]).map((r, i) => { const t = s.equip[r], y0 = 136 + i * 60;
-    return `<button class="srow ${r === k ? 'on' : ''}" style="${mp(742, y0, 1328, y0 + 56)}" data-smsel="${r}"><span class="si" style="--gc:${t ? gcol(t) : '#555'}">${slotImg(r, t)}</span><span class="sn" style="color:${t ? gcol(t) : '#888'}">${t ? t.name : SLOT_INFO[r].name + ' 없음'}<small>${t ? '품질 ' + QUALITY[qualityOf(t)].n + (t.pot && t.pot.length ? ' · 잠재 ' + t.pot.length + '줄' : ' · 잠재 없음') : ''}</small></span></button>`; }).join('');
+  const rows = SMITH_ROWS.filter(r => r !== 'acc2' && (r !== 'acc1' || s.equip.acc1)).map((r, i) => { const t = s.equip[r], y0 = 136 + i * 60;
+    return `<button class="srow ${r === k ? 'on' : ''}" style="${mp(742, y0, 1328, y0 + 56)}" data-smsel="${r}"><span class="si" style="--gc:${t ? gcol(t) : '#555'}">${slotImg(r, t)}</span><span class="sn" style="color:${t ? gcol(t) : '#888'}">${t ? t.name : SLOT_INFO[r].name + ' 없음'}<small>${t ? (t.ring ? '반지 · 품질 없음' : '품질 ' + QUALITY[qualityOf(t)].n) + (t.pot && t.pot.length ? ' · 잠재 ' + t.pot.length + '줄' : ' · 잠재 없음') : ''}</small></span></button>`; }).join('');
   const cq = it ? rerollCost(it, 'q') : null, cp = it ? rerollCost(it, 'p') : null, q = it ? QUALITY[qualityOf(it)] : null;
-  const okQ = it && qual >= cq.stone && s.gold >= cq.gold, okP = it && pot >= cp.stone && s.gold >= cp.gold;
+  const okQ = it && !it.ring && qual >= cq.stone && s.gold >= cq.gold, okP = it && pot >= cp.stone && s.gold >= cp.gold;
   const locks = potLockedOf(it || {}), nL = locks.filter(Boolean).length;
   const pots = it && it.pot && it.pot.length ? it.pot.map((pl, i) =>
     `<div class="potrow"><button class="lkbtn ${locks[i] ? 'on' : ''}" data-lock="${i}" data-lockk="${k}" title="${locks[i] ? '잠금 풀기' : '이 줄 잠그기'}"><img src="assets/ui/ui_lock_${locks[i] ? 'closed' : 'open'}.png" alt=""></button><b class="pot">${potLine(pl, it.grade)}</b></div>`).join('')
@@ -14368,11 +14376,11 @@ function rerollWin() {
     <div class="uttl" style="${mp(60, 60, 660, 114)}">${ttl('재설정', 'REROLL')}</div>
     <div class="uttl" style="${mp(726, 60, 1330, 114)}">${ttl(G.ui.potTbl ? '확률표' : '내 장비', G.ui.potTbl ? 'ODDS' : 'MY GEAR')}</div>
     <div class="sbig" style="${mp(262, 215, 455, 422)};--gc:${it ? gcol(it) : '#555'}">${it ? slotImg(k, it) : ''}</div>
-    <div class="sinfo" style="${mp(72, 190, 160, 278)}"><b style="color:${q ? q.col : '#888'}">${q ? q.n : '-'}</b></div><div class="scap" style="${mp(52, 282, 182, 304)}">품질</div>
+    <div class="sinfo" style="${mp(72, 190, 160, 278)}"><b style="color:${q && !it.ring ? q.col : '#888'}">${q && !it.ring ? q.n : '-'}</b></div><div class="scap" style="${mp(52, 282, 182, 304)}">품질</div>
     <div class="sinfo" style="${mp(552, 190, 638, 278)}"><b>${it && it.pot ? it.pot.length : 0}</b><small>줄</small></div><div class="scap" style="${mp(532, 282, 660, 304)}">잠재 옵션</div>
     <div class="sinfo" style="${mp(72, 369, 160, 455)}"><b class="gold">${nf(pot)}</b></div><div class="scap" style="${mp(52, 459, 182, 481)}">보유 잠재석</div>
     <div class="sinfo" style="${mp(552, 369, 638, 455)}">${pimg('coin')}<b class="${s.gold >= (cp ? cp.gold : REROLL_GOLD) ? 'gold' : 'dn2'}">${nf(cp ? cp.gold : REROLL_GOLD)}</b></div><div class="scap" style="${mp(532, 459, 660, 481)}">1회 골드</div>
-    <div class="stext rr" style="${mp(84, 503, 631, 606)}">${it ? `<div style="color:${gcol(it)}">${it.name} · 기본 능력치 ×${q.mul}</div>
+    <div class="stext rr" style="${mp(84, 503, 631, 606)}">${it ? `<div style="color:${gcol(it)}">${it.name} · ${it.ring ? '반지 · 잠재만 바꾼다' : '기본 능력치 ×' + q.mul}</div>
       <div class="potlist">${pots}</div>
       <div class="rrfoot"><span class="smsg">${G.ui.rrMsg || `잠금 ${nL}줄`}</span><span class="exch"><button class="mini freeb" data-rpf="${k}" title="무료 잠재 변경권 · 잠금과 상관없이 잠재석·골드 없이 한 번" ${free > 0 && it.pot && it.pot.length ? '' : 'disabled'}><img class="freeic" src="assets/items/item_free_reroll.png" alt="">변경권 ${free}</button></span></div>` : '<div>장착한 장비를 고르자</div>'}</div>
     <button class="sgo half hl" style="${mp(150, 632, 353, 718)}" data-rq="${k}" ${okQ ? '' : 'disabled'}>${ttl('품질', cq ? `품질석 ${cq.stone} · ${nf(cq.gold)}골드` : '-')}</button>
@@ -14454,6 +14462,11 @@ uwClick = function (t, right) {
 /* ---- old saves: traits cleared once with every point back; 연금 결정 from zero; older items count as 중급 with no potentials ---- */
 const _startGame9 = startGame;
 startGame = function (save, isNew) {
+  if (save) {   // 2026-11-23 (user): rings got potentials; a ring from before gets its three lines once
+    const give = it => { if (it && it.ring && !(it.pot && it.pot.length)) it.pot = rollPot(3, 'acc1'); };
+    give(save.equip && save.equip.acc1); for (const it of save.items || []) give(it);
+    try { const st = storeNow(); if (st && st.storage) for (const it of st.storage.items || []) give(it); } catch (e) { }
+  }
   if (save && save.xpRebased && !isNew) { const [a, b] = save.xpRebased; delete save.xpRebased; setTimeout(() => toast('레벨 기준이 바뀌었다 · Lv.' + a + ' → Lv.' + b + (save.tp >= b - 1 && Object.keys(save.traits || {}).length === 0 && b > 1 ? ' · 특성 포인트를 돌려받았다' : ''), 'gold'), 1800); }
   if (save && !save.traitV2) { const had = Object.keys(save.traits || {}).length; save.traits = {}; save.tp = Math.max(0, (save.level || 1) - 1); save.traitV2 = 1; if (had && !isNew) setTimeout(() => toast('특성이 새로 바뀌어 포인트를 모두 돌려받았다 · T', 'gold'), 1500); }
   if (save) { save.mats = save.mats || {}; const cv = alchToStones(save); if (cv && !isNew) setTimeout(() => toast('연금 결정 ' + nf(cv[0]) + '개를 나눠 바꿨다 · 품질석 +' + cv[1] + ' · 잠재석 +' + cv[2], 'gold'), 3000); }
