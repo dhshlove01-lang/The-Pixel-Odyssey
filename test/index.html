@@ -173,98 +173,106 @@ button{font-family:inherit;color:inherit}
 .csel .hint{display:flex;align-items:center;justify-content:center;font-size:calc(var(--s)*12);color:#a8a29a}
 .frame.cine #hud,.frame.cine #skills,.frame.cine #toasts,.frame.cine #mini{visibility:hidden}
 /* pixel windows (52_uiwin.js): the mockup fills the screen, data sits on it in mockup pixels (--m) */
-#uiwin{position:absolute;inset:0;display:none;background:#05060a;z-index:20;--m:calc(var(--u)*0.69767);font-family:'Galmuri',var(--font-ui,sans-serif);-webkit-font-smoothing:none;font-smooth:never}
+#uiwin{position:absolute;inset:0;display:none;background:#05060a;z-index:20;--m:calc(var(--u)*0.69767);--mf:var(--m);font-family:'Galmuri',var(--font-ui,sans-serif);-webkit-font-smoothing:none;font-smooth:never}
 #uiwin.on{display:block}
+.frame.touch #uiwin{--mf:max(var(--m),0.5714px)}   /* 2026-11-23: text scales with the window art (--m) on PC; on touch screens one floor for every text so sizes keep their order */
 #uiwin .uw{position:absolute;left:0;top:calc(var(--u)*2);width:calc(var(--m)*1376);height:calc(var(--m)*768);background-size:100% 100%;image-rendering:pixelated}
 #uiwin .uw>*{position:absolute;box-sizing:border-box}
 #uiwin img.pix,#uiwin canvas{image-rendering:pixelated}
 #uiwin button{font-family:inherit;cursor:pointer;color:inherit}
 #uiwin .uttl{display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;line-height:1.05}
-#uiwin .tko{font-weight:700;font-size:calc(var(--m)*30);color:#ffe7a0;text-shadow:calc(var(--m)*3) calc(var(--m)*3) 0 #1a1412,0 0 0 #000;letter-spacing:.06em}
-#uiwin .ten{font-size:max(8px,calc(var(--m)*13));color:#b8a98a;letter-spacing:.2em;margin-top:calc(var(--m)*4)}
-#uiwin .uttl.small .tko{font-size:calc(var(--m)*24)}
+#uiwin .tko{font-weight:700;font-size:calc(var(--mf)*30);color:#ffe7a0;text-shadow:calc(var(--m)*3) calc(var(--m)*3) 0 #1a1412,0 0 0 #000;letter-spacing:.06em}
+#uiwin .ten{font-size:calc(var(--mf)*13);color:#b8a98a;letter-spacing:.2em;margin-top:calc(var(--m)*4)}
+#uiwin .uttl.small .tko{font-size:calc(var(--mf)*24)}
 #uiwin .eq{background:none;border:0;padding:calc(var(--m)*12);display:flex;align-items:center;justify-content:center}
 #uiwin .eq img{width:100%;height:100%;object-fit:contain}
-#uiwin .eq em,#uiwin .cell em,#uiwin .sbig em{position:absolute;right:calc(var(--m)*8);bottom:calc(var(--m)*5);font-style:normal;font-size:calc(var(--m)*15);color:#ffe08a;text-shadow:calc(var(--m)*2) calc(var(--m)*2) 0 #1a1412}
-#uiwin .eq i{position:absolute;left:0;right:0;bottom:calc(var(--m)*-22);text-align:center;font-style:normal;font-size:max(8px,calc(var(--m)*13));color:#c9c2b0;text-shadow:calc(var(--m)*2) calc(var(--m)*2) 0 #1a1412}
+#uiwin .eq em,#uiwin .cell em,#uiwin .sbig em{position:absolute;right:calc(var(--m)*8);bottom:calc(var(--m)*5);font-style:normal;font-size:calc(var(--mf)*15);color:#ffe08a;text-shadow:calc(var(--m)*2) calc(var(--m)*2) 0 #1a1412}
+#uiwin .eq i{position:absolute;left:0;right:0;bottom:calc(var(--m)*-22);text-align:center;font-style:normal;font-size:calc(var(--mf)*13);color:#c9c2b0;text-shadow:calc(var(--m)*2) calc(var(--m)*2) 0 #1a1412}
 #uiwin .eq.on,#uiwin .cell.on{outline:calc(var(--m)*4) solid #f0c040;outline-offset:calc(var(--m)*-6)}
 #uiwin .eq:not(.lock):hover,#uiwin .cell:not(:disabled):hover{filter:brightness(1.25)}
 #uiwin .eq.lock{opacity:.85}#uiwin .eq.lock .lk{position:absolute;width:calc(var(--m)*28);right:calc(var(--m)*10);top:calc(var(--m)*10)}
 #uiwin .ucp{display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
-#uiwin .ucp small{font-size:max(8px,calc(var(--m)*13));color:#b8b0a0}#uiwin .ucp b{font-size:calc(var(--m)*26);color:#ffe08a;text-shadow:calc(var(--m)*3) calc(var(--m)*3) 0 #1a1412}
-#uiwin .ustats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:hidden;gap:calc(var(--m)*2) calc(var(--m)*6);font-size:max(8px,calc(var(--m)*13));color:#b8b0a0;align-content:center}
+#uiwin .ucp small{font-size:calc(var(--mf)*13);color:#b8b0a0}#uiwin .ucp b{font-size:calc(var(--mf)*26);color:#ffe08a;text-shadow:calc(var(--m)*3) calc(var(--m)*3) 0 #1a1412}
+#uiwin .ustats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:hidden;gap:calc(var(--m)*2) calc(var(--m)*6);font-size:calc(var(--mf)*13);color:#b8b0a0;align-content:center}
 #uiwin .ustats b{color:#fff;font-weight:400}#uiwin .ustats span{white-space:nowrap;overflow:hidden;text-overflow:clip}#uiwin .ustats sup{color:#ff9ad0;font-size:.8em}#uiwin .ustats,#uiwin .usoul{font-size:max(6.5px,calc(var(--m)*13))!important}
-#uiwin .usoul{flex-wrap:wrap;align-content:center;font-size:max(8px,calc(var(--m)*12));color:#9d968a;display:flex;align-items:center;justify-content:center;text-align:center}
+#uiwin .usoul{flex-wrap:wrap;align-content:center;font-size:calc(var(--mf)*12);color:#9d968a;display:flex;align-items:center;justify-content:center;text-align:center}
 #uiwin .ugrid{overflow-y:auto;overflow-x:hidden;display:grid;align-content:start;scrollbar-width:thin;scrollbar-color:#5a5a66 transparent}
 #uiwin .ugrid.inv{grid-template-columns:repeat(6,calc(var(--m)*90));gap:calc(var(--m)*2) calc(var(--m)*1.5);padding:calc(var(--m)*3) calc(var(--m)*8)}
 #uiwin .cell{position:relative;border:0;padding:calc(var(--m)*16);width:calc(var(--m)*90);height:calc(var(--m)*92);background:transparent 0 0/100% 100% no-repeat;display:flex;align-items:center;justify-content:center}
 #uiwin .cell img{width:100%;height:100%;object-fit:contain}
 #uiwin .cell::after{content:'';position:absolute;inset:calc(var(--m)*9);border-bottom:calc(var(--m)*3) solid var(--gc,transparent);opacity:.8;pointer-events:none}
 #uiwin .cell.cons::after{display:none}
-#uiwin .cell i{position:absolute;left:calc(var(--m)*10);top:calc(var(--m)*7);font-style:normal;font-size:max(8px,calc(var(--m)*12));color:#9a9488}
+#uiwin .cell i{position:absolute;left:calc(var(--m)*10);top:calc(var(--m)*7);font-style:normal;font-size:calc(var(--mf)*12);color:#9a9488}
 #uiwin .cell:disabled{filter:grayscale(.7) brightness(.6);cursor:default}
-#uiwin .glyph{font-size:calc(var(--m)*30);color:#aaa}
-#uiwin .udet{background:rgba(12,12,18,.96);border:calc(var(--m)*3) solid #5a5a66;box-shadow:inset 0 0 0 calc(var(--m)*3) #1a1412;padding:calc(var(--m)*10) calc(var(--m)*14);font-size:max(8px,calc(var(--m)*14));color:#d8d2c2;line-height:1.45}
-#uiwin .udet .dn{font-size:calc(var(--m)*18);font-weight:700}#uiwin .udet .dl{color:#bdb6a6}
+#uiwin .glyph{font-size:calc(var(--mf)*30);color:#aaa}
+#uiwin .udet{background:rgba(12,12,18,.96);border:calc(var(--m)*3) solid #5a5a66;box-shadow:inset 0 0 0 calc(var(--m)*3) #1a1412;padding:calc(var(--m)*10) calc(var(--m)*14);font-size:calc(var(--mf)*14);color:#d8d2c2;line-height:1.45}
+#uiwin .udet .dn{font-size:calc(var(--mf)*18);font-weight:700}#uiwin .udet .dl{color:#bdb6a6}
 #uiwin .udet .db{position:absolute;right:calc(var(--m)*10);bottom:calc(var(--m)*10);display:flex;gap:calc(var(--m)*8)}
 #uiwin .up{color:#8fd48c}#uiwin .dn2{color:#ff8d80}#uiwin .gold{color:#ffd860}#uiwin .dim{color:#9d968a;font-size:.85em}
-#uiwin .ubar{display:flex;align-items:center;gap:calc(var(--m)*10);padding:0 calc(var(--m)*12);font-size:calc(var(--m)*20);color:#e8e2d0}
-#uiwin .ubar img{width:calc(var(--m)*24)}#uiwin .ubar .cnt{margin-left:auto}#uiwin .ubar.flat{font-size:calc(var(--m)*16);padding:0 calc(var(--m)*8)}#uiwin .ubar.c{justify-content:center}
-#uiwin .ubtn{background:none;border:0;font-size:calc(var(--m)*18);color:#f2ead6;text-shadow:calc(var(--m)*2) calc(var(--m)*2) 0 #1a1412;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
-#uiwin .ubtn.sm{font-size:max(8px,calc(var(--m)*14))}
+#uiwin .ubar{display:flex;align-items:center;gap:calc(var(--m)*10);padding:0 calc(var(--m)*12);font-size:calc(var(--mf)*20);color:#e8e2d0}
+#uiwin .ubar img{width:calc(var(--m)*24)}#uiwin .ubar .cnt{margin-left:auto}#uiwin .ubar.flat{font-size:calc(var(--mf)*16);padding:0 calc(var(--m)*8)}#uiwin .ubar.c{justify-content:center}
+#uiwin .ubtn{background:none;border:0;font-size:calc(var(--mf)*18);color:#f2ead6;text-shadow:calc(var(--m)*2) calc(var(--m)*2) 0 #1a1412;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
+#uiwin .ubtn.sm{font-size:calc(var(--mf)*14)}
 #uiwin .udet .ubtn,#uiwin .utalk .ubtn{position:static;background:#3a3a46;border:calc(var(--m)*3) solid #1a1412;box-shadow:inset calc(var(--m)*-3) calc(var(--m)*-3) 0 #26262e,inset calc(var(--m)*3) calc(var(--m)*3) 0 #5a5a68;padding:calc(var(--m)*5) calc(var(--m)*14)}
 #uiwin .ubtn:disabled{opacity:.4;cursor:default}
+/* 2026-11-23: the blacksmith art still had the old baked words rubbed out in the middle of its two bottom buttons (a darker patch);
+   a face in the button's own colours goes over it, inside the drawn bevel (5 art px in, 6 at the bottom) */
+#uiwin .ubtn.bred,#uiwin .ubtn.bblu{padding:calc(var(--m)*5) calc(var(--m)*5) calc(var(--m)*6);background-clip:content-box;background-origin:content-box}
+#uiwin .ubtn.bred{background-image:linear-gradient(180deg,#963f33 0,#8e3334 28%,#762334 62%,#702137 100%)}
+#uiwin .ubtn.bblu{background-image:linear-gradient(180deg,#3275a7 0,#2c679f 28%,#25508a 62%,#294d88 100%)}
+#uiwin .ubtn.bred:not(:disabled):hover,#uiwin .ubtn.bblu:not(:disabled):hover{filter:brightness(1.15)}
+#uiwin .artfix{pointer-events:none}   /* 2026-11-23: covers a stray scroll arrow left in the blacksmith art above the 강화 횟수 cell */
 #uiwin .ubtn:not(:disabled):hover{color:#fff3c0}
-#uiwin .ubtn .tko{font-size:calc(var(--m)*22)}#uiwin .ubtn .ten{font-size:max(8px,calc(var(--m)*10));margin-top:calc(var(--m)*2)}
+#uiwin .ubtn .tko{font-size:calc(var(--mf)*22)}#uiwin .ubtn .ten{font-size:calc(var(--mf)*10);margin-top:calc(var(--m)*2)}
 #uiwin .ubtn.tab:not(.on){filter:brightness(.7)}
 #uiwin .ubtn.tab.on{outline:calc(var(--m)*3) solid #f0c040;outline-offset:calc(var(--m)*2)}
 #uiwin .uprev{pointer-events:none}
 #uiwin .sbig{display:flex;align-items:center;justify-content:center;padding:calc(var(--m)*24)}
 #uiwin .sbig img{width:100%;height:100%;object-fit:contain}
-#uiwin .sbig em{font-size:calc(var(--m)*24);right:calc(var(--m)*12);bottom:calc(var(--m)*8)}
-#uiwin .sbig u,#uiwin .srow u{text-decoration:none;position:absolute;left:calc(var(--m)*12);top:calc(var(--m)*8);font-size:max(8px,calc(var(--m)*14));color:#c9a0ff}
+#uiwin .sbig em{font-size:calc(var(--mf)*24);right:calc(var(--m)*12);bottom:calc(var(--m)*8)}
+#uiwin .sbig u,#uiwin .srow u{text-decoration:none;position:absolute;left:calc(var(--m)*12);top:calc(var(--m)*8);font-size:calc(var(--mf)*14);color:#c9a0ff}
 #uiwin .sbig.fx-ok{animation:uwok .6s steps(6)}#uiwin .sbig.fx-no{animation:uwno .5s steps(8)}
 @keyframes uwok{0%,40%{background:rgba(255,255,255,.9)}20%,60%{background:rgba(255,220,120,.6)}100%{background:transparent}}
 @keyframes uwno{0%,50%{background:rgba(255,60,40,.55);transform:translateX(calc(var(--m)*-6))}25%,75%{transform:translateX(calc(var(--m)*6))}100%{background:transparent;transform:none}}
-#uiwin .sinfo{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:calc(var(--m)*20);color:#fff;text-shadow:calc(var(--m)*2) calc(var(--m)*2) 0 #1a1412;gap:calc(var(--m)*4)}
-#uiwin .sinfo img{width:calc(var(--m)*30)}#uiwin .sinfo small{font-size:max(8px,calc(var(--m)*12));color:#c9c2b0}
+#uiwin .sinfo{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:calc(var(--mf)*20);color:#fff;text-shadow:calc(var(--m)*2) calc(var(--m)*2) 0 #1a1412;gap:calc(var(--m)*4)}
+#uiwin .sinfo img{width:calc(var(--m)*30)}#uiwin .sinfo small{font-size:calc(var(--mf)*12);color:#c9c2b0}
 #uiwin .sinfo .gbar{width:80%;height:calc(var(--m)*8);background:#1a1412;border:calc(var(--m)*2) solid #5a5a66}#uiwin .sinfo .gbar i{display:block;height:100%;background:#f0c040}
-#uiwin .scap{text-align:center;font-size:max(8px,calc(var(--m)*13));color:#d8c79a;text-shadow:calc(var(--m)*2) calc(var(--m)*2) 0 #1a1412;pointer-events:none}
-#uiwin .stext{font-size:calc(var(--m)*18);color:#e8e2d0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:calc(var(--m)*5);text-align:center;line-height:1.3}
-#uiwin .stext .smsg{font-size:max(8px,calc(var(--m)*14));color:#bdb6a6}
+#uiwin .scap{text-align:center;font-size:calc(var(--mf)*13);color:#d8c79a;text-shadow:calc(var(--m)*2) calc(var(--m)*2) 0 #1a1412;pointer-events:none}
+#uiwin .stext{font-size:calc(var(--mf)*18);color:#e8e2d0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:calc(var(--m)*5);text-align:center;line-height:1.3}
+#uiwin .stext .smsg{font-size:calc(var(--mf)*14);color:#bdb6a6}
 #uiwin .sgo{background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#ffe9a0}
-#uiwin .sgo .tko{font-size:calc(var(--m)*34);color:#ffe9a0;text-shadow:calc(var(--m)*3) calc(var(--m)*3) 0 #4a1008}
+#uiwin .sgo .tko{font-size:calc(var(--mf)*34);color:#ffe9a0;text-shadow:calc(var(--m)*3) calc(var(--m)*3) 0 #4a1008}
 #uiwin .sgo .ten{color:#ffc890}
 #uiwin .sgo:disabled{filter:grayscale(.85) brightness(.7);cursor:default}
 #uiwin .sgo:not(:disabled):hover{filter:brightness(1.2)}
 #uiwin .ulist{overflow-y:auto;scrollbar-width:thin;scrollbar-color:#5a5a66 transparent}
-#uiwin .srow{position:absolute;display:flex;align-items:center;gap:calc(var(--m)*12);background:rgba(30,32,42,.85);border:calc(var(--m)*3) solid #3a3c4a;padding:0 calc(var(--m)*12) 0 calc(var(--m)*4);text-align:left;font-size:calc(var(--m)*16)}
+#uiwin .srow{position:absolute;display:flex;align-items:center;gap:calc(var(--m)*12);background:rgba(30,32,42,.85);border:calc(var(--m)*3) solid #3a3c4a;padding:0 calc(var(--m)*12) 0 calc(var(--m)*4);text-align:left;font-size:calc(var(--mf)*16)}
 #uiwin .srow{left:calc(var(--m)*6)!important;top:auto!important;position:relative;margin-bottom:calc(var(--m)*4)}
 #uiwin .srow.on{border-color:#f0c040;background:rgba(60,50,24,.85)}
 #uiwin .srow.lock{opacity:.55}
 #uiwin .srow .si{width:calc(var(--m)*48);height:calc(var(--m)*48);display:flex;align-items:center;justify-content:center;background:#16161c;border:calc(var(--m)*2) solid var(--gc,#444)}
 #uiwin .srow .si img{width:85%;height:85%;object-fit:contain}
 #uiwin .srow .sn{display:flex;flex-direction:column;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#uiwin .srow .sn small{font-size:max(8px,calc(var(--m)*12));color:#9d968a}
-#uiwin .srow em{font-style:normal;color:#ffe08a;font-size:calc(var(--m)*18);position:relative}
+#uiwin .srow .sn small{font-size:calc(var(--mf)*12);color:#9d968a}
+#uiwin .srow em{font-style:normal;color:#ffe08a;font-size:calc(var(--mf)*18);position:relative}
 #uiwin .srow em u{position:static;margin-left:calc(var(--m)*4)}
 #uiwin .srow .sc{min-width:calc(var(--m)*90);text-align:right;color:#ffd860}#uiwin .srow .sc.no{color:#a0645c}
 #uiwin .ugrid.shopg{grid-template-columns:repeat(6,calc(var(--m)*98));gap:calc(var(--m)*4) calc(var(--m)*3);padding:calc(var(--m)*4) calc(var(--m)*4)}
 #uiwin .cell.shop{width:calc(var(--m)*98);height:calc(var(--m)*100);padding:calc(var(--m)*14) calc(var(--m)*18) calc(var(--m)*26)}
-#uiwin .cell .pr{position:absolute;left:0;right:0;bottom:calc(var(--m)*8);text-align:center;font-size:max(8px,calc(var(--m)*14));color:#ffe08a;text-shadow:calc(var(--m)*2) calc(var(--m)*2) 0 #1a1412}
+#uiwin .cell .pr{position:absolute;left:0;right:0;bottom:calc(var(--m)*8);text-align:center;font-size:calc(var(--mf)*14);color:#ffe08a;text-shadow:calc(var(--m)*2) calc(var(--m)*2) 0 #1a1412}
 #uiwin .cell.armed{outline:calc(var(--m)*4) solid #ff6a50;outline-offset:calc(var(--m)*-6)}
-#uiwin .empty{grid-column:1/-1;text-align:center;color:#8a8478;padding:calc(var(--m)*40);font-size:calc(var(--m)*16)}
+#uiwin .empty{grid-column:1/-1;text-align:center;color:#8a8478;padding:calc(var(--m)*40);font-size:calc(var(--mf)*16)}
 #uiwin .uport{background:radial-gradient(ellipse at 50% 70%,rgba(255,170,90,.28),rgba(0,0,0,0) 65%)}
-#uiwin .utalk{font-size:calc(var(--m)*17);color:#ece4d0;line-height:1.45}
-#uiwin .utalk .who{color:#ffd27a;font-size:calc(var(--m)*15);margin-bottom:calc(var(--m)*4)}
-#uiwin .utalk .hint{color:#9d968a;font-size:max(8px,calc(var(--m)*13));margin-top:calc(var(--m)*6)}
+#uiwin .utalk{font-size:calc(var(--mf)*17);color:#ece4d0;line-height:1.45}
+#uiwin .utalk .who{color:#ffd27a;font-size:calc(var(--mf)*15);margin-bottom:calc(var(--m)*4)}
+#uiwin .utalk .hint{color:#9d968a;font-size:calc(var(--mf)*13);margin-top:calc(var(--m)*6)}
 #uiwin .utalk .chips{display:flex;gap:calc(var(--m)*6);flex-wrap:wrap;margin-top:calc(var(--m)*8)}
-#uiwin .chip{font-family:inherit;font-size:max(8px,calc(var(--m)*13));background:#2a2420;border:calc(var(--m)*2) solid #5a4a3a;color:#d8c8a8;padding:calc(var(--m)*3) calc(var(--m)*8)}
+#uiwin .chip{font-family:inherit;font-size:calc(var(--mf)*13);background:#2a2420;border:calc(var(--m)*2) solid #5a4a3a;color:#d8c8a8;padding:calc(var(--m)*3) calc(var(--m)*8)}
 #uiwin .chip.on{border-color:var(--gc);color:#fff}
-#uiwin .ufoot{display:flex;align-items:center;font-size:max(8px,calc(var(--m)*14));color:#9d968a;padding-left:calc(var(--m)*10)}#uiwin .ufoot.c{justify-content:center}
+#uiwin .ufoot{display:flex;align-items:center;font-size:calc(var(--mf)*14);color:#9d968a;padding-left:calc(var(--m)*10)}#uiwin .ufoot.c{justify-content:center}
 #uiwin .ugrid.wh{grid-template-columns:repeat(5,calc(var(--m)*91));gap:calc(var(--m)*4) calc(var(--m)*4);padding:calc(var(--m)*4) calc(var(--m)*6)}
 #uiwin .cell.wh{width:calc(var(--m)*91);height:calc(var(--m)*90)}
-#uiwin .ucnt{display:flex;align-items:center;justify-content:center;font-size:calc(var(--m)*20);color:#ffd27a}
+#uiwin .ucnt{display:flex;align-items:center;justify-content:center;font-size:calc(var(--mf)*20);color:#ffd27a}
 #sktip.pxf{font-family:'Galmuri',sans-serif}
 .pbox{width:calc(var(--u)*860);max-width:96%;max-height:94%;overflow:auto;background:var(--panel);border:1px solid var(--line2);padding:calc(var(--u)*18) calc(var(--u)*22);box-shadow:0 10px 50px #000}
 .ph{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:calc(var(--u)*10);margin-bottom:calc(var(--u)*14)}
@@ -611,10 +619,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1043"></script>
-<script src="assets/js/act3_data.js?v=261123-1043"></script>
+<script src="assets/js/pfx.js?v=261123-1055"></script>
+<script src="assets/js/act3_data.js?v=261123-1055"></script>
 <script>
-const GAME_VER = '261123-1043';
+const GAME_VER = '261123-1055';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -13354,11 +13362,11 @@ function smithWin() {
     <div class="stext" style="${mp(84, 503, 631, 606)}"><div>${SLOT_INFO[k].label} <b>${fmtVal(k, cur)}</b>${max ? '' : ` → <b class="up">${fmtVal(k, nxt)}</b>`}</div>${smithCpLine(k, se, max, cap)}<div>${max ? '계승' : '필요 골드'} <b class="gold">${nf(gd)}</b> · 보유 <b class="${s.gold >= gd ? '' : 'dn2'}">${nf(s.gold)}</b></div><div class="smsg">${msg}</div></div>
     <button class="sgo" style="${mp(150, 632, 556, 718)}" ${G.map.safe && can ? '' : 'disabled'} data-${max ? 'inh' : 'enh'}="${k}">${max ? ttl('계승', 'INHERIT') : ttl('강화', 'ENHANCE')}</button>
     <div class="ulist" data-keep-scroll="smith" style="${mp(736, 130, 1336, 618)}">${rows}</div>
-    <div class="ubar flat" style="${mp(744, 642, 936, 672)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b></div>
+    <i class="artfix" style="${mp(1249, 621, 1263, 628)};background:#13151b"></i><i class="artfix" style="${mp(1242, 634, 1270, 640)};background:#121016"></i><div class="ubar flat c" style="${mp(744, 642, 936, 672)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b></div>
     <div class="ubar flat c" style="${mp(958, 642, 1048, 672)}">계승석</div><div class="ubar flat c" style="${mp(1062, 642, 1168, 672)}"><b>${s.mats.inherit}</b></div>
     <div class="ubar flat c" style="${mp(1188, 642, 1328, 672)}">강화 <b>${nf(s.enh || 0)}</b>회</div>
-    <button class="ubtn" style="${mp(733, 688, 862, 735)}" data-close="1">닫기</button>
-    <button class="ubtn" style="${mp(1203, 688, 1333, 735)}" data-gear="1">장비 창</button>`;
+    <button class="ubtn bred" style="${mp(733, 688, 862, 735)}" data-close="1">닫기</button>
+    <button class="ubtn bblu" style="${mp(1203, 688, 1333, 735)}" data-gear="1">장비 창</button>`;
 }
 /* ---- trader ---- */
 function shopGoods() {
@@ -13922,13 +13930,13 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tbar{height:4px;background:#222634;margin-bottom:4px}.tbar i{display:block;height:100%;background:linear-gradient(90deg,#c08a2a,#ff6ab0,#fff4c0)}
 .tcard.t6 .rk{padding:calc(var(--u)*2) 0;font-size:max(8px,calc(var(--u)*10.5))}
 #uiwin .stabs{position:absolute;display:flex;gap:calc(var(--m)*6)}
-#uiwin .stab{flex:1;background:rgba(30,26,36,.9);border:calc(var(--m)*3) solid #4a3e30;color:#cbbfa6;font-size:calc(var(--m)*17);font-weight:700}
+#uiwin .stab{flex:1;background:rgba(30,26,36,.9);border:calc(var(--m)*3) solid #4a3e30;color:#cbbfa6;font-size:calc(var(--mf)*17);font-weight:700}
 #uiwin .stab.on{background:rgba(90,52,18,.95);border-color:#e8b048;color:#ffe9a0}
-#uiwin .sgo.half .tko{font-size:calc(var(--m)*28)}#uiwin .sgo.half+.sgo.half{border-left:calc(var(--m)*3) solid rgba(40,8,4,.6)}
+#uiwin .sgo.half .tko{font-size:calc(var(--mf)*28)}#uiwin .sgo.half+.sgo.half{border-left:calc(var(--m)*3) solid rgba(40,8,4,.6)}
 #uiwin .dbox{background:none;border:0;cursor:pointer}#uiwin .dbox:disabled{opacity:.45;cursor:default}#uiwin .dbox:not(:disabled):hover{filter:brightness(1.3)}
-#uiwin .dbig{flex-direction:column;gap:calc(var(--m)*6);color:#ffe08a}#uiwin .dbig b{font-size:calc(var(--m)*40);text-shadow:calc(var(--m)*3) calc(var(--m)*3) 0 #1a1412}#uiwin .dbig small{font-size:calc(var(--m)*16);color:#e8d8b0}
+#uiwin .dbig{flex-direction:column;gap:calc(var(--m)*6);color:#ffe08a}#uiwin .dbig b{font-size:calc(var(--mf)*40);text-shadow:calc(var(--m)*3) calc(var(--m)*3) 0 #1a1412}#uiwin .dbig small{font-size:calc(var(--mf)*16);color:#e8d8b0}
 #uiwin [data-keep-scroll="dis"] .srow{height:calc(var(--m)*48)}
-#uiwin .stext.rr{font-size:calc(var(--m)*16);gap:calc(var(--m)*8)}#uiwin .stext .pot{color:#c8a8ff;display:block}#uiwin .muted{color:#9a9384}
+#uiwin .stext.rr{font-size:calc(var(--mf)*16);gap:calc(var(--m)*8)}#uiwin .stext .pot{color:#c8a8ff;display:block}#uiwin .muted{color:#9a9384}
 #uiwin .srow .dis1{margin-left:auto;flex:none}
 #uiwin .over{color:#ff9ad0;font-size:.85em}
 #uiwin .si,#uiwin .slot .pix,#uiwin .cell .pix,#uiwin .eq .pix{filter:drop-shadow(0 0 calc(var(--m)*3) var(--gc,transparent))}
@@ -13947,7 +13955,8 @@ function dismantleGrade(g) {
   return [list.length, y];
 }
 /* ---- rerolling at the smith: quality or potentials of an equipped item, for 결정 and gold ---- */
-const rerollCost = (it, kind) => ({ alch: (kind === 'q' ? 5 : 10) * (1 + (it.grade || 0)), gold: Math.round(120 * CHM[Math.max(1, Math.min(CH_COUNT, it.ilvl || 1))].gold * GOLD_INCOME_X / 10) * 10 });
+const REROLL_GOLD = 200;   // 2026-11-23 (user): a small flat gold cost per reroll, quality or potential (was 120 x the chapter gold curve)
+const rerollCost = (it, kind) => ({ alch: (kind === 'q' ? 5 : 10) * (1 + (it.grade || 0)), gold: REROLL_GOLD });
 function reroll(slot, kind) {
   const s = G.save, it = s.equip[slot]; if (!it) return false; const c = rerollCost(it, kind);
   if ((s.mats.alch || 0) < c.alch || s.gold < c.gold) return false;
@@ -13986,10 +13995,10 @@ function rerollWin() {
     <button class="sgo half" style="${mp(150, 632, 350, 718)}" data-rq="${k}" ${okQ ? '' : 'disabled'}>${ttl('품질', 'QUALITY')}</button>
     <button class="sgo half" style="${mp(356, 632, 556, 718)}" data-rp="${k}" ${okP ? '' : 'disabled'}>${ttl('잠재', 'POTENTIAL')}</button>
     <div class="ulist" data-keep-scroll="smith" style="${mp(736, 130, 1336, 618)}">${rows}</div>
-    <div class="ubar flat" style="${mp(744, 642, 936, 672)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b></div>
+    <i class="artfix" style="${mp(1249, 621, 1263, 628)};background:#13151b"></i><i class="artfix" style="${mp(1242, 634, 1270, 640)};background:#121016"></i><div class="ubar flat c" style="${mp(744, 642, 936, 672)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b></div>
     <div class="ubar flat c" style="${mp(958, 642, 1168, 672)}">연금 결정 <b>${nf(alch)}</b></div>
-    <button class="ubtn" style="${mp(733, 688, 862, 735)}" data-close="1">닫기</button>
-    <button class="ubtn" style="${mp(1203, 688, 1333, 735)}" data-gear="1">장비 창</button>`;
+    <button class="ubtn bred" style="${mp(733, 688, 862, 735)}" data-close="1">닫기</button>
+    <button class="ubtn bblu" style="${mp(1203, 688, 1333, 735)}" data-gear="1">장비 창</button>`;
 }
 function disWin() {
   const s = G.save, alch = s.mats.alch || 0, list = s.items.filter(x => x.type !== 'soul').slice().sort((a, b) => (a.grade - b.grade) || (a.ilvl - b.ilvl));
@@ -14005,10 +14014,10 @@ function disWin() {
     <div class="stext" style="${mp(84, 503, 631, 606)}"><div>장비를 녹여 <b class="gold">연금 결정</b>을 얻는다</div><div class="smsg">일반 1 · 레어 3 · 유니크 8 · 레전드 20, 아이템 레벨 4마다 +1. 장착한 장비와 영혼은 분해되지 않는다</div>${G.ui.disMsg ? `<div class="gold">${G.ui.disMsg}</div>` : ''}</div>
     <button class="sgo" style="${mp(150, 632, 556, 718)}" data-dislow="1" ${low ? '' : 'disabled'}>${ttl('일반·레어 분해', 'DISMANTLE ' + low)}</button>
     <div class="ulist" data-keep-scroll="dis" style="${mp(736, 130, 1336, 618)}">${rows}</div>
-    <div class="ubar flat" style="${mp(744, 642, 936, 672)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b></div>
+    <i class="artfix" style="${mp(1249, 621, 1263, 628)};background:#13151b"></i><i class="artfix" style="${mp(1242, 634, 1270, 640)};background:#121016"></i><div class="ubar flat c" style="${mp(744, 642, 936, 672)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b></div>
     <div class="ubar flat c" style="${mp(958, 642, 1168, 672)}">연금 결정 <b>${nf(alch)}</b></div>
-    <button class="ubtn" style="${mp(733, 688, 862, 735)}" data-close="1">닫기</button>
-    <button class="ubtn" style="${mp(1203, 688, 1333, 735)}" data-gear="1">장비 창</button>`;
+    <button class="ubtn bred" style="${mp(733, 688, 862, 735)}" data-close="1">닫기</button>
+    <button class="ubtn bblu" style="${mp(1203, 688, 1333, 735)}" data-gear="1">장비 창</button>`;
 }
 /* the bag's item detail: a dismantle button too; the stats line notes crit overflow */
 const _invDetail9 = invDetail;
@@ -15741,9 +15750,9 @@ uwTip = function (code) {
 document.head.insertAdjacentHTML('beforeend', `<style>
 #uiwin .ubtn.auto{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;line-height:1.1;background:linear-gradient(180deg,#5a5f6a,#3a3d46 46%,#2c2f36);border:calc(var(--m)*3) solid #1a1412;
   box-shadow:inset calc(var(--m)*2) calc(var(--m)*2) 0 #6e7480,inset calc(var(--m)*-2) calc(var(--m)*-2) 0 #23252b;border-radius:calc(var(--m)*4);color:#ffe9a0}
-#uiwin .ubtn.auto .tko{font-size:calc(var(--m)*19)}#uiwin .ubtn.auto .ten{color:#cfe6a8;font-size:calc(var(--m)*14)}
+#uiwin .ubtn.auto .tko{font-size:calc(var(--mf)*19)}#uiwin .ubtn.auto .ten{color:#cfe6a8;font-size:calc(var(--mf)*14)}
 #uiwin .ubtn.auto:disabled{filter:grayscale(.6) brightness(.75)}#uiwin .ubtn.auto:not(:disabled):hover{filter:brightness(1.15);color:#fff3c0}
-#uiwin .stext .cp{font-size:calc(var(--m)*17)}
+#uiwin .stext .cp{font-size:calc(var(--mf)*17)}
 </style>`);
 
 /* P8 + P9 (player side): every melee hit covers what its effect draws. The boxes are the measured effect (fxmeasure.js:
@@ -17740,9 +17749,12 @@ function wmState(n) { if (G.map && G.map.ch === n) return 'here'; if (wmCleared(
 #wmHead .cur{margin-left:auto;text-align:right;font-size:max(9px,calc(var(--u)*12))}#wmHead .cur em{font-style:normal;background:#d6b25e;color:#1a1408;font-weight:700;padding:1px 6px;margin-right:6px;font-size:.85em}
 #wmHead .ticks{display:flex;gap:2px;justify-content:flex-end;margin-top:4px;align-items:center}#wmHead .ticks i{width:calc(var(--u)*7);height:calc(var(--u)*6);background:#4c4754}#wmHead .ticks i.c{background:#d6b25e}#wmHead .ticks i.h{background:#f2da92;box-shadow:0 0 4px #f2da92}
 #wmHead .ticks span{margin-left:8px;color:#9a8f7a;font-size:max(8px,calc(var(--u)*10))}
-.wmx{border:1px solid #806327;background:rgba(30,24,14,.9);color:#e8dfc8;font:600 max(9px,calc(var(--u)*11))/1.2 var(--font-ui);padding:calc(var(--u)*5) calc(var(--u)*10);cursor:pointer}
+.wmx{white-space:nowrap;border:1px solid #806327;background:rgba(30,24,14,.9);color:#e8dfc8;font:600 max(9px,calc(var(--u)*11))/1.2 var(--font-ui);padding:calc(var(--u)*5) calc(var(--u)*10);cursor:pointer}
 .wmx:hover{border-color:#d6b25e;color:#f2da92}
-#wmLegend{position:absolute;left:30%;bottom:2.6%;display:flex;gap:calc(var(--u)*16);align-items:center;padding:calc(var(--u)*6) calc(var(--u)*14);background:rgba(13,11,20,.82);border:1px solid #4c4754;font-size:max(8px,calc(var(--u)*10));color:#bcc4d2;pointer-events:none}
+@container (max-width: 760px){#wmLegend .wlh{display:none}}
+#wmHead{white-space:nowrap;overflow:hidden}#wmHead .ttl{flex:0 1 auto;min-width:0;overflow:hidden}#wmHead .ttl small{display:block;overflow:hidden;text-overflow:ellipsis}
+#wmHead .cur{flex:1 1 auto;min-width:0;overflow:hidden}#wmHead .cur>div:first-child{overflow:hidden;text-overflow:ellipsis}#wmHead .wmx{flex:0 0 auto}
+#wmLegend{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;bottom:2.6%;display:flex;gap:calc(var(--u)*16);align-items:center;padding:calc(var(--u)*6) calc(var(--u)*14);background:rgba(13,11,20,.82);border:1px solid #4c4754;font-size:max(8px,calc(var(--u)*10));color:#bcc4d2;pointer-events:none}
 #wmLegend i{display:inline-block;width:calc(var(--u)*11);height:calc(var(--u)*11);border-radius:50%;background:#2a2016;border:2px solid #d6b25e;vertical-align:middle;margin-right:5px}#wmLegend i.o{background:#141a2a;border-color:#bcc4d2}#wmLegend i.l{background:#0c0b10;border-color:#4c4754}
 #wmPop{position:absolute;z-index:3;display:none;flex-direction:column;gap:calc(var(--u)*5);padding:calc(var(--u)*6);background:rgba(13,11,20,.94);border:1px solid #806327;box-shadow:0 4px 14px rgba(0,0,0,.55);transform-origin:left center;animation:wmPopIn .12s ease-out}
 #wmPop.on{display:flex}#wmPop .wmx{white-space:nowrap;min-width:calc(var(--u)*92);text-align:center}#wmPop .wmx[disabled]{opacity:.4;cursor:default}
@@ -17781,7 +17793,7 @@ function wmState(n) { if (G.map && G.map.ch === n) return 'here'; if (wmCleared(
     <div class="cur"><div><em>현재 위치</em><span id="wmCur"></span></div><div class="ticks" id="wmTicks"></div></div>
     <button class="wmx" id="wmPg0" type="button" data-pg="0">1–20</button><button class="wmx" id="wmPg1" type="button" data-pg="1">21–30</button>
     <button class="wmx" id="wmClose" type="button">Esc · 닫기</button></div>
-  <div id="wmLegend"><span><i></i>클리어</span><span><i class="o"></i>열림</span><span><i class="l"></i>잠김</span><span style="color:#f2da92">◎ 현재 위치</span><span style="color:#9a8f7a">올리면 이동 버튼 · 누르면 야영지로</span></div>
+  <div id="wmLegend"><span><i></i>클리어</span><span><i class="o"></i>열림</span><span><i class="l"></i>잠김</span><span style="color:#f2da92">◎ 현재 위치</span><span class="wlh" style="color:#9a8f7a">올리면 이동 버튼 · 누르면 야영지로</span></div>
   <div id="wmPop"><button class="wmx" type="button" data-go="camp">야영지로 가기</button><button class="wmx" type="button" data-go="boss">보스로 가기</button></div>
   <div id="wmDetail"></div>`;
   const game = $('#game'); game.appendChild(el);
@@ -17919,7 +17931,7 @@ function wmDraw() {
   };
   // act badges (fixed spots on empty ground); page 0: the tower's badge turns the page; page 1: the tower's badge and the way back
   const rects = [];
-  c.font = `600 ${Math.max(9, M.h * 0.019)}px 'Noto Sans KR',sans-serif`;
+  c.font = `600 ${Math.max(6, M.h * 0.019)}px 'Noto Sans KR',sans-serif`;
   const A3 = WM_ACTS.find(A => A.a > CH_COUNT);
   const badges = PG ? [Object.assign({}, A3, { x: 0.012, y: 0.02 }), { name: '◀ 1막 · 2막 지도', a: 1, b: CH_COUNT, col: '214,178,94', x: 0.012, y: 0.115, go: 0 }]
     : WM_ACTS.map(A => A === A3 ? Object.assign({}, A, { name: A.name + '  ▶', go: 1 }) : A);
@@ -17927,7 +17939,7 @@ function wmDraw() {
   for (const A of badges) {
     const cl = [...Array(A.b - A.a + 1)].map((_, k) => A.a + k), all = cl.every(wmCleared), any = cl.some(n => st[n] !== 'lock');
     const s2 = `CH.${String(A.a).padStart(2, '0')} – ${String(A.b).padStart(2, '0')} · ${all ? '클리어' : any ? '진행 중' : '잠김'}${A.go != null ? ' · ' + (A.go ? 'E' : 'Q') : ''}`;
-    const fs = Math.max(9, M.h * 0.019), x = M.x + A.x * M.w, y = M.y + A.y * M.h, wd = Math.max(c.measureText(A.name).width, c.measureText(s2).width * 0.8) + 22, hd = fs * 2.6;
+    const fs = Math.max(6, M.h * 0.019), x = M.x + A.x * M.w, y = M.y + A.y * M.h, wd = Math.max(c.measureText(A.name).width, c.measureText(s2).width * 0.8) + 22, hd = fs * 2.6;
     c.fillStyle = 'rgba(20,14,10,.78)'; c.fillRect(x, y, wd, hd); c.fillStyle = `rgb(${A.col})`; c.fillRect(x, y, 3, hd); c.strokeStyle = A.go != null ? 'rgba(214,178,94,.75)' : 'rgba(214,178,94,.35)'; c.strokeRect(x + .5, y + .5, wd - 1, hd - 1);
     c.fillStyle = '#e8dfc8'; c.textAlign = 'left'; c.textBaseline = 'top'; c.font = `600 ${fs}px 'Noto Sans KR',sans-serif`; c.fillText(A.name, x + 10, y + fs * 0.3);
     c.fillStyle = `rgb(${A.col})`; c.font = `${fs * 0.8}px 'Noto Sans KR',sans-serif`; c.fillText(s2, x + 10, y + fs * 1.5);
@@ -17938,6 +17950,13 @@ function wmDraw() {
   if (PG) {
     // ---- the tower: every floor of the picture is a button, its name in the middle ----
     const F = WM_ACT3_FLOORS, IW = 1672, IH = 941;
+    /* one size for all ten name plates (user: no ragged edges): the same font, width and height on every floor, centred on the
+       tower. Width = the longest name + the longest status ('◎ 현재 위치'), so a plate never changes size when a floor is cleared;
+       the font is the largest that fits the narrowest room (floor 21 is the shortest band) on one line. */
+    const lab = n => `CH.${n} · ${CHAPTERS[n] ? CHAPTERS[n].title : ''}`, bandW = (F.x1 - F.x0) * M.w;
+    let wA = 0, minH = 1e9; for (let n = N0; n <= N1; n++) { c.font = `700 10px 'Noto Sans KR',sans-serif`; wA = Math.max(wA, c.measureText(lab(n)).width); minH = Math.min(minH, (F.y[n][1] - F.y[n][0]) * M.h); }
+    c.font = `600 8.2px 'Noto Sans KR',sans-serif`; const wB = c.measureText('◎ 현재 위치').width + 9;   // at a 10 px font: status width + gap
+    const w10 = wA + wB + 14, FS = Math.max(4, Math.min(17, minH * 0.5, 10 * (bandW * 0.92) / w10)), PW = w10 * FS / 10, PH = FS * 1.75;
     for (let n = N0; n <= N1; n++) {
       const [y0, y1] = F.y[n], s = st[n], k = scl(n), hov = WM.hov === n;
       const B = { x: M.x + F.x0 * M.w, y: M.y + y0 * M.h, w: (F.x1 - F.x0) * M.w, h: (y1 - y0) * M.h };
@@ -17946,22 +17965,20 @@ function wmDraw() {
       if (s === 'lock') { c.fillStyle = 'rgba(6,5,12,.55)'; c.fillRect(dx, dy, dw, dh); }
       if (hov || s === 'here') { c.save(); c.strokeStyle = hov ? '#f2da92' : 'rgba(242,218,146,.75)'; c.lineWidth = hov ? 2 : 1.5; if (!hov) c.setLineDash([6, 4]); c.strokeRect(dx + 1, dy + 1, dw - 2, dh - 2); c.restore(); }
       // the name plate
-      const C = CHAPTERS[n], fs = clamp(B.h * 0.24, 9, 17) * k, l1 = `CH.${n} · ${C ? C.title : ''}`;
-      const tag = s === 'clear' ? '✓ 클리어' : s === 'here' ? '◎ 현재 위치' : s === 'lock' ? '잠김' : '';
-      c.font = `700 ${fs}px 'Noto Sans KR',sans-serif`; const tw1 = c.measureText(l1).width;
-      c.font = `600 ${fs * 0.78}px 'Noto Sans KR',sans-serif`; const tw2 = tag ? c.measureText(tag).width : 0;
-      const pw = Math.max(tw1, tw2) + fs * 1.6, ph = tag ? fs * 2.55 : fs * 1.6, px = B.x + B.w / 2 - pw / 2, py = B.y + B.h / 2 - ph / 2;
+      // one line, never wrapped or cut: title on the left, status on the right edge, same plate on every floor
+      const l1 = lab(n), tag = s === 'clear' ? '✓ 클리어' : s === 'here' ? '◎ 현재 위치' : s === 'lock' ? '잠김' : '';
+      const fs = FS * k, pw = PW * k, ph = PH * k, px = B.x + B.w / 2 - pw / 2, py = B.y + B.h / 2 - ph / 2;
       c.fillStyle = hov ? 'rgba(26,18,8,.86)' : 'rgba(12,9,14,.72)'; c.fillRect(px, py, pw, ph);
       c.fillStyle = s === 'here' ? '#d6b25e' : `rgb(${(wmAct(n) || A3).col})`; c.fillRect(px, py, 3, ph);
       c.strokeStyle = hov ? 'rgba(242,218,146,.8)' : 'rgba(214,178,94,.35)'; c.lineWidth = 1; c.strokeRect(px + .5, py + .5, pw - 1, ph - 1);
-      c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillStyle = s === 'lock' ? '#8a8292' : '#f2e6c8'; c.font = `700 ${fs}px 'Noto Sans KR',sans-serif`; c.fillText(l1, B.x + B.w / 2, py + (tag ? fs * 0.85 : ph / 2));
-      if (tag) { c.fillStyle = s === 'clear' ? '#d6b25e' : s === 'here' ? '#f2da92' : '#8a8292'; c.font = `600 ${fs * 0.78}px 'Noto Sans KR',sans-serif`; c.fillText(tag, B.x + B.w / 2, py + fs * 1.85); }
+      c.textAlign = 'left'; c.textBaseline = 'middle'; const tx = px + fs * 0.7, ty = py + ph / 2 + 0.5;
+      c.fillStyle = s === 'lock' ? '#8a8292' : '#f2e6c8'; c.font = `700 ${fs}px 'Noto Sans KR',sans-serif`; c.fillText(l1, tx, ty);
+      if (tag) { c.fillStyle = s === 'clear' ? '#d6b25e' : s === 'here' ? '#f2da92' : '#8a8292'; c.font = `600 ${fs * 0.82}px 'Noto Sans KR',sans-serif`; c.textAlign = 'right'; c.fillText(tag, px + pw - fs * 0.7, ty); }
       WM.hit.push({ n, rect: B, ax: B.x + B.w, ay: B.y + B.h / 2, bx: B.x });
     }
   } else {
     // ---- chapters 1-20: circles (1.5x the old size), names beside them ----
-    const P = WM_XY.slice(0, CH_COUNT).map(([x, y]) => ({ x: M.x + x * M.w, y: M.y + y * M.h })), R = Math.max(9, M.h * 0.016) * 1.5, at = n => P[n - N0];
+    const P = WM_XY.slice(0, CH_COUNT).map(([x, y]) => ({ x: M.x + x * M.w, y: M.y + y * M.h })), R = Math.max(6, M.h * 0.024), at = n => P[n - N0];
     for (let n = N0; n <= N1; n++) rects.push({ x: at(n).x - R - 2, y: at(n).y - R - 2, w: 2 * R + 4, h: 2 * R + 4 });
     for (let n = N0; n <= N1; n++) {
       const p = at(n), s = st[n], A = wmAct(n), k = scl(n), Rk = R * k, hov = WM.hov === n;
@@ -17979,9 +17996,9 @@ function wmDraw() {
       c.fillText(String(n).padStart(2, '0'), p.x, p.y + 1);
       if (s === 'clear') { c.fillStyle = '#d6b25e'; c.beginPath(); c.arc(p.x + Rk * 0.75, p.y + Rk * 0.75, Rk * 0.36, 0, 6.283); c.fill(); c.strokeStyle = '#1a1408'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(p.x + Rk * 0.58, p.y + Rk * 0.76); c.lineTo(p.x + Rk * 0.72, p.y + Rk * 0.9); c.lineTo(p.x + Rk * 0.95, p.y + Rk * 0.6); c.stroke(); }
       if (s === 'lock') { const lx = p.x + Rk * 0.7, ly = p.y - Rk * 0.8; c.fillStyle = '#9a8f7a'; c.fillRect(lx - Rk * 0.26, ly, Rk * 0.52, Rk * 0.4); c.strokeStyle = '#9a8f7a'; c.lineWidth = 1.4; c.beginPath(); c.arc(lx, ly, Rk * 0.18, Math.PI, 0); c.stroke(); }
-      WM.hit.push({ n, x: p.x, y: p.y, r: R * grow, ax: p.x + R * grow, ay: p.y, bx: p.x - R * grow });
+      WM.hit.push({ n, x: p.x, y: p.y, r: Math.max(R * grow, 12), ax: p.x + R * grow, ay: p.y, bx: p.x - R * grow });
       // the label: below, above, left, right; the first spot that touches nothing
-      const C = CHAPTERS[n], fs = Math.max(8, M.h * 0.0165), l1 = small ? '' : `CH.${String(n).padStart(2, '0')}`, l2 = C ? C.title : '';
+      const C = CHAPTERS[n], fs = Math.max(6, M.h * 0.0165), l1 = small ? '' : `CH.${String(n).padStart(2, '0')}`, l2 = C ? C.title : '';
       c.font = `600 ${fs}px 'Noto Sans KR',sans-serif`; const lw = Math.max(c.measureText(l2).width, l1 ? c.measureText(l1).width * 0.8 : 0) + 14, lh = l1 ? fs * 2.35 : fs * 1.5;
       const cand = [[p.x - lw / 2, p.y + R + 5], [p.x - lw / 2, p.y - R - 5 - lh], [p.x - R - 6 - lw, p.y - lh / 2], [p.x + R + 6, p.y - lh / 2], [p.x - lw / 2, p.y + R + 5 + lh * 0.9]];
       const ok = ([x, y]) => x >= M.x + M.w * 0.015 && y >= M.y + M.h * 0.12 && x + lw <= M.x + M.w * 0.975 && y + lh <= M.y + M.h * 0.97 && !rects.some(q => x < q.x + q.w && x + lw > q.x && y < q.y + q.h && y + lh > q.y);
@@ -19944,11 +19961,11 @@ invWin = function () {
 const _uwClickF = uwClick;
 uwClick = function (t, right) { if (t.dataset.statd) { G.ui.statDetail = !G.ui.statDetail; sfx('click'); uiRefresh(); return; } return _uwClickF(t, right); };
 document.head.insertAdjacentHTML('beforeend', `<style>
-#uiwin .ustatb{position:absolute;background:rgba(30,32,42,.92);border:calc(var(--m)*3) solid #4a4c5a;color:#e8e2d0;font-size:max(8px,calc(var(--m)*14));font-family:inherit;cursor:pointer;z-index:2}
+#uiwin .ustatb{position:absolute;background:rgba(30,32,42,.92);border:calc(var(--m)*3) solid #4a4c5a;color:#e8e2d0;font-size:calc(var(--mf)*14);font-family:inherit;cursor:pointer;z-index:2}
 #uiwin .ustatb:hover,#uiwin .ustatb.on{border-color:#e8b048;color:#ffe9a0}
-#uiwin .ustatd{position:absolute;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:calc(var(--m)*3) calc(var(--m)*8);padding:calc(var(--m)*8);background:rgba(14,15,22,.88);border:calc(var(--m)*3) solid #3a3c4a;font-size:max(7px,calc(var(--m)*13));color:#b8b0a0;box-sizing:border-box;z-index:1}
+#uiwin .ustatd{position:absolute;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:calc(var(--m)*3) calc(var(--m)*8);padding:calc(var(--m)*8);background:rgba(14,15,22,.88);border:calc(var(--m)*3) solid #3a3c4a;font-size:calc(var(--mf)*13);color:#b8b0a0;box-sizing:border-box;z-index:1}
 #uiwin .ustatd span{display:flex;flex-direction:column;justify-content:center;border-bottom:calc(var(--m)*2) solid #262833;white-space:nowrap;overflow:hidden}
-#uiwin .ustatd b{color:#fff;font-weight:400;font-size:max(8px,calc(var(--m)*16))}
+#uiwin .ustatd b{color:#fff;font-weight:400;font-size:calc(var(--mf)*16)}
 </style>`);
 
 /* ============ AUDIO: synthesized sound effects + generated background music ============
