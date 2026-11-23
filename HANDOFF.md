@@ -69,6 +69,16 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-1345  주인공 48f 걷기 보정: 도적 좌우 뒤집힘 · 몸통 흔들림 · 다리 속도   (대상: test/index.html, 정식 미배포)
+증상: 걸을 때 도적이 좌우를 번갈아 봄, 네 직업 모두 걷는 모양이 어색함. 원인과 고친 것 (48f 블록, hero48Load 아래):
+- 도적 시트 이동 15-21 은 그림이 왼쪽을 봄 → `HERO48_MIRROR = { lykos: [15..21] }`, 새 `hero48Fix(ch, im)` 가 시트를 캔버스에 옮기며 그 칸만 좌우 반전.
+  프레임 번호는 그대로라 다른 사람 화면(netF)도 같게 보임. **원본 PC에서 시트 그림 자체를 고쳐도 됨** (그러면 MIRROR 비우기)
+- 대기·이동 0-21 의 몸통이 셀 안에서 프레임마다 다른 자리 → hero48Fix 가 셀 y 120-230 줄마다 가장 긴 불투명 구간의 가운데를 재서
+  중앙값을 그 프레임 ax 로 (공격·사망 22-47 은 160 그대로). 캔버스 실패 시 원래 그림·축 160
+- hero48Load: fr 의 img/ax 를 hero48Fix 결과로
+- HERO48_ANIM runK 2.5(초당 30장, 다리가 미끄러질 만큼 빠름) → 보폭 실측으로 theron 1.7 · kallisto 1.55 · lykos 1.45 · mage 1.6 (초당 18~21장)
+- HERO48_ANIM 에 `bob: 0`, heroPose(40_render 첫 정의) 걷기 줄: `A.bob === 0` 이면 sy=sx=1 (48f 는 그림에 들썩임이 있어 프레임마다 찌그러뜨리던 것 끔)
+
 ### 261123-1335  정식 배포 (test → 루트: 1321·1335 내용 — 3막 의뢰, 48프레임, 멀티 QA, 거래)
 - 루트 index.html = test/index.html 에서 noindex · DEV_TOOLS 두 줄만 뺀 것, 루트 assets/ = test/assets/ (boss 48f 30장, heroes 48f 4장, ui 6개)
 - Firebase 규칙: 사용자가 trade/tradereq (+dev_, local_) 게시함 (2026-11-23)
