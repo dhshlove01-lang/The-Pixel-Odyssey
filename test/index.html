@@ -620,10 +620,10 @@ button{font-family:inherit;color:inherit}
 </main>
 
 <style>@font-face{font-family:'Galmuri';font-weight:400;src:url(assets/fonts/Galmuri11.woff2) format('woff2');font-display:swap}@font-face{font-family:'Galmuri';font-weight:700;src:url(assets/fonts/Galmuri11-Bold.woff2) format('woff2');font-display:swap}</style>
-<script src="assets/js/pfx.js?v=261123-1419"></script>
+<script src="assets/js/pfx.js?v=261123-1425"></script>
 <script src="assets/js/act3_data.js?v=261123-1335"></script>
 <script>
-const GAME_VER = '261123-1419';
+const GAME_VER = '261123-1425';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -6056,7 +6056,7 @@ function tickAct(dt) {
       slashFx(a.n);
     } else if (a.id === 'x' && !a.done && a.t >= a.hitAt) {
       a.done = 1;
-      const mult = 2.3 * (k1 >= 1 ? 1.25 : 1) * tDmg('th1'), burn = k1 >= 2 ? { t: 3, dps: S.atk * 0.12 } : null;
+      const mult = 1.6 * (k1 >= 1 ? 1.25 : 1) * tDmg('th1'), burn = k1 >= 2 ? { t: 3, dps: S.atk * 0.12 } : null;
       meleeHit({ x: p.face > 0 ? p.x - 8 : p.x - 72, y: p.y - p.h - 84, w: 80, h: p.h + 122 }, mult, { kb: p.face * 60, burn });
       if (k1 >= 3) for (const ang of tAwake('th1') ? [-0.22, 0, 0.22] : [0])
         { proj({ x: p.x + p.face * 22, y: p.y - 26, vx: Math.cos(ang) * p.face * 400, vy: Math.sin(ang) * 400, w: 40, h: 34, mult: 1.3 * tDmg('th1'), pierce: true, kind: 'fire', life: 1, maxDist: 360, burn: { t: 3, dps: S.atk * 0.12 } }); pfxOn(G.projs[G.projs.length - 1], 'projectiles/plasma-shot', { palette: PAL.theron }); }
@@ -16555,7 +16555,7 @@ const _h48 = (a, n) => Array.from({ length: n }, (_, i) => a + i);
 const HERO48_ANIM = {
   theron: { idle: _h48(0, 8), run: _h48(8, 14), runK: 1.7, bob: 0, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
     z: [{ w: 24, s: 28, f: 33 }, { w: 25, s: 29, f: 34 }, { w: 26, s: 30, f: 35 }],
-    x: { w: 23, s: 29, f: 34 },                                 // 상향 일섬
+    x: { w: 23, s: 25, f: 26 },                                 // 상향 일섬 (1418b: 칼을 올려 드는 25·26, 전엔 내려치는 29·34)
     c: { spin: [28, 33] },                                      // 회전 검풍
     sk_a: { w: 24, s: 29, f: 35 }, sk_s: { w: 22, s: 28, f: 31 }, sk_d: { rise: 23, drop: 30, s: 34 } },
   kallisto: { idle: _h48(0, 8), run: _h48(8, 14), runK: 1.55, bob: 0, air: 13, fall: 17, land: 0, hurt: 24, guard: 26, dead: _h48(38, 10), deadMs: 0.18,
@@ -16667,7 +16667,7 @@ classSelectHtml = function () { return _classSelectHtmlR().replace(sp(62, 496, 2
 const REM_SK = {
   theron: {
     zOld: { file: 'vfx/vfx_warrior_slash.png', cell: [426, 380], w: 61, h: 54, align: 'center', lift: 20, off: 26, ms: [50, 60, 70, 80], hf: 2 },
-    x: { file: 'vfx/vfx_warrior_upper.png', cell: [453, 589], w: 120, h: 156, align: 'bottom', foot: 1, lift: 0, off: 112, ms: [60, 70, 90, 110], hf: 2 },   // foot: in the air it rises from the hero's feet, not the floor (user)
+    x: { file: 'vfx/vfx_warrior_upper.png', cell: [453, 589], w: 80, h: 104, align: 'bottom', foot: 1, lift: 0, off: 64, tip: [64, -66], piv: [0.25, 0.95], rot: 0.44, ms: [60, 70, 90, 110], hf: 2 },   // foot: in the air it rises from the hero's feet, not the floor (user)
     cOld: { file: 'vfx/vfx_warrior_whirlwind.png', cell: [407, 613], w: 72, h: 108, align: 'bottom', lift: 0, off: 0, ms: [55, 55, 90, 120], hf: 1 },
     a: { file: 'vfx/vfx_warrior_dash_cleave.png', cell: [655, 188], w: 132, h: 38, align: 'center', lift: 24, off: 34, nofx: 1, ms: [50, 45, 90, 110], hf: 2 },
     s: { file: 'vfx/vfx_warrior_earth_breaker.png', cell: [443, 474], w: 99, h: 106, align: 'bottom', lift: 0, off: 62, ms: [60, 70, 110, 150], hf: 2 },   // 2026-11-21 user: the rocks bigger (x1.4) and further ahead (spec 71x76 at 28); hit box = drawn box
@@ -16695,6 +16695,7 @@ const remGround = p => p.onGround ? p.y : Math.min(GROUND, groundBelow(p.x, p.y 
 /* the box at the hero now (k: trait growth of the area, both sides kept in proportion) */
 function remBox(p, sk, k) {
   const w = Math.round(sk.w * (k || 1)), h = Math.round(sk.h * (k || 1)), f = p.face || 1;
+  if (sk.tip) { const fx = f > 0 ? sk.piv[0] : 1 - sk.piv[0]; return { x: Math.round(p.x + f * sk.tip[0] - w * fx), y: Math.round(p.y + sk.tip[1] - h * sk.piv[1]), w, h }; }   // 1418b: the strip's piv point on the sword tip
   const bottom = sk.align === 'bottom' ? (sk.foot ? p.y : remGround(p)) : p.y - sk.lift;
   return { x: Math.round(p.x + f * sk.off - w / 2), y: Math.round(bottom - h), w, h };
 }
@@ -16717,6 +16718,7 @@ function remDrawBox(c, sk, frame, box, face, alpha) {
   const im = remImg(sk.file); if (!im.complete || !im.naturalWidth) return;
   const cw = Math.floor(im.naturalWidth / 4), chh = im.naturalHeight;
   c.save(); c.imageSmoothingEnabled = false; c.globalCompositeOperation = 'lighter'; if (alpha != null) c.globalAlpha *= alpha;
+  if (sk.rot) { const px = box.x + box.w * (face < 0 ? 1 - sk.piv[0] : sk.piv[0]), py = box.y + box.h * sk.piv[1]; c.translate(px, py); c.rotate(face < 0 ? -sk.rot : sk.rot); c.translate(-px, -py); }   // 1418b: turned to the blade's angle
   if (face < 0) { c.translate(Math.round(box.x + box.w), Math.round(box.y)); c.scale(-1, 1); c.drawImage(im, frame * cw, 0, cw, chh, 0, 0, box.w, box.h); }
   else c.drawImage(im, frame * cw, 0, cw, chh, Math.round(box.x), Math.round(box.y), box.w, box.h);
   c.restore();
@@ -16738,11 +16740,11 @@ const REM_TICK = {
   theron(p, a) {
     const k1 = traitRank('th1'), k2 = traitRank('th2'), S = G.stats;
     if (a.id === 'x') {   // 베기 (Z) and 회전참 (C) went back to the old code (user, 2026-11-20): see tickAct below
-      if (!a.vfx) { a.vfx = 1; remFx(remSk('x'), { follow: p, hitAt: 0, delay: 0.09 }); }   // 1352b: from the first frame, as the drawn sword trail (frames 28-30) shows, past its tip
+      if (!a.vfx) { a.vfx = 1; }   // 1418d: the flame is drawn along the blade itself (thBladeFx), not as a box at the tip
       if (!a.done && a.t >= a.hitAt) {
         a.done = 1;
-        const mult = 2.3 * (k1 >= 1 ? 1.25 : 1) * tDmg('th1'), burn = k1 >= 2 ? { t: 3, dps: S.atk * 0.12 } : null;
-        remHit(remReach(p, remBox(p, remSk('x'))), mult, { kb: p.face * 60, burn }); G.hitstop = Math.max(G.hitstop, 0.06); shake(3);
+        const mult = 1.6 * (k1 >= 1 ? 1.25 : 1) * tDmg('th1'), burn = k1 >= 2 ? { t: 3, dps: S.atk * 0.12 } : null;
+        { const r = remReach(p, remBox(p, remSk('x'))); r.h = p.y + 4 - r.y; remHit(r, mult, { kb: p.face * 60, burn }); }   // 1418b: from the flame's top down to the floor G.hitstop = Math.max(G.hitstop, 0.06); shake(3);
         if (k1 >= 3) for (const ang of tAwake('th1') ? [-0.22, 0, 0.22] : [0])
           { proj({ x: p.x + p.face * 66, y: p.y - 26, vx: Math.cos(ang) * p.face * 400, vy: Math.sin(ang) * 400, w: 40, h: 34, mult: 1.3 * tDmg('th1'), pierce: true, kind: 'fire', life: 1, maxDist: 360, burn: { t: 3, dps: S.atk * 0.12 } }); pfxOn(G.projs[G.projs.length - 1], 'projectiles/plasma-shot', { palette: PAL.theron }); }
       }
@@ -21413,37 +21415,64 @@ renderWorld = function () {
 
 /* ============ 2026-11-23: 궁수 V 화살 폭풍이 맵 전체를 맞힌다 ============
    ULT12.kallisto 의 화살 폭풍 6번(0.40~0.75초, 공격력 90%씩)에 all: true → ult12Box 가 맵 전체 상자를 돌려준다 (위아래 층 포함, 화면 밖도).
-   마지막 유성 4번(-60~60칸)은 그대로. 화살비 그림(12장 중 4~7번)을 원래 크기 그대로 400px 간격으로 화면 전체에 이어 그린다 (1415b, 사용자: 선 화살은 어색). */
+   마지막 유성 4번(-60~60칸)은 그대로. 화살비 장면(12장 중 4~7번)은 그림 한 장을 비율 그대로 키워 화면 전체를 덮는다 (1418c, 사용자). */
 ULT12.kallisto.waves.forEach(w => { if (w.at >= 0.39 && w.at <= 0.76) w.all = true; });
 const _ult12BoxKa = ult12Box;
 ult12Box = function (w, p, face) { return w.all ? { x: -1e5, y: -1e5, w: 2e5, h: 2e5 } : _ult12BoxKa(w, p, face); };
-/* 1415b: the strip's own arrow rain (frames 4-7) laid side by side across the whole screen at its own size (not stretched), on the hero's floor line */
-ULT12.kallisto.rainF = [4, 5, 6, 7]; ULT12.kallisto.rainStep = 260;
+/* 1418c: the strip's arrow rain (frames 4-7): ONE picture, its drawn part (cell x 56-552) scaled evenly (width and height together, not stretched)
+   to span the whole screen, on the hero's floor line. The middle original is not drawn on those frames, so nothing doubles or shows a seam (user). */
+ULT12.kallisto.rainF = [4, 5, 6, 7]; ULT12.kallisto.rainSrc = [56, 552];
 const _ult9DrawKa = ult9Draw;
 ult9Draw = function (c, over) {
-  _ult9DrawKa(c, over);
-  const u = G.ult; if (over || !u || u.phase !== 'act' || u.ch !== 'kallisto') return;
-  const C = ULT12.kallisto, im = ULT12_IMG; if (!im || !im.complete || !im.naturalWidth) return;
-  const ms = C.ms, t0 = ms.slice(0, C.rainF[0]).reduce((a, b) => a + b, 0), t1 = t0 + C.rainF.reduce((a, f) => a + ms[f], 0);
-  if (u.t * 1000 < t0 || u.t * 1000 > t1 + 160) return;
-  const p = G.player, cw = Math.floor(im.naturalWidth / 12), chh = im.naturalHeight, sc = C.scale;
-  const gy = p.onGround ? p.y : groundBelow(p.x, p.y), ax0 = Math.round(p.x + u.face * C.fwd), S = C.rainStep;
-  const hr = (k, n) => { const v = Math.sin(k * 12.9898 + n * 78.233) * 43758.5453; return v - Math.floor(v); };   // fixed per tile: no flicker
-  const L = G.cam.x - 300, R = G.cam.x + W + 300, D0 = 56, D1 = 552;   // the drawn part of a rain frame (cell x)
+  const u = G.ult, C = ULT12.kallisto, im = ULT12_IMG;
+  const rain = !over && u && u.phase === 'act' && u.ch === 'kallisto' && C.rainF.includes(u.fi) && im && im.complete && im.naturalWidth;
+  if (!rain) return _ult9DrawKa(c, over);
+  const p = G.player, cw = Math.floor(im.naturalWidth / 12), chh = im.naturalHeight, sw = C.rainSrc[1] - C.rainSrc[0];
+  const dw = W + 80, s = dw / sw, dh = Math.round(chh * s), gy = p.onGround ? p.y : groundBelow(p.x, p.y), dy = Math.round(gy - (chh - ULT12_GROUND) * s);
   c.save(); c.imageSmoothingEnabled = false; c.globalCompositeOperation = 'lighter';
-  for (let k = Math.floor((L - ax0) / S) - 1; k <= Math.ceil((R - ax0) / S) + 1; k++) {
-    if (k === 0) continue;   // the middle one is the original
-    const lt = u.t * 1000 - hr(k, 1) * 120; if (lt < t0) continue;   // each tile starts a little later than the last
-    let f = C.rainF[C.rainF.length - 1], acc = t0; for (const fr of C.rainF) { acc += ms[fr]; if (lt < acc) { f = fr; break; } }
-    const fade = lt > t1 ? Math.max(0, 1 - (lt - t1) / 160) : 1; if (fade <= 0) continue;
-    const s = sc * (0.8 + hr(k, 2) * 0.28), sw = Math.round((D1 - D0) * (0.5 + hr(k, 3) * 0.3)), sx = D0 + Math.round(hr(k, 4) * (D1 - D0 - sw));   // a different slice of the rain, a different size
-    const ax = ax0 + k * S + (hr(k, 5) - 0.5) * 140, dw = Math.round(sw * s), dh = Math.round(chh * s), dy = Math.round(gy - (chh - ULT12_GROUND) * s);
-    if (ax + dw / 2 < L || ax - dw / 2 > R) continue;
-    c.save(); c.globalAlpha = fade * (0.7 + hr(k, 6) * 0.3); c.translate(ax, 0); if (u.face < 0) c.scale(-1, 1);
-    c.drawImage(im, f * cw + sx, 0, sw, chh, -Math.round(dw / 2), dy, dw, dh); c.restore();
-  }
+  c.translate(Math.round(G.cam.x + W / 2), 0); if (u.face < 0) c.scale(-1, 1);
+  c.drawImage(im, u.fi * cw + C.rainSrc[0], 0, sw, chh, -Math.round(dw / 2), dy, dw, dh);
   c.restore();
 };
+
+/* ============ 2026-11-23 (1418b): 전사 X 상향 일섬 = 공중에서 쓰면 한 번 더 뛰어오른다 ============
+   점프 중 X: 점프 한 번만큼 위로 (점프력 보너스 포함), 착지할 때까지 1회. 공중에서는 좌우 이동 85%. 피해는 230% → 160% (특성 배율은 그대로) */
+const _startActTh = startAct;
+startAct = function (id) {
+  const p = G.player, a0 = p && p.act, r = _startActTh.apply(this, arguments), a = p && p.act;
+  if (G.save.char === 'theron' && id === 'x' && a && a !== a0 && a.id === 'x' && !p.onGround && !p.thXJ) {
+    p.thXJ = 1; p.vy = -JUMP * Math.sqrt(1 + (G.stats.jumpP || 0) / 100); a.mv = 0.85;
+    sfx('jump'); for (let i = 0; i < 8; i++) addPart({ x: p.x + rnd(-12, 12), y: p.y - rnd(0, 8), vx: rnd(-60, 60), vy: rnd(20, 90), g: 0, life: 0.3, r: rnd(2, 3.5), col: '255,190,120', glow: 1 });
+  }
+  return r;
+};
+/* 1418d: 불꽃이 칼날을 따라 붙는다 (사용자: 칼날의 손 쪽부터 검 끝 조금 너머까지, 움직이는 각도대로).
+   프레임별 칼날 선 [손잡이 x, y, 검 끝 x, y] (셀 좌표). 이펙트 1번 장면의 불꽃 줄기(밑동 113,558 → 끝 420,235)를 손잡이 → 검 끝 +20% 에 맞춰 늘려 그린다.
+   25(올려벤 순간)는 진하게, 26(머리 위 마무리)은 각도를 따라가며 사라진다. */
+const TH_BLADE = { 23: [152, 223, 245, 261], 25: [203, 183, 288, 156], 26: [146, 118, 54, 142] };
+const TH_STREAK = { f: 1, b: [113, 558], e: [420, 235] };
+function thBladeFx(c) {
+  const p = G.player, a = p && p.act; if (!a || a.id !== 'x' || G.save.char !== 'theron') return;
+  const set = SPR.theron; if (!set || !set.sheet48) return;
+  const sk = REM_SK.theron.x, im = remImg(sk.file); if (!im.complete || !im.naturalWidth) return;
+  const ps = heroPose('theron', p), L = TH_BLADE[ps.f]; if (!L || ps.f === 23) return;
+  const fr = set[ps.f], face = p.face || 1, sc = set.sc;
+  const wx = (cx, cy) => [p.x + (ps.dx || 0) * face + face * (cx - fr.ax) * sc * (ps.sx || 1), p.y + (cy - fr.ay) * sc * (ps.sy || 1)];
+  const h = wx(L[0], L[1]), tp = wx(L[2] + (L[2] - L[0]) * 0.2, L[3] + (L[3] - L[1]) * 0.2);
+  const len = Math.hypot(tp[0] - h[0], tp[1] - h[1]), ang = Math.atan2(tp[1] - h[1], tp[0] - h[0]);
+  const S = TH_STREAK, sdx = S.e[0] - S.b[0], sdy = S.e[1] - S.b[1], slen = Math.hypot(sdx, sdy), sang = Math.atan2(sdy, sdx);
+  const kL = len / slen, kT = kL * 2.4 * (face < 0 ? -1 : 1);   // a little thicker than true length would give, flames kept on the top side
+  const fade = ps.f === 26 ? Math.max(0, 1 - Math.max(0, a.t - 0.2) / Math.max(0.05, a.dur - 0.2)) : 1; if (fade <= 0) return;
+  const cw = Math.floor(im.naturalWidth / 4), chh = im.naturalHeight;
+  c.save(); c.imageSmoothingEnabled = false; c.globalCompositeOperation = 'lighter'; c.globalAlpha *= fade;
+  c.translate(h[0], h[1]); c.rotate(ang); c.scale(kL, kT); c.rotate(-sang); c.translate(-S.b[0], -S.b[1]);
+  c.drawImage(im, S.f * cw, 0, cw, chh, 0, 0, cw, chh);
+  c.restore();
+}
+const _playerFigTh = playerFig;
+playerFig = function () { const r = _playerFigTh.apply(this, arguments); try { thBladeFx(ctx); } catch (e) { } return r; };
+const _updateSkillsTh = updateSkills;
+updateSkills = function (dt) { const r = _updateSkillsTh.apply(this, arguments); const p = G.player; if (p && p.onGround) p.thXJ = 0; return r; };
 
 /* ============ MAIN LOOP ============ */
 function ambient(dt) {
