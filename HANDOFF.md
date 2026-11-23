@@ -69,6 +69,9 @@
   - 56f_news: newsShow 조건에 `acctSeen()['news_' + NEWS.id]`, 닫을 때 거기에도 기록
   - 장 도입 이야기(seenCh)는 캐릭터별 그대로
 
+### 261123-0932  정식 배포 (test → 루트, 위 0930 내용)
+- 루트 index.html = test/index.html 에서 noindex · DEV_TOOLS 두 줄만 뺀 것, 루트 assets/ = test/assets/
+
 <!-- 형식:
 ### yymmdd-hhmm  한 줄 제목   (커밋 abc1234, 대상: test/index.html)
 - 원래 파일: 32_skills.js (배너 "SKILLS: awakening skills…")

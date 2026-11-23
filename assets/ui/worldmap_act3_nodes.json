@@ -1,0 +1,197 @@
+{
+  "project": "The Pixel Odyssey",
+  "asset": "assets/ui/worldmap_act3_bg.png",
+  "act": 3,
+  "act_name": "타락한 별들과 성탑",
+  "chapters": "CH.21–30",
+  "canvas": {
+    "width": 1672,
+    "height": 941
+  },
+  "coordinate_space": "normalized 0-1, origin top-left, multiply by the drawn background rect",
+  "route": "carved spiral staircase on the left side of the tower; nodes sit on its landings from the bottom floor upward",
+  "act_color": "#70ccc2",
+  "node_size_pct_of_height": 3.2,
+  "nodes": [
+    {
+      "ch": 21,
+      "name": "성탑의 첫 계단",
+      "boss": "별빛 사냥꾼",
+      "region": "성탑 외벽 1층 — 꺼진 별의 잔해가 계단처럼 굳은 구간",
+      "floor": "잔해의 계단",
+      "x": 0.338,
+      "y": 0.955,
+      "px1672": [
+        565,
+        899
+      ],
+      "px1600x900": [
+        541,
+        860
+      ],
+      "labelSide": "left"
+    },
+    {
+      "ch": 22,
+      "name": "녹슨 성좌의 회랑",
+      "boss": "녹슨 대천사",
+      "region": "성탑 2층 — 녹슨 청동 성좌판이 늘어선 회랑",
+      "floor": "녹슨 성좌 회랑",
+      "x": 0.334,
+      "y": 0.9,
+      "px1672": [
+        558,
+        847
+      ],
+      "px1600x900": [
+        534,
+        810
+      ],
+      "labelSide": "left"
+    },
+    {
+      "ch": 23,
+      "name": "거울로 된 하늘",
+      "boss": "거울의 여왕",
+      "region": "성탑 3층 — 깨진 거울이 하늘 대신 붙어 있는 방",
+      "floor": "거울 궁정",
+      "x": 0.348,
+      "y": 0.795,
+      "px1672": [
+        582,
+        748
+      ],
+      "px1600x900": [
+        557,
+        716
+      ],
+      "labelSide": "left"
+    },
+    {
+      "ch": 24,
+      "name": "까마귀가 세는 층",
+      "boss": "역병 까마귀 군주",
+      "region": "성탑 4층 — 깃털이 쌓여 바닥이 된 층",
+      "floor": "까마귀 둥지층",
+      "x": 0.338,
+      "y": 0.705,
+      "px1672": [
+        565,
+        663
+      ],
+      "px1600x900": [
+        541,
+        634
+      ],
+      "labelSide": "left"
+    },
+    {
+      "ch": 25,
+      "name": "무게가 사라진 방",
+      "boss": "중력의 거인",
+      "region": "성탑 5층 — 중력이 사라진 공전의 방",
+      "floor": "무중력의 방",
+      "x": 0.352,
+      "y": 0.615,
+      "px1672": [
+        589,
+        579
+      ],
+      "px1600x900": [
+        563,
+        554
+      ],
+      "labelSide": "left"
+    },
+    {
+      "ch": 26,
+      "name": "멈춘 시계의 서고",
+      "boss": "시간의 서기관",
+      "region": "성탑 6층 — 거대한 모래시계와 시계추가 걸린 서고",
+      "floor": "멈춘 시계 서고",
+      "x": 0.34,
+      "y": 0.528,
+      "px1672": [
+        568,
+        497
+      ],
+      "px1600x900": [
+        544,
+        475
+      ],
+      "labelSide": "left"
+    },
+    {
+      "ch": 27,
+      "name": "별을 삼킨 뱀의 우물",
+      "boss": "공허의 레비아탄",
+      "region": "성탑 7층 — 뱀이 몸을 감은 원형 우물",
+      "floor": "뱀의 우물",
+      "x": 0.35,
+      "y": 0.438,
+      "px1672": [
+        585,
+        412
+      ],
+      "px1600x900": [
+        560,
+        394
+      ],
+      "labelSide": "left"
+    },
+    {
+      "ch": 28,
+      "name": "백은의 제단",
+      "boss": "백은의 기계신 데우스",
+      "region": "성탑 8층 — 백은으로 된 거대 제단과 여섯 겹의 광륜",
+      "floor": "백은 제단",
+      "x": 0.336,
+      "y": 0.34,
+      "px1672": [
+        562,
+        320
+      ],
+      "px1600x900": [
+        538,
+        306
+      ],
+      "labelSide": "left"
+    },
+    {
+      "ch": 29,
+      "name": "월식의 검투장",
+      "boss": "핏빛 월식 기사",
+      "region": "성탑 9층 — 붉은 월식이 걸린 검투장",
+      "floor": "월식 검투장",
+      "x": 0.352,
+      "y": 0.252,
+      "px1672": [
+        589,
+        237
+      ],
+      "px1600x900": [
+        563,
+        227
+      ],
+      "labelSide": "left"
+    },
+    {
+      "ch": 30,
+      "name": "별이 꺼지는 옥좌",
+      "boss": "별을 삼킨 군주 아스트라온",
+      "region": "성탑 최상층 — 꺼져 가는 별들의 왕관이 걸린 옥좌",
+      "floor": "성좌의 옥좌",
+      "x": 0.5,
+      "y": 0.085,
+      "px1672": [
+        836,
+        80
+      ],
+      "px1600x900": [
+        800,
+        76
+      ],
+      "labelSide": "right"
+    }
+  ]
+}
