@@ -12,6 +12,26 @@
 
 ## 옮길 것
 
+### 261124-1900  19장 빙판 바닥 · 음소거 아이콘 · 궁수 S 덫 그림   (대상: index.html / test/index.html)
+지시서: 2026-11-24 사용자 작업 지시 "음소거·19장빙판·궁수S 에셋 3종 적용 및 푸시".
+같은 팩(`work/fx_4pack/manifest.json`)에서 **귀환 이펙트(`vfx_return_scroll.png`)는 사용자가 빼 달라고 해서 적용하지 않았다** — 코드의 기존 귀환 연출(1800) 그대로다.
+index.html 을 직접 고쳤고 test/index.html 은 1·3행만 다르게 다시 만들었다(둘 다 같은 줄 수).
+새 그림 3장: `assets/ui/btn_audio_muted.png`(64×64) · `assets/ui/floor_ch19_ice.png`(512×128) · `assets/vfx/vfx_archer_s_trap.png`(1024×256, 칸 256×256, 지면 여백 16) (+ `test/assets/` 사본 3장).
+
+- **(1) 음소거 아이콘** — CSS `#bMute.off .hico{opacity:.22;filter:grayscale(1)}` 와 `#bMute.off::before`(붉은 사선)를 없앴다(각각 `opacity:1;filter:none` / `content:none`). 꺼짐 그림 자체가 빨간 X 를 들고 있어 덮어쓰면 지저분해진다.
+  붉은 바탕(`#bMute.off`)과 `::after` "꺼짐" 배지는 그대로 — 2026-11-24 사용자가 "한눈에 보이게" 요청한 표시다(1710 패치).
+  스크립트: `MUTE_ICON = { on: ASSET9+'ui/btn_audio_icon.png', off: ASSET9+'ui/btn_audio_muted.png' }`, `syncAudioBtn()` 이 `#bMute img.hico` 의 `src` 를 바꿔 끼운다(같으면 건드리지 않음).
+  첫 토글에 깜빡이지 않게 꺼짐 그림을 미리 `new Image()` 로 받아 둔다. 음향 설정 창의 글자 버튼(`data-amute`)은 그림이 아니라 손대지 않았다.
+- **(2) 19장 빙판 바닥** — `FLOOR19_ICE`(Image, `?v=GAME_VER`) 를 `drawFloorExtras23` 의 `m.theme === 'glacier'` 갈래에서 `GROUND`(480) 기준 512px 씩 반복해 그린다(`imageSmoothingEnabled=false`, 클립은 기존 `GROUND-4 ~ H`).
+  타일이 이미 윗면 광택·서리 띠·균열·기포를 갖고 있어, 덮던 세로 그라디언트 알파를 .34/.26/.14/.06 → .14/.12/.09/.05 로 낮추고, 반짝임 줄 20→12(알파 .16→.10), 중복이던 균열 선 12개는 지웠다. 흰 윗면 선(`GROUND-2`)은 그대로.
+  `glacier` 테마는 19장 두 곳(사냥터 `c19_a`·보스방 `c19_arena`)뿐이라 다른 장은 영향 없다(17장 보스방 돌바닥 그대로 확인).
+- **(3) 궁수 S 덫** — `REM_SK.kallisto.sTrap = { file:'vfx/vfx_archer_s_trap.png', cell:[256,256], w:256, h:256, align:'bottom', ms:[110,120,120,220] }` 추가.
+  **판정·피해는 기존 `REM_SK.kallisto.s`(86×116) 그대로** — 그림만 새 스트립으로 바꿨다. 놓인 덫은 1프레임(룬 씨앗)을 계속 그리고, 발동하면 `remFx(..., seq:[[1,120],[2,120],[3,220]])` 로 사슬→점화→포획을 0.46초 재생한다.
+  그리는 자리는 `trapFxBox(b)` — 덫 판정 상자의 바닥 가운데를 256 칸의 가운데·아래에 맞춘다.
+  놓인 덫은 `drawTrapArt()` 로 **일반 합성 한 겹 + 빛 합성 반 겹** — 빛 합성만 하면 밝은 빙판에서 초록이 하얗게 날아간다(예전에 덧그리던 경계 고리도 그림에 룬 고리가 있어 뺐다). 바닥 빛무리는 가시성용으로 남기고 알파만 낮췄다(.30/.16 → .24/.13).
+- **검증(헤드리스 크롬, 로컬 서버)**: 음소거 켜짐/꺼짐 `src` 전환 · 사선 `none` · 아이콘 opacity 1 · 꺼짐 배지 유지, 19장 보스방·사냥터 바닥 픽셀(푸른빛)과 스크린샷, 덫 2개 무장 → 발동(새 스트립 재생 + 피해), 패치 노트 새 카드 3항목·가로 넘침 0, PC·휴대폰 pageerror 0, 자산 404 없음.
+  증거 그림: `handoffs/🚀-음소거-19장빙판-궁수s-에셋-3종-적용-및-푸시/evidence/`(`final2_pc_ch19_arena.png`, `final2_pc_trap_frame2.png`, `final2_pc_mute_off.png` 등).
+
 ### 261124-1830  보스 1~30장 누끼 정밀 보수   (대상: assets/boss/*.png + test/assets/boss/*.png, 코드 변경 없음)
 작업: 2026-11-24 사용자 제보(7장 폭주 거인 흰 조각, 17장 검선 청운 몸통 파먹힘)에 따라 1~30장 보스 48프레임 시트 30종(1,440프레임)을 전수 검수.
 

@@ -536,10 +536,11 @@ button{font-family:inherit;color:inherit}
 .hbtn kbd{position:absolute;right:calc(var(--u)*2);bottom:0;margin:0;font-size:max(7px,calc(var(--u)*8));line-height:1.2}
 .hbtn.off{color:#6a6a70}
 .hbtn.off::before{content:"";position:absolute;width:70%;height:1.5px;background:#a05a50;transform:rotate(-40deg)}
-/* 2026-11-24 (user): 음소거 상태가 한눈에 보이게 — 붉은 바탕 + 굵은 사선 + 꺼짐 배지 */
+/* 2026-11-24 (user): 음소거 상태가 한눈에 보이게 — 붉은 바탕 + 꺼짐 배지.
+   2026-11-24 (user): 꺼짐 그림 자체에 빨간 X 가 들어와(assets/ui/btn_audio_muted.png) 덮어쓰던 사선·회색 처리는 없앴다 */
 #bMute.off{color:#ff9a88;background:rgba(96,22,16,.62);border-color:#c0503a;box-shadow:inset 0 0 0 1px rgba(255,90,70,.5),0 0 calc(var(--u)*6) rgba(255,70,50,.35)}
-#bMute.off .hico{opacity:.22;filter:grayscale(1)}
-#bMute.off::before{width:calc(var(--u)*2.2);height:132%;background:#ff5f48;box-shadow:0 0 calc(var(--u)*5) rgba(255,60,40,.9);transform:rotate(-45deg)}
+#bMute.off .hico{opacity:1;filter:none}
+#bMute.off::before{content:none}
 #bMute.off::after{content:"꺼짐";position:absolute;left:50%;bottom:calc(var(--u)*-9);transform:translateX(-50%);font-size:max(7px,calc(var(--u)*8));line-height:1.1;color:#ffc0b0;background:rgba(48,10,8,.92);border:1px solid #a04030;border-radius:calc(var(--u)*3);padding:0 calc(var(--u)*3);white-space:nowrap;letter-spacing:.02em}
 .hbtn.dot::after{position:absolute;top:calc(var(--u)*-2);right:calc(var(--u)*-2);margin:0}
 #mini{border-radius:calc(var(--u)*6);border-color:rgba(255,255,255,.08)}
@@ -689,7 +690,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261124-1830';
+const GAME_VER = '261124-1900';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16071,12 +16072,20 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261124j',   // 2026-11-24 열 번째 패치(GAME_VER '261124-1830'): 보스 1~30장 누끼 정밀 보수
+  id: '261124k',   // 2026-11-24 열한 번째 패치(GAME_VER '261124-1900'): 19장 빙판 바닥 · 음소거 아이콘 · 궁수 S 덫
   title: '패치 노트',
-  sub: '보스 1~30장 누끼 정밀 보수 — 갇힌 흰 배경 조각과 옷자락 흰 테두리 제거',
+  sub: '19장 빙판 바닥 · 음소거 아이콘 · 궁수의 덫',
   versions: [
     {
-      ver: '261124-1830', date: '2026-11-24', name: '보스 30종 누끼 정밀 보수', cur: 1,
+      ver: '261124-1900', date: '2026-11-24', name: '19장 빙판 · 음소거 아이콘 · 궁수의 덫', cur: 1,
+      items: [
+        { t: '연출', h: '19장 바닥이 얼음판이 되었다', p: '19장 만년설 늑대 숲과 보스방 바닥이 돌바닥에서 얼음판으로 바뀐다. 걷는 윗면은 반들반들 빛나고 아래로 갈수록 짙은 푸른색으로 잠기며, 얼음 속 균열과 갇힌 기포, 위로 흐르는 잔빛이 보인다.', q: '얼음판은 폭 512px로 끊김 없이 이어지고, 걷는 판정과 미끄러짐은 예전 그대로다.' },
+        { t: 'UI', h: '음소거 버튼이 꺼진 그림으로 바뀐다', p: '모든 소리를 끄면 금테 스피커 위에 빨간 X가 그려진 아이콘으로 바뀌고 버튼 테두리가 붉어진다. 예전처럼 그림 위에 사선을 덧그리거나 흐리게 만들지 않는다.', q: '버튼 아래 작은 "꺼짐" 표시는 그대로 남고, 다시 켜면 원래 스피커 그림으로 돌아온다.' },
+        { t: '전투', h: '궁수의 덫이 룬으로 펼쳐진다', p: '궁수 S 섬광 덫을 놓으면 바닥에 초록 룬 고리와 금빛 화살촉이 새겨진다. 무장한 뒤 적이 밟으면 사슬 고리가 펼쳐지고 세 갈래 올가미가 점화된 다음 사방으로 터진다.', q: '피해(공격력 300%)·기절 1.5초·무장까지 0.4초·유지 8초는 그대로다.' },
+      ],
+    },
+    {
+      ver: '261124-1830', date: '2026-11-24', name: '보스 30종 누끼 정밀 보수', cur: 0,
       items: [
         { t: '연출', h: '보스 30종의 누끼를 전부 다시 훑었다', p: '팔·다리·사슬·불티 사이에 갇혀 있던 흰색·연회색 배경 조각을 보스별로 찾아 걷어냈다. 1~30장 1,440프레임을 모두 확인했고, 21종에서 3,133픽셀을 지웠다.', q: '7장 폭주 거인의 주먹·사슬·불티 사이 흰 조각, 17장 검선 청운의 옷자락 흰 테두리가 대표적이다.' },
         { t: '연출', h: '원래 흰 부분은 그대로 둔다', p: '눈·이빨·은갑옷 하이라이트·불꽃 심지·흰 깃털·흰 드레스처럼 원래 흰 그림은 건드리지 않았다. 어두운 틈에 끼어 있던 배경색 덩어리만 골라 지우는 방식이다.', q: '그래서 5장 알로페(흰 깃털)·2장 레테이아(흰 드레스)는 그림이 그대로다.' },
@@ -17741,6 +17750,8 @@ const REM_SK = {
     c: { file: 'vfx/vfx_kallisto_c_fan.png', cell: [540, 200], w: 540, h: 200, align: 'center', lift: -30, off: 240, ms: [60, 90, 110, 160], hf: 2 },
     a: { file: 'vfx/vfx_kallisto_a_rain.png', cell: [456, 400], w: 456, h: 400, align: 'bottom', lift: 0, off: 212, ms: [70, 80, 120, 180], hf: 2 },
     s: { file: 'vfx/vfx_archer_flare_snare.png', cell: [491, 659], w: 86, h: 116, align: 'bottom', lift: 0, off: 18, ms: [70, 80, 110, 160], hf: 2 },
+    // 2026-11-24 (user): 덫 그림은 새 4프레임 스트립(vfx_archer_s_trap.png, 256x256 칸, 지면 16px) — 판정 상자(w·h)는 위 s 그대로 쓴다
+    sTrap: { file: 'vfx/vfx_archer_s_trap.png', cell: [256, 256], w: 256, h: 256, align: 'bottom', lift: 0, off: 0, ms: [110, 120, 120, 220] },
     v: { file: 'vfx/vfx_archer_awakening.png', cell: [503, 498], w: 152, h: 150, align: 'bottom', lift: 0, off: 0, ms: [90, 80, 150, 300], hf: 1 } },
   lykos: {
     zOld: { file: 'vfx/vfx_rogue_twin_slash.png', cell: [472, 482], w: 55, h: 56, align: 'center', lift: 18, off: 22, ms: [40, 45, 65, 85], hf: 2 },
@@ -17783,23 +17794,34 @@ function remDrawBox(c, sk, frame, box, face, alpha) {
   else c.drawImage(im, frame * cw, 0, cw, chh, Math.round(box.x), Math.round(box.y), box.w, box.h);
   c.restore();
 }
+/* 2026-11-24 (user): 덫 스트립은 256 칸을 1:1 로 그린다 — 덫 자리(판정 상자)의 바닥 가운데를 그림 가운데에 맞춘다 */
+function trapFxBox(b) { const st = REM_SK.kallisto.sTrap, cw = st.cell[0], chh = st.cell[1], cx = b.x + b.w / 2, gy = b.y + b.h; return { x: Math.round(cx - cw / 2), y: Math.round(gy - chh), w: cw, h: chh }; }
+/* 놓인 덫: 빛 합성만 하면 밝은 바닥(빙판)에서 초록이 하얗게 날아가므로, 색을 살리는 바탕 한 겹 위에 빛 한 겹을 더한다 */
+function drawTrapArt(c, b, alpha) {
+  const st = REM_SK.kallisto.sTrap, im = remImg(st.file); if (!im.complete || !im.naturalWidth) return;
+  const gb = trapFxBox(b), cw = st.cell[0], chh = st.cell[1];
+  c.save(); c.imageSmoothingEnabled = false;
+  c.globalAlpha = (c.globalAlpha || 1) * (alpha == null ? 1 : alpha);
+  c.drawImage(im, 0, 0, cw, chh, gb.x, gb.y, cw, chh);
+  c.globalCompositeOperation = 'lighter'; c.globalAlpha *= 0.5;
+  c.drawImage(im, 0, 0, cw, chh, gb.x, gb.y, cw, chh);
+  c.restore();
+}
 function remFxDraw(c) {
   for (const e of G.rfx || []) {
     if (e.t < 0) continue;
     const box = e.follow ? remBox(e.follow, e.sk, e.k) : e.box; if (e.follow) e.face = e.follow.face || 1;
     remDrawBox(c, e.sk, remFrameAt(e.seq, e.t), box, e.face, e.alpha);
   }
-  for (const tr of G.traps || []) {   // 2026-11-24 (user): 궁수 S(섬광 덫) 가시성 — 바닥 빛무리 + 경계 고리 + 밝은 덫 그림
+  for (const tr of G.traps || []) {   // 2026-11-24 (user): 궁수 S(섬광 덫) 가시성 — 바닥 빛무리 + 새 덫 그림(1프레임 = 놓인 룬)
     if (!tr.rem) continue;
     const b = tr.box, cx = b.x + b.w / 2, gy = b.y + b.h, armed = tr.t > tr.arm, pulse = 0.5 + 0.5 * Math.sin(G.t * 6);
     c.save(); c.globalCompositeOperation = 'lighter';
     const rg = c.createRadialGradient(cx, gy - 6, 2, cx, gy - 6, b.w * 0.85);
-    rg.addColorStop(0, `rgba(255,214,120,${((armed ? 0.30 : 0.16) + 0.10 * pulse).toFixed(3)})`); rg.addColorStop(1, 'rgba(255,170,60,0)');
+    rg.addColorStop(0, `rgba(255,214,120,${((armed ? 0.24 : 0.13) + 0.09 * pulse).toFixed(3)})`); rg.addColorStop(1, 'rgba(255,170,60,0)');
     c.fillStyle = rg; c.beginPath(); c.ellipse(cx, gy - 4, b.w * 0.85, 16, 0, 0, 6.283); c.fill();
-    c.strokeStyle = `rgba(255,226,150,${armed ? 0.85 : 0.45})`; c.lineWidth = 2;
-    c.beginPath(); c.ellipse(cx, gy - 4, b.w * 0.46, 9, 0, 0, 6.283); c.stroke();
     c.restore();
-    remDrawBox(c, REM_SK.kallisto.s, 0, b, tr.face, armed ? 0.9 : 0.6);
+    drawTrapArt(c, b, armed ? 0.95 : 0.7);   // 그림 자체에 룬 고리가 있어 경계 고리는 뺐다
   }
 }
 /* 1352b: warrior X / A effects start past the sword trail drawn in the 48f frames (tip ~62-67 px ahead): the hit covers the sword (from just behind the hero) out to the effect's far edge */
@@ -17942,7 +17964,7 @@ function remPreSkills(dt) {
     if ((tr.t > tr.arm && targets().some(inBox)) || tr.t > tr.life) {
       for (const e of targets()) if (inBox(e)) { dealDamage(e, 3 * awakeMul() * freshMul('s'), { kb: 0 }); if (!e.isBoss) e.stun = 1.5; }
       (G.remHits = G.remHits || []).push(Object.assign({}, box)); if (G.devHit) (G.dbgHits = G.dbgHits || []).push(Object.assign({ t: 0.3 }, box));
-      remFx(REM_SK.kallisto.s, { box, face: tr.face }); sfx('boom');
+      remFx(REM_SK.kallisto.sTrap, { box: trapFxBox(box), face: tr.face, seq: [[1, 120], [2, 120], [3, 220]] }); sfx('boom');   // 2026-11-24 (user): 펼침→점화→포획 3프레임
     } else keep.push(tr);
   }
   G.traps = keep;
@@ -21965,9 +21987,13 @@ function makeReverb(c, secs) {          // dark, smooth impulse response: decayi
   }
   const cv = c.createConvolver(); cv.buffer = ir; return cv;
 }
-function syncAudioBtn() {          // the one HUD sound button: dark + slashed only when every sound is off
+const MUTE_ICON = { on: ASSET9 + 'ui/btn_audio_icon.png', off: ASSET9 + 'ui/btn_audio_muted.png' };   // 2026-11-24 (user): 꺼짐 전용 그림(빨간 X)
+(function () { const im = new Image(); im.src = MUTE_ICON.off; })();                                   // first mute must not blink
+function syncAudioBtn() {          // the one HUD sound button: dark + the muted picture only when every sound is off
   const b = $('#bMute'); if (!b) return;
   b.classList.toggle('off', !!AU.muted); b.title = AU.muted ? '음향 설정 · 모든 소리 꺼짐' : '음향 설정';
+  const ic = b.querySelector('img.hico');                                        // 켜짐/꺼짐 그림을 바꿔 끼운다
+  if (ic) { const src = AU.muted ? MUTE_ICON.off : MUTE_ICON.on; if (ic.getAttribute('src') !== src) ic.setAttribute('src', src); }
   const mt = $('#muteT'); if (mt) mt.textContent = AU.muted ? '음향 끔' : '음향 켬';
 }
 function toggleMute() {
@@ -24844,6 +24870,8 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 #sureAsk button:first-child{background:#6a2a20;border-color:#e0704a}
 </style>`);
 
+/* 2026-11-24 (user): 19장 빙판 바닥 타일 — 512x128, GROUND 아래로 위 60px 가 보인다 (이음매 없이 반복) */
+const FLOOR19_ICE = (() => { const im = new Image(); im.src = ASSET9 + 'ui/floor_ch19_ice.png?v=' + GAME_VER; return im; })();
 /* 7·8) 바닥 위에 덧그리는 것 — 보스방 좌우 경계(17장 등) + 19장 빙판 광택 */
 function drawFloorExtras23(c, cam) {
   const m = G.map; if (!m) return;
@@ -24870,20 +24898,21 @@ function drawFloorExtras23(c, cam) {
     const x0 = Math.max(cam.x - 10, 0), x1 = Math.min(cam.x + W + 10, m.w), w = x1 - x0; if (w <= 0) return;
     const t = G.t;
     c.save(); c.beginPath(); c.rect(x0, GROUND - 4, w, H - GROUND + 8); c.clip();
-    const g = c.createLinearGradient(0, GROUND - 4, 0, GROUND + 70);
-    g.addColorStop(0, 'rgba(220,246,255,.34)'); g.addColorStop(0.28, 'rgba(170,215,245,.26)'); g.addColorStop(0.62, 'rgba(120,175,220,.14)'); g.addColorStop(1, 'rgba(80,130,185,.06)');
+    const ice = FLOOR19_ICE;                                  // 빙판 바닥은 타일 그림이 맡는다 (돌바닥 위를 덮는다)
+    if (ice.complete && ice.naturalWidth) {
+      c.imageSmoothingEnabled = false;
+      const TW = 512;
+      for (let tx = Math.floor(x0 / TW) * TW; tx < x1; tx += TW) c.drawImage(ice, tx, GROUND);
+    }
+    const g = c.createLinearGradient(0, GROUND - 4, 0, GROUND + 70);   // 타일 위에 옅게 까는 한기 (그림의 명암을 덮지 않게)
+    g.addColorStop(0, 'rgba(220,246,255,.14)'); g.addColorStop(0.28, 'rgba(170,215,245,.12)'); g.addColorStop(0.62, 'rgba(120,175,220,.09)'); g.addColorStop(1, 'rgba(80,130,185,.05)');
     c.fillStyle = g; c.fillRect(x0, GROUND - 4, w, 80);
     c.globalCompositeOperation = 'lighter';
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 12; i++) {                            // 타일이 이미 가진 균열·기포와 겹치지 않게 반짝임만 조금
       const sx = x0 + ((i * 137 + t * 26) % (w + 120)) - 60, y = GROUND + 3 + (i * 37) % 52;
       const lg = c.createLinearGradient(sx, y, sx + 90, y + 12);
-      lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(0.5, `rgba(240,252,255,${(0.16 + 0.10 * Math.sin(t * 1.6 + i)).toFixed(3)})`); lg.addColorStop(1, 'rgba(255,255,255,0)');
+      lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(0.5, `rgba(240,252,255,${(0.10 + 0.07 * Math.sin(t * 1.6 + i)).toFixed(3)})`); lg.addColorStop(1, 'rgba(255,255,255,0)');
       c.fillStyle = lg; c.fillRect(sx, y, 110, 3);
-    }
-    for (let i = 0; i < 12; i++) {
-      const bx = x0 + ((i * 211 + 41) % (w + 40)) - 20;
-      c.strokeStyle = 'rgba(240,252,255,.26)'; c.lineWidth = 1;
-      c.beginPath(); c.moveTo(bx, GROUND + 2); c.lineTo(bx + 8, GROUND + 14); c.lineTo(bx + 3, GROUND + 26); c.stroke();
     }
     c.globalCompositeOperation = 'source-over';
     c.fillStyle = 'rgba(255,255,255,.55)'; c.fillRect(x0, GROUND - 2, w, 2);
