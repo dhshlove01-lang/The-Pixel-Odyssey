@@ -690,7 +690,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261124-2240';
+const GAME_VER = '261124-2310';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -12219,8 +12219,36 @@ const MUZZLE = {};
    읽는 법: 셀 256, 프레임 i의 셀 좌상단 = ((i % 8) * 256, Math.floor(i / 8) * 256). */
 const MUZZLE_B28 = { 22: [1704, 678], 27: [958, 938], 32: [240, 1196], 37: [1449, 1191] };
 const COLF = n => 'COL' + n;   // b.fsmForce = COLF(2) shows frame 8 + 2 (attack row, column 2)
+/* 2026-11-25 3차 배치: 발사점을 시트 픽셀표(MUZZLE) 대신 **몸 비율**로 잡는다.
+   48프레임 시트는 8×6 이라 옛 4×4 시트에서 읽은 픽셀 좌표가 한 줄(256px)씩 어긋나 빔이 허공에서 시작했다.
+   MZREL[보스][프레임] = [앞 거리, 높이] · 둘 다 보스 몸높이(b.h) 비율, 높이는 발끝에서 위로 + (음수 = 위).
+   프레임이 없으면 보스 기본값, 보스가 없으면 예전 일반 폴백을 쓴다. */
+const MZREL = {
+  b12: { 9: [0.52, -0.56], 10: [0.52, -0.56], 11: [0.60, -0.62] },   // 키메라의 입
+  b14: { 9: [0.40, -0.66], 10: [0.40, -0.66], 11: [0.44, -0.62] },   // 라의 태양 원반
+  b15: { 9: [0.44, -0.50], 10: [0.44, -0.50], 11: [0.48, -0.56] },   // 선장의 손
+  b16: { 9: [0.58, -0.34], 10: [0.62, -0.34], 11: [0.60, -0.40] },   // 크라켄 앞 촉수
+  b17: { 9: [0.46, -0.52], 10: [0.46, -0.52], 11: [0.52, -0.58] },   // 검지 끝 / 등 뒤 비검
+  b18: { 9: [0.48, -0.20], 10: [0.48, -0.20], 11: [0.52, -0.26] },   // 창끝이 바닥에 닿는 곳
+  b19: { 8: [0.02, -0.02], 9: [0.67, -0.44], 10: [0.67, -0.44], 11: [0.67, -0.44] },   // 마녀의 발밑 / 늑대의 입
+  b20: { 9: [0.44, -0.54], 10: [0.46, -0.52], 11: [0.44, -0.56] },   // 이그니스의 검끝
+  b21: { default: [0.46, -0.62], 9: [0.46, -0.62], 10: [0.46, -0.62], 11: [0.50, -0.60] },
+  b23: { default: [0.40, -0.62], 10: [0.40, -0.62], 11: [0.42, -0.60] },
+  b24: { default: [0.56, -0.62], 9: [0.56, -0.62], 10: [0.56, -0.62], 11: [0.58, -0.64] },
+  b25: { default: [0.48, -0.40] },
+  b26: { default: [0.42, -0.62], 11: [0.44, -0.64] },
+  b27: { default: [0.42, -0.76], 9: [0.42, -0.76], 10: [0.42, -0.76], 11: [0.44, -0.74] },
+  b30: { default: [0.40, -0.50], 10: [0.40, -0.50], 11: [0.42, -0.54] },
+};
+function mzRel(b, idx) {
+  const t = MZREL[b.id]; if (!t) return null;
+  const v = t[idx] || t.default; if (!v) return null;
+  const face = b.fsm ? b.fsm.face : b.face;
+  return { x: b.x + face * v[0] * b.h, y: b.y + (b.yOff || 0) + v[1] * b.h };   // v[1] 음수 = 발끝 위
+}
 /* where a frame's fire point is in the world right now */
 function muzzle(b, idx) {
+  const _r = mzRel(b, idx); if (_r) { if (G.devHit) (G.muzz = G.muzz || []).push({ x: _r.x, y: _r.y, t: 0 }); return _r; }
   const S = BOSS_SHEETS[b.id], A = S && SPR[S.grid], fr = A && A[idx], m = MUZZLE[b.id] && MUZZLE[b.id][idx];
   if (!fr || !m) return { x: b.x + b.face * b.w * 0.4, y: b.y + (b.yOff || 0) - b.h * 0.55 };
   const sc = bossSheetScale(b.id, 'grid'), face = b.fsm ? b.fsm.face : b.face;
@@ -15880,6 +15908,12 @@ hitEntity = function (e, dmg, crit, o) {
   return _hitEntity9s(e, dmg, crit, o);
 };
 
+/* 19장 늑대 브레스 조준: 입 높이에서 앞으로 거의 수평(±0.42rad). 입에서 시작해 바닥을 뚫지 않는다. */
+function fr19aim(b, m) {
+  const f = (b.fsm ? b.fsm.face : b.face) || 1, p = G.player;
+  const rel = clamp(Math.atan2((p.y - 36) - m.y, Math.max(60, Math.abs(p.x - m.x))), -0.42, 0.42);
+  return f > 0 ? rel : Math.PI - rel;
+}
 /* ======== 19. 서리 마녀 & 얼음 늑대 ======== */
 reg9('b19', {
   bz: '영구 동토 백야', keepGims: ['ledge'],
@@ -15889,10 +15923,10 @@ reg9('b19', {
       tele(b, S) { S.x = clampX(G.player.x, 110); const h = zone9(b, S, S.x, 220, 70, { tone: 'ice' }); h.onFire = () => gim9('freezeGround', b, { t: 4.5 }); },
       vfx: 0, vpos: (b, S) => [S.x, GROUND + 10], vo: { w: 240, flip: false } },
     { name: '늑대의 절대영도 브레스', tel: 0.75, dmg: 28, mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 2]], ct: 1.5, rt: 0.6,
-      tele(b, S) { const m = muzzle(b, 10); S.m = m; S.a = Math.atan2((GROUND - 30) - m.y, G.player.x - m.x); tg9({ kind: 'aim_ray', src: b, x: m.x, y: m.y, angles: [S.a - 0.2, S.a, S.a + 0.2], rayLength: 380, width: 40, dur: S.tel, tone: 'ice' }); },
+      tele(b, S) { const m = muzzle(b, 10); S.m = m; S.a = fr19aim(b, m); tg9({ kind: 'aim_ray', src: b, x: m.x, y: m.y, angles: [S.a - 0.16, S.a, S.a + 0.16], rayLength: 380, width: 40, dur: S.tel, tone: 'ice' }); },
       vfx: 1, vpos: (b, S) => [S.m.x + S.face * 120, S.m.y + 110], vo: { w: 260, loop: true, life: 1.5 },
-      cast(b, S) { S.h = addHaz({ src: b, beam: true, spr: 'frost', x0: S.m.x, y0: S.m.y, x1: S.m.x + Math.cos(S.a) * 420, y1: S.m.y + Math.sin(S.a) * 420, th: 54, warn: 0, act: 1.5, dmg: dmg9(b, 28), own: true, col: '150,225,255', pat: 'v9', multi: true, kb: 80, up: 40, onHit: p => gim9('slow', b, { t: 1.5 }) }); },
-      castTick(b, S, dt) { const p = G.player, want = Math.atan2((p.y - 30) - S.m.y, p.x - S.m.x); S.a += clamp(want - S.a, -0.5 * dt, 0.5 * dt); if (S.h) { S.h.x1 = S.m.x + Math.cos(S.a) * 420; S.h.y1 = Math.min(GROUND, S.m.y + Math.sin(S.a) * 420); } } },   // follows you, slowly
+      cast(b, S) { S.h = addHaz({ src: b, beam: true, spr: 'frost', x0: S.m.x, y0: S.m.y, x1: S.m.x + Math.cos(S.a) * 420, y1: Math.min(GROUND - 6, S.m.y + Math.sin(S.a) * 420), th: 54, warn: 0, act: 1.5, dmg: dmg9(b, 28), own: true, col: '150,225,255', pat: 'v9', multi: true, kb: 80, up: 40, onHit: p => gim9('slow', b, { t: 1.5 }) }); },
+      castTick(b, S, dt) { const want = fr19aim(b, S.m); S.a += clamp(want - S.a, -0.5 * dt, 0.5 * dt); if (S.h) { S.h.x1 = S.m.x + Math.cos(S.a) * 420; S.h.y1 = Math.min(GROUND - 6, S.m.y + Math.sin(S.a) * 420); } } },   // follows you, slowly
     { name: '고드름 창 비', tel: 0.6, dmg: 22, mt: [2, 1], mc: [[2, 3]], mr: [[0, 1]], ct: 0.7, rt: 0.5,
       tele(b, S) { const p = G.player; S.xs = [-3, -2, -1, 0, 1, 2, 3].map(i => clampX(p.x + i * 110 + rnd(-20, 20), 40)); S.xs.forEach((x, i) => col9(b, S, x, 50, { delay: i * 0.07, tone: 'ice', haz: { onFire: () => { fall9(b, 'pstone', x, 4); fx9(b, 2, x, GROUND + 10, 90, { flip: false }); } } })); } },
     { name: '빙결 감옥 파쇄', tel: 0.8, dmg: 30, mt: [2, 0], mc: [[2, 2]], mr: [[0, 2]], ct: 1.0, rt: 0.5,
@@ -15916,7 +15950,7 @@ reg9('b20', {
   files: ['boss_20/b20_s1_fire_crescent.png', 'boss_20/b20_s2_ice_shatter.png', 'boss_20/b20_s3_cross_judgment.png', 'boss_20/b20_s4_dual_ground_split.png', 'boss_20/b20_s5_meltdown_berserk.png', 'boss_20/b20_s6_apocalypse_eclipse.png'],
   skills: [
     { name: '홍련의 화염검기', tel: 0.5, dmg: 26, mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 1]], ct: 0.6, rt: 0.5,
-      tele(b, S) { S.o = { x: b.x + S.face * 50, y: b.y - b.h * 0.45 }; tg9({ kind: 'aim_ray', src: b, x: S.o.x, y: S.o.y, angles: [-0.3, 0, 0.3].map(a => (S.face > 0 ? 0 : Math.PI) + a * S.face), rayLength: 380, dur: S.tel }); },
+      tele(b, S) { S.o = { x: b.x + S.face * 62, y: b.y - b.h * 0.55 }; tg9({ kind: 'aim_ray', src: b, x: S.o.x, y: S.o.y, angles: [-0.3, 0, 0.3].map(a => (S.face > 0 ? 0 : Math.PI) + a * S.face), rayLength: 380, dur: S.tel }); },
       vfx: 0, vpos: (b, S) => [S.o.x + S.face * 80, S.o.y + 120], vo: { w: 230 },
       cast(b, S) { [-0.3, 0, 0.3].forEach((a, i) => after(i * 0.12, () => { if (G.boss !== b || b.st === 'die') return; shot9(b, 'pwave', S.o.x, S.o.y, (S.face > 0 ? 0 : Math.PI) + a * S.face, 420, { sc: 5, pierce: true, life: 2.5 }); })); sfx('slash'); } },   // three tiers of fire waves
     { name: '창백의 빙결검기', tel: 0.55, dmg: 24, gim: null, mt: [2, 0], mc: [[2, 1]], mr: [[0, 1]], ct: 0.5, rt: 0.5,
@@ -16131,10 +16165,20 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261124n',   // 2026-11-24 열네 번째 패치(GAME_VER '261124-2240'): 2차 배치 — 22·26·28장 보스 + 코드 빔 4종 + 공용 전조 6종
+  id: '261124o',   // 2026-11-24 열다섯 번째 패치(GAME_VER '261124-2310'): 3차 배치 — 21·23·24·25·27·30장 보스 + 브레스·발사점 정리
   title: '패치 노트',
-  sub: '보스 셋과 전조·빔을 도트 그림으로 바꿨다',
+  sub: '남은 보스 여섯과 스킬이 나가는 자리를 맞췄다',
   versions: [
+    {
+      ver: '261124-2310', date: '2026-11-24', name: '3차 배치 · 남은 보스 6종과 발사점', cur: 1,
+      items: [
+        { t: '전투', h: '21·23·24·25·27·30장 보스가 새 그림으로 움직인다', p: '성운 추적자 · 거울의 여왕 · 역병 까마귀 군주 · 중력의 거인 · 공허의 레비아탄 · 아스트라온. 여섯 마리 모두 대기 8 · 이동 14 · 공격 16 · 사망 10 프레임을 주인공과 같은 도트체로 다시 그렸다.' },
+        { t: '전투', h: '이제 어느 동작에서도 몸이 줄지 않는다', p: '이동·공격 프레임에서 몸높이가 절반으로 줄어 보이던 문제를 고쳤다. 한 보스 안에서 몸높이 편차를 1~2%로 묶어, 걸을 때와 공격할 때 크기가 튀지 않는다.' },
+        { t: '전투', h: '19장 늑대의 절대영도 브레스가 입에서 나간다', p: '허공에 뜬 막대처럼 보이던 브레스를 늑대 입에서 시작하게 고쳤다. 각도도 거의 수평으로 잡아 바닥을 뚫지 않고, 늑대가 고개를 돌리면 브레스도 따라 움직인다.' },
+        { t: '전투', h: '보스 스킬이 몸·입·무기 끝에서 나간다', p: '12·14·16·17·18·19·20·21·23·24·26·27·30장 스킬의 발사점을 시트 픽셀 좌표 대신 보스 몸높이 비율로 잡았다. 그림을 갈아입어도 빔·탄이 몸에서 떨어지지 않는다.' },
+        { t: '연출', h: '19장 얼음 전조를 한 단계 진하게', p: '밝은 청록이라 화면에서 옅게 보이던 얼음 전조(장판·조준선·기둥)의 색을 한 단계 내려 잘 보이게 했다. 판정 크기는 그대로다.' },
+      ],
+    },
     {
       ver: '261124-2240', date: '2026-11-24', name: '2차 배치 · 22·26·28장 보스와 빔·전조', cur: 1,
       items: [
@@ -20046,7 +20090,7 @@ const TGSP_BASE = {
 const TGSP_TONES = {
   danger: { ORANGE: 0xFF1E56, AMBER: 0xFF3D6E, GOLD: 0xFF7A9C, GOLD_HI: 0xFFC2D2, HOT: 0xFFFFFF,
             RED_HI: 0xFF1E56, RED: 0xC40E3C, CRIM: 0x94082C, MAROON: 0x520617, DEEP: 0x2E0310 },
-  ice:    { ORANGE: 0x38BDF8, AMBER: 0x5CD0FF, GOLD: 0x9BE4FF, GOLD_HI: 0xD6F4FF, HOT: 0xFFFFFF,
+  ice:    { ORANGE: 0x38BDF8, AMBER: 0x36A8DC, GOLD: 0x63C6F0, GOLD_HI: 0xA8E4FA, HOT: 0xFFFFFF,
             RED_HI: 0x2FA8E0, RED: 0x1D7FB8, CRIM: 0x115C8A, MAROON: 0x0B3B5A, DEEP: 0x07263A },
   poison: { ORANGE: 0x4ADE80, AMBER: 0x72EA9B, GOLD: 0xA8F5C0, GOLD_HI: 0xDEFCE8, HOT: 0xFFFFFF,
             RED_HI: 0x2FC268, RED: 0x219A50, CRIM: 0x166E39, MAROON: 0x0E4626, DEEP: 0x082A16 },
@@ -21531,7 +21575,7 @@ reg9('b27', {
       tele(b, S) { a3dashTele(b, S, 400); }, cast(b, S) { if (S.v) { S.v.follow = b; S.v.dx = 40; } sfx('dash'); }, castTick(b, S, dt, k) { a3dashTick(b, S, k, S.s.dmg, 120); } },
     { name: '심연 브레스', tel: a3s(750), dmg: a3d(14), gim: 'screenShake', mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 0]], ct: a3s(600), rt: a3s(380),
       vfx: 1, vpos: (b, S) => [a3fwd(b, S, 350), GROUND - 85], vo: { w: 760, anchor: 'center', step: 0.08 },
-      tele(b, S) { const o = muzzle(b, 9), x1 = clamp(o.x + a3face(b, S) * 700, arL(), arR()); S.y = GROUND - 130; line9(b, S, o.x, S.y, x1, S.y, 90, { act: 0.6, haz: { multi: true, every: 0.35 } }); } },
+      tele(b, S) { const o = muzzle(b, 9), x1 = clamp(o.x + a3face(b, S) * 700, arL(), arR()); S.y = GROUND - 130; line9(b, S, o.x, o.y, x1, GROUND - 56, 90, { act: 0.6, haz: { multi: true, every: 0.35 } }); } },   // 입에서 바닥 쪽으로 비스듬히
     { name: '꼬리 휩쓸기', tel: a3s(650), dmg: a3d(11), mt: [2, 1], mc: [[2, 2]], mr: [[0, 2]], ct: a3s(280), rt: a3s(320),
       vfx: 2, vpos: b => [b.x, GROUND], vo: { w: 470, flip: false, step: 0.07 },
       tele(b, S) { zone9(b, S, b.x, 380, 70, { kb: 260, up: 160 }); } },
