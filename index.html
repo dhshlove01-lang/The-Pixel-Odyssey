@@ -62,7 +62,8 @@ button{font-family:inherit;color:inherit}
 #bossbar{position:absolute;left:50%;top:calc(var(--u)*8);width:calc(var(--u)*360);transform:translateX(-50%);text-align:center;display:none;pointer-events:none}
 #bossbar.on{display:block}
 #bossbar .bn{font-family:var(--font-display);font-weight:700;font-size:max(11px,calc(var(--u)*18));letter-spacing:.2em;color:#efe0c0;text-shadow:0 2px 6px #000}
-#bossbar .bar{height:calc(var(--u)*12);border-color:#5a3b36}
+#bossbar .bar{height:calc(var(--u)*12);border-color:#5a3b36;position:relative}
+#bossbar #bossPct{position:absolute;right:calc(var(--u)*4);top:50%;transform:translateY(-50%);font-size:max(8px,calc(var(--u)*10));font-weight:700;color:#ffeec8;text-shadow:0 1px 2px #000,0 0 3px #000;letter-spacing:.02em}
 #bossbar .bar>i{background:linear-gradient(#e0a25a,#a2562b)}
 #bossbar .bcp{margin-top:calc(var(--u)*4);font-size:max(9px,calc(var(--u)*12));color:#cfc6b0;text-shadow:0 1px 3px #000}
 #bossbar .bcp b{color:#ffe08a}
@@ -535,6 +536,11 @@ button{font-family:inherit;color:inherit}
 .hbtn kbd{position:absolute;right:calc(var(--u)*2);bottom:0;margin:0;font-size:max(7px,calc(var(--u)*8));line-height:1.2}
 .hbtn.off{color:#6a6a70}
 .hbtn.off::before{content:"";position:absolute;width:70%;height:1.5px;background:#a05a50;transform:rotate(-40deg)}
+/* 2026-11-24 (user): 음소거 상태가 한눈에 보이게 — 붉은 바탕 + 굵은 사선 + 꺼짐 배지 */
+#bMute.off{color:#ff9a88;background:rgba(96,22,16,.62);border-color:#c0503a;box-shadow:inset 0 0 0 1px rgba(255,90,70,.5),0 0 calc(var(--u)*6) rgba(255,70,50,.35)}
+#bMute.off .hico{opacity:.22;filter:grayscale(1)}
+#bMute.off::before{width:calc(var(--u)*2.2);height:132%;background:#ff5f48;box-shadow:0 0 calc(var(--u)*5) rgba(255,60,40,.9);transform:rotate(-45deg)}
+#bMute.off::after{content:"꺼짐";position:absolute;left:50%;bottom:calc(var(--u)*-9);transform:translateX(-50%);font-size:max(7px,calc(var(--u)*8));line-height:1.1;color:#ffc0b0;background:rgba(48,10,8,.92);border:1px solid #a04030;border-radius:calc(var(--u)*3);padding:0 calc(var(--u)*3);white-space:nowrap;letter-spacing:.02em}
 .hbtn.dot::after{position:absolute;top:calc(var(--u)*-2);right:calc(var(--u)*-2);margin:0}
 #mini{border-radius:calc(var(--u)*6);border-color:rgba(255,255,255,.08)}
 /* ---- skill bar: uniform 48x48 icon slots, key badge, cooldown veil, counts (2026-11-21 skill icon spec, art/skills) ---- */
@@ -606,7 +612,7 @@ button{font-family:inherit;color:inherit}
         <canvas id="mini" width="400" height="112"></canvas>
       </div>
       <div id="skills"></div>
-      <div id="bossbar"><div class="bn" id="bossName"></div><div class="bar"><i id="bossHp"></i></div><div class="bcp" id="bossCp"></div></div>
+      <div id="bossbar"><div class="bn" id="bossName"></div><div class="bar"><i id="bossHp"></i><span id="bossPct">100%</span></div><div class="bcp" id="bossCp"></div></div>
       <div id="sktip"></div>
       <div id="prompt"></div>
     </div>
@@ -675,7 +681,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261124-1420';
+const GAME_VER = '261124-1710';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -826,7 +832,7 @@ const CHARS = {
     desc: '허리에 등불을 매단 석궁 사수. 몸은 약하지만 거리를 벌리며 쏘고, 위험하면 물러나며 다시 쏜다.',
     skills: [{ k: 'Z', n: '석궁 사격' }, { k: 'X', n: '관통 화살' }, { k: 'C', n: '후퇴 사격' }],
     light: { r: 190, col: '255,206,130' }, rim: '#f0c27a', mod: { hp: 1.0, def: 1.0 },
-    move: { name: '활공', how: '공중에서 Shift나 점프를 누르고 있으면 천천히 내려온다' },
+    move: { name: '집중', how: 'Shift를 누르면 10초 동안 주는 피해가 2배가 된다 (재사용 25초)' },
   },
   lykos: {
     id: 'lykos', name: '리코스', title: '그림자 암살자',
@@ -5152,7 +5158,11 @@ function spotsFor(id) {
   while (out.length < n && guard++ < 400) {
     const useLedge = ledges.length && r() < 0.35, pl = useLedge ? ledges[Math.floor(r() * ledges.length)] : null;
     const x = pl ? pl.x + 30 + r() * (pl.w - 60) : 260 + r() * (m.w - 520), y = pl ? pl.y : GROUND;
-    if (out.every(o => Math.abs(o.x - x) > 260) && (m.portals || []).every(pt => Math.abs(pt.x - x) > 90)) out.push({ x: Math.round(x), y });
+    const half = pp => ((typeof CC_SIZE !== 'undefined' && CC_SIZE[pp.t]) ? CC_SIZE[pp.t][0] : 60) / 2;
+    if (out.every(o => Math.abs(o.x - x) > 260) && (m.portals || []).every(pt => Math.abs(pt.x - x) > 90)
+      && (m.props || []).every(pp => Math.abs(pp.x - x) > half(pp) + 50)                 // 2026-11-24 (user): 석판·기둥 같은 배경 물건과 겹치지 않게
+      && (m.lore || []).every(l => Math.abs(l.x - x) > 90)
+      && (m.npcs || []).every(n => Math.abs(n.x - x) > 90)) out.push({ x: Math.round(x), y });
   }
   return SPOT_CACHE[id] = out;
 }
@@ -5343,7 +5353,7 @@ function genSideField(id, n, base, style, rng) {
   const order = []; for (const t in count) for (let i = 0; i < Math.round(count[t] * 1.35); i++) order.push(t);   // [S6-2] 0.9 -> 1.35
   for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
   const spawns = order.map((t, i) => {
-    const d = MON[t], sx = 360 + (w - 600) * (i + 0.5) / order.length;
+    const d = MON[t], sx = 420 + (w - 840) * (i + 0.5) / order.length;   // 2026-11-24 (user): 양 끝도 벽에서 떨어뜨린다 (예전엔 오른쪽 벽에 붙었다)
     if (d.kind === 'flyer') return { type: t, x: Math.round(sx), y: Math.round(230 + rng() * 70) };
     if ((d.kind === 'shooter' || d.kind === 'caster') && tops.length) { let best = tops[0]; for (const tp of tops) if (Math.abs(tp.x - sx) < Math.abs(best.x - sx)) best = tp; return { type: t, x: Math.round(best.x), y: best.y }; }
     return { type: t, x: Math.round(sx) };
@@ -5623,22 +5633,26 @@ const KEY_ACTIONS = [
   ['전투', 'z', '기본 공격', ['KeyZ']], ['전투', 'x', '스킬 1', ['KeyX']], ['전투', 'c', '스킬 2', ['KeyC']], ['전투', 'guard', '가드', ['KeyG']],
   ['기술', 'ka', '각성 기술 A', ['KeyA']], ['기술', 'ks', '각성 기술 S', ['KeyS']], ['기술', 'kd', '각성 기술 D', ['KeyD']], ['기술', 'kv', '궁극기', ['KeyV']], ['기술', 'kf', '레전드 기술', ['KeyF']],
   ['물건', 'pot', '치유 연고', ['Digit1', 'Numpad1']], ['물건', 'scroll', '귀환 주문서', ['Digit2', 'Numpad2']],
-  ['메뉴', 'm_gear', '장비 · 가방', ['KeyI']], ['메뉴', 'm_traits', '특성', ['KeyT']], ['메뉴', 'm_map', '미니맵', ['KeyN']], ['메뉴', 'm_music', '음악', ['KeyB']],
+  ['메뉴', 'm_gear', '장비 · 가방', ['KeyI']], ['메뉴', 'm_traits', '특성', ['KeyT']], ['메뉴', 'm_map', '미니맵', ['KeyN']], ['메뉴', 'm_music', '음악', []],   // 2026-11-24 (user): 화면에 없는 B 키로 배경음이 꺼지지 않는다
   ['메뉴', 'm_worldmap', '전체 맵', ['KeyM']], ['메뉴', 'm_quest', '퀘스트 · 일일 의뢰', ['KeyQ']], ['메뉴', 'm_wm_prev', '전체 맵 이전 페이지', []], ['메뉴', 'm_wm_next', '전체 맵 다음 페이지', ['KeyE']],['메뉴', 'm_trophy', '트로피 도감', ['KeyY']], ['메뉴', 'm_mute', '소리', ['KeyU']], ['메뉴', 'm_party', '파티 · 닉네임', ['KeyP']], ['메뉴', 'm_help', '가이드 · 조작법', ['KeyH']], ['메뉴', 'm_keys', '키 설정', ['KeyO']],
 ];
-const KEYS_STORE = 'devil-renown-keys';
+const KEYS_STORE = 'devil-renown-keys';   // 2026-11-24 (user): 저장 슬롯(캐릭터)마다 키세팅을 따로 기억한다
+const bindsKey = ch => KEYS_STORE + ':' + (ch || 'default');
 let BINDS = {}, KEYMAP = {};
 function rebuildKeymap() { KEYMAP = { Enter: 'ok' }; for (const a in BINDS) for (const code of BINDS[a]) KEYMAP[code] = a; if (typeof renderKeyHelp === 'function') renderKeyHelp(); }
 function loadBinds() {
-  let saved = {}; try { saved = JSON.parse(localStorage.getItem(KEYS_STORE) || '{}'); } catch (e) { }
-  if (saved.m_mute && saved.m_mute.includes('KeyM') && !(saved.m_worldmap && saved.m_worldmap.length)) { saved.m_mute = ['KeyU']; saved.m_worldmap = ['KeyM']; try { localStorage.setItem(KEYS_STORE, JSON.stringify(saved)); } catch (e) { } }   // 2026-11-21: M is the world map now, sound moved to U (once)
-  if (!(saved.m_quest && saved.m_quest.length) && saved.m_wm_prev && saved.m_wm_prev.includes('KeyQ')) { saved.m_quest = ['KeyQ']; saved.m_wm_prev = saved.m_wm_prev.filter(c => c !== 'KeyQ'); try { localStorage.setItem(KEYS_STORE, JSON.stringify(saved)); } catch (e) { } }   // 2026-11-23: Q opens the quest window (it still turns the world map page while that is open)
+  const key = bindsKey(G.save && G.save.char);
+  let saved = {}; try { saved = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { }
+  if (!Object.keys(saved).length) { try { const old = JSON.parse(localStorage.getItem(KEYS_STORE) || '{}'); if (Object.keys(old).length) saved = old; } catch (e) { } }   // the set from before this patch carries over once
+  if (saved.m_mute && saved.m_mute.includes('KeyM') && !(saved.m_worldmap && saved.m_worldmap.length)) { saved.m_mute = ['KeyU']; saved.m_worldmap = ['KeyM']; try { localStorage.setItem(key, JSON.stringify(saved)); } catch (e) { } }   // 2026-11-21: M is the world map now, sound moved to U (once)
+  if (!(saved.m_quest && saved.m_quest.length) && saved.m_wm_prev && saved.m_wm_prev.includes('KeyQ')) { saved.m_quest = ['KeyQ']; saved.m_wm_prev = saved.m_wm_prev.filter(c => c !== 'KeyQ'); try { localStorage.setItem(key, JSON.stringify(saved)); } catch (e) { } }   // 2026-11-23: Q opens the quest window
+  if (saved.m_music && saved.m_music.includes('KeyB')) { saved.m_music = saved.m_music.filter(c => c !== 'KeyB'); try { localStorage.setItem(key, JSON.stringify(saved)); } catch (e) { } }   // 2026-11-24 (user): B no longer turns the music off
   BINDS = {}; for (const [, a, , def] of KEY_ACTIONS) BINDS[a] = (saved[a] && saved[a].length ? saved[a] : def).slice();
   rebuildKeymap();
 }
-function saveBinds() { try { localStorage.setItem(KEYS_STORE, JSON.stringify(BINDS)); } catch (e) { } rebuildKeymap(); }
+function saveBinds() { try { localStorage.setItem(bindsKey(G.save && G.save.char), JSON.stringify(BINDS)); } catch (e) { } rebuildKeymap(); }
 function bindKey(action, code) { for (const a in BINDS) BINDS[a] = BINDS[a].filter(c => c !== code); BINDS[action] = [code]; saveBinds(); }
-function resetBinds() { try { localStorage.removeItem(KEYS_STORE); } catch (e) { } loadBinds(); }
+function resetBinds() { try { localStorage.removeItem(bindsKey(G.save && G.save.char)); } catch (e) { } loadBinds(); }
 const KEY_NAMES = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', Space: 'Space', ShiftLeft: 'Shift', ShiftRight: 'R-Shift', ControlLeft: 'Ctrl', ControlRight: 'R-Ctrl', AltLeft: 'Alt', AltRight: 'R-Alt', Enter: 'Enter', Tab: 'Tab', Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', Backslash: '\\', CapsLock: 'Caps' };
 const keyName = code => !code ? '-' : KEY_NAMES[code] || (code.startsWith('Key') ? code.slice(3) : code.startsWith('Digit') ? code.slice(5) : code.startsWith('Numpad') ? 'N' + code.slice(6) : code);
 const keyOf = a => keyName((BINDS[a] || [])[0]);
@@ -5952,12 +5966,13 @@ function supportAt(x, y) {
 /* ---- Map loading ---- */
 function getPortals() {
   const m = G.map, list = m.portals.slice();
-  if (m.boss && G.save.flags['boss_' + m.boss] && (!G.boss || G.boss.st === 'die')) list.push({ id: 'p_camp', x: 640, to: CHAPTERS[m.ch].camp, toX: 1560, label: '야영지로 귀환', req: () => true });
+  if (m.boss && G.save.flags['boss_' + m.boss] && (!G.boss || G.boss.st === 'die' || G.boss.hp <= 0)) list.push({ id: 'p_camp', x: 640, to: CHAPTERS[m.ch].camp, toX: 1560, label: '야영지로 귀환', req: () => true });   // 2026-11-24 (user): 보스가 쓰러진 상태면 연출·상태와 상관없이 열려 있다
   return list;
 }
 function loadMap(id, atX, quiet) {
   if (typeof resetBossArenaState === 'function') resetBossArenaState();   // nothing from the last fight carries over (54_fix8.js)
   G.quietLoad = !!quiet; G.cine = null; G.death = null; document.getElementById('game').classList.remove('cine');
+  if (G.map && G.mapId && G.player && G.save && !G.map.boss && id !== G.mapId) G.save.prevPos = { id: G.mapId, x: Math.round(G.player.x) };   // 2026-11-24 (user): 보스맵 퇴장은 들어오기 직전 자리로
   if (G.anon && G.map) { G.map.arenaL = G.anon.prevL; G.map.arenaR = G.anon.prevR; }
   const m = MAPS[id];
   G.map = m; G.mapId = id;
@@ -6063,12 +6078,12 @@ function updatePlayer(dt) {
   }
   p.inv = Math.max(0, p.inv - dt); p.hurt = Math.max(0, p.hurt - dt);
   p.guard = Math.max(0, p.guard - dt); p.parryFx = Math.max(0, p.parryFx - dt); p.sprint = Math.max(0, p.sprint - dt);
-  p.cd.g = Math.max(0, p.cd.g - dt); p.cd.s = Math.max(0, p.cd.s - dt);
+  p.cd.g = Math.max(0, p.cd.g - dt); p.cd.s = Math.max(0, p.cd.s - dt); p.pgFree = Math.max(0, (p.pgFree || 0) - dt);
   if (G.map.safe && p.hp < p.mhp) p.hp = Math.min(p.mhp, p.hp + p.mhp * TOWN_REGEN * (1 + (G.stats.hpGain || 0) / 100) * dt);   // slow heal by the camp fire
   if (p.poisonT > 0) { p.poisonT -= dt; p.hp = Math.max(1, p.hp - p.mhp * 0.02 * dt); }   // poison: slow loss, no regen until a potion
   if (p.hp < p.mhp && G.stats.regen && !(p.poisonT > 0) && !(p.healBlockT > 0)) p.hp = Math.min(p.mhp, p.hp + G.stats.regen * (1 + (G.stats.hpGain || 0) / 100) * dt);   // pauldron regen
   skillTimers(dt);
-  if (IN.press.guard && p.cd.g <= 0) { p.guard = GUARD_WIN; p.cd.g = p.cdMax.g; sfx('guard'); }
+  if (IN.press.guard && p.cd.g <= 0) { p.guard = GUARD_WIN; p.cd.g = p.pgFree > 0 ? 0 : p.cdMax.g; p.guardAt = G.t; sfx('guard'); }   // 2026-11-24 (user): 퍼펙트 가드 직후에는 쿨타임 없이 한 번 더
   p.cd.x = Math.max(0, p.cd.x - dt); p.cd.c = Math.max(0, p.cd.c - dt); p.cd.pot = Math.max(0, p.cd.pot - dt);
   p.comboT -= dt; if (p.comboT <= 0) p.combo = 0;
   p.drop = Math.max(0, p.drop - dt); p.coy = Math.max(0, p.coy - dt); p.jbuf = Math.max(0, p.jbuf - dt);
@@ -6309,7 +6324,7 @@ function tickCast(dt) {
   if (moved || IN.press.jump || IN.press.z || IN.press.x || IN.press.c || (IN.down.z && !held.z) || (IN.down.x && !held.x) || (IN.down.c && !held.c)) { p.cast = 0; p.castHeld = null; toast('귀환이 취소됐다', 'bad'); return; }
   if (Math.random() < 0.6) addPart({ x: p.x + rnd(-16, 16), y: p.y - rnd(0, 8), vx: 0, vy: rnd(-90, -40), g: 0, life: rnd(.5, .9), r: rnd(1.2, 2.4), col: '255,210,150', glow: 1 });
   p.cast -= dt;
-  if (p.cast <= 0) { p.cast = 0; p.castHeld = null; G.save.scrolls--; travel(CHAPTERS[mapChapter()].camp, 760); updateHud(true); }
+  if (p.cast <= 0) { p.cast = 0; p.castHeld = null; G.save.scrolls--; if (typeof scrollBurst23 === 'function') scrollBurst23(p); travel(CHAPTERS[mapChapter()].camp, 760); updateHud(true); }
 }
 function hurtPlayer(raw, srcX, o) {
   o = o || {};
@@ -6516,7 +6531,8 @@ function updateMarks(dt) {
 }
 
 /* ---------- Drops ---------- */
-function addDrop(k, v, x, y) { G.drops.push({ k, v, x, y, w: 10, h: 10, vx: rnd(-90, 90), vy: rnd(-380, -220), t: 0, life: 40, drop: 0 }); }
+const DROP_LIFE = 120;   // 2026-11-24 (user): 40초 -> 2분, 맵을 넘어가도 남는다
+function addDrop(k, v, x, y) { G.drops.push({ k, v, x, y, w: 10, h: 10, vx: rnd(-90, 90), vy: rnd(-380, -220), t: 0, life: DROP_LIFE, drop: 0 }); }
 function dropLoot(m) {
   const d = m.d;
   if (m.minion) return;
@@ -6571,7 +6587,11 @@ function makeMon(type, x, y, slot) {
   };
   G.mons.push(m); return m;
 }
-function spawnMon(sl) { sl.m = makeMon(sl.sp.type, sl.sp.x, sl.sp.y, sl); return sl.m; }
+function spawnMon(sl) {
+  const mw = (MON[sl.sp.type] && MON[sl.sp.type].w) || 40, mw2 = G.map ? G.map.w : 4000;
+  sl.sp.x = Math.round(clamp(sl.sp.x, 60 + mw / 2, mw2 - 60 - mw / 2));   // 2026-11-24 (user): 어떤 경우에도 벽 안으로 들어가지 않는다
+  sl.m = makeMon(sl.sp.type, sl.sp.x, sl.sp.y, sl); return sl.m;
+}
 function updateSpawns(dt) {
   const p = G.player;
   gateTick(); if (G.map.water) waterTick(dt);
@@ -6740,7 +6760,12 @@ function showBossBar(on) {
     if (el) el.innerHTML = rc ? `권장 전투력 <b>${nf(rc)}</b> · 내 전투력 <b style="color:${my >= rc ? '#8fd48c' : my >= rc * 0.85 ? '#f0d070' : '#ff8d80'}">${nf(my)}</b>` : '';
   }
 }
-function updateBossBar() { const b = G.boss; if (b) $('#bossHp').style.width = Math.max(0, b.hp / b.mhp * 100) + '%'; }
+function updateBossBar() {
+  const b = G.boss; if (!b) return;
+  const k = clamp(b.hp / b.mhp, 0, 1);
+  $('#bossHp').style.width = (k * 100) + '%';
+  const pc = $('#bossPct'); if (pc) pc.textContent = Math.ceil(k * 100) + '%';   // 2026-11-24 (user): 보스 체력 퍼센트
+}
 const bdmg = (b, k) => Math.round(BDMG[k] * b.atkMul);
 /* 2026-11-24 (user): 1~30장 보스 패턴·이펙트를 0.8배속으로 — 소요 시간은 1/0.8 = 1.25배 */
 const BOSS_PACE = 0.8, BOSS_INV = 1 / 0.8;
@@ -8813,7 +8838,24 @@ function playerFig() {
   if (p.focus > 0) drawFocusAura(ctx, p);   // 2026-11-24: 집중 중 황금 오라 (발밑 링 + 등 뒤 빛 + 잔불)
   drawGuardFx(ctx, p);   // pixel barrier, shock ring, sparks (59_fx.js)
   if (p.glide) { ctx.fillStyle = 'rgba(200,220,255,.25)'; for (let i = 0; i < 3; i++) ctx.fillRect(p.x - 14 + i * 12, p.y - 52 - Math.sin(G.t * 10 + i) * 2, 6, 1.5); }
-  if (p.cast > 0) { ctx.strokeStyle = `rgba(255,210,150,${0.5 + Math.sin(G.t * 20) * 0.2})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y - 24, 30, -Math.PI / 2, -Math.PI / 2 + (1 - p.cast / SCROLL_CAST) * 6.283); ctx.stroke(); }
+  if (p.cast > 0) {   // 2026-11-24 (user): 귀환 이펙트 — 발밑 회전 룬 + 빛기둥 + 남은 시간 고리
+    const k = 1 - p.cast / SCROLL_CAST, a = 0.55 + Math.sin(G.t * 12) * 0.15;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const cg = ctx.createRadialGradient(p.x, p.y - 34, 4, p.x, p.y - 34, 54);
+    cg.addColorStop(0, `rgba(255,232,170,${(0.28 * a).toFixed(3)})`); cg.addColorStop(1, 'rgba(255,190,90,0)');
+    ctx.fillStyle = cg; ctx.fillRect(p.x - 56, p.y - 92, 112, 100);
+    const bg = ctx.createLinearGradient(p.x, p.y - 150, p.x, p.y);
+    bg.addColorStop(0, 'rgba(255,235,180,0)'); bg.addColorStop(1, `rgba(255,225,160,${(0.16 + 0.1 * a).toFixed(3)})`);
+    ctx.fillStyle = bg; ctx.fillRect(p.x - 20, p.y - 150, 40, 150);
+    for (let r = 0; r < 2; r++) { const sp = r ? -1.6 : 2.2, rr = 26 + r * 9;
+      ctx.strokeStyle = `rgba(255,226,160,${((r ? 0.45 : 0.8) * (0.7 + 0.3 * a)).toFixed(3)})`; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.ellipse(p.x, p.y - 2, rr, rr * 0.32, 0, G.t * sp, G.t * sp + 5.2); ctx.stroke(); }
+    for (let i = 0; i < 6; i++) { const ang = G.t * 1.6 + i * 1.047, rx = p.x + Math.cos(ang) * 30, ry = p.y - 3 + Math.sin(ang) * 10;
+      ctx.fillStyle = 'rgba(255,240,190,.9)'; ctx.fillRect(Math.round(rx) - 1, Math.round(ry) - 3, 2, 6); }
+    ctx.strokeStyle = 'rgba(255,240,200,.95)'; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.arc(p.x, p.y - 40, 34, -Math.PI / 2, -Math.PI / 2 + k * 6.283); ctx.stroke();
+    ctx.restore();
+  }
 }
 function monFig(m) {
   const d = m.d;
@@ -9066,18 +9108,20 @@ function renderWorld() {
   drawAura(c);
   if (G.player.dead <= 0 || G.player.dead > 2.2) playerFig(); else { c.globalAlpha = clamp(G.player.dead / 2.2, 0, 1); playerFig(); c.globalAlpha = 1; }
   drawGims(c, true); drawWater(c);
-  drawPet(c); drawProjs(c); drawFx(c); drawSkillFx(c);
+  drawPet(c);
+  { const fk = FXA(); c.save(); c.globalAlpha = fk; drawProjs(c); drawFx(c); drawSkillFx(c); c.restore(); }   // 2026-11-24 (user): 이펙트 투명도
   c.restore();
   renderLighting(cam);
   c.save(); c.translate(camPx(-cam.x + cam.sx), camPx(cam.sy));
   /* [S5-5] 2026-11-23 (user): 지면(GROUND) 아래로는 스킬·전조·이펙트가 그려지지 않는다 (보스 사망 연출과 같은 방식) */
   c.save(); c.beginPath(); c.rect(cam.x - 60, -400, W + 120, GROUND + 400); c.clip();
-  drawPfx(c); drawVfxStrips(c); drawHaz(c); drawAims(c); drawTelegraphs(c);
+  { const fk = FXA(); c.save(); c.globalAlpha = fk; drawPfx(c); drawVfxStrips(c); c.restore(); }
+  drawHaz(c); drawAims(c); drawTelegraphs(c);   // 전조·위험 표시는 투명도를 낮춰도 그대로 (판단에 필요하다)
   c.restore();
   drawEyes(c); drawStatus(c);
   const p = G.player; if (p.lantern && p.dead <= 0) drawLantern(c, p.x + p.lantern.x * p.face, p.y + p.lantern.y);
   for (const n of visibleNpcs()) if (n.lantern) drawLantern(c, n.lantern.x, n.lantern.y);
-  drawParts(c); drawCine(c); drawDebug(c);
+  { const fk = FXA(); c.save(); c.globalAlpha = fk; drawParts(c); c.restore(); } drawCine(c); drawDebug(c);
   c.restore();
   for (let i = 0; i < 4; i++) {
     const x = ((i * 330 + G.t * 14 - cam.x * 0.45) % (W + 500) + (W + 500)) % (W + 500) - 250, y = 440 + Math.sin(G.t * 0.3 + i) * 10;
@@ -10035,7 +10079,7 @@ function cleanFrame(ch, i) {
 function heroPose(ch, p) {
   const A = HERO_ANIM[ch], a = p.act, t = p.anim, run = p.onGround ? clamp(Math.abs(p.vx) / 200, 0, 1) : 0;
   let f = A.idle[0], sx = 1, sy = 1, tilt = 0, dx = 0, flip = 1;
-  if (!a && p.onGround) { const br = Math.sin(t * 2.4); sy = 1 + br * 0.018; sx = 1 - br * 0.006; }   // breathing
+  { const bk = ch === 'kallisto' ? 0.45 : 1; if (!a && p.onGround) { const br = Math.sin(t * 2.4); sy = 1 + br * 0.018 * bk; sx = 1 - br * 0.006 * bk; } }   // breathing (2026-11-24 user: 궁수는 위아래 변화를 절반 이하로)
   if (p.walking && !a) {   // walk/run cycle at the speed of the feet (walkPh, 30_combat.js), with a small rise on the passing frames
     const ph = (p.walkPh || 0) * (A.runK || 1); f = A.run[Math.floor(ph) % A.run.length];   // 2026-11-23 48f: 14 run frames, phase x runK
     if (A.bob === 0) { sy = 1; sx = 1; } else sy = 1 + (Math.floor(ph) % 2 ? 0.015 : -0.01);   // 48f: the bounce is in the drawing; no extra squash
@@ -12968,6 +13012,9 @@ function renderKeyHelp() {
   if (G.scene === 'play' && G.save) buildSkills();
 }
 function OPT(k) { const o = (G.save && G.save.opt) || {}; return o[k] == null ? true : !!o[k]; }   // [S7-1] 기본은 모두 켜짐
+/* 2026-11-24 (user): 이펙트 투명도 10~100% (설정 탭). 스킬·타격·파티클에만 걸리고 전조/위험 표시는 그대로 둔다 */
+function FXA() { const v = (G.save && G.save.opt && G.save.opt.fxa != null) ? +G.save.opt.fxa : 100; return clamp(isFinite(v) ? v : 100, 10, 100) / 100; }
+function fxaPct() { return Math.round(FXA() * 100); }
 function keysHtml() {
   let html = '', grp = '';
   for (const [g, a, label] of KEY_ACTIONS) {
@@ -12982,6 +13029,7 @@ function keysHtml() {
     ${sw('flash', '번쩍임 줄이기', '화면 전체가 밝아지는 연출')}
     ${sw('nums', '데미지 숫자', '피해·회복 숫자를 띄운다')}
     ${sw('pet', '쁘띠 표시', '따라다니는 쁘띠를 그린다')}
+    <div class="krow"><span>이펙트 투명도<br><small style="color:#8a8a88">스킬·전투 이펙트의 진하기 (전조 표시는 그대로)</small></span><input class="fxar" type="range" min="10" max="100" step="5" value="${fxaPct()}" data-fxa="1"><b id="fxaV">${fxaPct()}%</b></div>
     <h4>자동</h4>
     ${sw('auto', '자동 줍기 강화', '떨어진 것을 더 멀리서 끌어온다')}
     <h4>소리 · 키</h4>
@@ -13002,13 +13050,15 @@ function updateHud(force) {
   setT('potN', s.potions); setT('scrN', s.scrolls);
   [['sk1', 'x'], ['sk2', 'c'], ['skp', 'pot'], ['skg', 'g'], ['skm', 's'], ['sk_a', 'ka'], ['sk_s', 'ks'], ['sk_d', 'kd'], ['sk_v', 'kv'], ['sk_f', 'kf']].forEach(([id, k]) => {
     const el = document.getElementById(id); if (!el) return;
-    const rem = p.cd[k], max = p.cdMax[k] || 1, h = (rem > 0 ? rem / max * 100 : 0).toFixed(0) + '%';
+    const foc = (k === 's' && s.char === 'kallisto');   // 2026-11-24 (user): 궁수 이동기(집중) 쿨타임은 왼쪽이 아니라 스킬창 칸에
+    const rem = foc ? p.focusCd : p.cd[k], max = foc ? FOCUS_CD : (p.cdMax[k] || 1), h = (rem > 0 ? rem / max * 100 : 0).toFixed(0) + '%';
     const key = id + 'h'; if (HUDC[key] !== h) { HUDC[key] = h; el.querySelector('.cd').style.height = h; }
     const t = rem > 0.05 ? rem.toFixed(rem < 10 ? 1 : 0) : ''; const tk = id + 't'; if (HUDC[tk] !== t) { HUDC[tk] = t; el.querySelector('.ct').textContent = t; el.classList.toggle('cool', t !== ''); }
   });
   if (IS_TOUCH) [['x', 'x'], ['c', 'c'], ['pot', 'pot'], ['guard', 'g'], ['shift', 's'], ['ka', 'ka'], ['ks', 'ks'], ['kd', 'kd'], ['kv', 'kv'], ['kf', 'kf']].forEach(([k, cd]) => {
     const b = document.querySelector('#touch .tb[data-k="' + k + '"]'); if (!b) return;
-    const rem = p.cd[cd], max = p.cdMax[cd] || 1, h = (rem > 0 ? rem / max * 100 : 0).toFixed(0) + '%', t = rem > 0.05 ? rem.toFixed(rem < 10 ? 1 : 0) : '';
+    const foc = (cd === 's' && s.char === 'kallisto');
+    const rem = foc ? p.focusCd : p.cd[cd], max = foc ? FOCUS_CD : (p.cdMax[cd] || 1), h = (rem > 0 ? rem / max * 100 : 0).toFixed(0) + '%', t = rem > 0.05 ? rem.toFixed(rem < 10 ? 1 : 0) : '';
     if (HUDC['tb' + k] !== h) { HUDC['tb' + k] = h; b.querySelector('.cdv').style.height = h; }
     if (HUDC['tt' + k] !== t) { HUDC['tt' + k] = t; b.querySelector('.cdt').textContent = t; }
   });
@@ -14122,7 +14172,9 @@ function bossExitGo(yes) {
   $('#exitAsk').classList.remove('on'); $('#game').focus({ preventScroll: true });
   if (!yes || !G.map || !G.map.boss) return;
   const e = G.map.exitTo || { to: CHAPTERS[G.map.ch].camp, toX: 600 };
-  travel(e.to, e.toX);
+  const pv = G.save && G.save.prevPos;
+  if (pv && MAPS[pv.id] && !MAPS[pv.id].boss && typeof pv.x === 'number') travel(pv.id, pv.x);   // 2026-11-24 (user): 마을이 아니라 들어오기 직전 맵·좌표로
+  else travel(e.to, e.toX);
 }
 function bossExitTick() {
   const btn = $('#bExit'); if (!btn) return;
@@ -14677,6 +14729,14 @@ uwClick = function (t, right) {
   if (D.lock != null) { togglePotLock(D.lockk || G.ui.smithSel || 'weapon', +D.lock); uiRefresh(); return; }         // [S1-6] 줄 잠금
   if (D.pets) { openPanel('pets'); return; }                                                                        // [S3-7] 쁘띠 도감(STEP 3에서 쓰인다)
   if (D.rpf) { if (reroll(D.rpf, 'p', true)) { G.ui.rrMsg = '변경권으로 잠재 옵션을 바꿨다'; sfx('quest'); } uiRefresh(); return; }   // 무료 잠재 변경권
+  if (D.rq) { const it = s.equip[D.rq]; if (it && !it.ring && qualityOf(it) >= QUALITY.length - 1) {
+      /* 2026-11-24 (user): 이미 최상급이면 한 번 더 묻는다 */
+      sureAsk('품질이 이미 최상급입니다. 돌리시겠습니까?', '최상급이 다시 나올 확률은 0.5% · 품질석 1개와 골드가 든다', () => {
+        if (reroll(D.rq, 'q')) { G.ui.rrMsg = '품질이 ' + QUALITY[qualityOf(s.equip[D.rq])].n + '(으)로 바뀌었다'; sfx('quest'); }
+        uiRefresh();
+      });
+      return;
+    } }
   if (D.rq || D.rp) { const k = D.rq || D.rp, kind = D.rq ? 'q' : 'p'; if (reroll(k, kind)) { const it = s.equip[k]; G.ui.rrMsg = kind === 'q' ? '품질이 ' + QUALITY[qualityOf(it)].n + '(으)로 바뀌었다' : '잠재 옵션이 바뀌었다'; sfx('quest'); } uiRefresh(); return; }
   return _uwClick9(t, right);
 };
@@ -14812,7 +14872,7 @@ function vfx9Draw(c) {
     c.translate(vx, Math.round(v.y));
     if (v.flip) c.scale(-1, 1);
     if (v.flipY) c.scale(1, -1);
-    c.globalAlpha = a; c.globalCompositeOperation = v.add ? 'lighter' : 'source-over';
+    c.globalAlpha = a * (typeof FXA === 'function' ? FXA() : 1); c.globalCompositeOperation = v.add ? 'lighter' : 'source-over';
     c.imageSmoothingEnabled = false;
     c.drawImage(v.img, f * fw, 0, fw, fh, dx, dy, dw, dh);
     c.restore();
@@ -15879,7 +15939,8 @@ const EHP9 = {};
 function ehp9(n) { if (EHP9[n]) return EHP9[n]; let t = 0; for (const c of ['theron', 'kallisto', 'lykos']) { const st = calcStats(specSave(n, c)); t += st.hp * (100 + st.def) / 100; } return (EHP9[n] = t / 3); }
 let FOX9 = null;   // the fox's damage multiplier as it was (the reference)
 function foxAtk9() { if (FOX9) return FOX9; const d = BOSSES[MAPS[CHAPTERS[5].arena].boss]; return (FOX9 = CHM[5].batk * Math.pow(d.pow || 1, 0.75) * 0.9 * 1.35); }
-function bossHp9(n) { return Math.round(BOSS9_DPS[n - 1] * BOSS_SECS * (BOSS9_HPK[n] || 1) / 10) * 10; }
+const BOSS_HP_K = n => (n >= 6 ? 1.5 : 1);   // 2026-11-24 (user): 6장부터 30장까지 보스 최대 HP 1.5배 (1~5장은 그대로)
+function bossHp9(n) { return Math.round(BOSS9_DPS[n - 1] * BOSS_SECS * (BOSS9_HPK[n] || 1) * BOSS_HP_K(n) / 10) * 10; }
 /* per chapter: the factor at which the bot with SPEC9 (rt 0.25, 5 potions) wins about 2 fights in 3 (tune9.js, 6 fights a
    step), then pulled halfway toward the median of its neighbours (6 fights are noisy). Later bosses have more to dodge, so
    the factor falls: their hits stay the same share of your health, there are just more of them. */
@@ -15908,12 +15969,53 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261124e',   // 2026-11-24 다섯 번째 패치(GAME_VER '261124-1420'): 원형 부채꼴 기술 버튼 · 도적·마법사 조정 · 랜덤 상자 타격감
+  id: '261124f',   // 2026-11-24 여섯 번째 패치(GAME_VER '261124-1710'): 23개 항목 정밀 수정 (전투·맵·UI·설정)
   title: '패치 노트',
-  sub: '동그란 부채꼴 기술 버튼 · 상자 타격감 · 도적과 마법사 조정',
+  sub: '이펙트 투명도 · 도적 암습 · 보스 체력 1.5배 · 맵 경계와 빙판',
   versions: [
     {
-      ver: '261124-1420', date: '2026-11-24', name: '동그란 기술 버튼 · 상자 타격감 · 도적·마법사 조정', cur: 1,
+      ver: '261124-1710', date: '2026-11-24', name: '23개 항목 — 전투 · 맵 · UI 정밀 수정', cur: 1,
+      items: [
+        { t: 'UI', h: '이펙트 투명도를 직접 맞춘다',
+          p: '설정(O) 창의 화면·연출에 이펙트 투명도 슬라이더가 생겼다. 10%에서 100%까지 5% 단위로 맞출 수 있고, 스킬·타격·파티클 같은 전투 이펙트의 진하기가 바로 바뀐다.',
+          q: '전조(경고 표시)와 위험 장판은 잘 보여야 해서 투명도를 낮춰도 그대로다. 값은 이 세이브에 저장된다.' },
+        { t: 'UI', h: '소리가 꺼졌는지 한눈에 보인다',
+          p: '오른쪽 위 소리 버튼이 꺼짐 상태에서 붉은 바탕에 굵은 사선, 그리고 꺼짐 글자가 붙는다. 예전에는 가는 사선 하나뿐이라 잘 보이지 않았다.',
+          q: '소리 버튼을 누르면 여전히 소리 설정 창이 열린다. 배경음만 끄는 B 단축키는 없앴다(설정에서 직접 지정 가능).' },
+        { t: '전투', h: '도적 S가 암습으로 바뀌었다',
+          p: '가장 가까운 적의 등 뒤로 순간이동해 단번에 찌른다(공격력의 400%). 착지하면 도적이 그 적을 바라보고, 체력 25% 이하 일반 몬스터는 즉사한다.',
+          q: '주변에 적이 없으면 발동하지 않고 재사용 대기시간도 소모되지 않는다. 스킬 이름·설명·특성 이름도 암습에 맞게 바뀌었다.' },
+        { t: '전투', h: '보스 체력이 6장부터 1.5배',
+          p: '6장에서 30장까지 모든 보스의 최대 체력이 1.5배가 됐다. 1~5장은 예전과 같다.',
+          q: '보스 체력바에 남은 체력 퍼센트(%)도 함께 표시된다. 숨은 보스와 21~30장 성탑 보스도 같은 기준을 따른다.' },
+        { t: '전투', h: '퍼펙트 가드가 한 번 더 확실하게',
+          p: '가드를 올린 뒤 0.1초 안에 막아 내면 퍼펙트 가드로 가드 쿨타임이 0이 된다. 이 0.1초 판정이 프레임 경계에서 조금씩 어긋나 가끔 쿨타임이 돌아오던 문제를 고쳐, 누른 시각을 기준으로 정확히 0.1초를 센다.',
+          q: '퍼펙트 가드 직후 다시 눌러도 쿨타임이 되살아나지 않아 연달아 막을 수 있다.' },
+        { t: '전투', h: '도적 독단검이 캐릭터로 돌아온다',
+          p: '특성 [변경]으로 단검이 되돌아올 때, 시전한 자리가 아니라 지금 서 있는 도적의 몸 중앙으로 날아와 회수된다. 이동해도 따라온다.',
+          q: '마법사 Z도 원을 그리지 않고 일직선으로 나갔다가 일직선으로 돌아오며, 캐릭터가 움직이면 그 자리로 곧장 따라온다.' },
+        { t: '전투', h: '궁수 집중 — 쿨타임이 스킬창에',
+          p: '궁수 이동기(Shift)는 집중이다. 10초 동안 주는 피해가 2배가 되고 재사용은 25초다. 남은 쿨타임이 화면 왼쪽이 아니라 스킬창의 이동기 칸에 다른 기술과 똑같이 표시되고, 설명도 집중에 맞게 고쳤다.',
+          q: '집중이 켜져 있는 동안에는 화면 왼쪽에 남은 시간이 작게 뜬다. 궁수 S(섬광 덫)는 바닥에 빛무리와 고리가 함께 그려져 어디에 놓였는지 잘 보인다.' },
+        { t: 'UI', h: '캐릭마다 다른 키세팅 · 스킬창은 끌어서 옮긴다',
+          p: '키 설정이 저장 슬롯(캐릭터)마다 따로 저장된다. 캐릭터를 바꾸면 그 캐릭터의 키세팅이 그대로 불러와진다.',
+          q: '컴퓨터에서는 스킬창을 통째로 끌어 화면 어디로든 옮길 수 있고, 옮긴 자리는 기억된다(휴대폰은 원형 버튼이라 그대로).' },
+        { t: '맵', h: '아이템이 2분 동안, 맵을 넘어도 남는다',
+          p: '떨어진 아이템이 사라지기까지 40초에서 2분으로 늘었다. 다른 맵으로 넘어가 있는 동안에도 시간은 줄어들고, 2분 안에 돌아오면 그 자리에 그대로 있다.',
+          q: '맵마다 따로 기억하므로 사냥터를 오가며 줍다 놓친 장비를 다시 찾을 수 있다.' },
+        { t: '맵', h: '보스방 끝과 빙판이 또렷해졌다',
+          p: '보스방 좌우 끝에 어두운 외곽과 돌기둥, 바닥 경계선을 그려 벽이 어디인지 보이게 했다(17장 등). 19장 얼어붙은 호수는 바닥에 반짝이는 빙판 결이 흐른다.',
+          q: '맵 아이템 줍기 퀘스트의 지점이 석판·기둥 같은 배경 물건과 겹치지 않게 배치된다. 필드 몬스터는 벽 여백을 두고 나타난다.' },
+        { t: '맵', h: '보스맵 퇴장은 들어온 자리로 · 10장 퇴장 포탈',
+          p: '보스맵 퇴장 버튼으로 나가면 마을이 아니라 보스방에 들어오기 직전의 맵과 좌표로 돌아간다. 직전 자리를 모르면 예전처럼 마을로 간다.',
+          q: '보스를 쓰러뜨린 뒤 생기는 귀환 포탈은 보스가 쓰러진 상태면 언제나 열려 있다.' },
+        { t: '보상', h: '품질 리롤 확인 문구',
+          p: '품질이 이미 최상급일 때 품질 재설정을 누르면 "품질이 이미 최상급입니다. 돌리시겠습니까?" 확인 창이 먼저 뜬다.',
+          q: '그만두기를 누르면 품질석과 골드는 소모되지 않는다.' },
+      ],
+    },
+    {
+      ver: '261124-1420', date: '2026-11-24', name: '동그란 기술 버튼 · 상자 타격감 · 도적·마법사 조정',
       items: [
         { t: 'UI', h: '기술 버튼이 동그란 부채꼴 호로',
           p: '휴대폰 기술 버튼이 금테를 두른 동그란 모양이 됐다. 오른쪽 아래 큰 Z(평타)를 중심으로 안쪽 호에 X·C, 그 위 궁극기(V), 바깥 호에 A·S·D와 무기 기술(F)이 부채꼴로 늘어서고, 가장 바깥 호에 상호작용(↑)·이동기·가드·점프가 자리잡는다.',
@@ -17550,7 +17652,18 @@ function remFxDraw(c) {
     const box = e.follow ? remBox(e.follow, e.sk, e.k) : e.box; if (e.follow) e.face = e.follow.face || 1;
     remDrawBox(c, e.sk, remFrameAt(e.seq, e.t), box, e.face, e.alpha);
   }
-  for (const tr of G.traps || []) if (tr.rem) remDrawBox(c, REM_SK.kallisto.s, 0, tr.box, tr.face, tr.t > tr.arm ? 0.55 + 0.2 * Math.sin(G.t * 6) : 0.3);   // an armed snare glints
+  for (const tr of G.traps || []) {   // 2026-11-24 (user): 궁수 S(섬광 덫) 가시성 — 바닥 빛무리 + 경계 고리 + 밝은 덫 그림
+    if (!tr.rem) continue;
+    const b = tr.box, cx = b.x + b.w / 2, gy = b.y + b.h, armed = tr.t > tr.arm, pulse = 0.5 + 0.5 * Math.sin(G.t * 6);
+    c.save(); c.globalCompositeOperation = 'lighter';
+    const rg = c.createRadialGradient(cx, gy - 6, 2, cx, gy - 6, b.w * 0.85);
+    rg.addColorStop(0, `rgba(255,214,120,${((armed ? 0.30 : 0.16) + 0.10 * pulse).toFixed(3)})`); rg.addColorStop(1, 'rgba(255,170,60,0)');
+    c.fillStyle = rg; c.beginPath(); c.ellipse(cx, gy - 4, b.w * 0.85, 16, 0, 0, 6.283); c.fill();
+    c.strokeStyle = `rgba(255,226,150,${armed ? 0.85 : 0.45})`; c.lineWidth = 2;
+    c.beginPath(); c.ellipse(cx, gy - 4, b.w * 0.46, 9, 0, 0, 6.283); c.stroke();
+    c.restore();
+    remDrawBox(c, REM_SK.kallisto.s, 0, b, tr.face, armed ? 0.9 : 0.6);
+  }
 }
 /* 1352b: warrior X / A effects start past the sword trail drawn in the 48f frames (tip ~62-67 px ahead): the hit covers the sword (from just behind the hero) out to the effect's far edge */
 function remReach(p, box) { const f = p.face || 1, x0 = f > 0 ? Math.min(box.x, p.x - 8) : box.x, x1 = f > 0 ? box.x + box.w : Math.max(box.x + box.w, p.x + 8); return { x: x0, y: box.y, w: x1 - x0, h: box.h }; }
@@ -17614,7 +17727,7 @@ const REM_TICK = {
       const sk = remSk('c'), n = k2 >= 2 ? 5 : 3, ps = { t: 4, dps: S.atk * 0.16 * (k2 >= 1 ? 1.4 : 1) * tDmg('ly2') };
       for (let i = 0; i < n; i++) {
         const ang = (i - (n - 1) / 2) * 0.11;
-        proj({ x: p.x + p.face * sk.off, y: p.y - sk.lift - sk.h / 2, vx: Math.cos(ang) * p.face * 720, vy: Math.sin(ang) * 720, w: sk.w, h: sk.h, mult: 0.85 * tDmg('ly2'), kind: 'rem', maxDist: 480, life: 1.6, poison: ps, pierce: k2 >= 3, boomer: k2 >= 3, rsk: sk, rfly: [0, 1], rend: [2, 3] });
+        proj({ x: p.x + p.face * sk.off, y: p.y - sk.lift - sk.h / 2, vx: Math.cos(ang) * p.face * 720, vy: Math.sin(ang) * 720, w: sk.w, h: sk.h, mult: 0.85 * tDmg('ly2'), kind: 'rem', maxDist: 480, life: 1.6, poison: ps, pierce: k2 >= 3, boomer: k2 >= 3, home: k2 >= 3, pick: 30, rsk: sk, rfly: [0, 1], rend: [2, 3] });   // 2026-11-24 (user): 돌아올 때 지금 캐릭터 중앙으로
       }
       sfx('throw');
     }
@@ -21598,11 +21711,9 @@ function focusHud(p, dt) {   // HUD 아이콘 + 남은 시간 (0.08초마다만 
   focusHudT -= dt; if (focusHudT > 0) return; focusHudT = 0.08;
   let el = document.getElementById('focusChip');
   if (!el) { el = chipHost('focusChip'); }
-  const on = p.focus > 0, cd = p.focusCd > 0;
-  el.classList.toggle('on', on); el.classList.toggle('ready', !on && !cd);
-  el.innerHTML = on ? `<img src="assets/skills/skill_kallisto_move.png" alt=""><b>집중</b><i>${p.focus.toFixed(1)}초</i><em>x2</em>`
-    : cd ? `<img src="assets/skills/skill_kallisto_move.png" alt=""><b>집중</b><i>${Math.ceil(p.focusCd)}초</i>`
-    : `<img src="assets/skills/skill_kallisto_move.png" alt=""><b>집중</b><i>${keyOf('shift')}</i>`;
+  if (!(p.focus > 0)) { if (el.classList.contains('on')) { el.classList.remove('on'); el.innerHTML = ''; } return; }   // 2026-11-24 (user): 쿨타임은 스킬창에, 왼쪽 표시는 집중 중에만
+  el.classList.add('on'); el.classList.remove('ready');
+  el.innerHTML = `<img src="assets/skills/skill_kallisto_move.png" alt=""><b>집중</b><i>${p.focus.toFixed(1)}초</i><em>x2</em>`;
 }
 function drawGuardFx(c, p) {
   const P = guardPal(), on = p.guard > 0 || p.parryFx > 0, raise = G.gfx.find(f => f.k === 'raise');
@@ -23341,15 +23452,19 @@ function audioHtml() {
     return `<div class="avrow${off ? ' off' : ''}"><img class="avic" src="assets/ui/${icon}" alt=""><span class="avn">${name}</span><input type="range" min="0" max="100" step="1" value="${v}" data-vol="${k}" ${off ? 'disabled' : ''}><b id="vol${k.toUpperCase()}">${v}%</b></div>`; };
   return `<div class="ph"><h3>소리 설정</h3><span class="sub">움직이면 바로 바뀐다 · 이 기기에 저장된다</span><button class="xbtn" data-close="1">닫기</button></div>
     <div class="avbox">${row('mus', 'ui_icon_bgm_note.png', '배경 음악')}${row('sfx', 'ui_icon_sfx_speaker.png', '효과음')}
-      <div class="avbtns"><button class="kbtn" data-amus="1">${AU.musicOn ? '음악 끄기' : '음악 켜기'} (${keyOf('m_music')})</button><button class="kbtn" data-amute="1">${AU.muted ? '모든 소리 켜기' : '모든 소리 끄기'} (${keyOf('m_mute')})</button></div></div>`;
+      <div class="avbtns"><button class="kbtn" data-amus="1">${AU.musicOn ? '음악 끄기' : '음악 켜기'}${(BINDS.m_music && BINDS.m_music.length) ? ' (' + keyOf('m_music') + ')' : ''}</button><button class="kbtn" data-amute="1">${AU.muted ? '모든 소리 켜기' : '모든 소리 끄기'} (${keyOf('m_mute')})</button></div></div>`;
 }
 $('#panel').addEventListener('input', e => {
+  const fx = e.target.closest('[data-fxa]');
+  if (fx) { const o = (G.save.opt = G.save.opt || {}); o.fxa = clamp(+fx.value, 10, 100); const lab = $('#fxaV'); if (lab) lab.textContent = o.fxa + '%'; return; }   // 2026-11-24 (user): 이펙트 투명도
   const t = e.target.closest('[data-vol]'); if (!t) return;
   const k = t.dataset.vol, v = clamp(+t.value / 100, 0, 1);
   AU.vol[k] = v; applyVol(); saveVol();
   const lab = $('#vol' + k.toUpperCase()); if (lab) lab.textContent = Math.round(v * 100) + '%';
 });
+$('#panel').addEventListener('change', e => { if (e.target.closest('[data-fxa]')) { writeSave(); sfx('click'); } });   // 이펙트 투명도는 손을 뗄 때 저장
 $('#bMute')?.addEventListener('contextmenu', e => { e.preventDefault(); if (G.scene === 'play') openPanel('audio'); });   // #bMus merged into #bMute
+document.head.insertAdjacentHTML('beforeend', '<style>.krow .fxar{flex:1;max-width:calc(var(--u)*150);accent-color:var(--accent2);height:calc(var(--u)*16)}.krow b#fxaV{min-width:calc(var(--u)*38);text-align:right;color:var(--accent2)}</style>');
 syncAudioBtn();
 document.head.insertAdjacentHTML('beforeend', `<style>
 .avbox{display:flex;flex-direction:column;gap:calc(var(--u)*12);padding:calc(var(--u)*16) calc(var(--u)*20);margin-top:calc(var(--u)*8);border:calc(var(--u)*24) solid transparent;border-image:url(assets/ui/ui_panel_dark_gold.png) 48 fill / calc(var(--u)*24) stretch}
@@ -23374,7 +23489,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 #focusChip em{font-style:normal;color:#1a1206;background:#f0c060;font-weight:700;padding:0 calc(var(--u)*4);font-size:.9em}
 #focusChip.on{border-color:#f0c060;box-shadow:0 0 0 1px rgba(240,192,96,.35),0 0 calc(var(--u)*10) rgba(240,192,96,.25)}#focusChip.on img{opacity:1}
 #focusChip.ready img{opacity:.9}#focusChip.ready b{color:#ffe6a8}
-#focusChip{display:flex}
+#focusChip.on{display:flex}
 </style>`);
 /* #bMus was merged into #bMute (2026-11-23): music toggling stays in the audio panel, in-game B key and m_music */
 $('#bMap').addEventListener('click', toggleMinimap);
@@ -23947,19 +24062,11 @@ function boomerTick(dt) {
     q.bLa += dt;
     if (q.bph === 'out') {
       if (q.bLa > 0.05) addPart({ x: q.x - sgn(q.vx) * 12, y: q.y + rnd(-8, 8), vx: rnd(-30, 30), vy: rnd(-20, 20), g: 0, life: rnd(0.2, 0.4), r: rnd(1, 2.4), col: '170,110,255', glow: 1 });
-      if (q.dist >= OUT_DIST || p.dead > 0) { q.bph = 'turn'; q.bT = 0; q.bA = Math.atan2(q.vy, q.vx); q.bSp = Math.hypot(q.vx, q.vy) || 470; }
+      if (q.dist >= OUT_DIST || p.dead > 0) { q.bph = 'ret'; q.bA = Math.atan2(hy - q.y, hx - q.x); q.bSp = 658; }   // 2026-11-24 (user): 곧바로 일직선 귀환
     } else {
-      const dx = hx - q.x, dy = hy - q.y, dd = Math.hypot(dx, dy), want = Math.atan2(dy, dx);
-      let da = want - q.bA; while (da > Math.PI) da -= 6.283185; while (da < -Math.PI) da += 6.283185;
-      if (q.bph === 'turn') {
-        q.bT += dt; const k = Math.min(1, q.bT / TURN_T), e = k * k * (3 - 2 * k);   // smoothstep: 각도·속도를 함께 이징
-        q.bA += da * (e - (q.bE || 0)); q.bE = e;
-        q.bSp = 470 + (658 - 470) * e;
-        if (k >= 1) { q.bph = 'ret'; q.bE = 0; }
-      } else {
-        const rate = 7 + 20 * Math.min(1, Math.abs(da) / 1.1);   // 멀수록 세게, 가까우면 부드럽게 (오버슛 없음)
-        q.bA += clamp(da, -rate * dt, rate * dt); q.bSp = 658;
-      }
+      /* 2026-11-24 (user): 원을 그리지 않고 일직선으로 돌아온다. 캐릭터가 움직이면 그 자리를 매 프레임 다시 조준해 따라온다 */
+      const dx = hx - q.x, dy = hy - q.y, dd = Math.hypot(dx, dy);
+      q.bph = 'ret'; q.bA = Math.atan2(dy, dx); q.bSp = 658;
       q.vx = Math.cos(q.bA) * q.bSp; q.vy = Math.sin(q.bA) * q.bSp;
       if (Math.random() < 0.55) addPart({ x: q.x, y: q.y + rnd(-6, 6), vx: rnd(-18, 18), vy: rnd(-18, 18), g: 0, life: rnd(0.15, 0.35), r: rnd(1, 2.6), col: '190,150,255', glow: 1 });
       if (dd <= (q.pick || 26) || p.dead > 0) { q.dead = true; q.picked = 1; spark(q.x, q.y, 6, '190,150,255', 160); }
@@ -24057,7 +24164,7 @@ function drawPerfectGuard(c) {
 }
 const _parry8 = parry;
 parry = function (src) {
-  const p = G.player, perfect = p.guard >= GUARD_WIN - PERFECT_GUARD_WIN;   // 가드 시작 0.1초 이내(남은 시간 0.15초 이상) = 퍼펙트
+  const p = G.player, perfect = p.guard > 0 && (p.guardAt != null ? (G.t - p.guardAt) <= PERFECT_GUARD_WIN + 1e-4 : p.guard >= GUARD_WIN - PERFECT_GUARD_WIN);   // 가드 시작 0.1초 이내 = 퍼펙트 (2026-11-24: 남은 시간 대신 누른 시각 기준)
   const r = _parry8(src);
   if (perfect) {
     const last = VFXQ.length ? VFXQ[VFXQ.length - 1] : null; if (last && last.n === 'hit_guard') VFXQ.pop();   // 청록 가드 이펙트는 빼고 금빛만
@@ -24517,6 +24624,191 @@ sfx = function (n, a) {
   if (n === 'shrine') { tone(392, 0.4, 'sine', 0.09, 587); tone(587, 0.5, 'sine', 0.07, 784, 0.12); noise(0.5, 0.03, 'highpass', 3000, 1200, 1); return; }
   return _sfxE(n, a);
 };
+
+
+/* ================= 2026-11-24 (user) 23개 항목 정밀 패치 ================= */
+/* 9) 퍼펙트 가드 — 가드를 올린 시각을 기준으로 0.1초를 센다 (프레임 경계에서 판정이 밀려 쿨타임이 돌아오던 문제).
+      퍼펙트 뒤에는 0.18초 동안 다시 눌러도 쿨타임이 되살아나지 않아 연달아 막을 수 있다. */
+const _parry23 = parry;
+parry = function (src) {
+  const p = G.player;
+  const perfect = p.guard > 0 && (p.guardAt != null ? (G.t - p.guardAt) <= PERFECT_GUARD_WIN + 1e-4 : p.guard >= GUARD_WIN - PERFECT_GUARD_WIN);
+  const r = _parry23(src);
+  if (perfect) { p.cd.g = 0; p.guardAt = null; p.pgFree = 0.18; }
+  return r;
+};
+
+/* 17) 도적 S(암습) — 가장 가까운 적의 등 뒤로 순간이동 + 단타 배후 타격. 적이 없으면 발동하지 않고 쿨타임도 쓰지 않는다.
+      피해는 기존 배후 타격(공격력의 400%, 체력 25% 이하 잡몹 즉사)을 그대로 쓴다 (remPreSkills). */
+const _castSkill23 = castSkill;
+castSkill = function (key) {
+  const p = G.player, ch = G.save && G.save.char;
+  if (ch !== 'lykos' || key !== 's') return _castSkill23(key);
+  const def = SKILLS.lykos.s;
+  let e = null, bd = 420;   // 보스·잡몹만 고른다 (상자·종 같은 사물은 대상이 아니다)
+  for (const m of G.mons) { if (m.st === 'die' || m.remove) continue; const d = Math.abs(m.x - p.x) + Math.abs(m.y - p.y) * 0.5; if (d < bd) { bd = d; e = m; } }
+  { const b = G.boss; if (b && b.st !== 'wait' && b.st !== 'die') { const d = Math.abs(b.x - p.x) + Math.abs(b.y - p.y) * 0.5; if (d < bd) { bd = d; e = b; } } }
+  if (!e) { toast('등 뒤로 돌아갈 적이 없다', 'bad'); return; }
+  const side = sgn(e.x - p.x) || p.face || 1, lo = (G.map.arenaL || 0) + 20, hi = (G.map.arenaR || G.map.w) - 20;
+  p.cd.ks = p.cdMax.ks = def.cd * (typeof freshCd === 'function' ? freshCd('s') : 1) * (1 - (G.stats.cdr || 0) / 100);
+  p.x = clamp(e.x + side * (e.w / 2 + 16), lo, hi);
+  p.face = -side;                                    // 착지하면 그 적을 바라본다
+  p.vx = 0; p.inv = Math.max(p.inv, 0.5);
+  p.act = { skill: 's', id: 'sk_s', t: 0, dur: 0.3, mv: 0, lf: 1, done: 0, hits: 0 };
+  dust(p.x - side * 10, p.y, 10, '70,60,110');
+  if (typeof pfx === 'function') pfx('shadow/hex-sigil', e.x, e.y + (e.yOff || 0) - e.h * 0.3, {});
+  sfx('skill'); sfx('dash');
+  G.execs.push({ e, t: 0, dur: 0.06, rem: 1 });
+  if (typeof remImg === 'function') remImg(REM_SK.lykos.s.file);
+};
+
+/* 11) 드랍 아이템 — 맵마다 기억하고, 다른 맵에 있는 동안에도 수명이 줄어든다 (2분) */
+const DROP_STORE23 = {};
+const _loadMap23 = loadMap;
+loadMap = function (id, atX, quiet) {
+  const from = G.mapId, cur = G.drops || [];
+  if (from && from !== id) DROP_STORE23[from] = { at: G.t, drops: cur };
+  const r = _loadMap23(id, atX, quiet);
+  const st = DROP_STORE23[id];
+  G.drops = [];
+  if (st && st.drops) {
+    const gone = Math.max(0, G.t - st.at);
+    for (const d of st.drops) { d.life -= gone; if (d.life > 0) { d.magnet = 0; d.dead = false; d.t = Math.max(d.t, 0.5); G.drops.push(d); } }
+  }
+  delete DROP_STORE23[id];
+  return r;
+};
+
+/* 12) 품질 리롤 확인 창 (이미 최상급일 때) */
+document.getElementById('game').insertAdjacentHTML('beforeend', '<div id="sureAsk"><div class="ea"><span id="sureTxt"></span></div></div>');
+let SURE23 = null;
+function sureAsk(text, sub, onYes) {
+  const el = document.getElementById('sureAsk'); if (!el) return;
+  el.querySelector('.ea').innerHTML = text + (sub ? '<small>' + sub + '</small>' : '') + '<div class="eb"><button type="button" data-sy="1">돌리기</button><button type="button" data-sn="1">그만두기</button></div>';
+  el.classList.add('on'); SURE23 = onYes;
+}
+$('#sureAsk').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) { if (e.target.id === 'sureAsk') { $('#sureAsk').classList.remove('on'); SURE23 = null; } return; }
+  $('#sureAsk').classList.remove('on');
+  const f = SURE23; SURE23 = null;
+  if (b.dataset.sy && f) f();
+});
+document.head.insertAdjacentHTML('beforeend', `<style>
+#sureAsk{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:31}
+#sureAsk.on{display:flex}
+#sureAsk .ea{background:#1c1420;border:2px solid #e8b048;padding:calc(var(--u)*16) calc(var(--u)*22);color:#f2e6cf;font-size:max(12px,calc(var(--u)*15));text-align:center;font-weight:700;max-width:calc(var(--u)*440);line-height:1.5}
+#sureAsk small{display:block;margin-top:6px;font-weight:400;color:#c8b898;font-size:max(10px,calc(var(--u)*11))}
+#sureAsk .eb{display:flex;gap:10px;justify-content:center;margin-top:12px}
+#sureAsk button{padding:6px 16px;background:#3a2a40;border:1px solid #8a7a98;color:#fff;cursor:pointer;font-weight:700}
+#sureAsk button:first-child{background:#6a2a20;border-color:#e0704a}
+.frame:not(.touch) #skills{cursor:grab}
+</style>`);
+
+/* 7·8) 바닥 위에 덧그리는 것 — 보스방 좌우 경계(17장 등) + 19장 빙판 광택 */
+function drawFloorExtras23(c, cam) {
+  const m = G.map; if (!m) return;
+  if (m.boss && m.arenaL != null && m.arenaR != null) {
+    const L = m.arenaL, R = m.arenaR;
+    c.save();
+    for (const [x, dir] of [[L, 1], [R, -1]]) {   // 벽은 여기다: 바깥 어둠 + 솟는 빛 금 + 바닥 경계
+      const gx = x - dir * 110, gg = c.createLinearGradient(x, 0, gx, 0);
+      gg.addColorStop(0, 'rgba(3,3,6,.76)'); gg.addColorStop(1, 'rgba(3,3,6,0)');
+      c.fillStyle = gg; c.fillRect(Math.min(x, gx), GROUND - 300, 110, 306);
+      const lg = c.createLinearGradient(x, GROUND - 260, x, GROUND);
+      lg.addColorStop(0, 'rgba(255,226,170,0)'); lg.addColorStop(0.72, `rgba(255,220,160,${(0.5 + 0.16 * Math.sin(G.t * 2.0)).toFixed(3)})`); lg.addColorStop(1, 'rgba(255,240,200,.95)');
+      c.fillStyle = lg; c.fillRect(x - 2, GROUND - 260, 4, 260);
+      for (let i = 0; i < 6; i++) {   // 위로 흐르는 금빛 눈금
+        const yy = GROUND - ((G.t * 46 + i * 44) % 260);
+        c.fillStyle = 'rgba(255,236,190,.55)'; c.fillRect(x - 7, yy, 14, 2);
+      }
+      c.fillStyle = 'rgba(255,238,196,.95)'; c.fillRect(x - 14, GROUND - 3, 28, 3);
+      c.fillStyle = 'rgba(255,220,160,.22)'; c.fillRect(x - 30, GROUND, 60, 22);
+    }
+    c.restore();
+  }
+  if (m.theme === 'glacier') {
+    const x0 = Math.max(cam.x - 10, 0), x1 = Math.min(cam.x + W + 10, m.w), w = x1 - x0; if (w <= 0) return;
+    const t = G.t;
+    c.save(); c.beginPath(); c.rect(x0, GROUND - 4, w, H - GROUND + 8); c.clip();
+    const g = c.createLinearGradient(0, GROUND - 4, 0, GROUND + 70);
+    g.addColorStop(0, 'rgba(220,246,255,.34)'); g.addColorStop(0.28, 'rgba(170,215,245,.26)'); g.addColorStop(0.62, 'rgba(120,175,220,.14)'); g.addColorStop(1, 'rgba(80,130,185,.06)');
+    c.fillStyle = g; c.fillRect(x0, GROUND - 4, w, 80);
+    c.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 20; i++) {
+      const sx = x0 + ((i * 137 + t * 26) % (w + 120)) - 60, y = GROUND + 3 + (i * 37) % 52;
+      const lg = c.createLinearGradient(sx, y, sx + 90, y + 12);
+      lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(0.5, `rgba(240,252,255,${(0.16 + 0.10 * Math.sin(t * 1.6 + i)).toFixed(3)})`); lg.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = lg; c.fillRect(sx, y, 110, 3);
+    }
+    for (let i = 0; i < 12; i++) {
+      const bx = x0 + ((i * 211 + 41) % (w + 40)) - 20;
+      c.strokeStyle = 'rgba(240,252,255,.26)'; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(bx, GROUND + 2); c.lineTo(bx + 8, GROUND + 14); c.lineTo(bx + 3, GROUND + 26); c.stroke();
+    }
+    c.globalCompositeOperation = 'source-over';
+    c.fillStyle = 'rgba(255,255,255,.55)'; c.fillRect(x0, GROUND - 2, w, 2);
+    c.restore();
+  }
+}
+const _drawGround23 = drawGround;
+drawGround = function (c, cam) { _drawGround23(c, cam); try { drawFloorExtras23(c, cam); } catch (e) { } };
+
+/* 18) 캐릭터(저장 슬롯)를 바꾸면 그 캐릭터의 키세팅을 불러온다 */
+const _startGame23 = startGame;
+startGame = function (save, isNew) {
+  const r = _startGame23(save, isNew);
+  try { loadBinds(); if (typeof renderKeyHelp === 'function') renderKeyHelp(); if (G.scene === 'play' && G.save) buildSkills(); } catch (e) { console.warn('[binds]', e); }
+  return r;
+};
+
+/* 19) 컴퓨터에서 스킬창 통째로 끌어 옮기기 (자리는 이 기기에 저장, 휴대폰은 원형 버튼이라 그대로) */
+(function skillBarDrag23() {
+  const KEY = 'dr-skillpos';
+  const bar = () => document.getElementById('skills');
+  const apply = () => {
+    if (IS_TOUCH) return; const b = bar(); if (!b) return;
+    let p = null; try { p = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { }
+    if (!p || p.x == null) return;
+    b.style.right = 'auto'; b.style.bottom = 'auto'; b.style.left = p.x + '%'; b.style.top = p.y + '%';
+  };
+  apply();
+  let drag = null;
+  document.addEventListener('pointerdown', e => {
+    if (IS_TOUCH || e.pointerType === 'touch' || e.button !== 0) return;
+    const b = bar(); if (!b || !e.target.closest('#skills')) return;
+    const host = document.getElementById('game').getBoundingClientRect(), r = b.getBoundingClientRect();
+    drag = { x0: e.clientX, y0: e.clientY, ox: r.left - host.left, oy: r.top - host.top, w: host.width, h: host.height, moved: false, b };
+  }, true);
+  document.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+    if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+    drag.moved = true; const b = drag.b;
+    b.style.right = 'auto'; b.style.bottom = 'auto';
+    b.style.left = Math.round(drag.ox + dx) + 'px'; b.style.top = Math.round(drag.oy + dy) + 'px';
+    e.preventDefault();
+  }, true);
+  document.addEventListener('pointerup', () => {
+    if (!drag) return;
+    const b = drag.b;
+    if (drag.moved) {
+      const host = document.getElementById('game').getBoundingClientRect(), r = b.getBoundingClientRect();
+      const px = clamp((r.left - host.left) / host.width * 100, 0, 88), py = clamp((r.top - host.top) / host.height * 100, 0, 88);
+      b.style.left = px.toFixed(2) + '%'; b.style.top = py.toFixed(2) + '%';
+      try { localStorage.setItem(KEY, JSON.stringify({ x: +px.toFixed(2), y: +py.toFixed(2) })); } catch (err) { }
+      hideSkillTip();
+    }
+    drag = null;
+  }, true);
+})();
+
+/* 23) 귀환 주문서가 완성되는 순간의 섬광 (지도가 바뀌기 전 페이드 동안 보인다) */
+function scrollBurst23(p) {
+  spark(p.x, p.y - 30, 30, '255,232,170', 300);
+  G.fx.push({ k: 'ring', x: p.x, y: p.y - 24, t: 0, dur: 0.35, R: 74, col: '255,226,150' });
+  for (let i = 0; i < 4; i++) addPart({ x: p.x + rnd(-10, 10), y: p.y - 20, vx: rnd(-20, 20), vy: -rnd(120, 220), g: -40, life: 0.6, r: rnd(2, 4), col: '255,236,180', glow: 1 });
+  G.flashW = Math.max(G.flashW, 0.3);
+}
 
 applyBossDefs();
 loadSprites();
