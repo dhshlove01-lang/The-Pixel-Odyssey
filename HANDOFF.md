@@ -15,7 +15,7 @@
 ### 261124-1135  랜덤 상자 3프레임 교체 + 인게임 패치노트 새 UI   (대상: index.html / test/index.html + assets/obj)
 지시서: `claude_code_8_traits_guard_shrine_prompt.txt` 5-3절(상자 3프레임) + 2026-11-24 사용자 지시(패치노트 UI 전면 교체).
 바로 아래 261124-1130 커밋(5adeb1f·2cd7091)의 마무리다. index.html 을 직접 고쳤고 test/index.html 에 같은 내용을 넣었다
-(1·3행만 다르고 4행부터 완전히 같음, 둘 다 24,198행). 원본 조각으로 옮길 때의 대상:
+(1·3행만 다르고 4행부터 완전히 같음, 둘 다 24,199행). 원본 조각으로 옮길 때의 대상:
 
 - **상자 3프레임 자산 교체** (`assets/obj/` + `test/assets/obj/`, 그림이라 조각 파일과 무관):
   `random_chest_{wood,silver,gold,mythic}.png` 128×128 한 장 → **384×128 3프레임 스트립**(셀 128×128, 0=닫힘 / 1=반쯤 열림·빛줄기 /
