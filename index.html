@@ -622,7 +622,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261123-2126';
+const GAME_VER = '261124-0915';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -1894,11 +1894,19 @@ function itemName(slot, cls, grade, ilvl) {
   if (grade === 3) { const list = LEGEND_NAMES[slot === 'weapon' ? cls : slot]; return list[Math.floor(Math.random() * list.length)]; }
   return MATERIAL[Math.min(MATERIAL.length - 1, ilvl)] + ' ' + (slot === 'weapon' ? WEAPON_NOUN[cls] : SLOT_NOUN[slot]);   // was min(10): 11-20 are 명성 in the table, so nothing changes below 21
 }
+/* P7 2026-11-24 (user): 직업 전용 장비는 무기와 방어구 6부위 모두, 어느 경로로도 다른 직업이 착용할 수 없다.
+   반지(acc1)는 직업 표식이 없어 전 직업 공용으로 남는다. 창고 보관·거래 수령·판매·분해는 그대로 허용한다. */
+const canWear = (it, ch) => !it || !it.cls || it.cls === (ch || (G.save && G.save.char));
+const clsName = c => (typeof CHARS !== 'undefined' && CHARS[c] ? CHARS[c].name : c);
+function cantWearMsg(it) {
+  const me = clsName(G.save.char);
+  return clsName(it.cls) + ' 전용 장비다 · ' + me + josa(me, '은', '는') + ' 낄 수 없다';
+}
 function makeItem(slot, cls, grade, ilvl, save) {
   const s = save || G.save;
   s.nextUid = (s.nextUid || 1) + 1;
   const it = { uid: s.nextUid, slot, grade, ilvl, name: itemName(slot, cls, grade, ilvl) };
-  if (slot === 'weapon') it.cls = cls;
+  if (cls && SLOTS.includes(slot)) it.cls = cls;   // P7 2026-11-24 (user): 무기만이 아니라 방어구 6부위에도 직업 표식 (반지는 makeRing = 공용)
   it.opts = rollOpts(slot, grade);
   if (slot === 'weapon' && grade === 3) { const ks = Object.keys(LEGEND_SKILLS); it.skill = ks[Math.floor(Math.random() * ks.length)]; }
   return it;
@@ -5659,6 +5667,22 @@ function fixSave(s) {
     delete s.gear; delete s.gauge;
   }
   for (const k of SLOTS) { s.slotE[k] = s.slotE[k] || { e: 0, T: 0, gauge: 0 }; if (s.equip[k] === undefined) s.equip[k] = null; }
+  /* P7 2026-11-24 (user): 방어구까지 직업 전용이 됐다. 예전 세이브의 방어구에는 직업 표식이 없었고(그때는 공용),
+     이름·아이콘으로 임자를 가릴 수 없으므로 이 세이브의 캐릭터 것으로 한 번 채운다(지금까지 낄 수 있던 것을 잃지 않는다).
+     창고(세 칸이 함께 쓰는 상자)에 있는 예전 방어구는 임자를 알 수 없어 그대로 둔다 = 지금처럼 공용. */
+  { const stamp = it => { if (it && it.type !== 'soul' && SLOTS.includes(it.slot) && !it.cls) it.cls = s.char; };
+    s.items.forEach(stamp); for (const k of SLOTS) stamp(s.equip[k]); }
+  {   // 다른 직업 장비가 끼워진 세이브는 가방으로 되돌린다
+    let moved = 0;
+    for (const k of SLOTS) {
+      const it = s.equip[k];
+      if (!it || canWear(it, s.char)) continue;
+      s.equip[k] = null; moved++;
+      if (s.items.length < BAG_MAX) { s.nextUid = (s.nextUid || 1) + 1; it.uid = s.nextUid; s.items.push(it); }
+      // 가방이 가득이면 슬롯만 비운다(능력치는 calcStats가 이미 막는다). 물건은 잃지 않는다.
+    }
+    if (moved) s.clsFix = (s.clsFix || 0) + moved;
+  }
   return s;
 }
 /* Saves belong to an ID. Each ID holds three character slots plus a storage chest they share.
@@ -5785,15 +5809,15 @@ const tAwake = id => traitRank(id) >= 10;
 function calcStats(save) {
   const s = save || G.save, L = s.level, tr = id => s.traits[id] || 0;
   const st = { atk: 10 + 2.2 * (L - 1), hp: 100 + 16 * (L - 1), def: 3 + (L - 1), crit: 5, aspd: Math.min(ASPD_LV_MAX, ASPD_LV * (L - 1)), spd: 0, regen: 0.2 + REGEN_LV * (L - 1), bossDmg: 0, pen: 0 };
-  for (const k of SLOTS) st[SLOT_INFO[k].stat] += slotValue(k, s);
+  for (const k of SLOTS) if (canWear(s.equip[k], s.char)) st[SLOT_INFO[k].stat] += slotValue(k, s);   // P7: 직업이 다른 장비는 능력치를 주지 않는다
   const op = { atkP: 0, hpP: 0, defP: 0, crit: 0, aspd: 0, regenP: 0 };
-  for (const k of SLOTS) for (const [ok, v] of itemOpts(s.equip[k])) op[ok] += v;
+  for (const k of SLOTS) if (canWear(s.equip[k], s.char)) for (const [ok, v] of itemOpts(s.equip[k])) op[ok] += v;   // P7
   st.atk *= 1 + op.atkP / 100; st.hp *= 1 + op.hpP / 100; st.def *= 1 + op.defP / 100; st.regen *= 1 + op.regenP / 100; st.crit += op.crit; st.aspd += op.aspd;
   if (s.char === 'kallisto' && tr('ka1') >= 1) st.aspd += 12;
   if (s.char === 'kallisto' && tr('ka1') >= 6) st.aspd += 10;
   for (const t of TRAITS[s.char]) if (!t.fresh && tr(t.id) >= 8) st.crit += 4;
   const pot = { atkP: 0, crit: 0, critDmg: 0, bossDmg: 0, cdr: 0, hpGain: 0, xpGain: 0, dmgRed: 0, jumpP: 0, spdP: 0 };   // potential lines (55_growth.js)
-  for (const k of SLOTS.concat(['acc1'])) for (const pl of ((s.equip[k] && s.equip[k].pot) || [])) pot[pl.k] += pl.v;   // 2026-11-23: the ring's potentials count too
+  for (const k of SLOTS.concat(['acc1'])) if (canWear(s.equip[k], s.char)) for (const pl of ((s.equip[k] && s.equip[k].pot) || [])) pot[pl.k] += pl.v;   // P7   // 2026-11-23: the ring's potentials count too
   st.atk *= 1 + pot.atkP / 100; st.crit += pot.crit;
   // 2026-11-22 QA 2-7: the five new lines, capped (six slots x three lines can stack a lot); not in 전투력
   st.hpGain = Math.min(40, pot.hpGain); st.xpGain = Math.min(60, pot.xpGain); st.dmgRed = Math.min(30, pot.dmgRed); st.jumpP = Math.min(25, pot.jumpP); st.spd += Math.min(40, pot.spdP);
@@ -5822,6 +5846,7 @@ function after(t, fn) { G.timers.push({ t, fn }); }
 
 /* ---- Physics ---- */
 const GRAV = 1900, MAXFALL = 960, JUMP = 760;
+const LY_DJ_X = 0.6;   // P8 2026-11-24 (user): 도적 이단 도약의 수평 이동 = 기존의 60% (-2/5). 높이(p.vy)·유지 시간(p.ljT)은 그대로
 function moveBody(b, dt) {
   const hw = b.w / 2, plats = G.map.plats;
   b.hitWall = false;
@@ -6016,7 +6041,7 @@ function updatePlayer(dt) {
     else { p.vy = -JUMP * Math.sqrt(1 + (S.jumpP || 0) / 100) * (G.map.water && swimming(p) ? SWIM_JUMP : 1); p.onGround = false; p.coy = 0; p.jbuf = 0; sfx('jump'); dust(p.x, p.y, 4); }
   }
   if (mob && ch === 'lykos' && !p.onGround && p.coy <= 0 && !p.dj && p.hurt <= 0 && (p.jbuf > 0 || IN.press.shift) && !(a && a.dash)) {
-    { const V = JUMP * Math.sqrt(1 + (S.jumpP || 0) / 100) * 0.88, fd = dir || p.face || 1; p.vy = -V; p.vx = fd * V; p.face = fd; p.ljT = 0.4; }   // 1425b: 45 degrees forward (was straight up)
+    { const V = JUMP * Math.sqrt(1 + (S.jumpP || 0) / 100) * 0.88, fd = dir || p.face || 1; p.vy = -V; p.vx = fd * V * LY_DJ_X; p.face = fd; p.ljT = 0.4; }   // 1425b: 45 degrees forward (was straight up)
     p.dj = true; p.djShift = !IN.down.jump; p.jbuf = 0; sfx('jump');
     for (let i = 0; i < 8; i++) addPart({ x: p.x + rnd(-10, 10), y: p.y - rnd(0, 20), vx: rnd(-40, 40), vy: rnd(10, 60), g: 0, life: 0.35, r: rnd(2, 4), col: '70,70,100', glow: 0 });
   }
@@ -7015,7 +7040,7 @@ function updateCamera(dt) {
 }
 
 /* ---------- Interactions ---------- */
-const visibleNpcs = () => G.map.npcs.filter(n => n.id !== 'hal' || G.map.ch === storyChapter());
+let visibleNpcs = () => G.map.npcs.filter(n => n.id !== 'hal' || G.map.ch === storyChapter());   // P5 2026-11-24 (user): 떠돌이 상인을 얹으려고 const -> let
 function updateInteract() {
   const p = G.player, m = G.map;
   let best = null, bd = 1e9;
@@ -7372,6 +7397,8 @@ function bossProjHit(q) {
 
 /* ---- the hidden boss: Anonymos steps out in the hunting grounds now and then; ninety seconds to put him down ---- */
 const ANON_CHANCE = 1 / 220, ANON_GAP = 15 * 60, ANON_TIME = 100;
+/* P1 2026-11-24 (user): 이름 없는 자 골드 = 1장 1,000 ~ 30장 300,000 (완만한 지수 곡선). 후반을 올리려면 이 한 줄만 고친다. */
+const ANON_GOLD = n => Math.round((1000 * Math.pow(300, (n - 1) / 29)) / 10) * 10;
 function anonDef(n) {
   const B = BOSSES['b' + n];
   return { ch: n, hidden: true, name: '이름 없는 자', look: 'anon', hp: Math.round(bossHp9(n) * 0.35 / 10) * 10,   // 2026-11-22 QA 2-1 (user: no name of his own; health on the chapter boss's real spawn health)
@@ -7410,7 +7437,7 @@ function updateAnon(dt) {
 function anonDefeated(b) {
   const n = b.d.ch, r = Math.random(), gr = r < 0.06 ? 3 : r < 0.5 ? 2 : 1, slot = SLOTS[Math.floor(Math.random() * SLOTS.length)];
   addDrop('item', 0, b.x, b.y - b.h * 0.5); G.drops[G.drops.length - 1].it = makeItem(slot, G.save.char, Math.min(gr, GRADES.length - 1), n);
-  const gold = Math.round((300 * n + (30 + 15 * n) * stoneGold(n)) / 20) * 10;   // QA 2-1 (user: 보상 절반)
+  const gold = ANON_GOLD(n);   // P1 2026-11-24 (user): 1장 1,000 ~ 30장 300,000 (QA 2-1의 절반 보상 식을 대신한다)
   G.save.gold += gold; G.save.anonKills = (G.save.anonKills || 0) + 1;
   if (Math.random() < 0.08) { G.save.mats.free = (G.save.mats.free || 0) + 1; after(2.4, () => toast('무료 잠재 변경권을 얻었다 · 대장장이 옵션 재설정에서 쓴다', 'gold')); }   // 2026-11-23 (user): 이름 없는 자, 낮은 확률(8%)
   for (let i = 0; i < 50; i++) addPart({ x: b.x + rnd(-30, 30), y: b.y - rnd(10, b.h), vx: rnd(-90, 90), vy: rnd(-260, -40), g: 60, life: rnd(1, 2.2), r: rnd(2, 4), col: '210,200,255', glow: 1 });
@@ -12948,7 +12975,7 @@ function tickDialog() {
 $('#dialog').addEventListener('click', e => { const b = e.target.closest('[data-ch]'); if (b && G.ui.dialog && G.ui.dialog.choice) choicePick(+b.dataset.ch); else if (matchMedia('(pointer: coarse)').matches) dialogAdvance(); });   // a click picks a choice; tapping the box moves on only on a touch screen (no Space key there)
 
 /* ---- Panels ---- */
-function openPanel(n) { G.ui.panel = n; G.ui.enhMsg = ''; if (n === 'shop') { G.ui.shopTab = 'buy'; G.ui.shopLine = null; G.ui.sellArm = null; } if (isUiWin(n)) { $('#panel').classList.remove('on'); uiRefresh(); } else { renderPanel(); $('#panel').classList.add('on'); } sfx('click'); $('#game').focus({ preventScroll: true }); }
+function openPanel(n) { G.ui.panel = n; G.ui.enhMsg = ''; if (n === 'shop') { G.ui.shopTab = 'buy'; G.ui.shopLine = null; G.ui.sellArm = null; } if (n === 'trade') G.ui.trDrawn = ''; if (isUiWin(n)) { $('#panel').classList.remove('on'); uiRefresh(); } else { renderPanel(); $('#panel').classList.add('on'); } sfx('click'); $('#game').focus({ preventScroll: true }); }
 function closePanel() { G.ui.rebind = null; G.ui.panel = null; G.ui.gearMode = null; G.ui.bagSel = null; G.ui.whSel = null; $('#uiwin').classList.remove('on'); $('#sktip').classList.remove('on', 'pxf'); $('#panel').classList.remove('on'); }
 function togglePanel(n) {
   if (G.scene !== 'play' || G.ui.dialog || G.ui.intro || G.ui.ending || G.ui.help || !G.save) return;
@@ -13060,7 +13087,8 @@ $('#panel').addEventListener('click', e => {
 });
 function equipItem(uid) {
   const s = G.save, i = s.items.findIndex(it => it.uid === uid); if (i < 0) return;
-  const it = s.items[i]; if (it.cls && it.cls !== s.char) return;
+  const it = s.items[i];
+  if (!canWear(it, s.char)) { toast(cantWearMsg(it), 'bad'); sfx('locked'); renderPanel(); return; }   // P7: 조용히 넘기지 않고 이유를 알린다
   const old = s.equip[it.slot]; s.items.splice(i, 1); if (old) s.items.push(old);
   s.equip[it.slot] = it; G.ui.bagSel = old ? old.uid : null;
   G.ui.enhMsg = `<span style="color:${GRADES[it.grade].col}">${it.name}</span>을(를) 끼웠다. ${SLOT_INFO[it.slot].name} 칸의 +${s.slotE[it.slot].e}은 그대로다.`.replace('을(를)', josa(it.name, '을', '를'));
@@ -14485,6 +14513,13 @@ startGame = function (save, isNew) {
   }
   return _startGame9(save, isNew);
 };
+/* P7 2026-11-24 (user): 다른 직업 장비를 가방으로 되돌렸으면(fixSave가 센 수) 시작할 때 한 번 알린다 */
+const _startGameCls = startGame;
+startGame = function (save) {
+  const r = _startGameCls.apply(this, arguments);
+  if (save && save.clsFix) { const n = save.clsFix; delete save.clsFix; setTimeout(() => toast('다른 직업 장비 ' + n + '개를 가방으로 되돌렸다', 'bad'), 1200); }
+  return r;
+};
 
 /* ---- bag (8-2 follow-up, user request): hovering an item compares it with what is equipped in that slot; a left click
    shows nothing more; a right click equips it ---- */
@@ -15829,9 +15864,15 @@ loadMap = function (id, ...rest) {
   return r;
 };
 /* renderWorld draws this instead of the old far layers (40_render.js asks drawMap9 first) */
+const MAP9_PAR = 1.15;   // P3 2026-11-24 (user): 좌우 이동 시 배경 패럴랙스(1.15배 확대)
 function drawMap9(c) {
   const im = map9Now(); if (!im) return false;
-  c.drawImage(im, 0, 0, W, H);                       // 1:1, the logical screen is 960x540
+  const m = G.map, dw = W * MAP9_PAR, dh = H * MAP9_PAR;
+  const span = Math.max(1, (m && m.w ? m.w : W) - W);
+  const t = m && m.w > W ? clamp(G.cam.x / span, 0, 1) : 0.5;   // 맵 진행도 0~1 (폭 960 이하 맵은 가운데 고정)
+  const dx = -(dw - W) * t;                                    // 왼쪽 끝 0, 오른쪽 끝 -144: 양 끝에서도 화면을 덮는다
+  const dy = -(dh - H) * (GROUND / H);                         // 지면선(GROUND)을 축으로 확대: 위 하늘만 잘린다
+  c.drawImage(im, dx, dy, dw, dh);
   c.fillStyle = 'rgba(0,0,0,0.18)'; c.fillRect(0, 0, W, H);
   return true;
 }
@@ -16137,7 +16178,7 @@ function autoPlan() {
   for (const slot of SLOTS) {
     let best = null, bestCp = cpNow;
     for (const it of s.items) {
-      if (it.type === 'soul' || it.slot !== slot || (it.cls && it.cls !== s.char)) continue;
+      if (it.type === 'soul' || it.slot !== slot || !canWear(it, s.char)) continue;   // P7: 같은 직업 장비만 후보
       trial.equip[slot] = it; const cp = calcStats(trial).cp; trial.equip[slot] = s.equip[slot];
       if (cp > bestCp) { bestCp = cp; best = it; }
     }
@@ -16150,7 +16191,7 @@ function autoPlan() {
 function autoEquipApply(plan) {
   const s = G.save, before = plan.cpNow;
   if (!plan.n) { toast('지금보다 강한 장비가 가방에 없다', ''); sfx('click'); return; }
-  for (const w of plan.swaps) { const old = s.equip[w.slot], i = s.items.indexOf(w.to); if (i < 0) continue; s.items.splice(i, 1); if (old) s.items.push(old); s.equip[w.slot] = w.to; }
+  for (const w of plan.swaps) { if (!canWear(w.to, s.char)) continue; const old = s.equip[w.slot], i = s.items.indexOf(w.to); if (i < 0) continue; s.items.splice(i, 1); if (old) s.items.push(old); s.equip[w.slot] = w.to; }   // P7: 착용 불가면 건너뛴다
   refreshStats(); if (G.player) G.player.soulT = 0; buildSkills(); writeSave();
   G.ui.bagSel = null; G.ui.autoPlan = null;
   const after = G.stats.cp;
@@ -17409,6 +17450,7 @@ const NPC_ART_FILES = {
   agros: ['npc_agros.png', 4, 204, 208, 102, 192, 300], nella: ['npc_nella.png', 4, 136, 204, 68, 188, 300],
   pelo: ['npc_pelo.png', 4, 140, 208, 70, 192, 260], poli: ['npc_poli.png', 4, 124, 210, 62, 194, 300],
   euno: ['npc_euno.png', 4, 132, 210, 66, 194, 320], thera: ['npc_thera.png', 4, 108, 202, 54, 186, 300],
+  wandering_merchant: ['npc_wandering_merchant.png', 4, 236, 228, 118, 212, 260],   // P5 2026-11-24 (user): 떠돌이 상인 (assets/npcs/npc_wandering_merchant.png)
 };
 const PROP_ART_FILES = { anvil: ['prop_anvil.png', 1, 196, 108, 98, 92, 0], forgepot: ['prop_forge_pot.png', 4, 116, 122, 58, 106, 130] };
 /* lanterns in world px from the feet (forward +x, up -y), measured on the pictures */
@@ -17503,7 +17545,7 @@ function npcNameTag(n, top) {
    sideways shows the game about 0.68x, so they come out about 40 px tall), the reward pills give way to 200 art px.
    닫기 (and Esc): on a quest offer it declines (the quest stays on offer, as the spec asks); on any other dialog it skips the
    lines left and still finishes it (its end may move the story on, so it is never dropped). ============ */
-const NPC_PORTRAIT = { [NS]: 'nestor', [KC]: 'kalkias', [DN]: 'dion' };
+const NPC_PORTRAIT = { [NS]: 'nestor', [KC]: 'kalkias', [DN]: 'dion', wandering_merchant: 'wandering_merchant' };   // P5: 떠돌이 상인 초상화(assets/ui/npc_portrait_wandering_merchant.png)
 const NPC_LATIN = { [NS]: 'NESTOR', [KC]: 'KALKIAS', [DN]: 'DION' };
 const DLG_ART = {};
 function dlgArt(file) { if (!DLG_ART[file]) { const im = new Image(); im.src = ASSET9 + 'ui/' + file; DLG_ART[file] = im; } return DLG_ART[file]; }
@@ -17549,7 +17591,7 @@ function npcPortraitUrl(look) {
   } catch (e) { url = null; }   // opened as a file (no pixel access): no portrait
   return (NPC_PORT_URL[look] = url);
 }
-function dlgPrefetch() { ['npc_dialog_frame.png', 'npc_btn_primary.png', 'npc_btn_secondary.png', 'npc_portrait_nestor.png', 'npc_portrait_kalkias.png', 'npc_portrait_dion.png'].forEach(dlgArt); }
+function dlgPrefetch() { ['npc_dialog_frame.png', 'npc_btn_primary.png', 'npc_btn_secondary.png', 'npc_portrait_nestor.png', 'npc_portrait_kalkias.png', 'npc_portrait_dion.png', 'npc_portrait_wandering_merchant.png'].forEach(dlgArt); }   // P5
 const dlgSpeakerKey = who => NPC_PORTRAIT[who] || (Object.keys(NPC_PORTRAIT).find(n => who && who.endsWith(n)) ? NPC_PORTRAIT[Object.keys(NPC_PORTRAIT).find(n => who.endsWith(n))] : '');   // '대장장이 칼키아스' too
 const dlgLatin = who => NPC_LATIN[who] || (Object.keys(NPC_LATIN).find(n => who && who.endsWith(n)) ? NPC_LATIN[Object.keys(NPC_LATIN).find(n => who.endsWith(n))] : '');
 
@@ -19435,7 +19477,7 @@ tgspLoad();   // 5장(합 28KB) 프리로드. 보스 등장 시점이 아니라 
    mirrored screen never turns them. ============ */
 const STORY50 = {
   1: { t: '종이 멈춘 밤', sub: '열두 시가 오지 않은 밤, 성문은 스스로 닫혔다.', boss: '이끼 낀 종지기 골렘', rage: '종이 멈춘 건 내가 아니야. 멈추지 않으면 이 왕국이 전부 무너져. …너도 그 소리를 들었잖아.' },
-  2: { t: '망각의 강', sub: '이름을 물으면 강이 대답한다. 대답을 들으면 이름을 잃는다.', boss: '무녀', rage: '네 이름, 아직 갖고 있니? …곧 필요 없어질 텐데, 왜 그렇게 붙들고 있지?' },
+  2: { t: '망각의 강', sub: '이름을 물으면 강이 대답한다. 대답을 들으면 이름을 잃는다.', boss: '망각의 무녀 레테이아', rage: '네 이름, 아직 갖고 있니? …곧 필요 없어질 텐데, 왜 그렇게 붙들고 있지?' },
   3: { t: '광대의 유희장', sub: '웃음소리는 관객석이 비어 있을수록 커진다.', boss: '사악한 광대', rage: '박수! 박수! …아, 미안. 관객은 다 죽었지. 그러니 이제 네가 관객이야.' },
   4: { t: '청동 미궁', sub: '문은 늘 하나뿐이다. 그 하나가 계속 움직일 뿐.', boss: '청동 황소 아스테리온', rage: '미로는 나를 가둔 게 아니야. 너를 여기까지 부른 거야.' },
   5: { t: '고르곤의 정원', sub: '돌이 된 자들은 모두 나를 보지 않았다. 그래서 더 오래 보았다.', boss: '고르곤 여왕 스테노', rage: '눈을 감아도 소용없어. 이제 네 뒤통수에도 내가 있어.' },
@@ -19509,7 +19551,7 @@ const STORY50 = {
 /* ---- old words -> the bible's, longest first (a full name before its short form) ---- */
 const STORY50_RENAME = [
   ['종을 든 돌거인 리토스', '이끼 낀 종지기 골렘'], ['돌거인 리토스', '종지기 골렘'], ['리토스', '종지기'],
-  ['망각의 무녀 레테이아', '무녀'], ['무녀 레테이아', '무녀'], ['레테이아', '무녀'],
+  // P2 2026-11-24 (user): 2장 보스는 '망각의 무녀 레테이아' 그대로 둔다 — 이 세 쌍(레테이아->무녀)은 지웠다
   ['웃는 광대 겔로스', '사악한 광대'], ['광대 겔로스', '사악한 광대'], ['겔로스', '광대'],
   ['썩지 않는 자 사르코스', '청동 황소 아스테리온'], ['사르코스', '아스테리온'],
   ['아홉 꼬리 알로페', '고르곤 여왕 스테노'], ['알로페', '스테노'],
@@ -21852,10 +21894,10 @@ function tradeHtml() {
   const mine = locked ? (me.it || []) : s.items.filter(x => t.offered.has(x.uid));
   const step = !ot.u ? '상대를 기다리는 중' : !locked && !ot.lock ? '잠금 대기 · 넣을 것을 고르고 잠근다' : locked && !ot.lock ? '상대가 잠그기를 기다리는 중' : !locked ? '상대 잠금 완료 · 내 쪽도 잠그자' : !me.ok && !ot.ok ? '양쪽 잠금 · 수락하면 교환' : me.ok && !ot.ok ? '상대 수락을 기다리는 중' : !me.ok ? '상대가 수락했다 · 수락하면 교환' : '교환 중…';
   return `<div class="ph tr-ph"><img class="tr-ic" src="assets/ui/ui_icon_trade.png" alt=""><h3>거래 · ${t.other.nick}</h3><span class="sub">${step}</span><button class="xbtn" data-trx="cancel">${me.ok ? '닫기' : '취소'}</button></div>
-    <div class="tr-cols"><div class="tr-col"><h4>내 가방 (${s.items.length})</h4><div class="tr-bag">${bag}</div></div>
-      <div class="tr-col"><h4>내 제안</h4><div class="tr-list">${mine.map(line).join('') || '<p class="tr-empty">비어 있다</p>'}</div>
+    <div class="tr-cols"><div class="tr-col"><h4>내 가방 (${s.items.length})</h4><div class="tr-bag" data-tscroll="bag">${bag}</div></div>
+      <div class="tr-col"><h4>내 제안</h4><div class="tr-list" data-tscroll="mine">${mine.map(line).join('') || '<p class="tr-empty">비어 있다</p>'}</div>
         <div class="tr-gold">골드 <input id="tradeGold" type="number" min="0" max="${s.gold}" value="${locked ? (me.g || 0) : (t.gold || 0)}" ${locked ? 'disabled' : ''}><button type="button" class="mini" data-trx="all" ${locked ? 'disabled' : ''}>전부</button></div></div>
-      <div class="tr-col"><h4>${t.other.nick}의 제안 ${ot.lock ? '· 잠금' : ''}${ot.ok ? ' · 수락' : ''}</h4><div class="tr-list">${(ot.it || []).map(line).join('') || '<p class="tr-empty">비어 있다</p>'}</div>
+      <div class="tr-col"><h4>${t.other.nick}의 제안 ${ot.lock ? '· 잠금' : ''}${ot.ok ? ' · 수락' : ''}</h4><div class="tr-list" data-tscroll="other">${(ot.it || []).map(line).join('') || '<p class="tr-empty">비어 있다</p>'}</div>
         <div class="tr-gold">골드 <b>${nf(ot.g || 0)}</b></div></div></div>
     <div class="tfoot"><span class="tr-note">강화 수치는 부위에 붙어 있어 함께 가지 않는다</span>
       ${locked ? `<button class="mini" data-trx="unlock" ${me.ok || ot.ok ? 'disabled' : ''}>잠금 해제</button><button class="gbtn" data-trx="ok" ${ot.lock && !me.ok ? '' : 'disabled'}>수락</button>` : `<button class="gbtn" data-trx="lock" ${ot.u ? '' : 'disabled'}>잠금</button>`}</div>`;
@@ -21874,7 +21916,31 @@ $('#panel').addEventListener('click', e => {
 $('#panel').addEventListener('input', e => { if (e.target.id === 'tradeGold' && TR) TR.gold = clamp(Math.floor(+e.target.value || 0), 0, G.save.gold); });
 for (const ev of ['keydown', 'keyup']) $('#panel').addEventListener(ev, e => { if (e.target && e.target.id === 'tradeGold') e.stopPropagation(); });
 const _renderPanelT = renderPanel;
-renderPanel = function () { if (G.ui.panel === 'trade') { $('#pBox').innerHTML = tradeHtml(); return; } return _renderPanelT(); };
+/* P6 2026-11-24 (user): 1초 폴링마다 통째로 다시 그려 스크롤·골드 입력이 튀던 것. 내용이 바뀌었을 때만 그리고,
+   다시 그려도 스크롤 위치는 되돌린다. 골드를 입력하는 중에는 그리지 않는다. */
+function trSig() {
+  const t = TR; if (!t) return '';
+  const n = t.node || {}, me = n[t.side] || {}, ot = n[trOther(t.side)] || {};
+  return JSON.stringify([ot.it || null, ot.g || 0, ot.lock || 0, ot.ok || 0,
+    me.lock || 0, me.ok || 0, [...t.offered].sort((a, b) => a - b), t.gold || 0,
+    G.save.items.length, G.save.gold]);
+}
+function trScroll() { const o = {}; document.querySelectorAll('#pBox [data-tscroll]')
+  .forEach(el => { o[el.dataset.tscroll] = el.scrollTop; }); return o; }
+function trScrollBack(o) { document.querySelectorAll('#pBox [data-tscroll]')
+  .forEach(el => { if (o[el.dataset.tscroll] != null) el.scrollTop = o[el.dataset.tscroll]; }); }
+renderPanel = function () {
+  if (G.ui.panel === 'trade') {
+    const ae = document.activeElement;
+    if (ae && ae.id === 'tradeGold') return;
+    const sig = trSig(); if (sig === G.ui.trDrawn) return;
+    G.ui.trDrawn = sig; const sc = trScroll();
+    $('#pBox').innerHTML = tradeHtml();
+    trScrollBack(sc);
+    return;
+  }
+  return _renderPanelT();
+};
 /* while an item is on offer it can not be sold, worn, stored or fed a soul */
 for (const fn of ['sellItems', 'equipItem', 'itemToStorage', 'insertSoul']) {
   const orig = window[fn]; if (typeof orig !== 'function') continue;
@@ -21928,14 +21994,15 @@ async function tradeRecover() {
 #mvp .mv-head .mv-b{background:none}
 #mvp .mv-f{text-align:right;margin-top:calc(var(--u)*8)}#mvp .mv-f button{font:inherit;background:#2a2416;color:#ffe6a8;border:1px solid #8a6a2a;padding:3px 14px;cursor:pointer}
 .tr-ph{display:flex;align-items:center;gap:calc(var(--u)*8)}.tr-ic{width:calc(var(--u)*28);height:calc(var(--u)*28);image-rendering:pixelated}
-.tr-cols{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:calc(var(--u)*12);margin-top:calc(var(--u)*8)}
-.tr-col{border:calc(var(--u)*14) solid transparent;border-image:url(assets/ui/ui_panel_dark_gold.png) 48 fill / calc(var(--u)*14) stretch;padding:calc(var(--u)*4);min-height:calc(var(--u)*200)}
+.tr-cols{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);gap:calc(var(--u)*12);margin-top:calc(var(--u)*8)}
+#pBox:has(.tr-cols){width:calc(var(--u)*940);max-width:98%;padding:calc(var(--u)*14) calc(var(--u)*16)}   /* P6: 가방 칸을 넓힌다 */
+.tr-col{border:calc(var(--u)*14) solid transparent;border-image:url(assets/ui/ui_panel_dark_gold.png) 48 fill / calc(var(--u)*14) stretch;padding:calc(var(--u)*4);min-height:calc(var(--u)*200);min-width:0}
 .tr-col h4{margin:0 0 calc(var(--u)*6);font-size:max(11px,calc(var(--u)*13));color:#fcf0c6}
-.tr-bag{display:grid;grid-template-columns:repeat(6,1fr);gap:calc(var(--u)*4);max-height:calc(var(--u)*220);overflow:auto}
-.tr-cell{aspect-ratio:1;background:rgba(0,0,0,.35);border:1px solid #3a3020;padding:2px;cursor:pointer}.tr-cell.on{border-color:#f0c040;box-shadow:0 0 0 1px #f0c040 inset}.tr-cell:disabled{opacity:.5;cursor:default}
-.tr-cell img{width:100%;height:100%;image-rendering:pixelated}
+.tr-bag{display:grid;grid-template-columns:repeat(auto-fill,minmax(calc(var(--u)*40),1fr));grid-auto-rows:calc(var(--u)*40);gap:calc(var(--u)*4);max-height:calc(var(--u)*240);overflow:auto;scrollbar-gutter:stable;min-width:0}
+.tr-cell{background:rgba(0,0,0,.35);border:1px solid #3a3020;padding:2px;cursor:pointer;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center}.tr-cell.on{border-color:#f0c040;box-shadow:0 0 0 1px #f0c040 inset}.tr-cell:disabled{opacity:.5;cursor:default}
+.tr-cell img{max-width:100%;max-height:100%;image-rendering:pixelated}
 .tr-list{display:flex;flex-direction:column;gap:calc(var(--u)*3);max-height:calc(var(--u)*170);overflow:auto}
-.tr-it{display:grid;grid-template-columns:calc(var(--u)*24) 1fr;column-gap:calc(var(--u)*6);align-items:center;font-size:max(10px,calc(var(--u)*12))}
+.tr-it{display:grid;grid-template-columns:calc(var(--u)*24) minmax(0,1fr);column-gap:calc(var(--u)*6);align-items:center;font-size:max(10px,calc(var(--u)*12));min-width:0}
 .tr-it img{width:calc(var(--u)*24);height:calc(var(--u)*24);image-rendering:pixelated;grid-row:span 2}.tr-it small{color:#8a8292}
 .tr-gold{margin-top:calc(var(--u)*8);display:flex;align-items:center;gap:calc(var(--u)*6)}.tr-gold input{width:calc(var(--u)*90)}
 .tr-empty{color:#8a8292;font-size:.9em}.tr-note{color:#8a8292;font-size:.85em}
@@ -21949,13 +22016,13 @@ castSkill = function (key) { const p = G.player, cd0 = p ? JSON.stringify(p.cd) 
 if (typeof startUlt === 'function') { const _startUltN = startUlt; startUlt = function () { const u0 = G.ult; const r = _startUltN.apply(this, arguments); if (G.ult && G.ult !== u0) netCast('v'); return r; }; }
 
 /* ============ 2026-11-23: 도적 X 그림자 걸음 = 순간이동 + 그림자 추격 ============
-   - X: 앞으로 돌진하던 거리(900px/s x 0.2s = 180px)만큼 즉시 순간이동. 벽(solid)·경기장 끝에 닿으면 그 앞에서 멈춘다.
+   - X: 앞으로 돌진하던 거리(900px/s x 0.2s = 180px, 2026-11-24 P8: 240px)만큼 즉시 순간이동. 벽(solid)·경기장 끝에 닿으면 그 앞에서 멈춘다.
    - 떠난 자리에 검은 그림자가 남아 0.5초 동안 도적을 따라온다(처음엔 느리게, 점점 빠르게). 그림자가 지나간 자리의 적은
      한 번씩 맞는다 (피해·넉백 = 예전 X: 210%, 특성 ly1 +30%, ly1 2랭크 치명 버프는 순간이동 때). 잔상(3랭크 0.4초, 각성 0.7초)은
      그림자가 도착한 뒤 지나온 구간 전체를 한 번 더 벤다.
    - 순간이동하는 순간 도적 본인 화면만 하얀 섬광(0.15초, 바로 사라짐). 다른 사람에겐 위치 이동 + 원래 X 효과(netCast)만 보인다.
    ============ */
-const LY_TP = { dist: 180, shadowT: 0.5, flashT: 0.15 };
+const LY_TP = { dist: 240, shadowT: 0.5, flashT: 0.15 };   // P8 2026-11-24 (user): 그림자 걸음 180 -> 240px (+1/3)
 function lyTpTarget(p, dir) {
   const hw = p.w / 2, plats = G.map.plats, lo = (G.map.arenaL || 0) + hw + 6, hi = (G.map.arenaR || G.map.w) - hw - 6;
   let x = p.x;
@@ -22766,7 +22833,258 @@ $('#cutSkip').addEventListener('click', e => { e.stopPropagation(); endCut(); })
 $('#mini').addEventListener('click', e => { e.stopPropagation(); toggleWorldMap(); });   // 2026-11-21: the world map (chapter travel is inside it, from a camp)
 $('#bWorld').addEventListener('click', e => { e.stopPropagation(); toggleWorldMap(); });
 const nojs = $('#nojs'); if (nojs) nojs.remove();
-window.__G = { G, IN, step, loadMap, updateWorld, calcStats, startGame, newSave, enhance, MON, BOSSES, MAPS, QUESTS, QUEST_ORDER, CHAPTERS, CHM, TRAITS, hurtPlayer, dealDamage, gainXp, talkHal, interact, renderWorld, levelCap, spawnBoss, showEnding, buy, useScroll };
+
+/* ============ 떠돌이 상인 (2026-11-24, 사용자 확정 스펙, P5) ============
+   매 시 정각 :00~:15 (서버 시계 srvNow()) 15분 동안 1~30장 일반 사냥터 한 곳에 나타난다.
+   어느 장 어느 맵인지는 그 시(hourKey)로 정해지므로 접속한 모든 사람이 같은 곳에서 만난다.
+   파는 물건도 시드로 정해지고 품목마다 수량이 한정된다. 수량은 Firebase에 두고 조건부 갱신(ETag)으로
+   하나씩 줄이므로 다른 사람이 사 가면 내 화면에서도 품절이 되고 더 살 수 없다.
+   오프라인(아이디 없음/규칙 막힘)이면 이 기기에만 수량이 줄어든다(게임은 그대로 돌아간다).
+   그림 assets/npcs/npc_wandering_merchant.png (NPC_ART_FILES, 4프레임 가로) · 상점 초상화 assets/npc/wandering_merchant_portrait.png
+   소리 assets/sfx/wandering_merchant_alert.wav (SFX_FILES.wander — 파일이 없으면 합성 벨)
+   ※ 이름 앞에 mer를 붙인 이유: 이 파일에는 이미 세계지도용 WM 객체가 있다(중복 선언 금지).
+   ※ 저장 파일에 새 필드를 만들지 않는다: 재고는 서버(또는 메모리)에만 있다. */
+const MER = {
+  MIN: 15, HOUR: 3600000,
+  hour: 0, map: null, ch: 1, items: null, left: [], npc: null,
+  wasHere: false, ann: 0, told: 0, polled: 0, busy: false, denied: false, drawn: '',
+};
+/* 가격은 이 표 한 곳에서만 고친다 (n = 상인이 선 장. stoneGold 758 / potionPrice 759 / scrollPrice 760) */
+const MER_GOODS = [
+  { k: 'qual',    n: '품질석',          give: 1, q: [1, 3], ic: '<img class="mer-ic" src="assets/items/item_quality_stone.png" alt="">',   p: n => Math.round(8 * stoneGold(n) / 5) * 5 },
+  { k: 'pot',     n: '잠재석',          give: 1, q: [1, 3], ic: '<img class="mer-ic" src="assets/items/item_potential_stone.png" alt="">', p: n => Math.round(10 * stoneGold(n) / 5) * 5 },
+  { k: 'inherit', n: '계승석',          give: 1, q: [1, 2], ic: '<span class="mer-gl">계</span>',                                          p: n => Math.round(25 * stoneGold(n) / 5) * 5 },
+  { k: 'free',    n: '무료 잠재 변경권', give: 1, q: [1, 2], ic: '<img class="mer-ic" src="assets/items/item_free_reroll.png" alt="">',     p: n => Math.round(60 * stoneGold(n) / 5) * 5 },
+  { k: 'potions', n: '치유 연고',        give: 3, q: [1, 2], ic: pimg('potion'),                                                          p: n => potionPrice(n) * 3 },
+  { k: 'scrolls', n: '귀환 주문서',      give: 1, q: [1, 2], ic: pimg('scroll'),                                                          p: n => scrollPrice(n) },
+];
+const merMaps = () => Object.keys(MAPS).filter(id => {
+  const m = MAPS[id]; return m && m.ch >= 1 && m.ch <= CH_LAST && !m.safe && !m.boss && !m.gate;
+});
+const merHash = n => { let x = (n | 0) ^ 0x9e3779b9; x = Math.imul(x ^ (x >>> 16), 2246822507); x = Math.imul(x ^ (x >>> 13), 3266489909); return (x ^ (x >>> 16)) >>> 0; };
+const merHour = () => Math.floor(srvNow() / MER.HOUR);
+const merMin = () => (srvNow() % MER.HOUR) / 60000;            // 0 ~ 60
+const merOn = () => merMin() < MER.MIN;                        // :00 ~ :15
+const merLeftMin = () => Math.max(0, MER.MIN - merMin());
+const merHere = () => !!(merOn() && G.map && MER.map && G.mapId === MER.map);
+
+function merMake(hour) {
+  const L = merMaps(); if (!L.length) return null;
+  const map = L[merHash(hour) % L.length], m = MAPS[map], n = (m && m.ch) || 1, r = seeded(hour ^ 0x5f356495);
+  const pool = MER_GOODS.slice();
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+  const items = pool.slice(0, 5).map(g => {
+    const qty = g.q[0] + Math.floor(r() * (g.q[1] - g.q[0] + 1));
+    return { k: g.k, n: g.n, give: g.give, qty, ic: g.ic, price: Math.max(5, g.p(n)) };
+  });
+  return { map, ch: n, items };
+}
+function merSetHour(h) {
+  const g = merMake(h) || { map: null, ch: 1, items: [] };
+  MER.hour = h; MER.map = g.map; MER.ch = g.ch; MER.items = g.items;
+  MER.left = g.items.map(it => it.qty);
+  MER.npc = null; MER.ann = 0; MER.told = 0; MER.polled = 0; MER.wasHere = false; MER.busy = false; MER.drawn = '';
+}
+function merNpc() {
+  const m = MER.map && MAPS[MER.map]; if (!m) return null;
+  if (!MER.npc) {
+    const x0 = Math.round(m.w * 0.5);
+    const near = v => (m.portals || []).every(p => Math.abs(v - p.x) > 130) && (m.lore || []).every(l => Math.abs(v - l.x) > 130);
+    let x = x0;
+    if (!near(x)) for (let d = 70; d <= 500; d += 70) { if (near(x0 + d)) { x = x0 + d; break; } if (near(x0 - d)) { x = x0 - d; break; } }
+    MER.npc = { id: 'wander', x, name: '떠돌이 상인', look: 'wandering_merchant' };   // 그림은 NPC_ART_FILES가 읽는다
+  }
+  return MER.npc;
+}
+/* 사냥터 NPC 목록에만 얹는다(맵 데이터는 건드리지 않는다 → 15분이 지나면 저절로 사라진다) */
+const _visibleNpcsW = visibleNpcs;
+visibleNpcs = function () {
+  const a = _visibleNpcsW(), n = merHere() ? merNpc() : null;
+  return n ? a.concat([n]) : a;
+};
+/* ↑로 말을 걸면 상점. talkNpc로 보내면 엉뚱한 잡담이 나온다 */
+const _interactW = interact;
+interact = function (it) {
+  if (it && it.type === 'npc' && it.obj && it.obj.id === 'wander') { merTalk(); return; }
+  return _interactW(it);
+};
+function merTalk() {
+  if (!merHere()) { toast('상인은 이미 떠났다', 'bad'); return; }
+  openPanel('merchant');
+  merRead().then(() => { if (G.ui.panel === 'merchant') merDraw(true); });
+}
+
+/* ---- 그림: NPC_ART_FILES에 등록한 4프레임 스트립을 기존 NPC 경로(npcBlit)로 그대로 그린다.
+   그림이 아직 안 왔으면 디온으로 대신한다(P5 폴백). ---- */
+const _drawNpcSpriteW = drawNpcSprite;
+drawNpcSprite = function (c, n, face) {
+  if (!n || n.id !== 'wander') return _drawNpcSpriteW(c, n, face);
+  const S = NPC_SPR[n.look];
+  if (S && S.ok && imgReady(S.img)) return _drawNpcSpriteW(c, n, face);
+  return _drawNpcSpriteW(c, Object.assign({}, n, { look: 'dion' }), face);
+};
+
+/* ---- 소리: 알림음(파일이 없으면 합성 벨) ---- */
+SFX_FILES.wander = 'wandering_merchant_alert.wav';
+const _sfxW = sfx;
+sfx = function (n, a) {
+  if (n === 'wander') {
+    if (!AU.ctx || AU.muted) return;
+    if (playSample('wander', 0.9)) return;
+    bellSound(660, 0.16, 1.4); bellSound(880, 0.11, 1.0); return;
+  }
+  return _sfxW(n, a);
+};
+
+/* ---- 재고: Firebase 조건부 갱신(ETag). 새 스트림은 열지 않고 2.5초 폴링 ----
+   경로는 dbUrl을 거치므로 localhost는 local_merchant/, dev 빌드는 dev_merchant/ 가 된다(규칙도 셋 다 있다). */
+const merSync = () => !!(G.uid && netBase() && netAllowed() && !MER.denied);
+function merDenied() {
+  if (!MER.denied) { MER.denied = true; toast('상인 재고를 서버와 맞추지 못한다 · 데이터베이스 규칙에 merchant를 넣어야 한다', 'bad'); }
+}
+async function merRead() {
+  if (!merSync() || !MER.items || !MER.items.length) return;
+  try {
+    const r = await fetch(dbUrl('merchant/' + MER.hour + '/st'));
+    if (r.status === 401 || r.status === 403) { merDenied(); return; }
+    if (!r.ok) return;
+    const j = (await r.json()) || {};
+    MER.items.forEach((it, i) => {
+      const v = j[i];
+      if (v && typeof v.left === 'number') MER.left[i] = Math.max(0, Math.min(it.qty, v.left));
+    });
+  } catch (e) { }
+}
+async function merClaim(i) {
+  const it = MER.items[i], path = 'merchant/' + MER.hour + '/st/' + i;
+  for (let k = 0; k < 4; k++) {
+    let etag = null, left = MER.left[i] == null ? it.qty : MER.left[i];
+    try {
+      const r = await fetch(dbUrl(path), { headers: { 'X-Firebase-ETag': 'true' }, cache: 'no-store' });
+      if (r.status === 401 || r.status === 403) { merDenied(); return false; }
+      if (r.ok) {
+        etag = r.headers.get('ETag');
+        const j = await r.json().catch(() => null);
+        if (j && typeof j.left === 'number') left = j.left;
+      }
+    } catch (e) { return false; }
+    if (left <= 0) { MER.left[i] = 0; return false; }
+    const h = { 'Content-Type': 'application/json' };
+    if (etag) h['if-match'] = etag;                  // ETag가 없으면(첫 구매) 조건 없이 쓴다
+    try {
+      const w = await fetch(dbUrl(path, 'print=silent'), { method: 'PUT', headers: h, body: JSON.stringify({ left: left - 1, by: myNick(), t: srvNow() }) });
+      if (w.ok) { MER.left[i] = left - 1; return true; }
+      if (w.status === 412) continue;                 // 다른 사람이 먼저 샀다: 다시 읽고 재시도
+      if (w.status === 401 || w.status === 403) { merDenied(); return false; }
+      return false;
+    } catch (e) { return false; }
+  }
+  return false;
+}
+function merGive(it) {
+  const s = G.save;
+  if (it.k === 'potions') s.potions = Math.min(POTION_MAX, s.potions + it.give);
+  else if (it.k === 'scrolls') s.scrolls = Math.min(SCROLL_MAX, s.scrolls + it.give);
+  else s.mats[it.k] = (s.mats[it.k] || 0) + it.give;
+}
+async function merBuy(i) {
+  if (MER.busy || !merHere()) return;
+  const it = MER.items[i]; if (!it) return;
+  const left = MER.left[i] == null ? it.qty : MER.left[i];
+  if (left <= 0) { toast('품절이다', 'bad'); merDraw(true); return; }
+  if (G.save.gold < it.price) { toast('골드가 모자란다', 'bad'); return; }
+  if (it.k === 'potions' && G.save.potions >= POTION_MAX) { toast('연고를 더 들 수 없다', 'bad'); return; }
+  if (it.k === 'scrolls' && G.save.scrolls >= SCROLL_MAX) { toast('귀환 주문서를 더 들 수 없다', 'bad'); return; }
+  MER.busy = true;
+  let ok;
+  if (merSync()) ok = await merClaim(i);
+  else { MER.left[i] = Math.max(0, left - 1); ok = true; }
+  MER.busy = false;
+  if (!ok) { toast('방금 다른 사람이 사 갔다', 'bad'); merRead().then(() => merDraw(true)); return; }
+  G.save.gold -= it.price; merGive(it); writeSave(); updateHud(true); sfx('coin');   // 재고 1 감소 성공 -> 골드 차감 -> 지급
+  { const nm = it.n + (it.give > 1 ? ' ' + it.give + '개' : '');   // 조사: 품질석을 / 잠재석을 / 연고 3개를
+    toast(nm + josa(nm.slice(-1), '을', '를') + ' 샀다 · -' + nf(it.price) + ' 골드', 'gold'); }
+  merDraw(true);
+}
+
+/* ---- 상점 창 (#panel/.pbox, 거래 창과 같은 결) ---- */
+function merHtml() {
+  const s = G.save, m = MAPS[MER.map];
+  const rows = (MER.items || []).map((it, i) => {
+    const left = MER.left[i] == null ? it.qty : MER.left[i];
+    return `<div class="mer-row${left ? '' : ' out'}"><span class="mer-i">${it.ic}</span>
+      <span class="mer-n">${it.n}<small>${nf(it.price)} 골드${it.give > 1 ? ' · ' + it.give + '개' : ''}</small></span>
+      <span class="mer-s">${left ? '남은 ' + left : '품절'}</span>
+      <button class="mini" data-merbuy="${i}" ${left && s.gold >= it.price ? '' : 'disabled'}>사기</button></div>`;
+  }).join('');
+  return `<div class="ph tr-ph"><img class="mer-port" src="assets/npc/wandering_merchant_portrait.png" alt="" onerror="this.style.display='none'">
+      <h3>떠돌이 상인</h3>
+      <span class="sub">${m ? m.ch + '장 ' + m.name : ''} · ${Math.ceil(merLeftMin())}분 남았다</span>
+      <button class="xbtn" data-close="1">닫기</button></div>
+    <div class="mer-list">${rows || '<p class="tr-empty">오늘은 짐이 비었다</p>'}</div>
+    <div class="tfoot"><span class="tr-note">수량은 모두가 함께 쓰는 재고다 · 누가 사 가면 줄어든다${merSync() ? '' : ' (지금은 이 기기에서만)'}</span></div>`;
+}
+const _renderPanelW = renderPanel;
+function merDraw(force) {
+  if (G.ui.panel !== 'merchant') return;
+  const sig = MER.hour + '|' + MER.left.join(',') + '|' + G.save.gold;
+  if (!force && sig === MER.drawn) return;
+  MER.drawn = sig; $('#pBox').innerHTML = merHtml();
+}
+renderPanel = function () {
+  if (G.ui.panel === 'merchant') { MER.drawn = ''; merDraw(true); return; }
+  return _renderPanelW();
+};
+$('#panel').addEventListener('click', e => {
+  const b = e.target.closest('[data-merbuy]'); if (!b || G.ui.panel !== 'merchant') return;
+  e.stopPropagation(); merBuy(+b.dataset.merbuy);
+}, true);
+document.head.insertAdjacentHTML('beforeend', `<style>
+.mer-list{display:flex;flex-direction:column;gap:calc(var(--u)*6);margin-top:calc(var(--u)*10);max-height:calc(var(--u)*330);overflow:auto}
+.mer-row{display:grid;grid-template-columns:calc(var(--u)*40) minmax(0,1fr) calc(var(--u)*72) calc(var(--u)*64);align-items:center;gap:calc(var(--u)*8);
+  padding:calc(var(--u)*6) calc(var(--u)*8);border:1px solid rgba(211,156,58,.35);background:rgba(20,16,10,.55)}
+.mer-row.out{opacity:.45}
+.mer-i{display:flex;align-items:center;justify-content:center;width:calc(var(--u)*32);height:calc(var(--u)*32)}
+.mer-ic{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+.mer-gl{color:#ffe08a;font-weight:700;font-size:max(12px,calc(var(--u)*16))}
+.mer-n{display:flex;flex-direction:column;min-width:0;font-size:max(11px,calc(var(--u)*13));color:#f2e6c8}
+.mer-n small{color:#b8a888;font-size:max(9px,calc(var(--u)*11))}
+.mer-s{color:#cfe6a8;font-size:max(9px,calc(var(--u)*11));text-align:right;white-space:nowrap}
+.mer-row.out .mer-s{color:#c08080}
+.mer-port{width:calc(var(--u)*40);height:calc(var(--u)*40);object-fit:cover;image-rendering:pixelated;border:1px solid rgba(211,156,58,.5)}
+</style>`);
+
+/* ---- 매 틱: 시간 창, 알림, 재고 폴링, 퇴장 ---- */
+function merTick(dt) {
+  if (G.scene !== 'play' || !G.save || !G.map) return;
+  const h = merHour();
+  if (MER.hour !== h || !MER.items) merSetHour(h);
+  if (merOn() && MER.ann !== h) {
+    MER.ann = h;
+    const m = MAPS[MER.map];
+    if (m) {
+      toast('떠돌이 상인 · ' + m.ch + '장 ' + m.name + ' · ' + Math.ceil(merLeftMin()) + '분 남았다', 'gold');
+      sfx('wander');
+      chatPush('near', 'merchant', { n: '떠돌이 상인', m: m.ch + '장 ' + m.name + '에 나타났다 · ' + Math.ceil(merLeftMin()) + '분간', t: Date.now() }, false);
+    }
+  }
+  const here = merHere();
+  if (here && MER.told !== h) { MER.told = h; toast('떠돌이 상인 · 다가가서 ↑', 'gold'); }
+  MER.wasHere = here;
+  if (!merOn() && G.ui.panel === 'merchant') { closePanel(); toast('떠돌이 상인이 짐을 쌌다', 'bad'); }
+  MER.polled -= dt;
+  if (G.ui.panel === 'merchant' && MER.polled <= 0) {
+    MER.polled = 2.5;
+    merRead().then(() => { if (G.ui.panel === 'merchant') merDraw(false); });
+  }
+}
+const _updateWorldW = updateWorld;
+updateWorld = function (rdt) { _updateWorldW(rdt); merTick(rdt); };
+merSetHour(merHour());
+
+/* ---- 부록 끝 ---- */
+
+window.__G = { G, IN, step, loadMap, updateWorld, calcStats, startGame, newSave, enhance, MON, BOSSES, MAPS, QUESTS, QUEST_ORDER, CHAPTERS, CHM, TRAITS, hurtPlayer, dealDamage, gainXp, talkHal, interact, renderWorld, levelCap, spawnBoss, showEnding, buy, useScroll, MER, merMake, merHour, merOn, merTick };
 applyBossDefs();
 loadSprites();
 growBodies();

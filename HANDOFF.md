@@ -11,7 +11,33 @@
 5. 옮긴 항목은 "옮김 완료"로 내리고 커밋한다.
 
 ## 옮길 것
-(없음)
+
+### 261124-0915  8개 개선(P1~P8) + 떠돌이 상인 + 방어구 직업 제한   (커밋 이 커밋, 대상: index.html / test/index.html)
+지시서: `claude_code_wandering_merchant_8_prompt.txt` (기준 737fc12). index.html 을 직접 고쳤고 test/index.html 에 같은 자리로 넣었다
+(1~3행만 다르고 4행부터 완전히 같음). 원본 조각으로 옮길 때의 대상(식별자로 찾는다):
+- P1 `30_combat.js`(추정): `ANON_CHANCE` 줄 아래 `ANON_GOLD` 추가, `anonDefeated` 의 `const gold = …` 한 줄을 `ANON_GOLD(n)` 으로.
+  보상 곡선 1장 1,000 ~ 30장 300,000 (2장 1,220 · 10장 5,870 · 20장 41,970). 장비 드랍·8% 무료권·파티클은 그대로.
+- P2 `56z_act3.js`/스토리 조각(추정): `STORY50[2].boss` 를 `'망각의 무녀 레테이아'` 로, `STORY50_RENAME` 의 레테이아→무녀 세 쌍 삭제.
+- P3 `56g_maps.js`: `MAP9_PAR = 1.15` + `drawMap9` 본문(cam.x 진행도로 dx, GROUND 축으로 dy). 화면 반전·tint9 래퍼는 그대로.
+- P5 새 조각 `62_merchant1124.js`(60_audio.js/61_patch1123.js 뒤, 70_main.js 앞) 권장: `const MER …` ~ `merSetHour(merHour());` 블록 전체
+  (index.html 22837~23165행, window.__G 바로 앞). build.py 에 `62_merchant1124.js` 순서 추가. `window.__G` 끝에 `MER, merMake, merHour, merOn, merTick` 추가,
+  `visibleNpcs` 를 `const` → `let` 로. 그림은 `NPC_ART_FILES`(assets/npcs/npc_wandering_merchant.png), 소리는 `SFX_FILES.wander`(assets/sfx/wandering_merchant_alert.wav).
+- P6 `60_trade.js`(추정): `renderPanel` 거래 래퍼를 지문(trSig)+스크롤 복원으로 교체, `openPanel` 에 `if (n === 'trade') G.ui.trDrawn = '';`,
+  `tradeHtml` 의 `.tr-bag`/`.tr-list` 두 곳에 `data-tscroll`, CSS `.tr-cols`/`.tr-col`/`.tr-bag`/`.tr-cell`/`.tr-it` + `#pBox:has(.tr-cols)`.
+- P7 `10_data.js`+`50_ui.js`: `canWear/clsName/cantWearMsg` 추가, `makeItem` 의 cls 를 `SLOTS.includes(slot)` 전체로(무기+방어구 6부위, 반지는 makeRing 그대로),
+  `equipItem` 안내 토스트, `calcStats` 세 루프에 `canWear`, `fixSave` 에 (a) 옛 방어구 cls 채우기 (b) 다른 직업 장비 가방行 + `clsFix` 카운터,
+  `startGame` 래퍼에서 `clsFix` 토스트, `autoPlan`/`autoEquipApply` 에 `canWear`.
+- P8 `30_combat.js`: `LY_DJ_X = 0.6` + `p.vx = fd * V * LY_DJ_X`, `LY_TP.dist` 180 → 240 (주석의 180px 도 함께).
+- **Firebase Realtime Database 규칙: 사용자가 콘솔(devil-renown-default-rtdb)에서 `merchant` / `dev_merchant` / `local_merchant`
+  규칙을 이미 넣고 게시했다** (`auth != null` 읽기, `st/$i` 쓰기는 `left` 가 -1~99 숫자일 때만). 코드는 `dbUrl` 을 거치므로
+  실제 게임은 `merchant/`, dev 빌드는 `dev_merchant/`, localhost 는 `local_merchant/` 를 쓴다 — 셋 다 규칙이 있어야 한다(지금 완료).
+- 이번에 함께 고친 것(지시서 밖, 1줄): 상인 구매 토스트의 조사를 `josa()` 로 계산 (`품질석를` → `품질석을`).
+- 새 파일: `assets/npc/wandering_merchant_sheet.png`, `assets/npc/wandering_merchant_portrait.png`,
+  `assets/npcs/npc_wandering_merchant.png`, `assets/ui/npc_portrait_wandering_merchant.png`,
+  `assets/sfx/wandering_merchant_alert.wav` + `.mp3` (test/assets 에도 같은 경로로 복사).
+- 확인: 헤드리스 Chromium 으로 P1~P8 54개 항목 전부 통과(골드 1,000/5,870/41,970/300,000 · 2장 보스 이름 · 배경 1.15배 패럴랙스 ·
+  드랍 수명 40초 유지 · 상인 :04 등장/구매/두 탭 재고/동시 구매 1명 성공/:16 퇴장/오프라인 · 거래 스크롤·가로 잘림 · 직업 제한 4경로 ·
+  이단 도약 160.5px/그림자 걸음 240px), pageerror 0, 새 자산 404 0 (기존 `assets/ui/boss_clear_screen.png` 누락만 남아 있음).
 
 <!-- 형식:
 ### yymmdd-hhmm  한 줄 제목   (커밋 abc1234, 대상: test/index.html)
