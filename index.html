@@ -550,10 +550,13 @@ button{font-family:inherit;color:inherit}
 .skgrid{display:grid;grid-template-columns:repeat(6,var(--sk));grid-auto-rows:var(--sk);gap:calc(var(--u)*3);padding:calc(var(--u)*4);
   background:rgba(8,10,16,.62);border:1px solid rgba(255,255,255,.1);border-radius:0 calc(var(--u)*5) calc(var(--u)*5) 0;pointer-events:auto}
 #skills.fold .skgrid{display:none}
-.sktog{width:calc(var(--u)*14);pointer-events:auto;cursor:pointer;border:1px solid rgba(255,255,255,.14);border-right:0;border-radius:calc(var(--u)*5) 0 0 calc(var(--u)*5);
-  background:rgba(14,16,24,.82);color:#e8d2a0;font:700 max(8px,calc(var(--u)*10))/1 var(--font-ui);display:flex;align-items:center;justify-content:center;padding:0;-webkit-tap-highlight-color:transparent}
+.sktog{width:calc(var(--u)*17);pointer-events:auto;cursor:pointer;border:1px solid rgba(255,255,255,.14);border-right:0;border-radius:calc(var(--u)*5) 0 0 calc(var(--u)*5);
+  background:rgba(14,16,24,.82);color:#e8d2a0;font:700 max(8px,calc(var(--u)*10))/1 var(--font-ui);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*3);padding:0;-webkit-tap-highlight-color:transparent}
 .sktog:hover{background:rgba(40,34,22,.9)}
-#skills.fold .sktog{border-right:1px solid rgba(255,255,255,.14);border-radius:calc(var(--u)*5);height:calc(var(--u)*40);align-self:flex-end}
+/* 2026-11-24 (user) "스킬창 닫으면 아예 사라짐": 접었을 때 남는 손잡이를 눈에 띄게 (금테 + 세로 '스킬' 라벨) */
+.sktog .ska{line-height:1;font-size:max(8px,calc(var(--u)*10))}
+.sktog .sklb{font:700 max(7px,calc(var(--u)*9))/1.1 var(--font-ui);font-style:normal;writing-mode:vertical-rl;letter-spacing:calc(var(--u)*1.5);color:#ffe6a8;opacity:.9}
+#skills.fold .sktog{border-right:1px solid rgba(232,176,72,.65);border-color:rgba(232,176,72,.65);border-radius:calc(var(--u)*5);height:calc(var(--u)*72);align-self:flex-end;box-shadow:0 0 calc(var(--u)*10) rgba(0,0,0,.7)}
 .sk.empty{background:rgba(10,12,18,.55);border-style:dashed;border-color:rgba(255,255,255,.08)}
 .sk.empty .kb{opacity:.45}
 .sk{position:relative;flex:0 0 auto;width:var(--sk);height:var(--sk);padding:0;display:block;overflow:hidden;border-radius:calc(var(--u)*5);background:#0a0c12;border:1px solid rgba(255,255,255,.12);pointer-events:auto;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
@@ -681,7 +684,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261124-1710';
+const GAME_VER = '261124-1745';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -12239,7 +12242,7 @@ Object.assign(ARENAS, {
   ] },
   17: { gims: [
     { t: 'ledge', style: 'gothic', x: 250, y: 345, w: 180 }, { t: 'ledge', style: 'gothic', x: 850, y: 345, w: 180 }, { t: 'ledge', style: 'gothic', x: 545, y: 250, w: 190 },
-    { t: 'cliff', x0: 170, x1: 1110 },
+    { t: 'cliff', x0: 40, x1: 1240 },   // 2026-11-24 (user): 바닥도 방 끝(벽)까지 이어진다
   ] },
   18: { gims: [
     { t: 'ledge', style: 'rock', x: 250, y: 345, w: 170 }, { t: 'ledge', style: 'rock', x: 860, y: 345, w: 170 },
@@ -12256,7 +12259,8 @@ Object.assign(ARENAS, {
 (function setupArenas4() {
   for (const n of [16, 17, 18, 19, 20]) { const m = MAPS[CHAPTERS[n].arena]; if (!m) continue; m.plats = [ground(m.w)]; m.gims = ARENAS[n].gims; m.props = (m.props || []).filter(p => p.t === 'brazier' || p.t === 'torch'); }
   MAPS[CHAPTERS[16].arena].water = { y: GROUND - 40 };
-  Object.assign(MAPS[CHAPTERS[17].arena], { arenaL: 180, arenaR: 1100 });   // the boss keeps to the jade floor
+  // 2026-11-24 (user): 17장 보스방을 다른 보스방과 같은 폭으로 넓혔다 (180~1100 → 40~1240, 맵 1280)
+  Object.assign(MAPS[CHAPTERS[17].arena], { arenaL: 40, arenaR: 1240 });   // the boss keeps to the jade floor
 })();
 
 /* ---- floors: ice slides, fire burns, the cloud edge drops you ---- */
@@ -12409,6 +12413,9 @@ function drawTentProp(c, g, wy) {
   return true;
 }
 function drawCliff(c, g) {
+  // 2026-11-24 (user) "양끝 네모난 구름 사진 제거": 바닥이 방 끝(40~1240)까지 이어져 밖으로 나가는 자리가 없으므로
+  // 양 끝에 타일로 붙이던 구름 그림(prop_cloud_bank/mist)은 그리지 않는다. (바닥이 다시 좁아지면 예전처럼 그린다)
+  if (g.x0 <= 64 && G.map.w - g.x1 <= 64) return;
   const bank = propImg('prop_cloud_bank'), mist = propImg('prop_cloud_mist'), edge = propImg('prop_cliff_edge');
   if (bank) {   // 2026-11-22: cloud tiles (every other one mirrored, so no seam shows), mist over them, the jade edge at the cliff
     const top = Math.round(GROUND - 40), hgt = 120;
@@ -12930,8 +12937,9 @@ function buildSkills() {
   const bottom = ch.skills.map((s, i) => slot('sk' + i, ['z', 'x', 'c'][i], s.n)).join('')
     + slot('skg', 'guard', '가드') + (G.save.flags.mobility ? slot('skm', 'shift', ch.move.name) : empty('shift')) + slot('sks', 'scroll', '귀환 주문서', 'scr', 'scrN');
   const fold = skFold();
-  $('#skills').innerHTML = `<button class="sktog" type="button" title="스킬창 접기/펴기">${fold ? '◀' : '▶'}</button><div class="skgrid">${top}${bottom}</div>`;
+  $('#skills').innerHTML = `<button class="sktog" type="button" title="스킬창 접기/펴기"><b class="ska">${fold ? '◀' : '▶'}</b><i class="sklb">스킬</i></button><div class="skgrid">${top}${bottom}</div>`;
   $('#skills').classList.toggle('fold', fold);
+  try { if (window.placeSkillBar23) window.placeSkillBar23(); } catch (e) { }   // 2026-11-24: 칸이 다시 그려진 뒤 자리를 화면 안으로
   $('#hName').textContent = (typeof myNick === 'function' ? myNick() : '') || ch.name;   // 2026-11-22 QA 2-6 (user): the nickname, the class name only without one
   const lb = { z: ch.skills[0].n, x: ch.skills[1].n, c: ch.skills[2].n, up: '대화', jump: '', guard: '가드', shift: G.save.flags.mobility ? ch.move.name : '4장', ka: sk.a.name, ks: sk.s.name, kd: sk.d.name, kv: '궁극기', kf: w && w.skill ? LEGEND_SKILLS[w.skill].name : '' };
   const shown = { ka: skillUnlocked('a', lv), ks: skillUnlocked('s', lv), kd: skillUnlocked('d', lv), kv: skillUnlocked('v', lv), kf: !!(w && w.skill) };
@@ -12975,7 +12983,7 @@ function bindSkillTips() {
   if (_tipsBound) return; _tipsBound = true;
   const bar = $('#skills');
   bar.addEventListener('error', e => { const im = e.target; if (im && im.classList && im.classList.contains('ic')) im.parentNode.classList.add('noimg'); }, true);   // a missing icon: that slot shows its name
-  bar.addEventListener('click', e => { const b = e.target.closest('.sktog'); if (!b) return; const f = !bar.classList.contains('fold'); skFold(f); bar.classList.toggle('fold', f); b.textContent = f ? '◀' : '▶'; hideSkillTip(); sfx('click'); });
+  bar.addEventListener('click', e => { const b = e.target.closest('.sktog'); if (!b) return; const f = !bar.classList.contains('fold'); skFold(f); bar.classList.toggle('fold', f); const a = b.querySelector('.ska'); if (a) a.textContent = f ? '◀' : '▶'; else b.textContent = f ? '◀' : '▶'; hideSkillTip(); sfx('click'); try { if (window.fitSkillBar23) window.fitSkillBar23(); } catch (err) { } });
   bar.addEventListener('mouseover', e => { const el = e.target.closest('[data-tip]'); if (el) showSkillTip(el); });
   bar.addEventListener('mouseout', e => { if (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('[data-tip]')) $('#sktip').classList.remove('on'); });
   let hold = null;
@@ -15969,12 +15977,20 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261124f',   // 2026-11-24 여섯 번째 패치(GAME_VER '261124-1710'): 23개 항목 정밀 수정 (전투·맵·UI·설정)
+  id: '261124g',   // 2026-11-24 일곱 번째 패치(GAME_VER '261124-1745'): 17장 보스방 폭 · 끝의 구름 · 스킬창
   title: '패치 노트',
-  sub: '이펙트 투명도 · 도적 암습 · 보스 체력 1.5배 · 맵 경계와 빙판',
+  sub: '17장 보스방을 넓히고 · 양끝 구름을 걷고 · 스킬창이 사라지지 않게',
   versions: [
     {
-      ver: '261124-1710', date: '2026-11-24', name: '23개 항목 — 전투 · 맵 · UI 정밀 수정', cur: 1,
+      ver: '261124-1745', date: '2026-11-24', name: '17장 보스방 폭 확장 · 구름 제거 · 스킬창', cur: 1,
+      items: [
+        { t: '맵', h: '17장 보스방이 다른 보스방과 같은 폭', p: '17장 검선의 정원은 다른 보스방보다 280px 좁았다(180~1100). 이제 모든 보스방과 같은 40~1240으로 넓어져, 왼쪽 끝 벽까지 걸어가 패턴을 피할 수 있다.', q: '옥 바닥도 방 끝 벽까지 이어져 중간에 떨어지는 자리가 없다. 좌우 금빛 경계선도 넓힌 자리에 그대로 그려진다.' },
+        { t: '맵', h: '17장 양끝의 네모난 구름 그림 제거', p: '보스방 좌우 끝에 타일로 붙어 있던 구름 그림(각진 사각형)이 없어졌다. 바닥이 벽까지 이어지므로 방 끝이 자연스럽게 마감된다.', q: '구름 학 같은 몬스터나 배경의 구름은 그대로다.' },
+        { t: 'UI', h: '스킬창이 사라지지 않는다', p: '스킬창을 접어도 오른쪽 아래에 금테 두른 세로 스킬 손잡이가 남고, 끌어 옮긴 자리가 화면 밖으로 나가지 않는다. 창 크기를 바꾸거나 마우스를 창 밖에서 놓아도 화면 안으로 되돌아온다.', q: '접기 손잡이를 끌어도 이제 접기/펴기만 되고 위치는 움직이지 않는다.' },
+      ],
+    },
+    {
+      ver: '261124-1710', date: '2026-11-24', name: '23개 항목 — 전투 · 맵 · UI 정밀 수정', cur: 0,
       items: [
         { t: 'UI', h: '이펙트 투명도를 직접 맞춘다',
           p: '설정(O) 창의 화면·연출에 이펙트 투명도 슬라이더가 생겼다. 10%에서 100%까지 5% 단위로 맞출 수 있고, 스킬·타격·파티클 같은 전투 이펙트의 진하기가 바로 바뀐다.',
@@ -24761,45 +24777,61 @@ startGame = function (save, isNew) {
   return r;
 };
 
-/* 19) 컴퓨터에서 스킬창 통째로 끌어 옮기기 (자리는 이 기기에 저장, 휴대폰은 원형 버튼이라 그대로) */
+/* 19) 컴퓨터에서 스킬창 통째로 끌어 옮기기 (자리는 이 기기에 저장, 휴대폰은 원형 버튼이라 그대로)
+   2026-11-24 (user) "스킬창 닫으면 아예 사라짐": 자리를 프레임 안에서 '남는 여백 대비 비율'로 저장해 창 크기가 달라져도
+   화면 안에 남고, 끄는 동안에도, 놓을 때도 프레임 밖으로 나가지 못하게 막았다. 마우스를 창 밖에서 놓아 pointerup 을
+   놓쳐도(pointercancel·창 포커스 아웃) 끌기가 풀리며, 접기 손잡이는 끌지 않는다(누르면 접기/펴기만). */
 (function skillBarDrag23() {
   const KEY = 'dr-skillpos';
   const bar = () => document.getElementById('skills');
-  const apply = () => {
-    if (IS_TOUCH) return; const b = bar(); if (!b) return;
-    let p = null; try { p = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { }
-    if (!p || p.x == null) return;
-    b.style.right = 'auto'; b.style.bottom = 'auto'; b.style.left = p.x + '%'; b.style.top = p.y + '%';
+  const frame = () => document.getElementById('game');
+  const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
+  const geom = () => { const b = bar(), h = frame(); if (!b || !h) return null;
+    const hr = h.getBoundingClientRect(), br = b.getBoundingClientRect();
+    if (!hr.width || !hr.height || !br.width) return null;
+    const M = 10;   // 프레임 테두리에서 살짝 띄운다 (예전 기본 자리와 같은 느낌)
+    return { b, hr, br, m: M, freeX: Math.max(0, hr.width - br.width - M), freeY: Math.max(0, hr.height - br.height - M) }; };
+  const put = (g, L, T) => { g.b.style.right = 'auto'; g.b.style.bottom = 'auto'; g.b.style.left = Math.round(L) + 'px'; g.b.style.top = Math.round(T) + 'px'; };
+  /* 저장된 자리로 되돌린다 (예전 x/y% 저장값도 이어받는다) */
+  const place = () => {
+    if (IS_TOUCH) return; const g = geom(); if (!g) return;
+    const p = read(); if (!p || (p.fx == null && p.x == null)) return;
+    const fx = clamp(p.fx != null ? p.fx : (p.x || 0) / 88, 0, 1), fy = clamp(p.fy != null ? p.fy : (p.y || 0) / 88, 0, 1);
+    put(g, fx * g.freeX, fy * g.freeY);
   };
-  apply();
+  /* 지금 자리를 프레임 안으로 다듬고(save 면 비율로 저장) */
+  const fit = (save) => {
+    if (IS_TOUCH) return; const g = geom(); if (!g) return;
+    const L = clamp(g.br.left - g.hr.left, 0, g.freeX), T = clamp(g.br.top - g.hr.top, 0, g.freeY);
+    put(g, L, T);
+    if (save) { try { localStorage.setItem(KEY, JSON.stringify({ fx: g.freeX ? +(L / g.freeX).toFixed(3) : 0, fy: g.freeY ? +(T / g.freeY).toFixed(3) : 0 })); } catch (e) { } }
+  };
+  window.placeSkillBar23 = () => { try { place(); } catch (e) { } };   // 칸이 다시 그려진 뒤(buildSkills)
+  window.fitSkillBar23 = () => { try { fit(false); } catch (e) { } };   // 접기/펴기 뒤 한 번 더
+  place();
   let drag = null;
   document.addEventListener('pointerdown', e => {
     if (IS_TOUCH || e.pointerType === 'touch' || e.button !== 0) return;
     const b = bar(); if (!b || !e.target.closest('#skills')) return;
-    const host = document.getElementById('game').getBoundingClientRect(), r = b.getBoundingClientRect();
-    drag = { x0: e.clientX, y0: e.clientY, ox: r.left - host.left, oy: r.top - host.top, w: host.width, h: host.height, moved: false, b };
+    if (e.target.closest('.sktog')) return;   // 접기 손잡이는 끌지 않는다
+    const host = frame().getBoundingClientRect(), r = b.getBoundingClientRect();
+    drag = { x0: e.clientX, y0: e.clientY, ox: r.left - host.left, oy: r.top - host.top, w: host.width - 10, h: host.height - 10, bw: r.width, bh: r.height, moved: false, b };
   }, true);
   document.addEventListener('pointermove', e => {
     if (!drag) return;
     const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
     if (!drag.moved && Math.hypot(dx, dy) < 5) return;
-    drag.moved = true; const b = drag.b;
-    b.style.right = 'auto'; b.style.bottom = 'auto';
-    b.style.left = Math.round(drag.ox + dx) + 'px'; b.style.top = Math.round(drag.oy + dy) + 'px';
+    drag.moved = true;
+    const L = clamp(drag.ox + dx, 0, Math.max(0, drag.w - drag.bw)), T = clamp(drag.oy + dy, 0, Math.max(0, drag.h - drag.bh));
+    const b = drag.b; b.style.right = 'auto'; b.style.bottom = 'auto';
+    b.style.left = Math.round(L) + 'px'; b.style.top = Math.round(T) + 'px';
     e.preventDefault();
   }, true);
-  document.addEventListener('pointerup', () => {
-    if (!drag) return;
-    const b = drag.b;
-    if (drag.moved) {
-      const host = document.getElementById('game').getBoundingClientRect(), r = b.getBoundingClientRect();
-      const px = clamp((r.left - host.left) / host.width * 100, 0, 88), py = clamp((r.top - host.top) / host.height * 100, 0, 88);
-      b.style.left = px.toFixed(2) + '%'; b.style.top = py.toFixed(2) + '%';
-      try { localStorage.setItem(KEY, JSON.stringify({ x: +px.toFixed(2), y: +py.toFixed(2) })); } catch (err) { }
-      hideSkillTip();
-    }
-    drag = null;
-  }, true);
+  const endDrag = () => { if (!drag) return; const moved = drag.moved; drag = null; if (moved) { fit(true); hideSkillTip(); } };
+  document.addEventListener('pointerup', endDrag, true);
+  document.addEventListener('pointercancel', endDrag, true);
+  addEventListener('blur', () => { drag = null; });
+  addEventListener('resize', () => { try { place(); } catch (e) { } });
 })();
 
 /* 23) 귀환 주문서가 완성되는 순간의 섬광 (지도가 바뀌기 전 페이드 동안 보인다) */
