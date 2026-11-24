@@ -12,6 +12,38 @@
 
 ## 옮길 것
 
+### 261124-1135  랜덤 상자 3프레임 교체 + 인게임 패치노트 새 UI   (대상: index.html / test/index.html + assets/obj)
+지시서: `claude_code_8_traits_guard_shrine_prompt.txt` 5-3절(상자 3프레임) + 2026-11-24 사용자 지시(패치노트 UI 전면 교체).
+바로 아래 261124-1130 커밋(5adeb1f·2cd7091)의 마무리다. index.html 을 직접 고쳤고 test/index.html 에 같은 내용을 넣었다
+(1·3행만 다르고 4행부터 완전히 같음, 둘 다 24,198행). 원본 조각으로 옮길 때의 대상:
+
+- **상자 3프레임 자산 교체** (`assets/obj/` + `test/assets/obj/`, 그림이라 조각 파일과 무관):
+  `random_chest_{wood,silver,gold,mythic}.png` 128×128 한 장 → **384×128 3프레임 스트립**(셀 128×128, 0=닫힘 / 1=반쯤 열림·빛줄기 /
+  2=갈라져 부서짐)로 교체. 출처 `downloads/steam_polish_assets_pack/assets/obj/`. 코드는 이미 폭으로 판별한다
+  (`naturalWidth>=380 ? 3프레임 : 한 장`) — 그림만 갈아 끼웠고, 보이지 않게 `?v=GAME_VER` 로 캐시를 갱신했다.
+- **(A) 인게임 패치노트 UI 전면 교체** `56f_news.js`(추정): `const NEWS` 부터 `newsShow()` 끝까지 통째로 교체.
+  - 데이터 구조: `NEWS = { id, title, sub, versions: [{ ver, date, name, cur?, items: [{ t, h, p, q }] }] }`
+    (`t`=분류 배지 전투/성장/월드/보상/UI/시스템, `h`=제목, `p`=본문, `q`=작은 팁).
+    카드 3장 — **1135**(9항목): 특성 15단계·누적 수치·마법사 X·겹침 580곳·퍼펙트 가드·랜덤 상자·축복의 제단·Z 부메랑·상자 3프레임 /
+    **1040**(13항목): 도약 30도·보스 소개 즉시·권장 전투력 2/3·골드 키패드·빈 방 가드·9장 오네이라·29장 개기일식·보스 0.8배속·궁수 집중·
+    거래 UI·세계지도 화살표·프리로드·보스 세 종 다리 / **0915**(9항목): 이름 없는 자 골드·2장 레테이아·배경 패럴럭스·떠돌이 상인·
+    방어구 직업 제한·거래 스크롤·도적 거리·아이템 40초(변경 없음)·상인 문구.
+  - 화면: `document.body` 에 붙는 `position:fixed` 모달. 게임 화면 배율(`--u`·`.frame`) **밖**이라 화면 픽셀로 그린다.
+    픽셀 폰트(Galmuri) 대신 시스템 한글 폰트 + 안티앨리어싱 + `image-rendering:auto` (도트 느낌 제거, 사용자 지시).
+    구성 = 머리(제목·부제) / 스크롤 본문(`.nsc` flex:1) / 바닥(안내 + `모험 계속`) + **우측 상단 ✕(`.nx`, aria-label="닫기")**.
+  - 아코디언 2단: 버전 카드(`.nvh`, 최신 카드만 열린 상태로 시작) → 항목(`.nih`, 누르면 `.nid` 의 본문·팁이 펼쳐지고 `+`가 `×`로 돈다).
+    **닫는 길 4가지** — ✕ / Esc / 바깥 어두운 곳 클릭 / `모험 계속`. 넷 다 같은 close() 로 `s.flags['news_'+id]`·계정 기록·`localStorage`·`writeSave()`.
+  - 띄우는 조건·한 번 보기 규칙은 그대로: `s.time>60`, `s.flags`·계정 기록·`NEWS_KEY(devil-renown-news:)` 셋 중 하나라도 있으면 안 뜬다.
+  - 창이 떠 있는 동안 `window` keydown 캐데트로 게임 입력 차단(Esc 만 닫기). 스타일은 `newsStyle()` 이 `#newsStyle` 로 1회만 주입.
+  - **글쓰기 규칙(사용자 지시)**: 함수·변수·파일 이름 금지. 게임에서 실제로 달라지는 것과 확률·수치만 적는다.
+- 버전: `GAME_VER '261124-1135'`, `version.json`(루트·test) 같은 값, `NEWS.id '261124c'` (GAME_VER 과 함께 올린다).
+- 검증(헤드리스 Chromium, 최종 파일): 상자 11항목 = 정지 F0(sx 0) / Z 실제 공격 F1(sx 128) / 50% 미만 복귀 F0 /
+  50% 이상 F1 유지 / 파괴 F2(sx 256) / 0.62초 제거 / 보상 지급 / 4티어 F2 / 3프레임 384×128 로드 / 404 0 / pageerror 0.
+  패치노트 23항목 = PC 1280×720(최신 카드만 열림·다른 카드 클릭 펼침·항목 상세 펼침·본문 868px 스크롤·✕/Esc/바깥클릭/버튼 닫기·
+  글꼴 antialiased·image-rendering auto) + MO 390×844(전체 화면·✕ 터치·카드 터치 펼침·항목 터치 펼침·695px 스크롤·✕ 터치 닫기) +
+  test 빌드 동일. 스모크 7항목 = 4직업 필드 10초 60fps·pageerror 0, 창이 떠 있으면 이동키 차단(dx 0)·닫은 뒤 dx 174.
+  스크린샷: `.work/po/news_ui_pc_{1,2,3}.png`, `news_ui_mo_{1,2,3}.png`, `shot_chest_f2.png`.
+
 ### 261124-1130  8개 항목: 특성 15단계 연출·누적 수치 · 마법사 X 전용 이펙트 · 전맵 포탈/가로등 겹침 · 퍼펙트 가드 · 랜덤 상자·축복의 제단 · Z 귀환/HUD   (대상: index.html / test/index.html + assets)
 지시서: `claude_code_8_traits_guard_shrine_prompt.txt` (기준 cec0a79). index.html 을 직접 고쳤고
 test/index.html 에 같은 자리로 넣었다(1·3행만 다르고 4행부터 같음, 둘 다 24,041행). 원본 조각으로 옮길 때의 대상:
@@ -48,7 +80,7 @@ test/index.html 에 같은 자리로 넣었다(1·3행만 다르고 4행부터 �
 - 새 자산(assets/ 와 test/assets/ 같은 경로): `vfx/mage_x_bolt.png`(1024×256) `vfx/perfect_guard_fx.png`(1024×256)
   `obj/random_chest_{wood,silver,gold,mythic}.png`(128×128, 3프레임 스트립으로 교체 예정) `obj/blessing_shrine.png`(128×160)
   — 출처 `downloads/steam_polish_assets_pack/`.
-- 버전: GAME_VER '261124-1130', version.json(루트·test) 동일.
+- 버전: GAME_VER '261124-1130', version.json(루트·test) 동일. → 마무리 커밋에서 **'261124-1135' 로 올라갔다**(위 1135 항목 참고).
 
 ### 261124-1040  12개 개선 + 궁수 집중 + 29장 개기일식 + 프리로드 + 보스 다리 복구   (대상: index.html / test/index.html + assets)
 지시서: `claude_code_12_polish_eclipse_prompt.txt` (기준 bc0ca55). index.html 을 직접 고쳤고

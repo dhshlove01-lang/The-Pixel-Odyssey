@@ -622,7 +622,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261124-1130';
+const GAME_VER = '261124-1135';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -15781,118 +15781,274 @@ spawnBoss = function (id) {
    damage already sit on a spec twice the old one, so they are clearly above chapter 10 (whose numbers are kept). */
 for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.def = Math.round(d.def * 1.5); d.def9 = 1; } }
 
-/* ============ 새 소식: after an update, the first time an account enters the game it sees a short pixel window of
-   what changed, written as the game talks (no technical words). Shown once per NEWS.id per account: the id is kept in
-   the save (synced to the cloud) and on the device. New characters with no play time do not see it.
-   To announce the next update: change NEWS.id and the items. Icons are drawn from the game's own pictures. ============ */
+/* ============ 새 소식(패치 노트): after an update, the first time an account enters the game it sees this window.
+   Shown once per NEWS.id per account: the id is kept in the save (synced to the cloud) and on the device.
+   New characters with no play time do not see it.
+   2026-11-24 사용자 지시: 도트 느낌을 뺀 선명한 다크 판타지 모달, 우측 상단 ✕, 버전 카드 + 항목 아코디언,
+   코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
+   To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261124b',   // 2026-11-24 두 번째 패치: 12개 개선 + 보스 다리 복구 (GAME_VER과 함께 올린다)
-  title: '새 소식',
-  sub: '궁수는 집중으로, 보스는 천천히, 달은 개기일식으로',
-  items: [
-    { icon: 'hero', head: '궁수 · 집중', text: '활공을 없앴다. Shift를 누르면 10초 동안 데미지 2배(재사용 25초). 발밑 황금빛 오라와 화살 잔상, HUD 남은 시간으로 확인한다.' },
-    { icon: 'road', head: '도적 이단 도약 30도', text: '공중 2단 점프가 낮고 길게, 30도 각도로 앞으로 뻗는다. 높이보다 거리다.' },
-    { icon: 'warn', head: '보스는 0.8배속', text: '1~30장 보스의 선딜·후딜·투사체·이펙트가 0.8배속이 됐다. 같은 패턴을 25% 더 여유 있게 피한다.' },
-    { icon: 'warn', head: '29장 개기일식', text: '달 그림을 지우고 코드로 그린다. 보름달이 검게 덮이면 가드로만 버틴다. 화면 테두리·카운트다운·바닥 띠로 미리 알린다.' },
-    { icon: 'map', head: '전체 맵 화살표', text: '세계 지도 좌우의 화살표로 1–20 / 21–30을 넘긴다. 넘길 때 낮은 둥. 소리가 난다.' },
-    { icon: 'bag', head: '거래 창 새 단장', text: '금테 프레임에 내 제안·상대 제안·가방 7열. 골드는 숫자 키패드로 바로 입력하고 +1천/+1만/+10만 버튼도 있다.' },
-    { icon: 'gold', head: '권장 전투력 표기', text: '보스 권장 전투력 숫자를 실제의 2/3로 표시한다. 보스 난이도는 그대로다.' },
-    { icon: 'hero', head: '9장은 몽마 오네이라', text: '9장 보스와 맵 이름을 몽마로 통일했다. 거신 크리오스라는 이름은 없앴다.' },
-    { icon: 'road', head: '보스 소개는 바로', text: '보스방에 들어서면 걷지 않아도 소개·각성 컷신이 뜬다.' },
-    { icon: 'map', head: '화면이 늦게 뜨지 않는다', text: '제목·세계 지도·맵 그림을 미리 받아 두고 한 번에 그린다. 배경이 순간 바뀌는 깜빡임이 없어졌다.' },
-    { icon: 'hero', head: '보스 다리 복구', text: '20장 보스(이그니스)의 잘려 있던 다리·부츠를 복구했다. 1~30장 1,440프레임을 전수 확인했다.' },
-    { icon: 'warn', head: '빈 방 방지', text: '1~30장 사냥방·회랑·문턱 111곳을 점검했다. 어떤 이유로든 몬스터가 비면 그 자리에서 채운다.' },
+  id: '261124c',   // 2026-11-24 세 번째 패치(GAME_VER '261124-1135'): 상자 3프레임 + 8개 항목 + 지난 패치 전체
+  title: '패치 노트',
+  sub: '상자 그림 세 단계 · 겹침 580곳 정리 · 퍼펙트 가드',
+  versions: [
+    {
+      ver: '261124-1135', date: '2026-11-24', name: '상자 그림 세 단계 · 8개 항목', cur: 1,
+      items: [
+        { t: '성장', h: '특성이 15단계까지 열린다',
+          p: '특성 한 갈래를 15단계까지 올릴 수 있다. 15단계까지 30포인트가 들고, 만렙(150)에서 받는 특성 포인트는 149라 여섯 갈래를 전부 끝낼 수는 없다(전부 채우면 180포인트). 네 갈래를 끝내고 다섯째에 29포인트를 넣는 것이 최대다.',
+          q: '5·10·15단계마다 연출이 진화한다. 5단계는 금빛 스파크, 10단계는 보라 고리와 진홍 스파크, 15단계는 금백빛 이중 고리와 화면 번쩍임. 캐릭터 발밑 고리로 지금 단계를 알 수 있다.' },
+        { t: '성장', h: '특성 카드에 누적 수치가 보인다',
+          p: '특성 카드마다 누적 줄이 생겼다. 지금까지 쌓인 피해·재사용·치명타·공격 속도·방어막·지속 시간이 그대로 적힌다. 기존 특성은 5단계 피해 +30%, 10단계 피해 +75%에 재사용 -20%·치명타 +4%p, 11~14단계 각 +6%, 15단계 피해 +124%.',
+          q: '새 각성 특성은 단계마다 피해 +5%, 10단계에서 재사용 -15%, 15단계에서 피해가 한 번 더 +25% 붙어 최종 피해 +100%·재사용 -30%다. 창 위 합계 줄에는 여섯 특성의 합과 특성 포인트 한도(149 / 180)가 함께 나온다.' },
+        { t: '전투', h: '마법사 X에 전용 그림',
+          p: '마법사 X(공허의 화살)에 전용 그림이 붙었다. 점화 → 응집 → 관통 세 단계를 거치며 날아가고, 세 번을 뚫은 뒤 그 자리에서 터지며 잔광이 남는다.',
+          q: '평타 Z와 그림이 겹치지 않아 지금 나간 기술이 무엇인지 바로 보인다.' },
+        { t: '월드', h: '포탈과 가로등이 겹치던 580곳 정리',
+          p: '1~30장과 캠프·아레나를 전부 훑어 포탈을 가로지르던 낮은 발판 85곳, 포탈 앞을 막던 가로등·화로 67곳, 발판을 뚫고 솟던 소품 428곳 — 모두 580곳을 없앴다. 발판 26개는 옆으로 옮기거나 폭을 줄였고, 소품 466개는 빈 자리로 옮기고 35개는 뺐다.',
+          q: '포탈은 하나도 옮기지 않았고, 길이 끊기지 않도록 발판은 없애지 않고 옮기거나 줄이기만 했다. 159개 맵 가운데 158개가 달라졌다.' },
+        { t: '전투', h: '퍼펙트 가드 — 0.1초 안에 막으면 쿨타임 0',
+          p: '가드는 0.25초 유지된다. 그중 시작 0.1초 안에 막아 내면 PERFECT GUARD! 가 뜨고 가드 쿨타임이 바로 0이 되어 연달아 막을 수 있다. 0.1초를 넘겨 막으면 예전처럼 3초를 기다린다.',
+          q: '성공하는 순간 금빛 이펙트가 터지고 화면이 0.1초 멈추며 살짝 흔들린다. 기본 가드의 청록 이펙트는 퍼펙트일 때 나오지 않아 금빛만 보인다.' },
+        { t: '보상', h: '랜덤 상자 — 필드 25%, 맵마다 15분',
+          p: '필드에 들어갈 때 25% 확률로 상자가 하나 놓인다. 한 번 나온 맵은 15분 동안 다시 나오지 않는다. 나무 상자 1~50타(55%), 은 상자 51~120타(28%), 황금 상자 121~220타(13%), 신화 상자 221~300타(4%) 순으로 드물게 나온다.',
+          q: '보상 — 나무: 골드 + 치유 연고 1~2개 / 은: 골드 + 잠재석·품질석 1~2개 / 황금: 골드 다량 + 품질석·잠재석 2~4개 / 신화: 골드 대량 + 무료 잠재 변경권 1장 + 계승석 1~2개(60%) 또는 3등급 장비. 골드는 장마다 35%씩 늘어난다. 파티 공용이 아니라 각자 자기 화면에서만 도는 상자다.' },
+        { t: '보상', h: '축복의 제단 — 35%, 3~5분 버프',
+          p: '필드에 들어갈 때 35% 확률로 제단이 선다. 앞에서 위 방향키를 누르면 3~5분(180~300초) 동안 네 가지 중 하나를 받는다. 공격의 축복은 공격력 +20%, 속도의 축복은 공격·이동 속도 +15%, 지혜의 축복은 경험치 +30%, 회복의 축복은 HP를 전부 채운다.',
+          q: '한 번 쓴 제단은 사라지고 그 맵은 10분 뒤에 다시 설 수 있다. 남은 시간은 화면 위 표시에 초 단위로 나온다.' },
+        { t: '전투', h: '마법사 Z 부메랑이 각도를 접어 돌아온다',
+          p: '마법사 Z가 앞으로 400 나간 뒤 0.16초 동안 각도와 속도를 함께 접어(470→658) 주인에게 돌아온다. 화면에서 갑자기 뒤집히지 않고, 돌아올 때도 곡선을 그리며 지나치지 않는다.',
+          q: 'Z 칸에 회전 / 복귀와 남은 비율이 표시된다.' },
+        { t: '보상', h: '상자 그림이 세 단계로',
+          p: '상자 그림이 닫힘 · 반쯤 열림 · 부서짐 세 장으로 나뉘었다. 때리는 순간과 남은 타수가 절반을 넘겼을 때 반쯤 열린 그림이 나오고, 부서지면 갈라진 그림을 0.34초 보여 준 뒤 보상이 떨어진다. 상자는 0.62초 뒤 사라진다.',
+          q: '나무·은·황금·신화 네 종류 모두 같은 방식이다.' },
+      ],
+    },
+    {
+      ver: '261124-1040', date: '2026-11-24', name: '12개 개선 · 29장 개기일식 · 보스 0.8배속',
+      items: [
+        { t: '전투', h: '도적 이단 도약이 30도로',
+          p: '공중 2단 점프가 56.5도(상승 112 · 이동 215)에서 30도(상승 48 · 이동 484)로 낮고 길게 바뀌었다. 높이보다 거리다.',
+          q: '좁은 틈을 넘기보다 멀리 건너는 움직임이 됐다.' },
+        { t: '월드', h: '보스방에 들어서면 바로 소개',
+          p: '보스방에 들어서는 순간, 걷지 않아도 보스 소개와 각성 컷신이 시작된다.',
+          q: '컷신을 기다리느라 방 안을 헤매지 않아도 된다.' },
+        { t: 'UI', h: '권장 전투력은 실제의 2/3로',
+          p: '보스 권장 전투력 숫자가 실제의 2/3로 표시된다. 실제 32,276인 10장 보스가 21,517로 보인다. 보스 난이도 자체는 그대로다.',
+          q: '숫자만 보고 겁내지 말고 들어가 보라는 뜻이다.' },
+        { t: 'UI', h: '거래 골드 입력이 숫자 키패드로',
+          p: '거래 창의 골드 칸을 누르면 휴대폰 숫자 키패드가 뜨고 숫자만 들어간다. +1천 · +1만 · +10만 버튼도 그대로다.',
+          q: '입력하는 동안에는 창이 다시 그려지지 않아 글자가 사라지지 않는다.' },
+        { t: '시스템', h: '빈 사냥방 안전장치',
+          p: '1~30장 사냥방·회랑·문턱 111곳을 점검했다. 어떤 이유로든 그 방에 몬스터가 하나도 없으면 잡몹 15마리와 정예 1마리를 그 자리에서 채운다.',
+          q: '원래 비어 있는 방은 없었고(방마다 12~32마리), 혹시 생길 경우를 막는 장치다.' },
+        { t: '월드', h: '9장 보스는 몽마 오네이라',
+          p: '9장 보스와 맵 이름을 몽마 오네이라로 통일했다. 맵 이름은 갈비뼈 아래의 불 · 눈 내리는 무덤 · 꿈의 회랑 · 몽마의 침실이다.',
+          q: '거신 크리오스라는 이름은 이제 게임 어디에도 나오지 않는다.' },
+        { t: '전투', h: '29장 개기일식',
+          p: '29장 달을 게임이 직접 그린 보름달로 바꿨다. 화면 오른쪽에서 검은 달이 밀려와 해를 덮고, 덮이는 동안 화면 테두리와 3·2·1 카운트다운, 바닥 띠로 미리 알린다. 그 순간의 일격은 가드로만 버틸 수 있다.',
+          q: '달이 화면 오른쪽 위에 고정돼 어떤 화면 비율에서도 뭉개지지 않는다.' },
+        { t: '전투', h: '보스는 0.8배속',
+          p: '1~30장 보스의 전조·시전·투사체·이펙트가 모두 0.8배속이 됐다. 전조 대기 0.85→1.067초, 시전 0.9→1.133초, 투사체 속도 400→320. 같은 패턴을 25% 더 여유 있게 피한다.',
+          q: '보스의 체력과 공격력은 그대로다. 느려진 만큼 조금 더 오래 싸운다.' },
+        { t: '전투', h: '궁수는 집중으로',
+          p: '궁수의 활공을 없앴다. Shift를 누르면 10초 동안 데미지가 2배가 되고 재사용은 25초다(실측 466→932). 발밑에 황금빛 고리, 등 뒤에 빛, 화살에 금빛 잔상이 따라온다.',
+          q: '남은 시간과 쿨타임은 화면 위 표시에 나온다. 활공은 마법사만 쓴다.' },
+        { t: 'UI', h: '거래 창 새 단장',
+          p: '거래 창을 내 제안 | 상대 제안 두 칸으로 나누고 가방은 7열로 넓게 폈다. 금테 프레임과 잠금·수락 배지가 붙고, 가방이 옆으로 잘리지 않는다.',
+          q: '골드 빠른 입력 버튼은 두 칸 모두에 있다.' },
+        { t: 'UI', h: '전체 지도 화살표',
+          p: '세계 지도 좌우에 화살표 버튼이 생겼다. 한 번에 1–20장 / 21–30장 페이지를 넘기고, 넘길 때 낮은 둥 소리가 난다.',
+          q: '키보드 E로도 다음 페이지로 넘어간다.' },
+        { t: '시스템', h: '화면이 늦게 뜨지 않는다',
+          p: '제목 화면·세계 지도·맵 그림·보스 그림·장비 아이콘을 미리 받아 두고 한 번에 그린다. 배경이 순간 비어 보이던 깜빡임이 사라졌다.',
+          q: '맵을 옮길 때는 그림이 준비될 때까지 0.07초 여유를 두고, 늦어도 1.2초 안에 넘어간다.' },
+        { t: '시스템', h: '보스 세 종의 다리 복구',
+          p: '20장 보스(이그니스)의 잘려 있던 다리와 부츠를 복구했다. 1~30장 보스 1,440프레임을 전수 확인했고, 그림을 받을 때마다 새 그림을 받도록 해 같은 문제가 다시 생기지 않게 했다.',
+          q: '다른 보스는 모두 정상이었다.' },
+      ],
+    },
+    {
+      ver: '261124-0915', date: '2026-11-24', name: '8개 개선 · 떠돌이 상인 · 방어구 직업 제한',
+      items: [
+        { t: '보상', h: '이름 없는 자의 골드',
+          p: '가끔 필드에 나타나는 이름 없는 자를 잡으면 주는 골드를 장에 맞게 다시 정했다. 1장 1,000 · 2장 1,220 · 10장 5,870 · 20장 41,970 · 30장 300,000.',
+          q: '장비 드랍과 8% 확률의 무료 잠재 변경권은 그대로다.' },
+        { t: '월드', h: '2장 보스는 망각의 무녀 레테이아',
+          p: '2장 보스 이름이 망각의 무녀 레테이아로 돌아왔다. 다른 곳에서 무녀라고만 적혀 있던 표기도 함께 정리했다.',
+          q: '2장 이야기 곳곳의 대사도 같은 이름을 쓴다.' },
+        { t: '월드', h: '배경이 좌우로 흐른다',
+          p: '맵 그림이 1.15배 커져 좌우로 걸을 때 배경이 함께 흐른다. 위쪽 하늘만 잘리고 지면선은 그대로다.',
+          q: '화면이 반전되는 구간에서도 배경은 자연스럽게 따라온다.' },
+        { t: '보상', h: '떠돌이 상인 — 매 시 :00~:15',
+          p: '매 시 0분부터 15분까지 1~30장 사냥터 한 곳에 떠돌이 상인이 선다. 어느 장 어느 맵인지는 시간마다 정해져 모든 사람이 같은 곳에서 만난다. 품질석·잠재석·계승석·무료 잠재 변경권·치유 연고·귀환 주문서 가운데 다섯 가지를 장에 맞는 값에 팔고, 16분이 되면 사라진다.',
+          q: '재고는 품목마다 수량이 정해져 있고 모두가 함께 쓴다. 먼저 산 사람이 가져가면 내 화면에서도 수량이 줄고, 다 팔리면 품절로 잠긴다. 두 탭으로 열어도 중복 구매는 되지 않는다.' },
+        { t: '시스템', h: '방어구에도 직업 제한',
+          p: '방어구에 직업 제한이 붙었다. 다른 직업의 장비는 낄 수 없고, 그런 장비는 가방으로 간다. 이미 끼고 있던 장비 중 직업에 맞지 않는 것은 들어올 때 자동으로 가방으로 옮겨지고 안내가 뜬다.',
+          q: '자동 장비 정비도 낄 수 있는 것만 고른다.' },
+        { t: 'UI', h: '거래 창 스크롤이 유지된다',
+          p: '거래 창을 내린 채로 물건을 옮겨도 스크롤이 맨 위로 튀지 않고 그 자리에 남는다.',
+          q: '가방과 제안 칸을 따로 내릴 수 있다.' },
+        { t: '전투', h: '도적의 거리',
+          p: '이단 도약이 앞으로 160.5, 그림자 걸음이 240 나아간다. 그림자 걸음 사거리를 180에서 240으로 늘렸다.',
+          q: '도약의 상승 높이는 그대로 두고 앞으로 나가는 힘만 키웠다.' },
+        { t: '시스템', h: '떨어진 아이템은 40초',
+          p: '바닥에 떨어진 아이템은 40초 뒤 사라진다. 이번에 손대지 않고 그대로 두었다.',
+          q: '드랍 확률과 규칙도 그대로다.' },
+        { t: '시스템', h: '상인 구매 안내 문구',
+          p: '상인에게 물건을 살 때 뜨는 안내 문구의 조사가 자연스러워졌다(품질석를 → 품질석을).',
+          q: '' },
+      ],
+    },
   ],
 };
 const NEWS_KEY = 'devil-renown-news:';
-const NEWS_PER = 5;   // lines on one page; more than this and the window gets < 이전 / 다음 >
-(function newsStyle() {
-  const st = document.createElement('style');
+const NEWS_TONE = { '전투': '#a9503a', '성장': '#6d5bb4', '월드': '#3b7a6e', '보상': '#9a7a28', 'UI': '#3a6a9c', '시스템': '#5f5a6a' };
+let NEWS_DONE = 0;   // one style sheet, however many times the window opens
+/* 선명한 모던 다크 판타지: 픽셀 폰트·픽셀 확대를 쓰지 않고, 화면 기준 픽셀로 그린다(게임 화면 배율과 무관). */
+function newsStyle() {
+  if (NEWS_DONE) return; NEWS_DONE = 1;
+  const st = document.createElement('style'); st.id = 'newsStyle';
   st.textContent = `
-#news{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(3,3,8,.72);z-index:40;font-family:'Galmuri',var(--font-ui,sans-serif);-webkit-font-smoothing:none;image-rendering:pixelated}
+#news{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(1100px 620px at 50% 12%,rgba(36,26,46,.86),rgba(6,5,10,.92));
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Pretendard','Malgun Gothic',system-ui,'Segoe UI',sans-serif;
+  color:#eae3d5;text-align:left;letter-spacing:0;line-height:1.5;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;
+  image-rendering:auto;font-weight:400;animation:nfade .16s ease-out}
+@keyframes nfade{from{opacity:0}to{opacity:1}}
 #news.on{display:flex}
-#news .nw{position:relative;width:calc(var(--u)*600);padding:calc(var(--u)*12) calc(var(--u)*20) calc(var(--u)*10);background:#120e14;
-  box-shadow:0 0 0 calc(var(--u)*3) #2a1d12,0 0 0 calc(var(--u)*6) #c89a48,0 0 0 calc(var(--u)*9) #2a1d12,0 calc(var(--u)*14) calc(var(--u)*30) rgba(0,0,0,.6);
-  transform:scale(.92);opacity:0;transition:transform .22s steps(4),opacity .22s steps(4)}
-#news.on .nw{transform:scale(1);opacity:1}
-#news .nh{text-align:center;color:#ffd36a;font-weight:700;font-size:calc(var(--u)*24);letter-spacing:calc(var(--u)*4);text-shadow:calc(var(--u)*2) calc(var(--u)*2) 0 #5a2a10}
-#news .ns{text-align:center;color:#b8a888;font-size:calc(var(--u)*11);margin:calc(var(--u)*2) 0 calc(var(--u)*8)}
-#news .nl{display:flex;flex-direction:column;gap:calc(var(--u)*5)}
-#news .ni{display:flex;align-items:center;gap:calc(var(--u)*12);padding:calc(var(--u)*4) calc(var(--u)*8);background:#1b151d;box-shadow:inset 0 0 0 calc(var(--u)*2) #2e2430;
-  opacity:0;transform:translateX(calc(var(--u)*-14));transition:opacity .18s steps(3),transform .18s steps(3)}
-#news .ni.in{opacity:1;transform:none}
-#news .ni canvas{width:calc(var(--u)*48);height:calc(var(--u)*48);flex:none;image-rendering:pixelated;background:#0b0910;box-shadow:inset 0 0 0 calc(var(--u)*2) #3a2c22}
-#news .nt b{display:block;color:#ffcf7a;font-size:calc(var(--u)*14);margin-bottom:calc(var(--u)*3)}
-#news .nt span{word-break:keep-all;color:#e4dccb;font-size:calc(var(--u)*11);line-height:1.4}
-#news .nf{display:flex;align-items:center;justify-content:center;gap:calc(var(--u)*12);margin-top:calc(var(--u)*10)}
-#news .npg{color:#b8a888;font-size:calc(var(--u)*11);min-width:calc(var(--u)*40);text-align:center}
-#news .np{padding:calc(var(--u)*6) calc(var(--u)*16);background:#1e1820;color:#d8c8a8;font-family:inherit;font-weight:700;font-size:calc(var(--u)*12);border:0;cursor:pointer;box-shadow:0 0 0 calc(var(--u)*2) #6a5434}
-#news .np:disabled{opacity:.35;cursor:default}
-#news .nb{display:block;margin:0;padding:calc(var(--u)*6) calc(var(--u)*26);background:#3a2410;color:#ffe2a0;font-family:inherit;font-weight:700;font-size:calc(var(--u)*13);border:0;cursor:pointer;
-  box-shadow:0 0 0 calc(var(--u)*2) #c89a48,0 calc(var(--u)*3) 0 calc(var(--u)*2) #5a3a18}
-#news .nb:hover{background:#5a3818}
-#news .nk{text-align:center;color:#7a6e60;font-size:calc(var(--u)*10);margin-top:calc(var(--u)*4)}`;
+#news *{box-sizing:border-box;font-family:inherit}
+#news .nw{position:relative;display:flex;flex-direction:column;width:min(760px,100%);max-height:min(88vh,820px);
+  background:linear-gradient(180deg,#191422 0%,#131019 46%,#100d16 100%);
+  border:1px solid rgba(200,161,106,.34);border-radius:16px;overflow:hidden;
+  box-shadow:0 30px 80px rgba(0,0,0,.66),0 0 0 1px rgba(255,214,150,.05) inset,0 1px 0 rgba(255,226,180,.09) inset}
+#news .nw::before{content:'';position:absolute;left:0;right:0;top:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(226,182,114,.9),transparent)}
+#news .nx{position:absolute;top:14px;right:14px;z-index:2;width:36px;height:36px;border-radius:10px;
+  border:1px solid rgba(200,161,106,.34);background:rgba(255,255,255,.035);color:#e7d9bb;font-size:15px;font-weight:600;
+  line-height:1;cursor:pointer;display:grid;place-items:center;transition:background .15s,border-color .15s,color .15s,transform .12s}
+#news .nx:hover{background:rgba(226,182,114,.16);border-color:rgba(226,182,114,.7);color:#ffe9c0}
+#news .nx:active{transform:scale(.94)}
+#news .nhd{padding:22px 62px 14px 26px;border-bottom:1px solid rgba(255,255,255,.06)}
+#news .nht{font-size:19px;font-weight:700;color:#f6e8cf;letter-spacing:.02em}
+#news .nhs{margin-top:5px;font-size:12.8px;color:#a99b86}
+#news .nhd,#news .nft{flex:none}
+#news .nsc{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:16px 18px 6px;
+  scrollbar-width:thin;scrollbar-color:rgba(200,161,106,.45) transparent}
+#news .nsc::-webkit-scrollbar{width:8px}
+#news .nsc::-webkit-scrollbar-thumb{background:rgba(200,161,106,.35);border-radius:8px}
+#news .nv{border:1px solid rgba(255,255,255,.07);border-radius:12px;margin:0 0 10px;background:rgba(255,255,255,.018);overflow:hidden}
+#news .nv.cur{border-color:rgba(200,161,106,.42);background:linear-gradient(180deg,rgba(200,161,106,.10),rgba(200,161,106,.02))}
+#news .nvh{display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;border:0;background:none;
+  color:inherit;font:inherit;text-align:left;cursor:pointer}
+#news .nvh:hover{background:rgba(255,255,255,.03)}
+#news .nvv{flex:none;font-size:11.5px;font-weight:700;letter-spacing:.03em;color:#c8a56e;
+  font-variant-numeric:tabular-nums;padding:3px 7px;border:1px solid rgba(200,161,106,.32);border-radius:6px}
+#news .nv.cur .nvv{color:#1a1210;background:#d8b276;border-color:#d8b276}
+#news .nvn{flex:1;min-width:0;font-size:14px;font-weight:600;color:#efe4cf;line-height:1.45}
+#news .nvd{flex:none;font-size:11.5px;color:#8b8171;font-variant-numeric:tabular-nums}
+#news .nvc{flex:none;font-size:11px;color:#8b8171;transition:transform .18s}
+#news .nv.open .nvc{transform:rotate(180deg)}
+#news .nvi{display:none;padding:0 8px 8px}
+#news .nv.open .nvi{display:block;animation:nopen .18s ease-out}
+@keyframes nopen{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+#news .ni{border-top:1px solid rgba(255,255,255,.055)}
+#news .nih{display:flex;align-items:flex-start;gap:9px;width:100%;padding:11px 6px;border:0;background:none;
+  color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:7px}
+#news .nih:hover{background:rgba(255,255,255,.028)}
+#news .nib{flex:none;margin-top:1px;font-size:10px;font-weight:700;letter-spacing:.04em;color:#fff;
+  padding:2.5px 7px;border-radius:5px;opacity:.92}
+#news .nihh{flex:1;min-width:0;font-size:13.2px;color:#e6dcc8;line-height:1.55}
+#news .ni.open .nihh{color:#ffe6b8}
+#news .nic{flex:none;margin-top:1px;font-size:14px;color:#8b8171;transition:transform .16s,color .16s}
+#news .ni.open .nic{transform:rotate(45deg);color:#c8a56e}
+#news .nid{display:none;padding:0 8px 13px 42px}
+#news .ni.open .nid{display:block;animation:nopen .16s ease-out}
+#news .nid p{margin:0 0 7px;font-size:12.6px;line-height:1.75;color:#c6bda9}
+#news .nid p:last-child{margin-bottom:0}
+#news .nid p.ntip{margin:0;padding:9px 11px;border-left:2px solid rgba(200,161,106,.7);border-radius:0 7px 7px 0;
+  background:rgba(200,161,106,.075);font-size:12.2px;line-height:1.7;color:#d6cab1}
+#news .nft{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 20px;
+  border-top:1px solid rgba(255,255,255,.07);background:rgba(8,6,12,.55)}
+#news .nfi{font-size:11.5px;color:#867d6e}
+#news .nb{padding:10px 24px;border-radius:9px;border:1px solid rgba(226,182,114,.8);
+  background:linear-gradient(180deg,#3d2c16,#2a1d0e);color:#ffe6b4;font:inherit;font-weight:700;font-size:13.5px;
+  cursor:pointer;transition:background .15s,transform .12s}
+#news .nb:hover{background:linear-gradient(180deg,#4c381c,#332410)}
+#news .nb:active{transform:scale(.98)}
+@media (max-width:560px){
+  #news{padding:0}
+  #news .nw{width:100%;height:100%;max-height:100%;border:0;border-radius:0}
+  #news .nhd{padding:18px 56px 12px 18px}
+  #news .nht{font-size:17px}
+  #news .nhs{font-size:12px}
+  #news .nx{top:10px;right:10px;width:34px;height:34px}
+  #news .nsc{padding:12px 12px 4px}
+  #news .nvn{font-size:13px}
+  #news .nvd{display:none}
+  #news .nid{padding:0 6px 12px 36px}
+  #news .nft{padding:11px 14px}
+  #news .nfi{display:none}
+  #news .nb{width:100%;padding:12px}
+}`;
   document.head.appendChild(st);
-})();
-/* the icons: a boss as it stands in the game, a warning as it looks in a fight, a road */
-function newsIcon(cv, kind, t) {
-  const c = cv.getContext('2d'), W = cv.width, H = cv.height; c.clearRect(0, 0, W, H); c.imageSmoothingEnabled = false;
-  const boss = (id, cell) => { const S = BOSS_SHEETS[id], fr = S && S.grid ? SPR[S.grid] && SPR[S.grid][cell] : bossArt(id); if (!fr || !imgReady(fr.img)) return false; const sc = (H - 10) / (fr.bodyH || fr.h); drawSprite(c, fr, W / 2, H - 4, -1, sc, { crisp: true }); return true; };
-  if (kind === 'giant') boss('b7', Math.floor(t * 5) % 8);   // 48f: 7장 보스방을 한 번 들어간 뒤부터 나온다(시트를 미리 불러오지 않음)
-  else if (kind === 'b20') boss('b20', Math.floor(t * 5) % 4);
-  else if (kind === 'npc') { const S = typeof NPC_SPR !== 'undefined' && NPC_SPR.chalkias; if (S && S.ok && imgReady(S.img)) { const i = Math.floor(t * 1000 / S.ms) % S.n, sc = (H - 6) / S.ch; c.drawImage(S.img, i * S.cw, 0, S.cw, S.ch, Math.round(W / 2 - S.ax * sc), Math.round(H - 3 - S.ay * sc), Math.round(S.cw * sc), Math.round(S.ch * sc)); } }   // the smith at his anvil
-  else if (kind === 'hero') { const ch = ['theron', 'kallisto', 'lykos'][Math.floor(t / 1.2) % 3], set = SPR[ch], fr = set && set[3 + Math.floor(t * 8) % 4]; if (fr && imgReady(fr.img)) drawSprite(c, fr, W / 2, H - 4, 1, (H - 10) / fr.bodyH * 0.95, { crisp: true }); }   // the new heroes running
-  else if (kind === 'mage') { const set = typeof mageSheet === 'function' ? mageSheet() : null, fr = set && set[Math.floor(t * 4) % 3]; if (fr && imgReady(fr.img)) drawSprite(c, fr, W / 2, H - 4, 1, (H - 10) / fr.bodyH, { crisp: true }); }   // 세라핀 as she stands
-  else if (kind === 'barrier') { const im = typeof mageImg === 'function' ? mageImg('barrier') : null; if (im && im.complete && im.naturalWidth) { const cw = Math.floor(im.naturalWidth / 4), f = [0, 1, 2, 2, 2, 3][Math.floor(t * 3) % 6]; c.drawImage(im, f * cw, 0, cw, im.naturalHeight, 0, Math.round(H * 0.12), W, Math.round(H * 0.82)); } }
-  else if (kind === 'b5') boss('b5', 0);
-  else if (kind === 'gold') { for (let i = 0; i < 7; i++) { const x = 10 + (i * 37) % 44, y = 46 - ((t * 40 + i * 13) % 40); c.fillStyle = '#7a5a10'; c.fillRect(x, y, 10, 10); c.fillStyle = '#ffd34a'; c.fillRect(x + 1, y + 1, 8, 8); c.fillStyle = '#fff2a8'; c.fillRect(x + 2, y + 2, 3, 3); } }
-  else if (kind === 'bag') { c.fillStyle = '#5a3a1a'; c.fillRect(14, 22, 36, 32); c.fillStyle = '#8a5a2a'; c.fillRect(16, 24, 32, 28); c.fillStyle = '#c89a48'; c.fillRect(24, 14, 16, 10); c.fillStyle = '#ffd36a'; const k = Math.floor(t * 3) % 2; c.fillRect(28, 32 - k * 4, 8, 8); }
-  else if (kind === 'ult') { const im = ULT9_IMG; if (im && im.complete && im.naturalWidth) { const nf = ULT12_IMG && im === ULT12_IMG ? 12 : 4, cw = Math.floor(im.naturalWidth / nf), f = Math.floor(t * (nf === 12 ? 8 : 3)) % nf; c.drawImage(im, f * cw, 0, cw, im.naturalHeight, 0, 0, W, H); } }   // your own class's ultimate
-  else if (kind === 'map') { const im = MAP9.get('ch20_boss') || map9Load(20, 'boss'); if (im && im.complete && im.naturalWidth) c.drawImage(im, 300 + Math.round(Math.sin(t * 0.6) * 40), 120, 300, 300, 0, 0, W, H); }   // a window onto the volcano
-  else if (kind === 'warn') {   // a dashed red box filling up from the floor, the "!" blinking over it
-    const p = (t * 0.8) % 1, blink = p > 0.8 && Math.floor(t * 12) % 2 === 0;
-    c.fillStyle = 'rgba(255,85,51,.18)'; c.fillRect(8, 22, 48, 34); c.fillStyle = 'rgba(255,85,51,.45)'; const h = Math.round(34 * p / 2) * 2; c.fillRect(8, 56 - h, 48, h);
-    c.strokeStyle = blink ? '#fff' : '#FF5533'; c.lineWidth = 2; c.setLineDash([4, 3]); c.strokeRect(9, 23, 46, 32); c.setLineDash([]); c.fillStyle = '#FF5533'; c.fillRect(8, 54, 48, 2);
-    c.fillStyle = blink ? '#fff' : '#FFCC00'; c.font = "bold 18px 'Galmuri',monospace"; c.textAlign = 'center'; c.fillText('!', 32, 18);
-  } else if (kind === 'road') {   // a path of stones running to a lit gate
-    c.fillStyle = '#2a2030'; c.fillRect(0, 44, 64, 20);
-    for (let i = 0; i < 5; i++) { const x = 4 + i * 11, y = 52 - i * 3, w = 10 - i; c.fillStyle = i % 2 ? '#8a7a68' : '#a8957c'; c.fillRect(x, y, w, 4); }
-    const g = 0.6 + Math.sin(t * 4) * 0.25; c.fillStyle = '#3a2a18'; c.fillRect(44, 18, 16, 28); c.fillStyle = `rgba(255,210,110,${g})`; c.fillRect(47, 22, 10, 24); c.fillStyle = '#c89a48'; c.fillRect(42, 14, 20, 4);
-  }
 }
 function newsSeen(uid) { try { return localStorage.getItem(NEWS_KEY + (uid || '_')) === NEWS.id; } catch (e) { return false; } }
 function newsShow(force) {
   const s = G.save; if (!s) return;
   if (!force && ((s.flags && s.flags['news_' + NEWS.id]) || (acctSeen() || {})['news_' + NEWS.id] || newsSeen(G.uid) || !(s.time > 60))) return;   // once per ID (2026-11-23: G.store.seen); not for a brand-new character
-  let el = $('#news'); if (!el) { el = document.createElement('div'); el.id = 'news'; ($('#uiwin') || document.body).parentNode.appendChild(el); }
-  /* pages of NEWS_PER lines: "< 이전" and "다음 >" (and the arrow keys) when there is more than one; the last page closes */
-  const pages = []; for (let i = 0; i < NEWS.items.length; i += NEWS_PER) pages.push(NEWS.items.slice(i, i + NEWS_PER));
-  let pg = 0, cvs = [];
-  const t0 = performance.now();
-  const render = () => {
-    const last = pg === pages.length - 1, many = pages.length > 1;
-    el.innerHTML = `<div class="nw"><div class="nh">${NEWS.title}</div><div class="ns">${NEWS.sub}</div><div class="nl">${pages[pg].map(it => `<div class="ni"><canvas width="64" height="64" data-k="${it.icon}"></canvas><div class="nt"><b>${it.head}</b><span>${it.text}</span></div></div>`).join('')}</div>`
-      + `<div class="nf">${many ? `<button class="np"${pg ? '' : ' disabled'}>&lt; 이전</button>` : ''}<button class="nb">${last ? '모험 계속' : '다음 &gt;'}</button>${many ? `<span class="npg">${pg + 1} / ${pages.length}</span>` : ''}</div>`
-      + `<div class="nk">${many ? '← → 넘기기 · ' : ''}Enter · Space</div></div>`;
-    el.classList.add('on');
-    el.querySelectorAll('.ni').forEach((n, i) => setTimeout(() => n.classList.add('in'), 120 + i * 120));   // one line at a time
-    cvs = [...el.querySelectorAll('canvas')];
-    el.querySelector('.nb').onclick = () => (last ? close() : go(1));
-    const pv = el.querySelector('.np'); if (pv) pv.onclick = () => go(-1);
+  newsStyle();
+  let el = document.getElementById('news');
+  if (!el) { el = document.createElement('div'); el.id = 'news'; document.body.appendChild(el); }
+  const esc = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const items = v => v.items.map(it => `
+        <div class="ni">
+          <button class="nih" type="button" aria-expanded="false">
+            <span class="nib" style="background:${NEWS_TONE[it.t] || '#5f5a6a'}">${esc(it.t)}</span>
+            <span class="nihh">${esc(it.h)}</span><span class="nic">+</span>
+          </button>
+          <div class="nid"><p>${esc(it.p)}</p>${it.q ? `<p class="ntip">${esc(it.q)}</p>` : ''}</div>
+        </div>`).join('');
+  el.innerHTML = `
+  <div class="nw" role="dialog" aria-modal="true" aria-label="${esc(NEWS.title)}">
+    <button class="nx" type="button" aria-label="닫기" title="닫기 (Esc)">&#10005;</button>
+    <div class="nhd"><div class="nht">${esc(NEWS.title)}</div><div class="nhs">${esc(NEWS.sub)}</div></div>
+    <div class="nsc">${NEWS.versions.map((v, vi) => `
+      <section class="nv${vi === 0 ? ' cur open' : ''}">
+        <button class="nvh" type="button" aria-expanded="${vi === 0}">
+          <span class="nvv">${esc(v.ver)}</span><span class="nvn">${esc(v.name)}</span>
+          <span class="nvd">${v.items.length}개 항목</span><span class="nvc">&#9662;</span>
+        </button>
+        <div class="nvi">${items(v)}</div>
+      </section>`).join('')}
+    </div>
+    <div class="nft"><span class="nfi">버전을 누르면 그 패치가, 항목을 누르면 자세한 내용이 펼쳐진다</span>
+      <button class="nb" type="button">모험 계속</button></div>
+  </div>`;
+  el.querySelectorAll('.nv').forEach(sec => {
+    const head = sec.querySelector('.nvh');
+    head.onclick = () => { const on = sec.classList.toggle('open'); head.setAttribute('aria-expanded', on ? 'true' : 'false'); try { sfx('click'); } catch (e) { } };
+    sec.querySelectorAll('.ni').forEach(ni => {
+      const b = ni.querySelector('.nih');
+      b.onclick = () => { const on = ni.classList.toggle('open'); b.setAttribute('aria-expanded', on ? 'true' : 'false'); try { sfx('click'); } catch (e) { } };
+    });
+  });
+  const close = () => {
+    el.classList.remove('on'); window.removeEventListener('keydown', newsKey, true); G.ui.news = false;
+    if (s.flags) s.flags['news_' + NEWS.id] = 1; { const A = acctSeen(); if (A) A['news_' + NEWS.id] = 1; } try { localStorage.setItem(NEWS_KEY + (G.uid || '_'), NEWS.id); } catch (e) { }
+    if (typeof writeSave === 'function') writeSave(); sfx('quest');
   };
-  const go = d => { const n = clamp(pg + d, 0, pages.length - 1); if (n === pg) return; pg = n; sfx('click'); render(); };
-  const loop = now => { if (!el.classList.contains('on')) return; cvs.forEach(cv => newsIcon(cv, cv.dataset.k, (now - t0) / 1000)); requestAnimationFrame(loop); };
-  const close = () => { el.classList.remove('on'); window.removeEventListener('keydown', key, true); G.ui.news = false;
-    if (s.flags) s.flags['news_' + NEWS.id] = 1; { const A = acctSeen(); if (A) A['news_' + NEWS.id] = 1; } try { localStorage.setItem(NEWS_KEY + (G.uid || '_'), NEWS.id); } catch (e) {} if (typeof writeSave === 'function') writeSave(); sfx('quest'); };
-  const key = e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); pg === pages.length - 1 ? close() : go(1); }
-    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
-    else if (e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); go(1); }
-    else if (e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); go(-1); }
-    else e.stopPropagation();
+  const newsKey = e => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); return; }
+    e.stopPropagation();   // the game must not take keys while the window is open (buttons still take Enter · Space)
   };
-  window.addEventListener('keydown', key, true);
-  render(); el.classList.remove('on'); requestAnimationFrame(() => { el.classList.add('on'); requestAnimationFrame(loop); });
+  el.querySelector('.nx').onclick = close;
+  el.querySelector('.nb').onclick = close;
+  el.addEventListener('click', e => { if (e.target === el) close(); });   // 바깥 어두운 곳을 눌러도 닫힌다
+  window.addEventListener('keydown', newsKey, true);
+  el.classList.remove('on'); requestAnimationFrame(() => { el.classList.add('on'); el.querySelector('.nsc').scrollTop = 0; });
   G.ui.news = true; sfx('bell', 0.5);
 }
 /* after entering the game (the chapter intro, if any, goes first) */
