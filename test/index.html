@@ -556,7 +556,12 @@ button{font-family:inherit;color:inherit}
 /* 2026-11-24 (user) "스킬창 닫으면 아예 사라짐": 접었을 때 남는 손잡이를 눈에 띄게 (금테 + 세로 '스킬' 라벨) */
 .sktog .ska{line-height:1;font-size:max(8px,calc(var(--u)*10))}
 .sktog .sklb{font:700 max(7px,calc(var(--u)*9))/1.1 var(--font-ui);font-style:normal;writing-mode:vertical-rl;letter-spacing:calc(var(--u)*1.5);color:#ffe6a8;opacity:.9}
-#skills.fold .sktog{border-right:1px solid rgba(232,176,72,.65);border-color:rgba(232,176,72,.65);border-radius:calc(var(--u)*5);height:calc(var(--u)*72);align-self:flex-end;box-shadow:0 0 calc(var(--u)*10) rgba(0,0,0,.7)}
+/* 2026-11-24 (user): 접었을 때 여는 탭은 늘 게임 화면 오른쪽 끝, 세로 가운데의 작은 금테 탭 (옮긴 자리와 무관) */
+#skills.fold{left:auto;top:50%;bottom:auto;right:calc(var(--u)*5);transform:translateY(-50%)}
+#skills.fold .sktog{width:calc(var(--u)*18);height:calc(var(--u)*64);border:1px solid rgba(232,176,72,.8);border-radius:calc(var(--u)*5) calc(var(--u)*2) calc(var(--u)*2) calc(var(--u)*5);
+  background:linear-gradient(180deg,rgba(52,40,20,.96),rgba(16,13,9,.96));box-shadow:0 0 calc(var(--u)*10) rgba(0,0,0,.72),inset 0 0 calc(var(--u)*8) rgba(232,176,72,.16)}
+#skills.fold .sktog:hover{border-color:rgba(255,214,130,.95);background:linear-gradient(180deg,rgba(74,56,26,.98),rgba(26,20,12,.98));box-shadow:0 0 calc(var(--u)*12) rgba(232,176,72,.35),inset 0 0 calc(var(--u)*10) rgba(255,214,130,.22)}
+#skills.fold .sktog .ska{color:#ffe6a8;text-shadow:0 0 calc(var(--u)*6) rgba(255,200,110,.85)}
 .sk.empty{background:rgba(10,12,18,.55);border-style:dashed;border-color:rgba(255,255,255,.08)}
 .sk.empty .kb{opacity:.45}
 .sk{position:relative;flex:0 0 auto;width:var(--sk);height:var(--sk);padding:0;display:block;overflow:hidden;border-radius:calc(var(--u)*5);background:#0a0c12;border:1px solid rgba(255,255,255,.12);pointer-events:auto;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
@@ -684,7 +689,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261124-1745';
+const GAME_VER = '261124-1800';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -6327,7 +6332,7 @@ function tickCast(dt) {
   if (moved || IN.press.jump || IN.press.z || IN.press.x || IN.press.c || (IN.down.z && !held.z) || (IN.down.x && !held.x) || (IN.down.c && !held.c)) { p.cast = 0; p.castHeld = null; toast('귀환이 취소됐다', 'bad'); return; }
   if (Math.random() < 0.6) addPart({ x: p.x + rnd(-16, 16), y: p.y - rnd(0, 8), vx: 0, vy: rnd(-90, -40), g: 0, life: rnd(.5, .9), r: rnd(1.2, 2.4), col: '255,210,150', glow: 1 });
   p.cast -= dt;
-  if (p.cast <= 0) { p.cast = 0; p.castHeld = null; G.save.scrolls--; if (typeof scrollBurst23 === 'function') scrollBurst23(p); travel(CHAPTERS[mapChapter()].camp, 760); updateHud(true); }
+  if (p.cast <= 0) { p.cast = 0; p.castHeld = null; G.save.scrolls--; if (typeof scrollBurst23 === 'function') scrollBurst23(p); G.retFlag23 = 1; travel(CHAPTERS[mapChapter()].camp, 760); updateHud(true); }   // 2026-11-24 (user): 도착한 야영지에서 완료 섬광 (travel 이 맵을 바꾼 뒤에 터진다)
 }
 function hurtPlayer(raw, srcX, o) {
   o = o || {};
@@ -7222,11 +7227,13 @@ function serviceNpc(n) {
   openChoice(n.name, b.k === 'remind' ? QUESTS[b.id].obj : '무슨 일로 왔나.', [[qLabel, () => talkNpc(n)], [smith ? '강화하기' : '거래하기', open], ['그만두기', null]]);   // the quest first (user, 2026-11-19)
 }
 function travel(to, x) {
-  if (G.ui.travel) return;
+  if (G.ui.travel) { G.retFlag23 = 0; return; }
   G.ui.travel = true;
   const f = $('#fade'); f.style.opacity = 1; sfx('portal');
+  const ret = !!G.retFlag23; G.retFlag23 = 0;   // 2026-11-24 (user): 귀환 완료 섬광은 맵이 다 바뀐 뒤 도착지에서
   setTimeout(() => {
     loadMap(to, x);
+    if (ret && typeof returnArrive23 === 'function') setTimeout(() => { try { returnArrive23(); } catch (e) { } }, 260);
     setTimeout(() => { f.style.opacity = 0; G.ui.travel = false; }, 120);
   }, 480);
 }
@@ -8841,22 +8848,73 @@ function playerFig() {
   if (p.focus > 0) drawFocusAura(ctx, p);   // 2026-11-24: 집중 중 황금 오라 (발밑 링 + 등 뒤 빛 + 잔불)
   drawGuardFx(ctx, p);   // pixel barrier, shock ring, sparks (59_fx.js)
   if (p.glide) { ctx.fillStyle = 'rgba(200,220,255,.25)'; for (let i = 0; i < 3; i++) ctx.fillRect(p.x - 14 + i * 12, p.y - 52 - Math.sin(G.t * 10 + i) * 2, 6, 1.5); }
-  if (p.cast > 0) {   // 2026-11-24 (user): 귀환 이펙트 — 발밑 회전 룬 + 빛기둥 + 남은 시간 고리
-    const k = 1 - p.cast / SCROLL_CAST, a = 0.55 + Math.sin(G.t * 12) * 0.15;
+  if (p.cast > 0) {   // 2026-11-24 (user): 귀환 시전 — 세 겹 마법진 + 룬 눈금 + 빛기둥 + 빨려드는 불티 + 굵은 진행 고리 (한눈에 보이게)
+    const k = clamp(1 - p.cast / SCROLL_CAST, 0, 1), beat = 0.78 + Math.sin(G.t * 9) * 0.22, spin = G.t * (1.1 + k * 2.6);
+    const cx = p.x, gy = p.y - 2, cy = p.y - 34;
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    const cg = ctx.createRadialGradient(p.x, p.y - 34, 4, p.x, p.y - 34, 54);
-    cg.addColorStop(0, `rgba(255,232,170,${(0.28 * a).toFixed(3)})`); cg.addColorStop(1, 'rgba(255,190,90,0)');
-    ctx.fillStyle = cg; ctx.fillRect(p.x - 56, p.y - 92, 112, 100);
-    const bg = ctx.createLinearGradient(p.x, p.y - 150, p.x, p.y);
-    bg.addColorStop(0, 'rgba(255,235,180,0)'); bg.addColorStop(1, `rgba(255,225,160,${(0.16 + 0.1 * a).toFixed(3)})`);
-    ctx.fillStyle = bg; ctx.fillRect(p.x - 20, p.y - 150, 40, 150);
-    for (let r = 0; r < 2; r++) { const sp = r ? -1.6 : 2.2, rr = 26 + r * 9;
-      ctx.strokeStyle = `rgba(255,226,160,${((r ? 0.45 : 0.8) * (0.7 + 0.3 * a)).toFixed(3)})`; ctx.lineWidth = 1.6;
-      ctx.beginPath(); ctx.ellipse(p.x, p.y - 2, rr, rr * 0.32, 0, G.t * sp, G.t * sp + 5.2); ctx.stroke(); }
-    for (let i = 0; i < 6; i++) { const ang = G.t * 1.6 + i * 1.047, rx = p.x + Math.cos(ang) * 30, ry = p.y - 3 + Math.sin(ang) * 10;
-      ctx.fillStyle = 'rgba(255,240,190,.9)'; ctx.fillRect(Math.round(rx) - 1, Math.round(ry) - 3, 2, 6); }
-    ctx.strokeStyle = 'rgba(255,240,200,.95)'; ctx.lineWidth = 2.2;
-    ctx.beginPath(); ctx.arc(p.x, p.y - 40, 34, -Math.PI / 2, -Math.PI / 2 + k * 6.283); ctx.stroke();
+    // 발밑 마법진 바탕 (금빛 원반)
+    const g1 = ctx.createRadialGradient(cx, gy, 2, cx, gy, 78);
+    g1.addColorStop(0, `rgba(255,244,212,${(0.30 + 0.22 * k).toFixed(3)})`);
+    g1.addColorStop(0.45, `rgba(255,206,122,${(0.13 + 0.10 * k).toFixed(3)})`);
+    g1.addColorStop(1, 'rgba(255,180,80,0)');
+    ctx.fillStyle = g1; ctx.beginPath(); ctx.ellipse(cx, gy, 80, 27, 0, 0, 6.283); ctx.fill();
+    // 세 겹으로 도는 룬 고리 (바깥과 안쪽은 반대로)
+    for (let r = 0; r < 3; r++) {
+      const rr = 50 - r * 11, sp = r === 1 ? -1 : 1;
+      ctx.strokeStyle = `rgba(${r === 2 ? '255,255,242' : r === 1 ? '255,216,142' : '255,238,190'},${((r === 2 ? 0.95 : 0.62) * (0.72 + 0.28 * beat)).toFixed(3)})`;
+      ctx.lineWidth = r === 2 ? 2.4 : 1.8;
+      ctx.beginPath(); ctx.ellipse(cx, gy, rr, rr * 0.34, 0, spin * sp + r, spin * sp + r + 5.4); ctx.stroke();
+    }
+    // 고리 위의 룬 눈금 12개
+    for (let i = 0; i < 12; i++) {
+      const a = spin * 0.8 + i * 0.5236, rx = cx + Math.cos(a) * 50, ry = gy + Math.sin(a) * 17;
+      ctx.fillStyle = `rgba(255,248,220,${(0.55 + 0.4 * Math.max(0, Math.sin(a * 3 + G.t * 5))).toFixed(3)})`;
+      ctx.fillRect(Math.round(rx) - 1.5, Math.round(ry) - 4, 3, 8);
+    }
+    // 하늘로 뻗는 빛기둥 (시전이 끝날수록 밝고 높아진다)
+    const ph = 200 + 70 * k, bw = 58 + 14 * k;
+    const hg = ctx.createLinearGradient(cx - bw / 2, 0, cx + bw / 2, 0);
+    hg.addColorStop(0, 'rgba(255,224,160,0)'); hg.addColorStop(0.34, 'rgba(255,234,186,.6)'); hg.addColorStop(0.5, 'rgba(255,252,240,.95)');
+    hg.addColorStop(0.66, 'rgba(255,234,186,.6)'); hg.addColorStop(1, 'rgba(255,224,160,0)');
+    const segs = 14;   // 위로 갈수록 옅어지는 기둥 (가로로는 부드럽게 번지는 빛)
+    for (let i = 0; i < segs; i++) {
+      const f = i / segs, fall = (1 - f) * (1 - f);
+      ctx.globalAlpha = Math.min(1, (0.05 + 0.92 * fall) * (0.6 + 0.4 * beat) * (0.72 + 0.28 * k));
+      ctx.fillStyle = hg; ctx.fillRect(cx - bw / 2, gy - ph + f * ph, bw, ph / segs + 1.2);
+    }
+    ctx.globalAlpha = 1;
+    const core = ctx.createLinearGradient(cx, gy - ph * 0.96, cx, gy);
+    core.addColorStop(0, 'rgba(255,252,238,0)'); core.addColorStop(0.6, `rgba(255,252,238,${(0.14 + 0.12 * beat).toFixed(3)})`); core.addColorStop(1, 'rgba(255,255,252,.5)');
+    ctx.fillStyle = core; ctx.fillRect(cx - 5, gy - ph * 0.96, 10, ph * 0.96);
+    for (let i = 0; i < 5; i++) {   // 기둥을 타고 올라가는 띠
+      const yy = gy - ((G.t * 130 + i * ph / 5) % ph), ww = 26 + i * 3;
+      ctx.fillStyle = `rgba(255,246,216,${(0.10 + 0.05 * Math.sin(G.t * 6 + i)).toFixed(3)})`;
+      ctx.fillRect(Math.round(cx - ww / 2), Math.round(yy), ww, 2);
+    }
+    // 몸으로 빨려드는 불티
+    for (let i = 0; i < 10; i++) {
+      const a = G.t * 2.2 + i * 0.628, rr2 = 42 - ((G.t * 26 + i * 9) % 42);
+      ctx.fillStyle = `rgba(255,242,200,${(0.35 + 0.45 * (1 - rr2 / 42)).toFixed(3)})`;
+      ctx.fillRect(Math.round(cx + Math.cos(a) * rr2) - 1, Math.round(cy + Math.sin(a * 1.7) * 26) - 2, 2, 4);
+    }
+    // 남은 시간: 바탕 고리 + 두꺼운 진행 호 + 끝의 빛 알갱이
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = 'rgba(44,32,16,.62)'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(cx, p.y - 42, 36, 0, 6.283); ctx.stroke();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = 'rgba(255,232,170,.20)'; ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.arc(cx, p.y - 42, 36, 0, 6.283); ctx.stroke();
+    const ca = -Math.PI / 2, cb = ca + k * 6.283;
+    ctx.strokeStyle = 'rgba(255,206,120,.92)'; ctx.lineWidth = 6.5;
+    ctx.beginPath(); ctx.arc(cx, p.y - 42, 36, ca, cb); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,252,238,.98)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, p.y - 42, 36, ca, cb); ctx.stroke();
+    if (k > 0.02) {
+      const tx = cx + Math.cos(cb) * 36, ty = p.y - 42 + Math.sin(cb) * 36;
+      const tg = ctx.createRadialGradient(tx, ty, 0, tx, ty, 11);
+      tg.addColorStop(0, 'rgba(255,255,248,.95)'); tg.addColorStop(1, 'rgba(255,204,116,0)');
+      ctx.fillStyle = tg; ctx.fillRect(tx - 11, ty - 11, 22, 22);
+    }
     ctx.restore();
   }
 }
@@ -9026,6 +9084,43 @@ function drawFx(c) {
       const L = G.map.arenaL || 0, R = G.map.arenaR || G.map.w; c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(${f.col},${0.6 * (1 - pr)})`; c.fillRect(L, f.y - 6, R - L, 12); c.restore();
     } else if (f.k === 'ring') {
       c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(${f.col},${1 - pr})`; c.lineWidth = 3 * (1 - pr); c.beginPath(); c.arc(f.x, f.y, f.R * pr, 0, 6.283); c.stroke(); c.restore();
+    } else if (f.k === 'retburst') {   // 2026-11-24: 귀환 도착 — 사방으로 열리는 금빛 고리 세 겹 + 서는 빛기둥 + 흰 중심
+      const fade = Math.max(0, 1 - pr), punch = Math.max(0, 1 - pr * 3.4);
+      c.save(); c.globalCompositeOperation = 'lighter';
+      for (let r = 0; r < 3; r++) {
+        const q = clamp((pr - r * 0.1) / 0.75, 0, 1);
+        if (q <= 0 || q >= 1) continue;
+        const R = 26 + q * (140 + r * 70);
+        c.strokeStyle = `rgba(${r ? '255,214,138' : '255,248,222'},${(Math.max(0, 1 - q) * (r ? 0.85 : 1)).toFixed(3)})`;
+        c.lineWidth = r ? 4.5 : 7;
+        c.beginPath(); c.ellipse(f.x, f.y, R, R * 0.34, 0, 0, 6.283); c.stroke();
+      }
+      for (let i = 0; i < 8; i++) {   // 사방으로 뻗는 짧은 금빛 광선
+        const a = i * 0.785 + pr * 0.9, L = 42 + pr * 140;
+        c.strokeStyle = `rgba(255,226,160,${(0.5 * Math.max(0, 1 - pr * 1.6)).toFixed(3)})`; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(f.x + Math.cos(a) * 20, f.y + Math.sin(a) * 7); c.lineTo(f.x + Math.cos(a) * L, f.y + Math.sin(a) * L * 0.34); c.stroke();
+      }
+      const bh = 250 * fade + 40;
+      const hg2 = c.createLinearGradient(f.x - 30, 0, f.x + 30, 0);
+      hg2.addColorStop(0, 'rgba(255,224,160,0)'); hg2.addColorStop(0.36, 'rgba(255,238,196,.65)'); hg2.addColorStop(0.5, 'rgba(255,255,246,.95)');
+      hg2.addColorStop(0.64, 'rgba(255,238,196,.65)'); hg2.addColorStop(1, 'rgba(255,224,160,0)');
+      for (let i = 0; i < 12; i++) {   // 위로 사그라드는 빛기둥
+        const seg = i / 12, fall = (1 - seg) * (1 - seg);
+        c.globalAlpha = Math.min(1, 0.06 + 0.9 * fall * fade);
+        c.fillStyle = hg2; c.fillRect(f.x - 30, f.y - bh + seg * (bh + 12), 60, (bh + 12) / 12 + 1.2);
+      }
+      c.globalAlpha = 1;
+      for (let i = 0; i < 10; i++) {
+        const lx = Math.cos(i * 0.628 + pr * 2.4) * 20, ly = f.y - 6 - ((pr * 190 + i * 17) % 190);
+        c.fillStyle = `rgba(255,248,220,${(0.5 * fade).toFixed(3)})`;
+        c.fillRect(Math.round(f.x + lx) - 1, Math.round(ly) - 3, 2, 7);
+      }
+      if (punch > 0) {
+        const cg2 = c.createRadialGradient(f.x, f.y - 26, 0, f.x, f.y - 26, 120);
+        cg2.addColorStop(0, `rgba(255,255,250,${(0.9 * punch).toFixed(3)})`); cg2.addColorStop(1, 'rgba(255,220,150,0)');
+        c.fillStyle = cg2; c.fillRect(f.x - 130, f.y - 156, 260, 260);
+      }
+      c.restore();
     } else if (f.k === 'trail') {
       c.save(); c.globalCompositeOperation = 'lighter';
       const g = c.createLinearGradient(f.x0, 0, f.x1, 0); g.addColorStop(0, 'rgba(120,130,220,0)'); g.addColorStop(1, `rgba(${f.echo ? '170,140,255' : '200,210,255'},${0.7 * (1 - pr)})`);
@@ -12939,7 +13034,6 @@ function buildSkills() {
   const fold = skFold();
   $('#skills').innerHTML = `<button class="sktog" type="button" title="스킬창 접기/펴기"><b class="ska">${fold ? '◀' : '▶'}</b><i class="sklb">스킬</i></button><div class="skgrid">${top}${bottom}</div>`;
   $('#skills').classList.toggle('fold', fold);
-  try { if (window.placeSkillBar23) window.placeSkillBar23(); } catch (e) { }   // 2026-11-24: 칸이 다시 그려진 뒤 자리를 화면 안으로
   $('#hName').textContent = (typeof myNick === 'function' ? myNick() : '') || ch.name;   // 2026-11-22 QA 2-6 (user): the nickname, the class name only without one
   const lb = { z: ch.skills[0].n, x: ch.skills[1].n, c: ch.skills[2].n, up: '대화', jump: '', guard: '가드', shift: G.save.flags.mobility ? ch.move.name : '4장', ka: sk.a.name, ks: sk.s.name, kd: sk.d.name, kv: '궁극기', kf: w && w.skill ? LEGEND_SKILLS[w.skill].name : '' };
   const shown = { ka: skillUnlocked('a', lv), ks: skillUnlocked('s', lv), kd: skillUnlocked('d', lv), kv: skillUnlocked('v', lv), kf: !!(w && w.skill) };
@@ -12983,7 +13077,7 @@ function bindSkillTips() {
   if (_tipsBound) return; _tipsBound = true;
   const bar = $('#skills');
   bar.addEventListener('error', e => { const im = e.target; if (im && im.classList && im.classList.contains('ic')) im.parentNode.classList.add('noimg'); }, true);   // a missing icon: that slot shows its name
-  bar.addEventListener('click', e => { const b = e.target.closest('.sktog'); if (!b) return; const f = !bar.classList.contains('fold'); skFold(f); bar.classList.toggle('fold', f); const a = b.querySelector('.ska'); if (a) a.textContent = f ? '◀' : '▶'; else b.textContent = f ? '◀' : '▶'; hideSkillTip(); sfx('click'); try { if (window.fitSkillBar23) window.fitSkillBar23(); } catch (err) { } });
+  bar.addEventListener('click', e => { const b = e.target.closest('.sktog'); if (!b) return; const f = !bar.classList.contains('fold'); skFold(f); bar.classList.toggle('fold', f); const a = b.querySelector('.ska'); if (a) a.textContent = f ? '◀' : '▶'; else b.textContent = f ? '◀' : '▶'; hideSkillTip(); sfx('click'); });
   bar.addEventListener('mouseover', e => { const el = e.target.closest('[data-tip]'); if (el) showSkillTip(el); });
   bar.addEventListener('mouseout', e => { if (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('[data-tip]')) $('#sktip').classList.remove('on'); });
   let hold = null;
@@ -15977,12 +16071,21 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261124g',   // 2026-11-24 일곱 번째 패치(GAME_VER '261124-1745'): 17장 보스방 폭 · 끝의 구름 · 스킬창
+  id: '261124h',   // 2026-11-24 여덟 번째 패치(GAME_VER '261124-1800'): 스킬창 제자리 고정 · 우측 열기 탭 · 귀환 이펙트
   title: '패치 노트',
-  sub: '17장 보스방을 넓히고 · 양끝 구름을 걷고 · 스킬창이 사라지지 않게',
+  sub: '스킬창은 제자리에 · 접으면 오른쪽 끝 탭 · 귀환은 도착한 야영지에서 터진다',
   versions: [
     {
-      ver: '261124-1745', date: '2026-11-24', name: '17장 보스방 폭 확장 · 구름 제거 · 스킬창', cur: 1,
+      ver: '261124-1800', date: '2026-11-24', name: '스킬창 고정 · 우측 열기 탭 · 귀환 이펙트', cur: 1,
+      items: [
+        { t: 'UI', h: '스킬창은 이제 끌어 옮겨지지 않는다', p: '컴퓨터에서 스킬창을 마우스로 끌어 옮기던 기능을 없앴다. 스킬창은 늘 오른쪽 아래 제자리에 있고, 예전에 옮겨 두었던 자리가 기기에 남아 있어도 쓰지 않는다.', q: '휴대폰은 원래 원형 버튼이라 그대로다.' },
+        { t: 'UI', h: '접었을 때 여는 탭은 오른쪽 끝 세로 가운데', p: '스킬창을 접으면 화면 오른쪽 끝 세로 가운데에 작은 금테 탭 하나만 남는다. 한 번 더 누르면 오른쪽 아래 제자리에서 스킬창이 다시 열린다.', q: '탭은 어디로 끌어도 움직이지 않고, 창 크기를 바꿔도 오른쪽 끝에 붙어 있다.' },
+        { t: '연출', h: '귀환 시전이 한눈에 보인다', p: '주문서를 펼치는 1.6초 동안 발밑에 세 겹으로 도는 금빛 마법진과 룬 눈금, 하늘로 뻗는 빛기둥, 몸으로 빨려드는 불티가 보이고, 남은 시간은 캐릭터를 두른 굵은 금빛 고리로 채워진다.', q: '움직이거나 맞으면 예전처럼 취소된다.' },
+        { t: '연출', h: '귀환 완료 섬광이 도착한 야영지에서 터진다', p: '주문이 끝나 모닥불 앞에 도착하는 순간 금빛 링 세 겹과 빛기둥, 사방으로 터지는 불티가 한꺼번에 터진다. 예전에는 화면이 바뀌면서 이펙트가 지워져 도착 장면이 밋밋했다.', q: '도착한 자리에서 그려져 어느 장에서 써도 야영지 모닥불 앞에서 터진다.' },
+      ],
+    },
+    {
+      ver: '261124-1745', date: '2026-11-24', name: '17장 보스방 폭 확장 · 구름 제거 · 스킬창', cur: 0,
       items: [
         { t: '맵', h: '17장 보스방이 다른 보스방과 같은 폭', p: '17장 검선의 정원은 다른 보스방보다 280px 좁았다(180~1100). 이제 모든 보스방과 같은 40~1240으로 넓어져, 왼쪽 끝 벽까지 걸어가 패턴을 피할 수 있다.', q: '옥 바닥도 방 끝 벽까지 이어져 중간에 떨어지는 자리가 없다. 좌우 금빛 경계선도 넓힌 자리에 그대로 그려진다.' },
         { t: '맵', h: '17장 양끝의 네모난 구름 그림 제거', p: '보스방 좌우 끝에 타일로 붙어 있던 구름 그림(각진 사각형)이 없어졌다. 바닥이 벽까지 이어지므로 방 끝이 자연스럽게 마감된다.', q: '구름 학 같은 몬스터나 배경의 구름은 그대로다.' },
@@ -21938,6 +22041,7 @@ function sfx(n, a) {
     case 'guard': tone(520, 0.08, 'triangle', 0.04, 760); break;
     case 'parry': [1400, 2100, 2950].forEach((f, i) => tone(f, 0.5 - i * 0.1, 'sine', 0.09 - i * 0.02, f * 0.995)); noise(0.06, 0.16, 'highpass', 3500, 2500, 1); tone(180, 0.15, 'sine', 0.2, 90); break;
     case 'portal': tone(180, 0.55, 'sine', 0.12, 720); tone(270, 0.55, 'sine', 0.05, 1080); break;
+    case 'ret': [523, 784, 1047].forEach((f, i) => tone(f, 0.34, 'sine', 0.07, null, i * 0.06)); bellSound(392, 0.05, 1.1); break;   // 2026-11-24: 귀환 도착 종소리
     case 'locked': tone(120, 0.18, 'triangle', 0.08, 90); break;
     case 'enh_ok': tone(1800, 0.25, 'triangle', 0.1, 1700); [523, 659, 784].forEach((f, i) => tone(f, 0.4, 'triangle', 0.09, null, 0.08 + i * 0.08)); break;
     case 'enh_no': noise(0.1, 0.16, 'lowpass', 900, 200, 1); tone(110, 0.25, 'sine', 0.25, 55); break;
@@ -24717,7 +24821,6 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 #sureAsk .eb{display:flex;gap:10px;justify-content:center;margin-top:12px}
 #sureAsk button{padding:6px 16px;background:#3a2a40;border:1px solid #8a7a98;color:#fff;cursor:pointer;font-weight:700}
 #sureAsk button:first-child{background:#6a2a20;border-color:#e0704a}
-.frame:not(.touch) #skills{cursor:grab}
 </style>`);
 
 /* 7·8) 바닥 위에 덧그리는 것 — 보스방 좌우 경계(17장 등) + 19장 빙판 광택 */
@@ -24777,69 +24880,29 @@ startGame = function (save, isNew) {
   return r;
 };
 
-/* 19) 컴퓨터에서 스킬창 통째로 끌어 옮기기 (자리는 이 기기에 저장, 휴대폰은 원형 버튼이라 그대로)
-   2026-11-24 (user) "스킬창 닫으면 아예 사라짐": 자리를 프레임 안에서 '남는 여백 대비 비율'로 저장해 창 크기가 달라져도
-   화면 안에 남고, 끄는 동안에도, 놓을 때도 프레임 밖으로 나가지 못하게 막았다. 마우스를 창 밖에서 놓아 pointerup 을
-   놓쳐도(pointercancel·창 포커스 아웃) 끌기가 풀리며, 접기 손잡이는 끌지 않는다(누르면 접기/펴기만). */
-(function skillBarDrag23() {
-  const KEY = 'dr-skillpos';
-  const bar = () => document.getElementById('skills');
-  const frame = () => document.getElementById('game');
-  const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
-  const geom = () => { const b = bar(), h = frame(); if (!b || !h) return null;
-    const hr = h.getBoundingClientRect(), br = b.getBoundingClientRect();
-    if (!hr.width || !hr.height || !br.width) return null;
-    const M = 10;   // 프레임 테두리에서 살짝 띄운다 (예전 기본 자리와 같은 느낌)
-    return { b, hr, br, m: M, freeX: Math.max(0, hr.width - br.width - M), freeY: Math.max(0, hr.height - br.height - M) }; };
-  const put = (g, L, T) => { g.b.style.right = 'auto'; g.b.style.bottom = 'auto'; g.b.style.left = Math.round(L) + 'px'; g.b.style.top = Math.round(T) + 'px'; };
-  /* 저장된 자리로 되돌린다 (예전 x/y% 저장값도 이어받는다) */
-  const place = () => {
-    if (IS_TOUCH) return; const g = geom(); if (!g) return;
-    const p = read(); if (!p || (p.fx == null && p.x == null)) return;
-    const fx = clamp(p.fx != null ? p.fx : (p.x || 0) / 88, 0, 1), fy = clamp(p.fy != null ? p.fy : (p.y || 0) / 88, 0, 1);
-    put(g, fx * g.freeX, fy * g.freeY);
-  };
-  /* 지금 자리를 프레임 안으로 다듬고(save 면 비율로 저장) */
-  const fit = (save) => {
-    if (IS_TOUCH) return; const g = geom(); if (!g) return;
-    const L = clamp(g.br.left - g.hr.left, 0, g.freeX), T = clamp(g.br.top - g.hr.top, 0, g.freeY);
-    put(g, L, T);
-    if (save) { try { localStorage.setItem(KEY, JSON.stringify({ fx: g.freeX ? +(L / g.freeX).toFixed(3) : 0, fy: g.freeY ? +(T / g.freeY).toFixed(3) : 0 })); } catch (e) { } }
-  };
-  window.placeSkillBar23 = () => { try { place(); } catch (e) { } };   // 칸이 다시 그려진 뒤(buildSkills)
-  window.fitSkillBar23 = () => { try { fit(false); } catch (e) { } };   // 접기/펴기 뒤 한 번 더
-  place();
-  let drag = null;
-  document.addEventListener('pointerdown', e => {
-    if (IS_TOUCH || e.pointerType === 'touch' || e.button !== 0) return;
-    const b = bar(); if (!b || !e.target.closest('#skills')) return;
-    if (e.target.closest('.sktog')) return;   // 접기 손잡이는 끌지 않는다
-    const host = frame().getBoundingClientRect(), r = b.getBoundingClientRect();
-    drag = { x0: e.clientX, y0: e.clientY, ox: r.left - host.left, oy: r.top - host.top, w: host.width - 10, h: host.height - 10, bw: r.width, bh: r.height, moved: false, b };
-  }, true);
-  document.addEventListener('pointermove', e => {
-    if (!drag) return;
-    const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
-    if (!drag.moved && Math.hypot(dx, dy) < 5) return;
-    drag.moved = true;
-    const L = clamp(drag.ox + dx, 0, Math.max(0, drag.w - drag.bw)), T = clamp(drag.oy + dy, 0, Math.max(0, drag.h - drag.bh));
-    const b = drag.b; b.style.right = 'auto'; b.style.bottom = 'auto';
-    b.style.left = Math.round(L) + 'px'; b.style.top = Math.round(T) + 'px';
-    e.preventDefault();
-  }, true);
-  const endDrag = () => { if (!drag) return; const moved = drag.moved; drag = null; if (moved) { fit(true); hideSkillTip(); } };
-  document.addEventListener('pointerup', endDrag, true);
-  document.addEventListener('pointercancel', endDrag, true);
-  addEventListener('blur', () => { drag = null; });
-  addEventListener('resize', () => { try { place(); } catch (e) { } });
-})();
-
-/* 23) 귀환 주문서가 완성되는 순간의 섬광 (지도가 바뀌기 전 페이드 동안 보인다) */
+/* 23) 귀환: 떠나는 순간의 작은 섬광(지도가 바뀌기 전 페이드 동안)과, 도착한 야영지에서 크게 터지는 완료 섬광 */
 function scrollBurst23(p) {
   spark(p.x, p.y - 30, 30, '255,232,170', 300);
   G.fx.push({ k: 'ring', x: p.x, y: p.y - 24, t: 0, dur: 0.35, R: 74, col: '255,226,150' });
   for (let i = 0; i < 4; i++) addPart({ x: p.x + rnd(-10, 10), y: p.y - 20, vx: rnd(-20, 20), vy: -rnd(120, 220), g: -40, life: 0.6, r: rnd(2, 4), col: '255,236,180', glow: 1 });
   G.flashW = Math.max(G.flashW, 0.3);
+}
+/* 2026-11-24 (user): 귀환이 끝나 도착한 모닥불 앞에서 금빛 링 세 겹·빛기둥·사방 불티가 한꺼번에 터진다.
+   (예전에는 travel() 전에 불렀는데, loadMap 이 G.fx/G.parts 를 비워 새 화면에서는 아무것도 보이지 않았다) */
+function returnArrive23() {
+  const p = G.player; if (!p || !G.map) return;
+  const x = p.x, y = p.y;
+  G.flashW = Math.max(G.flashW, 0.5);
+  G.fx.push({ k: 'retburst', x, y: y - 20, t: 0, dur: 1.05, col: '255,226,150' });
+  G.fx.push({ k: 'ring', x, y: y - 16, t: 0, dur: 0.55, R: 110, col: '255,232,176' });
+  G.fx.push({ k: 'ring', x, y: y - 34, t: 0, dur: 0.8, R: 168, col: '255,214,138' });
+  spark(x, y - 34, 48, '255,238,190', 430);
+  for (let i = 0; i < 28; i++) {
+    const a = rnd(0, 6.283), sp = rnd(120, 430);
+    addPart({ x, y: y - rnd(8, 92), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 90, g: 430, life: rnd(.5, 1.1), r: rnd(1.6, 3.4), col: i % 3 ? '255,226,150' : '255,255,242', glow: 1 });
+  }
+  for (let i = 0; i < 16; i++) addPart({ x: x + rnd(-36, 36), y: y - rnd(0, 22), vx: rnd(-16, 16), vy: -rnd(60, 200), g: -30, life: rnd(.7, 1.5), r: rnd(1.4, 2.8), col: '255,242,204', glow: 1 });
+  shake(4); sfx('ret');
 }
 
 applyBossDefs();

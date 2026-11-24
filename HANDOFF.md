@@ -12,6 +12,41 @@
 
 ## 옮길 것
 
+### 261124-1800  스킬창 제자리 고정 · 우측 열기 탭 · 귀환 이펙트 보강   (대상: index.html / test/index.html)
+지시서: 2026-11-24 사용자 지시 "스킬창 고정 · 우측 열기탭 및 귀환 이펙트 보강" 3항목.
+index.html 을 직접 고쳤고 test/index.html 을 같은 내용으로 다시 만들었다(1·3행만 다르고 4행부터 같음, 둘 다 24,916행).
+새 그림·소리 파일은 넣지 않았다(모두 캔버스 그리기 + CSS + 기존 신스 사운드).
+
+- **(1) PC 스킬창 드래그 제거 (원래 자리 고정)** — 1745 의 `skillBarDrag23()` IIFE 를 통째로 삭제했다
+  (`pointerdown/pointermove/pointerup/pointercancel/blur/resize` 핸들러, `place()/fit()`, `window.placeSkillBar23`,
+  `window.fitSkillBar23`), `buildSkills()` 끝의 `placeSkillBar23()` 호출, 접기 토글의 `fitSkillBar23()` 호출,
+  주입 스타일의 `.frame:not(.touch) #skills{cursor:grab}` 까지. `localStorage['dr-skillpos']` 는 이제 읽지도 쓰지도 않으므로
+  예전 값이 남아 있어도 무시된다(지우지도 않는다 — 사용자 데이터).
+  실측(1280×720, 프레임 1120×630): `{"fx":.85,"fy":.85}` 를 미리 넣고 부팅 → `#skills` 인라인 style 없음, 기본 자리 left 845/top 572.
+  마우스로 (스킬칸 → 200,120 → 화면 밖) 끌어도 845,572 그대로, 이후 마우스를 움직여도 따라오지 않음.
+- **(2) 접었을 때 여는 탭 = 화면 오른쪽 끝 세로 가운데** — CSS 만으로: `#skills.fold{left:auto;top:50%;bottom:auto;right:calc(var(--u)*5);transform:translateY(-50%)}`,
+  `#skills.fold .sktog` = 18u×64u, 금테 1px `rgba(232,176,72,.8)`, 금빛 세로 그라데이션 바탕 + 안쪽 금빛 그림자, hover 시 더 밝게, 화살표 `◀` + 세로 '스킬'.
+  펼치면 fold 규칙이 빠져 원래 `right:10u;bottom:10u` 로 돌아간다(JS 로 자리를 계산하지 않는다).
+  실측: 접힘 탭 21×75px, 프레임 오른쪽 끝(1200)에서 7px, 세로 중심 382px = 프레임 중심(67+630/2)과 일치.
+  다시 누르면 845,572 의 338×113 스킬창이 열리고, 접기/펴기 3회 반복해도 같은 자리. 휴대폰(`.frame.touch`)은 `#skills{display:none}` 그대로(원형 버튼).
+- **(3) 귀환 시전 이펙트 보강** — `playerFig()` 의 `p.cast > 0` 블록 재작성. 발밑 금빛 원반(방사형 그라데이션) + 세 겹 룬 고리(안/바깥 반대 회전) +
+  룬 눈금 12개 + 높이 200~270px 빛기둥(위로 갈수록 옅어지고 좌우로 부드럽게 번지는 14단 + 가운데 심지 10px) + 올라가는 띠 5줄 +
+  몸으로 빨려드는 불티 10개 + 진행 고리(바탕 5px → 금빛 6.5px → 흰 3px, 반지름 36, 캐릭터 머리 높이, 끝에 빛 알갱이).
+  이전(1745): 40×150 기둥 + 얇은 타원 2개 + 6개 점 + 2.2px 호. 실측: 시전 1.45 → 0.87(0.56초 뒤), 화면 캡처 `.work/po/p24_cast0..3.png`.
+- **(4) 귀환 도착 섬광이 야영지에서 터진다** — `tickCast()` 가 `scrollBurst23(p)`(떠나는 순간의 작은 섬광) 뒤에 `G.retFlag23 = 1` 을 남기고 `travel()` 호출.
+  `travel()` 은 `loadMap()` **뒤** 260ms 에 `returnArrive23()` 을 부른다(예전엔 loadMap 이 `G.fx`/`G.parts` 를 비워 새 화면에서 아무것도 안 보였다).
+  `returnArrive23()` = 새 fx `retburst`(금빛 고리 3겹 + 광선 8개 + 사그라드는 빛기둥 + 흰 중심) + `ring` 2개 + spark 48 + 불티 28 + 떠오르는 불티 16 +
+  `flashW .5` + `shake(4)` + `sfx('ret')`(523·784·1047 + 종). `drawFx()` 에 `retburst` 그리기, `sfx()` 에 `ret` 케이스 추가.
+  `travel()` 이 이미 이동 중이면(`G.ui.travel`) `retFlag23` 을 지워 다른 포탈 이동에 섬광이 묻지 않게 했다.
+  실측: c1_a(외곽) x=400 에서 사용 → 1.6초 시전 → 0.48초 페이드 → `camp` x=760 도착, 그 프레임 fx `retburst,ring,ring`, 파티클 97~108, flashW 0.46, 주문서 -1.
+  같은 시점의 1745 빌드는 fx 0·파티클 19(도착 섬광 없음).
+- 버전: `GAME_VER '261124-1800'`, `version.json`(루트·test), `NEWS.id '261124h'`, 카드 8장(1800 + 1745·1710·1420·1310·1135·1040·0915), 1800 카드 4항목.
+- 검증(헤드리스 Chromium 1280×720, index.html·test/index.html 둘 다, pageerror 0): 위 실측값 ①~④ + 패치노트 모달(새 카드 4항목)
+  + 가방·퀘스트·특성·설정 창 열림 + 휴대폰 844×390(터치): 스킬창 숨김·터치 버튼 14개 화면 밖 0·오류 0.
+  스크린샷: `.work/po/p24_2_fold_right.png`(우측 끝 접힘 탭), `p24_cast1_c.png`(시전), `p24_6_retburst_early_c.png`(도착 섬광),
+  `p24_news.png`(패치노트), `p24_mobile.png`. 이전 빌드 비교: `p24_before_cast_c.png`, `p24_before_fold_full.png`, `p24_before_arr.png`.
+  QA 스크립트: `.work/po/qa24_skillbar.py` (+ `qa24_visual.py`, `qa24_smoke.py`, `qa24_mobile.py`), 로그 `qa24_final.log`.
+
 ### 261124-1745  17장 보스방 폭 확장 · 양끝 구름 제거 · 스킬창 사라짐 수정   (대상: index.html / test/index.html)
 지시서: 2026-11-24 사용자 메시지 "방 폭 늘려주고 저기 양끝에 있는 구름 사진 제거해줘"(17장 보스방 스크린샷 첨부) +
 "그리고 스킬창 닫으면 아예 사라지는 버그 발생함 수정해줘".
