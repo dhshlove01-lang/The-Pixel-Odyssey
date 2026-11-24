@@ -23630,7 +23630,7 @@ const PERFECT_GUARD_WIN = 0.1;         // 사용자 확정(2026-11-24): 가드 �
 const PGQ = [];                         // 금빛 스트립 큐 (assets/vfx/perfect_guard_fx.png)
 const PG_IMG = (() => { const im = new Image(); im.src = 'assets/vfx/perfect_guard_fx.png?v=' + (typeof GAME_VER !== 'undefined' ? GAME_VER : ''); return im; })();
 function perfectGuardFx(p) {
-  PGQ.push({ x: p.x + p.face * 14, y: p.y - 28, t: 0, dur: 0.43, face: p.face || 1 });
+  PGQ.push({ x: p.x + p.face * 16, y: p.y - 40, t: 0, dur: 0.43, face: p.face || 1 });
   if (PGQ.length > 6) PGQ.shift();
 }
 function pgTick(dt) { for (const q of PGQ) q.t += dt; while (PGQ.length && PGQ[0].t >= PGQ[0].dur) PGQ.shift(); }
@@ -23655,6 +23655,7 @@ parry = function (src) {
   const p = G.player, perfect = p.guard >= GUARD_WIN - PERFECT_GUARD_WIN;   // 가드 시작 0.1초 이내(남은 시간 0.15초 이상) = 퍼펙트
   const r = _parry8(src);
   if (perfect) {
+    const last = VFXQ.length ? VFXQ[VFXQ.length - 1] : null; if (last && last.n === 'hit_guard') VFXQ.pop();   // 청록 가드 이펙트는 빼고 금빛만
     p.cd.g = 0;                 // 쿨타임 즉시 초기화: 다음 프레임에 다시 가드할 수 있다
     p.guardFlash = 0.3;
     p.inv = Math.max(p.inv, 0.12);
