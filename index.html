@@ -382,15 +382,59 @@ button{font-family:inherit;color:inherit}
 /* touch layout is switched on by a class from JS (not :has or pointer media queries, which some phone browsers lack) */
 .frame.touch #hud.on ~ #touch{display:block}
 .frame.touch #skills{display:none}
-.frame.touch .tb{position:absolute;pointer-events:auto;width:calc(var(--u)*64);height:calc(var(--u)*64);border-radius:50%;background:rgba(14,16,24,.55);border:1px solid rgba(226,164,85,.45);color:#f1e2bd;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:none;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
-.frame.touch .tb b{font-size:max(12px,calc(var(--u)*19));line-height:1}
-.frame.touch .tb small{font-size:max(7px,calc(var(--u)*9));font-weight:500;color:#cdbf9f;margin-top:calc(var(--u)*3);white-space:nowrap}
+/* ---- 모바일 전용 UI/UX (2026-11-24): 원형 조이스틱 · 두 줄 기술 · 접이식 메뉴 — 컴퓨터 화면은 그대로 ---- */
+.frame.touch .tb{position:absolute;pointer-events:auto;border-radius:calc(var(--u)*9);background:rgba(10,12,18,.62);border:1px solid rgba(255,255,255,.12);color:#f1e2bd;font-weight:700;display:flex;align-items:center;justify-content:center;touch-action:none;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.frame.touch .tb .tbi{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;image-rendering:pixelated;pointer-events:none;-webkit-user-drag:none}
+.frame.touch .tb.act{background:none;border:0}
+.frame.touch .tb.act .kb{display:none}
+.frame.touch .tb .kb{position:absolute;left:calc(var(--u)*2);top:calc(var(--u)*2);z-index:3;min-width:calc(var(--u)*11);height:calc(var(--u)*13);line-height:calc(var(--u)*13);padding:0 calc(var(--u)*2);border-radius:calc(var(--u)*2);font:700 max(8px,calc(var(--u)*9))/1 var(--font-ui);color:#ffe6a8;background:rgba(6,8,13,.84);border:1px solid rgba(255,230,168,.28);text-align:center;text-shadow:0 1px 2px #000;pointer-events:none}
+.frame.touch .tb small{position:absolute;right:calc(var(--u)*2);bottom:calc(var(--u)*2);z-index:3;font-size:max(8px,calc(var(--u)*11));font-weight:700;color:#ffe08a;background:rgba(6,8,13,.82);border-radius:calc(var(--u)*3);padding:0 calc(var(--u)*3);line-height:calc(var(--u)*14);text-shadow:0 1px 3px #000;white-space:nowrap;pointer-events:none}
 .frame.touch .tb small:empty{display:none}
-.frame.touch .tb[data-k="z"]{width:calc(var(--u)*76);height:calc(var(--u)*76)}
-.frame.touch .tb .cdv{position:absolute;left:0;right:0;bottom:0;height:0;background:rgba(0,0,0,.62);pointer-events:none}
-.frame.touch .tb .cdt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:max(11px,calc(var(--u)*17));color:#fff;text-shadow:0 1px 3px #000;pointer-events:none}
+.frame.touch .tb .cdv{position:absolute;left:0;right:0;bottom:0;height:0;background:rgba(3,4,8,.74);pointer-events:none;z-index:2}
+.frame.touch .tb .cdt{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:max(11px,calc(var(--u)*17));color:#fff;text-shadow:0 1px 3px #000;pointer-events:none}
 .frame.touch .tb .cdt:empty{display:none}
 .frame.touch .tb.off{opacity:.35}
+.frame.touch .tb.ult{box-shadow:inset 0 0 calc(var(--u)*9) rgba(226,190,120,.4)}
+.frame.touch .tb.leg{box-shadow:inset 0 0 calc(var(--u)*9) rgba(180,120,255,.4)}
+.frame.touch .tb:active{filter:brightness(1.3)}
+/* 왼쪽 아래: 원형 조이스틱(joy_base + joy_knob) */
+.frame.touch #joy{position:absolute;left:calc(var(--u)*20);top:calc(var(--u)*314);width:calc(var(--u)*176);height:calc(var(--u)*176);pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent;z-index:2}
+.frame.touch #joy .jb{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;pointer-events:none;-webkit-user-drag:none}
+.frame.touch #joy .jk{position:absolute;left:50%;top:50%;width:calc(var(--u)*72);height:calc(var(--u)*72);margin:calc(var(--u)*-36) 0 0 calc(var(--u)*-36);image-rendering:pixelated;pointer-events:none;will-change:transform}
+.frame.touch #joy.on .jb{filter:brightness(1.12)}
+/* 위쪽 압축: 왼쪽은 이름·레벨·체력·경험치·버프만 */
+.frame.touch .hud-tl{left:calc(var(--u)*10);top:calc(var(--u)*8);width:calc(var(--u)*238)}
+.frame.touch .nm{font-size:max(10px,calc(var(--u)*15))}
+.frame.touch .nm small{font-size:max(8px,calc(var(--u)*11))}
+.frame.touch .bar{height:calc(var(--u)*12);margin-top:calc(var(--u)*4);width:calc(var(--u)*196)}
+.frame.touch .bar>span{font-size:max(7px,calc(var(--u)*9))}
+.frame.touch .bar.xp{height:calc(var(--u)*4);margin-top:calc(var(--u)*3)}
+.frame.touch #qtrack{width:calc(var(--u)*232);padding:calc(var(--u)*5) calc(var(--u)*7);margin-top:calc(var(--u)*7);font-size:max(8px,calc(var(--u)*10))}
+.frame.touch #qtrack b{font-size:max(9px,calc(var(--u)*11))}
+.frame.touch #blessChip{position:static;margin-top:calc(var(--u)*5);max-width:calc(var(--u)*228);padding:calc(var(--u)*3) calc(var(--u)*7);font-size:max(8px,calc(var(--u)*10));overflow:hidden}
+.frame.touch #focusChip{position:static;margin-top:calc(var(--u)*4);padding:calc(var(--u)*2) calc(var(--u)*7) calc(var(--u)*2) calc(var(--u)*4);font-size:max(8px,calc(var(--u)*10))}
+.frame.touch #focusChip img{width:calc(var(--u)*16);height:calc(var(--u)*16)}
+/* 오른쪽: 미니맵 아래 전체맵·가방·≡ 만 */
+.frame.touch .hud-tr{right:calc(var(--u)*8);top:calc(var(--u)*8);gap:calc(var(--u)*4)}
+.frame.touch .res{font-size:max(8px,calc(var(--u)*10));padding:calc(var(--u)*3) calc(var(--u)*7);gap:calc(var(--u)*6)}
+.frame.touch .res b{margin-right:calc(var(--u)*5)}
+.frame.touch .hbtns{gap:calc(var(--u)*5)}
+.frame.touch .hbtns .hbtn{width:calc(var(--u)*44);height:calc(var(--u)*44);border-radius:calc(var(--u)*8);background:rgba(10,12,18,.84)}
+.frame.touch .hbtn svg{width:calc(var(--u)*23);height:calc(var(--u)*23)}
+.frame.touch .hbtn .hico{width:calc(var(--u)*24);height:calc(var(--u)*24)}
+.frame.touch .hbtn kbd{display:none}
+.frame.touch #mini{width:calc(var(--u)*168);height:calc(var(--u)*47)}
+.frame.touch .hud-tr .res{order:0}
+.frame.touch .hud-tr #mini{order:1}
+.frame.touch .hud-tr .hbtns{order:2}
+/* ≡ 드로어: 나머지 버튼은 여기로 접힌다 */
+.frame.touch #mobMenu{position:absolute;right:calc(var(--u)*8);top:calc(var(--u)*178);display:none;grid-template-columns:repeat(3,calc(var(--u)*46));gap:calc(var(--u)*5);padding:calc(var(--u)*7);pointer-events:auto;background:rgba(8,10,16,.95);border:1px solid rgba(255,255,255,.16);border-radius:calc(var(--u)*9);box-shadow:0 calc(var(--u)*8) calc(var(--u)*20) rgba(0,0,0,.55);z-index:9}
+.frame.touch #mobMenu.on{display:grid}
+.frame.touch.mob-menu #touch{opacity:.18}
+.frame.touch.mob-menu #touch .tb,.frame.touch.mob-menu #touch #joy{pointer-events:none}
+.frame.touch .hbtn:focus{outline:none}
+.frame.touch #mobMenu .hbtn{width:calc(var(--u)*46);height:calc(var(--u)*46);border-radius:calc(var(--u)*7)}
+.frame.touch #mobMenu .hbtn.dot::after{top:0;right:0}
 .sk.off{opacity:.35}
 .sk.leg{border-color:#7a4ab0}
 .gt .tier{margin-left:calc(var(--u)*6);font-size:max(8px,calc(var(--u)*11));color:#c9a0ff;border:1px solid #6a4a90;padding:0 calc(var(--u)*4)}
@@ -622,7 +666,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261124-1135';
+const GAME_VER = '261124-1310';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -12835,7 +12879,7 @@ function buildSkills() {
   $('#hName').textContent = (typeof myNick === 'function' ? myNick() : '') || ch.name;   // 2026-11-22 QA 2-6 (user): the nickname, the class name only without one
   const lb = { z: ch.skills[0].n, x: ch.skills[1].n, c: ch.skills[2].n, up: '대화', jump: '', guard: '가드', shift: G.save.flags.mobility ? ch.move.name : '4장', ka: sk.a.name, ks: sk.s.name, kd: sk.d.name, kv: '궁극기', kf: w && w.skill ? LEGEND_SKILLS[w.skill].name : '' };
   const shown = { ka: skillUnlocked('a', lv), ks: skillUnlocked('s', lv), kd: skillUnlocked('d', lv), kv: skillUnlocked('v', lv), kf: !!(w && w.skill) };
-  document.querySelectorAll('#touch .tb').forEach(b => { const k = b.dataset.k, sm = b.querySelector('small'); if (sm && lb[k] != null) sm.textContent = lb[k]; if (k === 'shift') b.classList.toggle('off', !G.save.flags.mobility); if (k in shown) b.style.display = shown[k] ? '' : 'none'; });
+  document.querySelectorAll('#touch .tb').forEach(b => { const k = b.dataset.k, kb = b.querySelector('.kb'); if (kb) kb.textContent = shortKey((BINDS[k] || [])[0] || ''); b.classList.toggle('off', (k === 'shift' && !G.save.flags.mobility) || (k in shown && !shown[k])); });
   bindSkillTips();
 }
 /* skill tooltips: hover a skill slot */
@@ -12956,7 +13000,7 @@ function updateHud(force) {
     if (HUDC['tb' + k] !== h) { HUDC['tb' + k] = h; b.querySelector('.cdv').style.height = h; }
     if (HUDC['tt' + k] !== t) { HUDC['tt' + k] = t; b.querySelector('.cdt').textContent = t; }
   });
-  if (IS_TOUCH) { const a = '연고 ' + s.potions, b2 = '귀환 ' + s.scrolls; if (HUDC.tpot !== a) { HUDC.tpot = a; const e = document.querySelector('#touch .tb[data-k="pot"] small'); if (e) e.textContent = a; } if (HUDC.tscr !== b2) { HUDC.tscr = b2; const e = document.querySelector('#touch .tb[data-k="scroll"] small'); if (e) e.textContent = b2; } }
+  if (IS_TOUCH) { const a = '×' + s.potions, b2 = '×' + s.scrolls; if (HUDC.tpot !== a) { HUDC.tpot = a; const e = document.querySelector('#touch .tb[data-k="pot"] small'); if (e) e.textContent = a; } if (HUDC.tscr !== b2) { HUDC.tscr = b2; const e = document.querySelector('#touch .tb[data-k="scroll"] small'); if (e) e.textContent = b2; } }
   $('#bTrait').classList.toggle('dot', s.tp > 0);
   const it = G.interact, pr = $('#prompt');
   if (it && !G.ui.dialog && !G.ui.panel && G.scene === 'play') {
@@ -13494,23 +13538,63 @@ $('#ending').addEventListener('click', e => {
   else if (b.id === 'eTitle') { $('#ending').classList.remove('on'); showTitle(); }
 });
 
-/* ---- Touch controls ---- */
+/* ---- 터치 조작 (2026-11-24 모바일 전용 UI/UX) ----
+   왼쪽 아래: 원형 조이스틱(joy_base/joy_knob) + 그 위 연고·귀환 퀵슬롯.
+   오른쪽 아래: 모든 기술을 두 열로 — 안쪽 Z·X·C·V, 바깥 A·S·D·F — 그리고 그 위 한 줄에 상호작용·이동기·가드·점프.
+   기술 칸 그림은 컴퓨터 화면과 같은 assets/skills/*.png, 동작 버튼은 새 모바일 그림(assets/ui/btn_mob_*.png). */
+const MOB_BTN_ART = { jump: 'btn_mob_jump', guard: 'btn_mob_guard', shift: 'btn_mob_shift', up: 'btn_mob_interact', pot: 'btn_mob_potion', scroll: 'btn_mob_scroll' };
+function mobBtnIcon(k) { return MOB_BTN_ART[k] ? 'assets/ui/' + MOB_BTN_ART[k] + '.png' : skillIconSrc(k, G.save ? G.save.char : 'theron'); }
+function mobAt(x, y, s) { return 'left:calc(var(--u)*' + (x - s / 2).toFixed(1) + ');top:calc(var(--u)*' + (y - s / 2).toFixed(1) + ');width:calc(var(--u)*' + s + ');height:calc(var(--u)*' + s + ')' }
+/* 버프·집중 표시는 휴대폰에서 왼쪽 위 정보 줄 안으로 들어간다 */
+function chipHost(id) {
+  const tl = IS_TOUCH && document.querySelector('#hud .hud-tl'), an = tl && tl.querySelector('.bar.xp');
+  const el = document.createElement('div'); el.id = id;
+  if (an) an.insertAdjacentElement('afterend', el); else (document.getElementById('game') || document.body).appendChild(el);
+  return el;
+}
 function buildTouch() {
-  // left thumb: move + interact. right thumb: attack, jump, skills, items. Cooldowns and counts show on the buttons themselves.
-  const defs = [
-    ['◀', 'left', '3%', '8%'], ['▶', 'right', '13%', '8%'], ['↑', 'up', '8%', '34%'],
-    ['G', 'guard', '60%', '8%'], ['Z', 'z', '72%', '8%'], ['점프', 'jump', '86%', '8%'],
-    ['X', 'x', '66%', '33%'], ['C', 'c', '77%', '33%'], ['⇧', 'shift', '88%', '33%'],
-    ['1', 'pot', '82%', '58%'], ['2', 'scroll', '92%', '58%'],
-    ['A', 'ka', '55%', '33%'], ['S', 'ks', '50%', '58%'], ['D', 'kd', '60%', '58%'], ['V', 'kv', '71%', '58%'], ['F', 'kf', '44%', '33%'],
+  const btn = d => '<div class="tb ' + (d[4] || '') + '" data-k="' + d[0] + '" style="' + mobAt(d[1], d[2], d[3]) + '">'
+    + '<img class="tbi" src="' + mobBtnIcon(d[0]) + '" alt=""><span class="kb"></span><small></small><i class="cdv"></i><em class="cdt"></em></div>';
+  // 두 열 · 네 줄: 안쪽(Z, X, C, 궁극기 V) · 바깥(각성 A, S, D · 무기 기술 F)
+  const SK = [
+    ['z', 826, 470, 74, 'big'], ['x', 826, 396, 62, 'skill'], ['c', 826, 322, 62, 'skill'], ['kv', 826, 248, 62, 'skill ult'],
+    ['ka', 898, 470, 62, 'skill'], ['ks', 898, 396, 62, 'skill'], ['kd', 898, 322, 62, 'skill'], ['kf', 898, 248, 62, 'skill leg'],
   ];
-  $('#touch').innerHTML = defs.map(d => `<div class="tb" data-k="${d[1]}" style="left:${d[2]};bottom:${d[3]}"><b>${d[0]}</b><small></small><i class="cdv"></i><em class="cdt"></em></div>`).join('');
-  // one-shot skills fire when the finger lifts; a 350 ms hold shows the skill's tooltip instead (no skill wasted).
-  // Moving, jumping, Z and Shift still start at once (they are held). X and C read the held key, so a lifted tap keeps it down 0.1 s.
+  // 위 한 줄: 상호작용 · 이동기 · 가드 · 점프
+  const ACT = [['up', 530, 182, 58, 'act'], ['shift', 610, 182, 58, 'act'], ['guard', 690, 182, 58, 'act'], ['jump', 770, 182, 58, 'act']];
+  // 조이스틱 위: 연고 · 귀환
+  const QK = [['pot', 74, 250, 64, 'act qk'], ['scroll', 146, 250, 64, 'act qk']];
+  $('#touch').innerHTML = '<div id="joy"><img class="jb" src="assets/ui/joy_base.png" alt=""><img class="jk" id="joyKnob" src="assets/ui/joy_knob.png" alt=""></div>'
+    + SK.concat(ACT, QK).map(btn).join('');
+  /* 조이스틱: 민 방향과 거리로 왼쪽·오른쪽(걷기), 위(대화·포탈), 아래(발판 내려가기)를 누른다. 손을 떼면 가운데로. */
+  const joy = $('#joy'), knob = $('#joyKnob');
+  let jid = null; const jdir = { left: 0, right: 0, up: 0, down: 0 };
+  const jset = (k, on) => { if (!!jdir[k] === !!on) return; jdir[k] = on ? 1 : 0; if (on) pressKey(k); else releaseKey(k); };
+  const jmove = e => {
+    if (!joy) return;
+    const r = joy.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, rad = r.width / 2;
+    const dx = e.clientX - cx, dy = e.clientY - cy, d = Math.hypot(dx, dy), lim = rad * 0.54;
+    const lx = d > lim ? dx / d * lim : dx, ly = d > lim ? dy / d * lim : dy;
+    knob.style.transform = 'translate(' + lx.toFixed(1) + 'px,' + ly.toFixed(1) + 'px)';
+    jset('left', dx < -rad * 0.3); jset('right', dx > rad * 0.3);
+    jset('up', dy < -rad * 0.34); jset('down', dy > rad * 0.44);
+  };
+  const jend = () => { jid = null; if (knob) knob.style.transform = ''; joy.classList.remove('on'); for (const k in jdir) jset(k, false); };
+  if (joy) {
+    joy.addEventListener('pointerdown', e => { e.preventDefault(); jid = e.pointerId; try { joy.setPointerCapture(e.pointerId); } catch (er) { } joy.classList.add('on'); audioInit(); jmove(e); });
+    joy.addEventListener('pointermove', e => { if (jid === e.pointerId) jmove(e); });
+    joy.addEventListener('pointerup', e => { if (jid === e.pointerId) jend(); });
+    joy.addEventListener('pointercancel', e => { if (jid === e.pointerId) jend(); });
+    joy.addEventListener('lostpointercapture', e => { if (jid === e.pointerId) jend(); });
+  }
+  // 한 번 쓰는 기술은 손을 뗄 때 나간다. 350ms 동안 누르고 있으면 기술 설명이 뜬다(기술을 낭비하지 않게).
+  // 걷기·점프·Z·이동기는 누르는 즉시 시작한다(계속 누르고 있는다). X·C는 눌린 키를 읽으므로 뗀 뒤 0.1초 더 눌러 둔다.
   const HOLDABLE = new Set(['x', 'c', 'guard', 'pot', 'scroll', 'ka', 'ks', 'kd', 'kv', 'kf']);
   let holdT = null, longPressed = false, pending = null;
   $('#touch').addEventListener('pointerdown', e => {
-    const b = e.target.closest('.tb'); if (!b) return; e.preventDefault(); b.setPointerCapture(e.pointerId); audioInit();
+    const b = e.target.closest('.tb'); if (!b) return; e.preventDefault();
+    try { b.setPointerCapture(e.pointerId); } catch (er) { }
+    audioInit();
     const k = b.dataset.k; longPressed = false; clearTimeout(holdT);
     if (G.ui.dialog) { pressKey(k); dialogAdvance(); return; }
     if (!HOLDABLE.has(k)) { pressKey(k); return; }
@@ -13524,6 +13608,27 @@ function buildTouch() {
   };
   $('#touch').addEventListener('pointerup', up);
   $('#touch').addEventListener('pointercancel', e => { clearTimeout(holdT); pending = null; const b = e.target.closest('.tb'); if (b) releaseKey(b.dataset.k); });
+}
+/* 위쪽 압축 메뉴: 미니맵 아래에 전체맵·가방·≡ 만 남기고 나머지 버튼은 ≡ 드로어로 접는다 */
+function buildMobMenu() {
+  const bar = document.querySelector('.hud-tr .hbtns'); if (!bar) return;
+  const KEEP = ['bWorld', 'bGear'];
+  const panel = document.createElement('div'); panel.id = 'mobMenu';
+  [...bar.children].forEach(b => { if (KEEP.indexOf(b.id) < 0) panel.appendChild(b); });
+  for (const id of KEEP) { const b = document.getElementById(id); if (b) bar.appendChild(b); }
+  const mk = document.createElement('button');
+  mk.className = 'hbtn'; mk.id = 'bMobMenu'; mk.type = 'button'; mk.title = '메뉴';
+  mk.innerHTML = '<img class="hico" src="assets/ui/btn_mobile_menu.png" alt="" onload="this.parentNode.classList.add(\'ico\')"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg>';
+  const setMenu = on => { panel.classList.toggle('on', on); $('#game').classList.toggle('mob-menu', on); };
+  mk.addEventListener('click', e => { e.stopPropagation(); setMenu(!panel.classList.contains('on')); sfx('click'); });
+  bar.appendChild(mk);
+  $('#hud').appendChild(panel);
+  panel.addEventListener('click', e => { if (e.target.closest('.hbtn')) setTimeout(() => setMenu(false), 0); });
+  document.addEventListener('pointerdown', e => {
+    if (!panel.classList.contains('on')) return;
+    if (e.target.closest && e.target.closest('#mobMenu, #bMobMenu')) return;
+    setMenu(false);
+  }, true);
 }
 
 /* ============ ATTACK EFFECTS: pixelfx (18_pfx.js, MIT) drawn into a low-resolution pixel layer over the world ============
@@ -15788,12 +15893,41 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261124c',   // 2026-11-24 세 번째 패치(GAME_VER '261124-1135'): 상자 3프레임 + 8개 항목 + 지난 패치 전체
+  id: '261124d',   // 2026-11-24 네 번째 패치(GAME_VER '261124-1310'): 휴대폰 화면 전용 조작(원형 조이스틱 · 두 줄 기술 · 접이식 메뉴)
   title: '패치 노트',
-  sub: '상자 그림 세 단계 · 겹침 580곳 정리 · 퍼펙트 가드',
+  sub: '휴대폰 조작 새 단장 · 원형 조이스틱 · 기술 여덟 개를 두 줄로',
   versions: [
     {
-      ver: '261124-1135', date: '2026-11-24', name: '상자 그림 세 단계 · 8개 항목', cur: 1,
+      ver: '261124-1310', date: '2026-11-24', name: '휴대폰 화면 전용 조작 — 조이스틱 · 두 줄 기술 · 접이식 메뉴', cur: 1,
+      items: [
+        { t: 'UI', h: '휴대폰으로 열면 조작 화면이 새로 짜인다',
+          p: '휴대폰으로 열면 조작 화면이 통째로 새로 짜인다. 컴퓨터로 열 때의 화면과 조작은 하나도 달라지지 않는다.',
+          q: '가로로 들었을 때를 기준으로 만들었다. 세로로 들면 지금처럼 가로 화면을 권하는 안내가 먼저 뜬다.' },
+        { t: 'UI', h: '왼손 엄지 아래에 원형 조이스틱',
+          p: '왼쪽 아래에 원형 조이스틱이 놓인다. 손가락을 대고 미는 방향과 거리에 따라 왼쪽·오른쪽으로 걷고, 위로 밀면 대화·포탈이 열리며 아래로 밀면 얇은 발판을 내려간다. 손을 떼면 노브가 가운데로 돌아오고 걷던 발도 바로 선다.',
+          q: '조이스틱 위에는 치유 연고와 귀환 주문서가 남은 개수와 함께 있다. 조이스틱을 움직이는 동안 화면의 다른 버튼은 눌리지 않는다.' },
+        { t: 'UI', h: '기술 여덟 개를 두 줄에 전부',
+          p: '오른쪽 아래에 기술 여덟 개를 두 줄로 세웠다. 안쪽 줄에 평타(Z)와 스킬(X·C), 그 위에 궁극기(V), 바깥 줄에 각성 기술(A·S·D)과 무기 기술(F)이 놓인다. 그 위 한 줄에는 상호작용(↑)·이동기·가드·점프가 있다.',
+          q: '아직 열리지 않은 기술도 자기 자리를 지켜서, 레벨이 오를 때 칸이 갑자기 생기거나 밀리지 않는다. 쿨타임과 남은 시간은 컴퓨터 화면과 똑같이 칸 안에 보인다.' },
+        { t: 'UI', h: '위쪽 화면이 넓어졌다',
+          p: '왼쪽 위는 이름·레벨·체력·경험치와 버프 표시만 남기고 납작해졌다. 오른쪽 위는 미니맵 아래에 전체 맵·가방·메뉴 세 개만 남았다.',
+          q: '특성·트로피·파티·채팅·소리·설정·가이드·미니맵 켜기는 메뉴(≡)를 눌러 열고 닫는다. 메뉴 밖을 누르면 저절로 닫힌다.' },
+        { t: 'UI', h: '세계 지도는 좌우 화살표로만 넘긴다',
+          p: '지도 위에 겹쳐 있던 페이지 배지(1막·2막 지도 / 3막 · 타락한 별들)를 없앴다. 이제 지도 양옆의 화살표만으로 1~20장과 21~30장을 오간다. 화살표는 절반 크기로 줄여 지도 그림을 덜 가린다.',
+          q: '막 이름표는 지도 위에 글자로만 남는다. 키보드 Q·E로도 그대로 넘어간다.' },
+        { t: 'UI', h: '떠돌이 상인의 진열이 가지런해졌다',
+          p: '다섯 줄의 물건 그림이 모두 같은 칸에 같은 크기로 들어간다. 계승석은 글자 대신 다른 돌과 같은 결의 그림이 붙었다. 연고와 귀환 주문서 그림도 다른 물건과 같은 크기라 진열이 들쭉날쭉하지 않다.',
+          q: '칸은 36칸, 그림은 32칸으로 다섯 줄이 모두 같다.' },
+        { t: '보상', h: '떠돌이 상인은 값이 싸다',
+          p: '떠돌이 상인의 값이 내려갔다. 치유 연고 3개와 귀환 주문서는 일반 상점보다 30% 싸고, 품질석·잠재석·계승석·무료 잠재 변경권도 예전 값의 3분의 1에서 5분의 1 수준이다.',
+          q: '10장 기준 — 품질석 85골드(예전 675), 잠재석 110(845), 계승석 255(2,115), 무료 잠재 변경권 680(5,075), 치유 연고 3개 105(150), 귀환 주문서 285(410).' },
+        { t: '시스템', h: '사지도 않았는데 품절로 막히던 문제',
+          p: '떠돌이 상인에게 물건을 살 때 다른 사람이 사지 않았는데도 품절이나 방금 다른 사람이 사 갔다로 막히는 일이 있었다. 재고를 서버와 맞추지 못하는 상황(연결이 잠깐 끊기거나 함께 쓰는 재고를 쓸 수 없을 때)을 진짜 품절과 구분해, 그때는 이 기기에서 수량을 세고 물건을 준다.',
+          q: '정말로 다른 사람이 먼저 산 경우에만 그 안내가 뜬다.' },
+      ],
+    },
+    {
+      ver: '261124-1135', date: '2026-11-24', name: '상자 그림 세 단계 · 8개 항목',
       items: [
         { t: '성장', h: '특성이 15단계까지 열린다',
           p: '특성 한 갈래를 15단계까지 올릴 수 있다. 15단계까지 30포인트가 들고, 만렙(150)에서 받는 특성 포인트는 149라 여섯 갈래를 전부 끝낼 수는 없다(전부 채우면 180포인트). 네 갈래를 끝내고 다섯째에 29포인트를 넣는 것이 최대다.',
@@ -18623,7 +18757,7 @@ function wmState(n) { if (G.map && G.map.ch === n) return 'here'; if (wmCleared(
 #worldmap.on{display:block}#worldmap.show{opacity:1;transform:none}
 #wmCv{position:absolute;inset:0;width:100%;height:100%;cursor:default}
 /* 2026-11-24 (user): 글자 버튼 대신 맵 좌우 가장자리의 작은 화살표 (누르면 낮은 베이스 '둥.') */
-.wmArrow{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:calc(var(--u)*64);height:calc(var(--u)*64);padding:0;border:0;background:none;cursor:pointer;pointer-events:auto;transition:transform .12s ease-out,filter .12s}
+.wmArrow{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:calc(var(--u)*32);height:calc(var(--u)*32);padding:0;border:0;background:none;cursor:pointer;pointer-events:auto;transition:transform .12s ease-out,filter .12s}
 .wmArrow.prev{left:1.1%}.wmArrow.next{right:1.1%}
 .wmArrow img{width:100%;height:100%;image-rendering:pixelated;filter:drop-shadow(0 2px 6px #000)}
 .wmArrow:hover:not(:disabled){transform:translateY(-50%) scale(1.07);filter:brightness(1.12)}
@@ -18674,8 +18808,8 @@ function wmState(n) { if (G.map && G.map.ch === n) return 'here'; if (wmCleared(
   document.head.appendChild(st);
   const el = document.createElement('div'); el.id = 'worldmap';
   el.innerHTML = `<canvas id="wmCv"></canvas>
-  <button class="wmArrow prev" id="wmPrev" type="button" aria-label="이전 페이지"><img src="assets/ui/btn_wm_prev.png" alt=""></button>
-  <button class="wmArrow next" id="wmNext" type="button" aria-label="다음 페이지"><img src="assets/ui/btn_wm_next.png" alt=""></button>
+  <button class="wmArrow prev" id="wmPrev" type="button" aria-label="이전 페이지 (Q)" title="이전 페이지 (Q)"><img src="assets/ui/btn_wm_prev.png" alt=""></button>
+  <button class="wmArrow next" id="wmNext" type="button" aria-label="다음 페이지 (E)" title="다음 페이지 (E)"><img src="assets/ui/btn_wm_next.png" alt=""></button>
   <div id="wmHead"><svg viewBox="0 0 16 16" width="26" height="26" style="flex:0 0 auto;stroke:#d6b25e;fill:none;stroke-width:1"><circle cx="8" cy="8" r="6.5"/><path d="M8 1.5L9.4 8 8 14.5 6.6 8z" fill="#d6b25e"/><path d="M1.5 8H14.5"/></svg>
     <div class="ttl"><b>세계 지도</b><small id="wmSub">THE PIXEL ODYSSEY · CHAPTERS 1 – 30</small></div>
     <div class="cur"><div><em>현재 위치</em><span id="wmCur"></span></div><div class="ticks" id="wmTicks"></div></div>
@@ -18824,8 +18958,9 @@ function wmDraw() {
   const rects = [];
   c.font = `600 ${Math.max(6, M.h * 0.019)}px 'Noto Sans KR',sans-serif`;
   const A3 = WM_ACTS.find(A => A.a > CH_COUNT);
-  const badges = PG ? [Object.assign({}, A3, { x: 0.012, y: 0.02 }), { name: '◀ 1막 · 2막 지도', a: 1, b: CH_COUNT, col: '214,178,94', x: 0.012, y: 0.115, go: 0 }]
-    : WM_ACTS.map(A => A === A3 ? Object.assign({}, A, { name: A.name + '  ▶', go: 1 }) : A);
+  // 2026-11-24 (user, 2차): 페이지를 넘기던 배지(◀ 1막·2막 지도 / 3막 ▶)는 없앴다 — 페이지는 좌우 화살표로만 넘긴다.
+  // 배지는 이제 '어느 막인지'만 알려 주는 이름표다(누를 수 없다).
+  const badges = PG ? [Object.assign({}, A3, { x: 0.012, y: 0.02 })] : WM_ACTS.map(A => Object.assign({}, A));
   WM.pageHit = [];
   for (const A of badges) {
     const cl = [...Array(A.b - A.a + 1)].map((_, k) => A.a + k), all = cl.every(wmCleared), any = cl.some(n => st[n] !== 'lock');
@@ -21426,7 +21561,7 @@ function focusHud(p, dt) {   // HUD 아이콘 + 남은 시간 (0.08초마다만 
   if (!G.save || G.save.char !== 'kallisto') return;
   focusHudT -= dt; if (focusHudT > 0) return; focusHudT = 0.08;
   let el = document.getElementById('focusChip');
-  if (!el) { el = document.createElement('div'); el.id = 'focusChip'; const g = document.getElementById('game') || document.body; g.appendChild(el); }
+  if (!el) { el = chipHost('focusChip'); }
   const on = p.focus > 0, cd = p.focusCd > 0;
   el.classList.toggle('on', on); el.classList.toggle('ready', !on && !cd);
   el.innerHTML = on ? `<img src="assets/skills/skill_kallisto_move.png" alt=""><b>집중</b><i>${p.focus.toFixed(1)}초</i><em>x2</em>`
@@ -23178,7 +23313,7 @@ if (!netAllowed()) $('#bNet').classList.add('off');
 $('#rotOk').addEventListener('click', () => $('#rot').classList.remove('on'));
 $('#game').addEventListener('pointerdown', e => { if (!(e.target.closest && e.target.closest('input, button, a'))) $('#game').focus({ preventScroll: true }); audioInit(); });   // no scroll jump: it moved buttons out from under the pointer
 addEventListener('keydown', () => { if (G.scene === 'play') audioInit(); });
-if (IS_TOUCH) { $('#game').classList.add('touch'); buildTouch(); }
+if (IS_TOUCH) { $('#game').classList.add('touch'); buildTouch(); buildMobMenu(); }
 $('#cutSkip').addEventListener('click', e => { e.stopPropagation(); endCut(); });
 $('#mini').addEventListener('click', e => { e.stopPropagation(); toggleWorldMap(); });   // 2026-11-21: the world map (chapter travel is inside it, from a camp)
 $('#bWorld').addEventListener('click', e => { e.stopPropagation(); toggleWorldMap(); });
@@ -23197,16 +23332,20 @@ const nojs = $('#nojs'); if (nojs) nojs.remove();
 const MER = {
   MIN: 15, HOUR: 3600000,
   hour: 0, map: null, ch: 1, items: null, left: [], npc: null,
-  wasHere: false, ann: 0, told: 0, polled: 0, busy: false, denied: false, drawn: '',
+  wasHere: false, ann: 0, told: 0, polled: 0, busy: false, denied: false, drawn: '', noEtag: false,
 };
-/* 가격은 이 표 한 곳에서만 고친다 (n = 상인이 선 장. stoneGold 758 / potionPrice 759 / scrollPrice 760) */
+/* 가격은 이 표 한 곳에서만 고친다 (n = 상인이 선 장. stoneGold 758 / potionPrice 759 / scrollPrice 760)
+   2026-11-24 (user, 2차): 떠돌이 상인은 '특가'다 — 연고·귀환 주문서는 일반 상점가의 0.7배,
+   돌(품질석·잠재석·계승석·무료 잠재 변경권)은 예전 값(1.6배·2배·5배·12배)보다 크게 낮춘다.
+   아이콘은 다섯 줄 모두 같은 칸(36x36)에 같은 그림 크기(32x32)로 넣는다. */
+const merPrice = v => Math.max(5, Math.round(v / 5) * 5);
 const MER_GOODS = [
-  { k: 'qual',    n: '품질석',          give: 1, q: [1, 3], ic: '<img class="mer-ic" src="assets/items/item_quality_stone.png" alt="">',   p: n => Math.round(8 * stoneGold(n) / 5) * 5 },
-  { k: 'pot',     n: '잠재석',          give: 1, q: [1, 3], ic: '<img class="mer-ic" src="assets/items/item_potential_stone.png" alt="">', p: n => Math.round(10 * stoneGold(n) / 5) * 5 },
-  { k: 'inherit', n: '계승석',          give: 1, q: [1, 2], ic: '<span class="mer-gl">계</span>',                                          p: n => Math.round(25 * stoneGold(n) / 5) * 5 },
-  { k: 'free',    n: '무료 잠재 변경권', give: 1, q: [1, 2], ic: '<img class="mer-ic" src="assets/items/item_free_reroll.png" alt="">',     p: n => Math.round(60 * stoneGold(n) / 5) * 5 },
-  { k: 'potions', n: '치유 연고',        give: 3, q: [1, 2], ic: pimg('potion'),                                                          p: n => potionPrice(n) * 3 },
-  { k: 'scrolls', n: '귀환 주문서',      give: 1, q: [1, 2], ic: pimg('scroll'),                                                          p: n => scrollPrice(n) },
+  { k: 'qual',    n: '품질석',          give: 1, q: [1, 3], ic: '<img class="mer-ic" src="assets/items/item_quality_stone.png" alt="">',   p: n => merPrice(1.0 * stoneGold(n)) },
+  { k: 'pot',     n: '잠재석',          give: 1, q: [1, 3], ic: '<img class="mer-ic" src="assets/items/item_potential_stone.png" alt="">', p: n => merPrice(1.3 * stoneGold(n)) },
+  { k: 'inherit', n: '계승석',          give: 1, q: [1, 2], ic: '<img class="mer-ic" src="assets/items/item_inherit_stone.png" alt="">',   p: n => merPrice(3.0 * stoneGold(n)) },
+  { k: 'free',    n: '무료 잠재 변경권', give: 1, q: [1, 2], ic: '<img class="mer-ic" src="assets/items/item_free_reroll.png" alt="">',     p: n => merPrice(8.0 * stoneGold(n)) },
+  { k: 'potions', n: '치유 연고',        give: 3, q: [1, 2], ic: '<img class="mer-ic" src="' + pixIcon('potion') + '" alt="">',             p: n => merPrice(potionPrice(n) * 3 * 0.7) },
+  { k: 'scrolls', n: '귀환 주문서',      give: 1, q: [1, 2], ic: '<img class="mer-ic" src="' + pixIcon('scroll') + '" alt="">',             p: n => merPrice(scrollPrice(n) * 0.7) },
 ];
 const merMaps = () => Object.keys(MAPS).filter(id => {
   const m = MAPS[id]; return m && m.ch >= 1 && m.ch <= CH_LAST && !m.safe && !m.boss && !m.gate;
@@ -23290,46 +23429,71 @@ sfx = function (n, a) {
    경로는 dbUrl을 거치므로 localhost는 local_merchant/, dev 빌드는 dev_merchant/ 가 된다(규칙도 셋 다 있다). */
 const merSync = () => !!(G.uid && netBase() && netAllowed() && !MER.denied);
 function merDenied() {
-  if (!MER.denied) { MER.denied = true; toast('상인 재고를 서버와 맞추지 못한다 · 데이터베이스 규칙에 merchant를 넣어야 한다', 'bad'); }
+  if (MER.denied) return;
+  MER.denied = true;
+  toast(AUTH.token ? '상인 재고를 서버와 맞추지 못한다 · 데이터베이스 규칙에 merchant를 넣어야 한다'
+    : '로그인 없이 하고 있어 상인 재고는 이 기기에서만 센다', AUTH.token ? 'bad' : '');
 }
 async function merRead() {
   if (!merSync() || !MER.items || !MER.items.length) return;
   try {
-    const r = await fetch(dbUrl('merchant/' + MER.hour + '/st'));
+    const r = await fetch(dbUrl('merchant/' + MER.hour + '/st'), { cache: 'no-store' });
     if (r.status === 401 || r.status === 403) { merDenied(); return; }
     if (!r.ok) return;
     const j = (await r.json()) || {};
+    if (typeof j !== 'object') return;
     MER.items.forEach((it, i) => {
       const v = j[i];
       if (v && typeof v.left === 'number') MER.left[i] = Math.max(0, Math.min(it.qty, v.left));
     });
   } catch (e) { }
 }
+/* 한 품목 읽기. ETag 헤더를 붙여 보고, 브라우저가 그 헤더를 막으면(CORS) 조건 없이 한 번 더 읽는다.
+   2026-11-24 (user bug): 조건부 갱신이 안 되는 브라우저에서 '아무도 안 샀는데 다른 사람이 샀다'로 막히던 원인을 없앤다. */
+async function merReadOne(i) {
+  const path = 'merchant/' + MER.hour + '/st/' + i;
+  if (!MER.noEtag) {
+    let r = null;
+    try { r = await fetch(dbUrl(path), { headers: { 'X-Firebase-ETag': 'true' }, cache: 'no-store' }); } catch (e) { r = null; }
+    if (r && (r.status === 401 || r.status === 403)) return { denied: 1 };
+    if (r && r.ok) {
+      const j = await r.json().catch(() => null), etag = r.headers.get('ETag');
+      if (!etag) MER.noEtag = true;                       // 헤더가 노출되지 않는다: 다음부터 조건 없이
+      return { left: j && typeof j.left === 'number' ? j.left : null, etag: etag || null };
+    }
+    if (r && r.status && r.status < 500) MER.noEtag = true;   // ETag 요청 자체를 거절(400 등)
+  }
+  try {
+    const r = await fetch(dbUrl(path), { cache: 'no-store' });
+    if (r.status === 401 || r.status === 403) return { denied: 1 };
+    if (!r.ok) return { err: r.status };
+    const j = await r.json().catch(() => null);
+    if (!MER.noEtag) MER.noEtag = true;
+    return { left: j && typeof j.left === 'number' ? j.left : null, etag: null };
+  } catch (e) { return { err: 'net' }; }
+}
+/* 돌려주는 값: 'ok'(샀다) · 'sold'(정말 품절) · 'conflict'(진짜 412 — 다른 사람이 먼저 샀다) · 'local'(서버와 못 맞춤) */
 async function merClaim(i) {
   const it = MER.items[i], path = 'merchant/' + MER.hour + '/st/' + i;
-  for (let k = 0; k < 4; k++) {
-    let etag = null, left = MER.left[i] == null ? it.qty : MER.left[i];
-    try {
-      const r = await fetch(dbUrl(path), { headers: { 'X-Firebase-ETag': 'true' }, cache: 'no-store' });
-      if (r.status === 401 || r.status === 403) { merDenied(); return false; }
-      if (r.ok) {
-        etag = r.headers.get('ETag');
-        const j = await r.json().catch(() => null);
-        if (j && typeof j.left === 'number') left = j.left;
-      }
-    } catch (e) { return false; }
-    if (left <= 0) { MER.left[i] = 0; return false; }
+  let conflict = false;
+  for (let k = 0; k < 3; k++) {
+    const rd = await merReadOne(i);
+    if (rd.denied) { merDenied(); return 'local'; }
+    if (rd.err) return 'local';                        // 네트워크·서버 오류: 이 기기에서만 센다(오프라인과 같은 규칙)
+    const left = rd.left == null ? (MER.left[i] == null ? it.qty : MER.left[i]) : rd.left;
+    if (left <= 0) { MER.left[i] = 0; return 'sold'; }
     const h = { 'Content-Type': 'application/json' };
-    if (etag) h['if-match'] = etag;                  // ETag가 없으면(첫 구매) 조건 없이 쓴다
+    if (rd.etag) h['if-match'] = rd.etag;              // ETag가 없으면 조건 없이 쓴다
     try {
       const w = await fetch(dbUrl(path, 'print=silent'), { method: 'PUT', headers: h, body: JSON.stringify({ left: left - 1, by: myNick(), t: srvNow() }) });
-      if (w.ok) { MER.left[i] = left - 1; return true; }
-      if (w.status === 412) continue;                 // 다른 사람이 먼저 샀다: 다시 읽고 재시도
-      if (w.status === 401 || w.status === 403) { merDenied(); return false; }
-      return false;
-    } catch (e) { return false; }
+      if (w.ok) { MER.left[i] = left - 1; return 'ok'; }
+      if (w.status === 412) { conflict = true; continue; }                      // 다시 읽고 재시도
+      if (w.status === 401 || w.status === 403) { merDenied(); return 'local'; }
+      if (w.status === 400 && rd.etag) { MER.noEtag = true; continue; }         // ETag를 받아 주지 않는 서버: 조건 없이 한 번 더
+      return 'local';
+    } catch (e) { return 'local'; }
   }
-  return false;
+  return conflict ? 'conflict' : 'local';
 }
 function merGive(it) {
   const s = G.save;
@@ -23346,11 +23510,11 @@ async function merBuy(i) {
   if (it.k === 'potions' && G.save.potions >= POTION_MAX) { toast('연고를 더 들 수 없다', 'bad'); return; }
   if (it.k === 'scrolls' && G.save.scrolls >= SCROLL_MAX) { toast('귀환 주문서를 더 들 수 없다', 'bad'); return; }
   MER.busy = true;
-  let ok;
-  if (merSync()) ok = await merClaim(i);
-  else { MER.left[i] = Math.max(0, left - 1); ok = true; }
+  const st = merSync() ? await merClaim(i) : 'local';
   MER.busy = false;
-  if (!ok) { toast('방금 다른 사람이 사 갔다', 'bad'); merRead().then(() => merDraw(true)); return; }
+  if (st === 'sold') { toast('품절이다', 'bad'); merRead().then(() => merDraw(true)); return; }
+  if (st === 'conflict') { toast('방금 다른 사람이 사 갔다', 'bad'); merRead().then(() => merDraw(true)); return; }
+  if (st === 'local') MER.left[i] = Math.max(0, left - 1);   // 서버와 못 맞췄다: 이 기기에서만 수량을 센다
   G.save.gold -= it.price; merGive(it); writeSave(); updateHud(true); sfx('coin');   // 재고 1 감소 성공 -> 골드 차감 -> 지급
   { const nm = it.n + (it.give > 1 ? ' ' + it.give + '개' : '');   // 조사: 품질석을 / 잠재석을 / 연고 3개를
     toast(nm + josa(nm.slice(-1), '을', '를') + ' 샀다 · -' + nf(it.price) + ' 골드', 'gold'); }
@@ -23391,12 +23555,12 @@ $('#panel').addEventListener('click', e => {
 }, true);
 document.head.insertAdjacentHTML('beforeend', `<style>
 .mer-list{display:flex;flex-direction:column;gap:calc(var(--u)*6);margin-top:calc(var(--u)*10);max-height:calc(var(--u)*330);overflow:auto}
-.mer-row{display:grid;grid-template-columns:calc(var(--u)*40) minmax(0,1fr) calc(var(--u)*72) calc(var(--u)*64);align-items:center;gap:calc(var(--u)*8);
+.mer-row{display:grid;grid-template-columns:calc(var(--u)*44) minmax(0,1fr) calc(var(--u)*72) calc(var(--u)*64);align-items:center;gap:calc(var(--u)*8);
   padding:calc(var(--u)*6) calc(var(--u)*8);border:1px solid rgba(211,156,58,.35);background:rgba(20,16,10,.55)}
 .mer-row.out{opacity:.45}
-.mer-i{display:flex;align-items:center;justify-content:center;width:calc(var(--u)*32);height:calc(var(--u)*32)}
-.mer-ic{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-.mer-gl{color:#ffe08a;font-weight:700;font-size:max(12px,calc(var(--u)*16))}
+.mer-i{display:flex;align-items:center;justify-content:center;flex:0 0 auto;width:calc(var(--u)*36);height:calc(var(--u)*36);
+  background:rgba(6,5,10,.45);border:1px solid rgba(211,156,58,.28);border-radius:calc(var(--u)*4)}
+.mer-ic{display:block;width:calc(var(--u)*32);height:calc(var(--u)*32);object-fit:contain;image-rendering:pixelated}
 .mer-n{display:flex;flex-direction:column;min-width:0;font-size:max(11px,calc(var(--u)*13));color:#f2e6c8}
 .mer-n small{color:#b8a888;font-size:max(9px,calc(var(--u)*11))}
 .mer-s{color:#cfe6a8;font-size:max(9px,calc(var(--u)*11));text-align:right;white-space:nowrap}
@@ -24145,7 +24309,7 @@ font-size:max(9px,calc(var(--u)*11));color:#f0e6cf;pointer-events:none;z-index:1
 document.head.insertAdjacentHTML('beforeend', FOCUS_CHIP_CSS);
 function blessHud() {
   let el = document.getElementById('blessChip');
-  if (!el) { el = document.createElement('div'); el.id = 'blessChip'; (document.getElementById('game') || document.body).appendChild(el); }
+  if (!el) { el = chipHost('blessChip'); }
   if (!G.bless || G.scene !== 'play') { el.classList.remove('on'); return; }
   const b = G.bless, m = Math.floor(b.t / 60), sec = Math.floor(b.t % 60);
   const txt = `<b>${b.name}</b><u>${b.desc}</u><i>${m}:${String(sec).padStart(2, '0')}</i>`;

@@ -12,6 +12,46 @@
 
 ## 옮길 것
 
+### 261124-1310  휴대폰 전용 UI/UX(원형 조이스틱 · 두 줄 기술 · ≡ 접이식 메뉴) + 세계 지도 화살표만 + 떠돌이 상인 아이콘·특가·구매 오류 구분   (대상: index.html / test/index.html + assets/ui + assets/items)
+지시서: 2026-11-24 사용자 지시(휴대폰 전용 조작 전면 교체 → 이어서 세계 지도 배지/화살표, 떠돌이 상인 아이콘·가격, 상인 구매 버그 3건).
+index.html 을 직접 고쳤고 test/index.html 을 같은 내용으로 다시 만들었다(1·3행만 다르고 4행부터 같음, 둘 다 24,318행).
+
+- **새 그림(그림이라 조각 파일과 무관)** — `assets/ui/` + `test/assets/ui/`: `joy_base.png`(192×192) `joy_knob.png`(96×96)
+  `btn_mobile_menu.png` `btn_mob_jump/guard/shift/interact/potion/scroll.png`(각 64×64), 출처 `downloads/mobile_ui_assets_pack/assets/ui/`.
+  `assets/items/` + `test/assets/items/`: `item_inherit_stone.png`(64×64, 계승석 — 없던 그림이라 새로 만들었다: 금테 + 금빛 돌 + 위 화살표·맞물린 고리).
+- **(A) 휴대폰 전용 UI/UX** — `IS_TOUCH` 일 때만. 컴퓨터 화면(`.frame` 에 `touch` 클래스가 없을 때)은 CSS·DOM·동작 모두 그대로다.
+  - CSS: `#touch{display:none}` 아래 **`.frame.touch …` 블록 전체**를 새로 썼다(`.frame.touch .tb` 부터 `#mobMenu` 까지).
+    `.tb` 는 원형 → 아이콘이 들어가는 둥근 사각 칸(58~74u)으로, 안에 `<img class="tbi">`+키 배지(`.kb`)+수량(`small`)+쿨타임(`.cdv`/`.cdt`)이 들어간다.
+    위치는 buildTouch 가 인라인 `left/top/width/height`(calc(var(--u)*n)) 로 넣는다.
+  - `buildTouch()` 전면 교체: 좌하단 `#joy`(joy_base + `#joyKnob` joy_knob, 176u) + 그 위 연고·귀환 퀵슬롯,
+    우하단 두 열 — 안쪽 Z·X·C·궁극기(V), 바깥 각성 A·S·D·무기 기술(F) —, 그 위 한 줄에 ↑상호작용·Shift·가드·점프.
+    손가락 방향/거리로 left·right·up·down 을 누르고(`pressKey`/`releaseKey`), 손을 떼면 노브가 가운데로 돌아오며 입력이 모두 풀린다.
+    버튼 그림은 기술 칸과 같은 `assets/skills/*`(=`skillIconSrc`), 동작 버튼만 새 모바일 그림(`MOB_BTN_ART`).
+    한 번 쓰는 기술은 손을 뗄 때 나가고 350ms 누르면 설명이 뜨는 규칙, 대화 중에는 넘기기 — 예전 그대로.
+  - `buildMobMenu()` 추가(초기화에서 `buildTouch()` 다음에 호출): 상단 오른쪽 `전체맵·가방·≡` 세 개만 남기고
+    나머지 9개(특성·미니맵·음향·파티·채팅·온라인·트로피·설정·가이드)를 `#mobMenu` 드로어로 옮긴다(3×3, `#hud` 안).
+    드로어가 열리면 `#game` 에 `mob-menu` 클래스가 붙어 터치 조작이 흐려지고 눌리지 않는다. 바깥을 누르면 닫힌다.
+  - `chipHost(id)` 추가: 버프(`#blessChip`)·집중(`#focusChip`) 칩을 휴대폰에서는 `.hud-tl` 의 경험치 줄 뒤로 넣어 왼쪽 위 정보 줄에 붙인다(컴퓨터는 예전처럼 `#game` 에 absolute).
+  - `buildSkills()` 의 터치 칸 갱신 줄: 이름 글자 대신 키 배지(`shortKey(BINDS[k])`)만 갱신하고, 아직 못 쓰는 기술은 숨기지 않고 `off`(흐림)로 둔다 — 두 열 자리가 밀리지 않게.
+  - `updateHud()` 의 퀵슬롯 수량 문구를 `연고 3` → `×3` 로(칸 아래 배지).
+- **(B) 세계 지도** — `wmDraw()` 의 `badges`: 3막 페이지의 `◀ 1막 · 2막 지도` 배지와 1막 페이지의 `3막 ▶` 배지를 없앴다(이제 글자 이름표뿐, `go` 없음 → `WM.pageHit` 0).
+  페이지는 좌우 화살표(`#wmPrev`/`#wmNext`)로만 넘긴다. `.wmArrow` 크기 64u → **32u**(절반), `title`/`aria-label` 에 Q·E 힌트.
+- **(C) 떠돌이 상인** — `MER_GOODS`: 계승석을 `<span class="mer-gl">계</span>` 에서 `item_inherit_stone.png` 로, 연고·귀환은 `pimg()` 대신 `pixIcon()` 을 `mer-ic` 로.
+  `.mer-i` 를 36×36 칸(테두리·배경)으로, `.mer-ic` 를 32×32 로 고정(다섯 줄 모두 같은 크기), `.mer-row` 첫 칸 40u → 44u.
+  값: `merPrice()`(5골드 단위 반올림) + 연고·귀환 = 일반 상점가 × 0.7, 품질석 ×1.0·잠재석 ×1.3·계승석 ×3·무료 잠재 변경권 ×8 (예전 1.6·2·5·12배 → 특가).
+- **(D) 상인 구매 버그** — `merClaim()` 이 `true/false` 대신 `'ok'|'sold'|'conflict'|'local'` 을 돌려준다. `merReadOne()` 추가(ETag 헤더를 붙여 보고, 브라우저 CORS·서버가 거절하면 조건 없이 한 번 더 — `MER.noEtag`).
+  `merBuy()` 는 `sold` → 품절, `conflict`(진짜 412 세 번) → 방금 다른 사람이 사 갔다, `local`(연결 실패·401/403·그 밖) → 이 기기에서만 수량을 세고 물건을 준다. `merDenied()` 문구도 로그인 없음/규칙 막힘을 나눈다.
+  → 아무도 사지 않았는데 '다른 사람이 사 갔다'로 막히고 물건을 못 받던 문제가 없어진다.
+- 버전: `GAME_VER '261124-1310'`, `version.json`(루트·test), `NEWS.id '261124d'`, 카드 4장(1310 = 8항목, 그 아래 1135·1040·0915).
+- 검증(헤드리스 Chromium, 최종 파일): 모바일 844×390·932×430 (겹침 0 — 컨트롤+상단 버튼 전부 BoundingBox 비교, 화면 밖 0,
+  조이스틱 좌/우 이동 ±124, 위로 밀면 대화 열림·손 떼면 복귀, X 쿨타임 3.1초 표시, Z 누르는 동안 공격, F 흐림 유지,
+  ≡ 드로어 9개·특성 창 열림·바깥 클릭 닫힘, 수량 ×3/×1) + 컴퓨터 1280×720(터치 숨김·기술 줄 flex·상단 버튼 11개·≡ 없음)
+  + 세계 지도(화살표 37px=32u, 페이지 배지 0, 화살표로 1↔3 페이지) + 상인(아이콘 칸 42px·그림 37px 동일, 계승석 새 그림,
+  연고 105/귀환 950 = 상점가 0.7배, 돌 4종 예전보다 70%↓, 정상 구매 → 서버에 left 기록, 412 1회 → 재시도 성공, 계속 412 → 안내만,
+  연결 실패 → 물건 지급·안내 없음, 401 → 안내 + 지급) + test 빌드 동일 + pageerror 0 + 새 그림 404 0.
+  스크린샷: `.work/po/mobile_applied_844x390.png`, `mobile_drawer_open.png`, `mobile_932x430.png`, `mobile_buffchip.png`,
+  `pc_1280_720.png`, `wm_page1.png`, `wm_page2.png`, `merchant_panel.png`.
+
 ### 261124-1135  랜덤 상자 3프레임 교체 + 인게임 패치노트 새 UI   (대상: index.html / test/index.html + assets/obj)
 지시서: `claude_code_8_traits_guard_shrine_prompt.txt` 5-3절(상자 3프레임) + 2026-11-24 사용자 지시(패치노트 UI 전면 교체).
 바로 아래 261124-1130 커밋(5adeb1f·2cd7091)의 마무리다. index.html 을 직접 고쳤고 test/index.html 에 같은 내용을 넣었다
