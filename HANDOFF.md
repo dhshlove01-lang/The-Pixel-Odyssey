@@ -12,6 +12,60 @@
 
 ## 옮길 것
 
+### 261124-1040  12개 개선 + 궁수 집중 + 29장 개기일식 + 프리로드 + 보스 다리 복구   (대상: index.html / test/index.html + assets)
+지시서: `claude_code_12_polish_eclipse_prompt.txt` (기준 bc0ca55). index.html 을 직접 고쳤고
+test/index.html 에 같은 자리로 넣었다(1~3행만 다르고 4행부터 완전히 같음, 둘 다 23,420행).
+헤드리스 크롬으로 12+2항목을 항목별로 재서 전부 통과(아래 "검증 수치"). 원본 조각으로 옮길 때의 대상(식별자로 찾는다):
+
+- **(1) 도적 이단 도약 30도** `30_combat.js`: `LY_DJ_X`(0.6) 삭제 → `const DJ_TAN = Math.tan(Math.PI/6), DJ_XK = 1.15;`
+  updatePlayer 의 도적 2단 점프 블록: `p.vx = fd*V*DJ_XK; p.vy = -p.vx*DJ_TAN; p.ljT = 0.55;`
+  실측 56.5°(상승 112·이동 215) → 30.0°(상승 48·이동 484).
+- **(2) 보스 소개 즉시** `30_combat.js`(updateBoss `case 'wait'`): `wakeNow = !!G.map.boss || p.x>wakeX || netWake()`
+  → 보스방 loadMap 직후 컷신. 1·30장 x=120/140에서 확인.
+- **(3) 권장 전투력 2/3** (recCp 덮어쓰기 — 보스 밸런스 조각, 추정 `55_boss9.js`): `Math.round(calcStats(specSave(n)).cp * (2/3))`.
+  실측 10장 32,276 → 21,517.
+- **(4) 거래 골드 키패드** `60_trade.js`: 입력칸 `type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done"`,
+  `trGoldSet`(숫자만·클램프), focusin/out 로 `G.ui.trTyping`(재렌더 금지 1.2초), 전역 keydown 첫 줄에
+  INPUT/TEXTAREA/SELECT/contenteditable 가드(30_combat 키 처리 + 퀘스트/트로피 좌우키 capture 2곳).
+- **(5) 1~30장 빈 사냥방 점검+가드** 새 코드 `auditRooms()`(12번과 같은 새 조각): A/B/문턱 111방을 훑어
+  MON 있는 스폰이 0이면 그 장의 잡몹 15+정예1로 채우고 `console.warn('[rooms] …')`.
+  ※ bc0ca55 실측: 빈 방 0(방당 12~32마리). 사용자가 본 "30장 보스 직전 방"은 재현되지 않음 — 안전장치만 넣음.
+- **(6) 9장 = 몽마 오네이라** `10_data.js`(CH_DEFS 9장 이름·boss·wake) + `16_story`(STORY50[9]) +
+  `56z_act3.js`(STORY50_RENAME): 크리오스→오네이라 쌍 삭제, 반대 방향 `['거신 크리오스','몽마 오네이라'], ['크리오스','오네이라']` 추가.
+  맵: 갈비뼈 아래의 불 / 눈 내리는 무덤 / 꿈의 회랑 / **몽마의 침실**, 퀘스트 obj '몽마의 침실에서 오네이라 처치'.
+- **(7) 29장 개기일식** (달·월식 조각, 추정 `56z2_boss30.js`): `moonImg`/`MOON_IMG`/moon_phases_29.png 제거.
+  `MOON_FULL=42`, `moonK()`, 코드로 그리는 보름달+검은 원(오른쪽에서 슬라이드)+코로나, `#moonWarn`(화면 테두리+3·2·1·가드 카운트다운+바닥 띠),
+  즉사는 그대로 가드만 통과(pure 102%). 달은 `cx = cam.x + W*0.78, cy = 176` 화면 고정.
+- **(8) 보스 0.8배속** `30_combat.js`+`56z`+`56z2`: `BOSS_PACE=0.8, BOSS_INV=1.25`.
+  updateBoss(wrapper) 첫 줄 `dt *= BOSS_PACE`, `b.tele.dur *= BOSS_INV`(1회), tg9.dur·addHaz(warn/act, src.isBoss)·vfx9Tick·walk9Tick·a3cloneTick·
+  moonTick·b22/b29 오라, bossAnimTick·proj(보스 투사체) wrapper. 실측 전조 0.85→1.067s, 시전 0.9→1.133s, 투사체 400→320.
+- **(9) 궁수 집중** `30_combat.js`+`40_render.js`+`50_ui.js`: 활공은 마법사만, 궁수 Shift → `FOCUS_T=10/FOCUS_CD=25`,
+  dealDamage `* (focus>0 ? 2 : 1)`, `drawFocusAura`(발밑 링+등 뒤 빛), 화살 pfx gold + 금빛 잔상, `#focusChip` HUD(남은 시간/쿨/Shift),
+  `focus_ping` 합성음, newPlayer 에 `focus/focusCd`. 실측 데미지 466→932.
+- **(10) 거래 UI** `60_trade.js`: tradeHtml 새 2단(내 제안 | 상대 제안 + 가방 7열) + `.tr-frame` 9-slice(ui_trade_frame.png 64 fill)
+  + 배지(잠금/수락) + 골드 빠른 입력(data-tradd) + `.tr-bag` `repeat(7,minmax(0,1fr))`(가로 잘림 0), CSS 전면 교체.
+- **(11) 세계지도 화살표** `55x_worldmap.js`+`60_audio.js`: 머리줄 `wmPg0/wmPg1` 삭제 → `#wmPrev/#wmNext`(.wmArrow, btn_wm_prev/next.png, 좌우 1.1%),
+  `wmTurn()`, wmPageUi 비활성, `wmPage` 에서 `sfx('wm_turn')`, `SFX_FILES.wm_turn='wm_page_turn.wav'` + 합성 폴백 case.
+- **(12) 프리로드** 새 조각(맨 끝, `63_polish1124.js` 권장): `PRE_IMG/preImg/preAll/preRace/mapArtUrls/bossPreUrls/mapVeil`,
+  loadMap(70ms 여유+1.2s 안전 해제 veil, 보스 시트·스트립 예열), travel(프리로드 후 이동), toggleWorldMap(배경 2장),
+  showTitle(제목 배경), startGame(맵·스킬 아이콘 예열, 동기 유지), 장비 아이콘 72장 백그라운드.
+- **(13) 보스 다리 복구 자산**: `assets/boss/b11_48f.png · b19_48f.png · b20_48f.png` (+ test/ 같은 경로) 교체.
+  b20 은 대기 8프레임 중 7프레임에서 무릎 아래가 잘려 있었고, 나머지 29종은 정상(1,440프레임 전수).
+  `bossSheetLoad` 의 `im.src` 에 `?v=GAME_VER` 추가(같은 파일명 캐시 회피).
+- **(14) 인게임 패치노트** `56f_news.js`: `NEWS.id '261123c' → '261124b'`, items 12줄(3페이지)로 교체.
+  **GAME_VER을 올릴 때 NEWS.id도 함께 올린다**(같으면 다시 안 뜬다).
+
+새 자산(모두 assets/ 와 test/assets/ 같은 경로):
+`ui/ui_trade_frame.png`(480×300) `ui/btn_wm_prev.png` `ui/btn_wm_next.png` `ui/ui_trade_gold.png` `ui/ui_trade_lock.png` `ui/ui_trade_check.png`(각 64×64)
+`sfx/wm_page_turn.wav`(44.1k 모노 16bit, 0.62초, 피크 -1.0dBFS, 클리핑 0)
+삭제: `vfx/moon_phases_29.png` (+ test/ 사본)
+버전: GAME_VER '261124-1040', version.json(루트·test) 동일.
+
+검증 수치(헤드리스 크롬, bc0ca55 → 이 커밋): 1번 30.0°/48/484 · 2번 x=120 컷신 · 3번 ×2/3(10장 21,517) · 4번 1500 입력/클램프 ·
+5번 111방 빈 방 0/가드 16마리 · 6번 크리오스 0건 · 7번 휘도 240→5·경고 1.6s·가드 생존 · 8번 ×1.25 전조·시전/투사체 ×0.8 ·
+9번 ×2.000·10s/25s·HUD · 10번 7열·잘림 0·패널 685px · 11번 좌우 12px·wm_turn 1회·wav 0.62s · 12번 map9Now 즉시·maps 404 0 ·
+13번 b20 2048²·하단 잉크 y239~240 · 14번 새 소식 뜨고 3페이지·닫힘 플래그. 4직업 회귀(필드 10초+보스 15초) pageerror 0.
+
 ### 261124-0915  8개 개선(P1~P8) + 떠돌이 상인 + 방어구 직업 제한   (커밋 이 커밋, 대상: index.html / test/index.html)
 지시서: `claude_code_wandering_merchant_8_prompt.txt` (기준 737fc12). index.html 을 직접 고쳤고 test/index.html 에 같은 자리로 넣었다
 (1~3행만 다르고 4행부터 완전히 같음). 원본 조각으로 옮길 때의 대상(식별자로 찾는다):
