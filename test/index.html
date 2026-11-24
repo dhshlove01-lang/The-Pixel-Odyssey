@@ -1,6 +1,8 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="robots" content="noindex"><link rel="icon" type="image/png" sizes="32x32" href="assets/spr/ec97f9389b185f.png">
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/spr/ec97f9389b185f.png">
 <link rel="apple-touch-icon" href="assets/spr/73ca7d5e983972.png">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0}</style></head><body><script>window.DEV_TOOLS = 1;</script><title>The Pixel Odyssey</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0}</style></head><body><script>window.DEV_TOOLS = 1;</script>
+<title>The Pixel Odyssey</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -690,7 +692,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261124-1900';
+const GAME_VER = '261124-1930';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16072,12 +16074,18 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261124k',   // 2026-11-24 열한 번째 패치(GAME_VER '261124-1900'): 19장 빙판 바닥 · 음소거 아이콘 · 궁수 S 덫
+  id: '261124l',   // 2026-11-24 열두 번째 패치(GAME_VER '261124-1930'): 궁수 S 덫을 바닥에 붙임
   title: '패치 노트',
-  sub: '19장 빙판 바닥 · 음소거 아이콘 · 궁수의 덫',
+  sub: '궁수의 덫을 바닥에 딱 붙였다',
   versions: [
     {
-      ver: '261124-1900', date: '2026-11-24', name: '19장 빙판 · 음소거 아이콘 · 궁수의 덫', cur: 1,
+      ver: '261124-1930', date: '2026-11-24', name: '궁수의 덫을 바닥에 붙임', cur: 1,
+      items: [
+        { t: '전투', h: '궁수 S 덫이 공중에 뜨지 않고 바닥에 딱 붙는다', p: '섬광 덫 그림이 캐릭터 발끝보다 한 뼘쯤 위에 떠 있던 것을 고쳤다. 이제 덫 룬 고리의 바닥이 캐릭터가 딛고 서는 지면선과 정확히 같은 높이에 놓인다.', q: '놓인 룬(1프레임)과 발동 연출(사슬 → 점화 → 포획 3프레임)이 모두 같은 지면선에 닿는다. 피해(공격력 300%)·기절 1.5초·무장 0.4초·유지 8초는 그대로다.' },
+      ],
+    },
+    {
+      ver: '261124-1900', date: '2026-11-24', name: '19장 빙판 · 음소거 아이콘 · 궁수의 덫', cur: 0,
       items: [
         { t: '연출', h: '19장 바닥이 얼음판이 되었다', p: '19장 만년설 늑대 숲과 보스방 바닥이 돌바닥에서 얼음판으로 바뀐다. 걷는 윗면은 반들반들 빛나고 아래로 갈수록 짙은 푸른색으로 잠기며, 얼음 속 균열과 갇힌 기포, 위로 흐르는 잔빛이 보인다.', q: '얼음판은 폭 512px로 끊김 없이 이어지고, 걷는 판정과 미끄러짐은 예전 그대로다.' },
         { t: 'UI', h: '음소거 버튼이 꺼진 그림으로 바뀐다', p: '모든 소리를 끄면 금테 스피커 위에 빨간 X가 그려진 아이콘으로 바뀌고 버튼 테두리가 붉어진다. 예전처럼 그림 위에 사선을 덧그리거나 흐리게 만들지 않는다.', q: '버튼 아래 작은 "꺼짐" 표시는 그대로 남고, 다시 켜면 원래 스피커 그림으로 돌아온다.' },
@@ -17751,7 +17759,7 @@ const REM_SK = {
     a: { file: 'vfx/vfx_kallisto_a_rain.png', cell: [456, 400], w: 456, h: 400, align: 'bottom', lift: 0, off: 212, ms: [70, 80, 120, 180], hf: 2 },
     s: { file: 'vfx/vfx_archer_flare_snare.png', cell: [491, 659], w: 86, h: 116, align: 'bottom', lift: 0, off: 18, ms: [70, 80, 110, 160], hf: 2 },
     // 2026-11-24 (user): 덫 그림은 새 4프레임 스트립(vfx_archer_s_trap.png, 256x256 칸, 지면 16px) — 판정 상자(w·h)는 위 s 그대로 쓴다
-    sTrap: { file: 'vfx/vfx_archer_s_trap.png', cell: [256, 256], w: 256, h: 256, align: 'bottom', lift: 0, off: 0, ms: [110, 120, 120, 220] },
+    sTrap: { file: 'vfx/vfx_archer_s_trap.png', cell: [256, 256], w: 256, h: 256, align: 'bottom', lift: 0, off: 0, gpad: 17, ms: [110, 120, 120, 220] },   // 2026-11-24 (user): 지면 밀착 — 이 스트립은 칸 아래 16px가 투명 여백이라 gpad만큼 내려 그린다(1프레임·발동 3프레임 공통)
     v: { file: 'vfx/vfx_archer_awakening.png', cell: [503, 498], w: 152, h: 150, align: 'bottom', lift: 0, off: 0, ms: [90, 80, 150, 300], hf: 1 } },
   lykos: {
     zOld: { file: 'vfx/vfx_rogue_twin_slash.png', cell: [472, 482], w: 55, h: 56, align: 'center', lift: 18, off: 22, ms: [40, 45, 65, 85], hf: 2 },
@@ -17795,7 +17803,7 @@ function remDrawBox(c, sk, frame, box, face, alpha) {
   c.restore();
 }
 /* 2026-11-24 (user): 덫 스트립은 256 칸을 1:1 로 그린다 — 덫 자리(판정 상자)의 바닥 가운데를 그림 가운데에 맞춘다 */
-function trapFxBox(b) { const st = REM_SK.kallisto.sTrap, cw = st.cell[0], chh = st.cell[1], cx = b.x + b.w / 2, gy = b.y + b.h; return { x: Math.round(cx - cw / 2), y: Math.round(gy - chh), w: cw, h: chh }; }
+function trapFxBox(b) { const st = REM_SK.kallisto.sTrap, cw = st.cell[0], chh = st.cell[1], cx = b.x + b.w / 2, gy = b.y + b.h; return { x: Math.round(cx - cw / 2), y: Math.round(gy - chh + (st.gpad || 0)), w: cw, h: chh }; }   // gpad: 칸 아래 투명 여백만큼 내려 룬 바닥을 지면선에 붙인다
 /* 놓인 덫: 빛 합성만 하면 밝은 바닥(빙판)에서 초록이 하얗게 날아가므로, 색을 살리는 바탕 한 겹 위에 빛 한 겹을 더한다 */
 function drawTrapArt(c, b, alpha) {
   const st = REM_SK.kallisto.sTrap, im = remImg(st.file); if (!im.complete || !im.naturalWidth) return;
