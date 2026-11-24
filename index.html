@@ -690,7 +690,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261124-1930';
+const GAME_VER = '261124-2100';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -7103,23 +7103,23 @@ function drawMoon29(c) {
   let g = c.createRadialGradient(cx, cy, R * 0.55, cx, cy, R * 2.7);
   g.addColorStop(0, `rgba(255,242,214,${halo})`); g.addColorStop(0.42, `rgba(255,204,150,${halo * 0.32})`); g.addColorStop(1, 'rgba(255,170,120,0)');
   c.fillStyle = g; c.fillRect(cx - R * 3, cy - R * 3, R * 6, R * 6);
-  // the full moon (soft, blended into the sky)
-  g = c.createRadialGradient(cx - 12, cy - 14, R * 0.12, cx, cy, R);
-  g.addColorStop(0, '#fffaf0'); g.addColorStop(0.62, '#f2e8d4'); g.addColorStop(1, '#c9bda4');
-  c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R, 0, 6.283); c.fill();
-  c.fillStyle = 'rgba(120,108,92,.16)';
-  for (const [ox, oy, rr] of [[-18, -20, 9], [10, -8, 13], [-6, 22, 11], [26, 18, 7], [-30, 10, 6]]) { c.beginPath(); c.arc(cx + ox, cy + oy, rr, 0, 6.283); c.fill(); }
-  // the shadow disc slides in from the right and covers it (smooth, not 8 frames)
-  const off = (1 - e) * 2.4 * R;
-  c.save(); c.beginPath(); c.arc(cx, cy, R + 0.5, 0, 6.283); c.clip();
-  g = c.createRadialGradient(cx + off, cy, R * 0.72, cx + off, cy, R * 1.02);
-  g.addColorStop(0, 'rgba(5,3,9,1)'); g.addColorStop(0.9, 'rgba(7,5,11,.985)'); g.addColorStop(1, 'rgba(7,5,11,0)');
-  c.fillStyle = g; c.beginPath(); c.arc(cx + off, cy, R * 1.02, 0, 6.283); c.fill();
-  c.restore();
-  if (e > 0.88) {   // total: a thin bright corona ring
-    const a = (e - 0.88) / 0.12;
-    c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(255,236,190,${0.55 * a})`; c.lineWidth = 2.4;
-    c.beginPath(); c.arc(cx, cy, R + 2.5, 0, 6.283); c.stroke();
+  // the moon itself: pixel-art 8-frame eclipse (달이 그림자에 먹히는 단계가 그림에 들어 있다)
+  const mo = moon29Sprite(), ms = Math.round((R + 2) * 2);
+  if (mo) {
+    const f = Math.max(0, Math.min(MOON29.n - 1, Math.round(e * (MOON29.n - 1))));
+    const prevSmooth = c.imageSmoothingEnabled; c.imageSmoothingEnabled = false;
+    c.drawImage(mo, f * MOON29.cell, 0, MOON29.cell, MOON29.cell, Math.round(cx - R - 2), Math.round(cy - R - 2), ms, ms);
+    c.imageSmoothingEnabled = prevSmooth;
+  } else {   // 그림을 못 불러왔을 때만 예전 벡터 달
+    g = c.createRadialGradient(cx - 12, cy - 14, R * 0.12, cx, cy, R);
+    g.addColorStop(0, '#fffaf0'); g.addColorStop(0.62, '#f2e8d4'); g.addColorStop(1, '#c9bda4');
+    c.fillStyle = g; c.beginPath(); c.arc(cx, cy, R, 0, 6.283); c.fill();
+    const off = (1 - e) * 2.4 * R;
+    c.save(); c.beginPath(); c.arc(cx, cy, R + 0.5, 0, 6.283); c.clip();
+    g = c.createRadialGradient(cx + off, cy, R * 0.72, cx + off, cy, R * 1.02);
+    g.addColorStop(0, 'rgba(5,3,9,1)'); g.addColorStop(0.9, 'rgba(7,5,11,.985)'); g.addColorStop(1, 'rgba(7,5,11,0)');
+    c.fillStyle = g; c.beginPath(); c.arc(cx + off, cy, R * 1.02, 0, 6.283); c.fill();
+    c.restore();
   }
   // the floor band while the doom warning runs (world space, so it lies on the arena floor)
   if (M.warn > 0) {
@@ -14924,6 +14924,55 @@ const TG9_COL = {
   poison: { stroke: '#4ADE80', fill: '74,222,128', badge: '#86EFAC' },
   sand: { stroke: '#FBBF24', fill: '251,191,36', badge: '#FDE68A' },
 };
+
+/* ============ 2026-11-25 (도트체 확정): 공용 전조 그림 — 손으로 찍은 픽셀아트 9-slice ============
+   assets/dot/telegraph_dash_line.png / telegraph_vertical_beam.png (96x96, 32px 테두리, 회색조)를
+   전조 색(tone)으로 곱해 칠한다. 캔버스 arc/stroke 로 그리던 반달·>>>·기둥을 대신한다.
+   그림이 아직 안 왔거나 읽기 실패면 예전 캔버스 코드로 그대로 돌아간다. */
+const TG_DOT = { dash: 'dot/telegraph_dash_line.png', beam: 'dot/telegraph_vertical_beam.png' };
+const TG_DOT_IMG = {}, TG_DOT_TINT = {};
+function tgDotImg(kind) {
+  let im = TG_DOT_IMG[kind];
+  if (!im) { im = TG_DOT_IMG[kind] = new Image(); im.src = ASSET9 + TG_DOT[kind]; }
+  return (im.complete && im.naturalWidth) ? im : null;
+}
+function tgDotTint(kind, col, mirror) {
+  const key = kind + '|' + col + (mirror ? '|m' : '');
+  if (TG_DOT_TINT[key]) return TG_DOT_TINT[key];
+  const im = tgDotImg(kind); if (!im) return null;
+  const cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight;
+  const x = cv.getContext('2d'); x.imageSmoothingEnabled = false;
+  if (mirror) { x.translate(cv.width, 0); x.scale(-1, 1); }
+  x.drawImage(im, 0, 0);
+  x.globalCompositeOperation = 'multiply'; x.fillStyle = `rgb(${col})`; x.fillRect(0, 0, cv.width, cv.height);
+  x.globalCompositeOperation = 'destination-in'; x.drawImage(im, 0, 0);
+  TG_DOT_TINT[key] = cv; return cv;
+}
+function tgDotBox(c, kind, x, y, w, h, col, alpha, mirror) {
+  const t = tgDotTint(kind, col, mirror); if (!t) return false;
+  const C = 32; x = Math.round(x); y = Math.round(y); w = Math.round(w); h = Math.round(h);
+  c.save(); c.imageSmoothingEnabled = false; c.globalAlpha *= Math.max(0, Math.min(1, alpha));
+  if (w < C * 2 || h < C * 2) { c.drawImage(t, 0, 0, 96, 96, x, y, Math.max(6, w), Math.max(6, h)); c.restore(); return true; }
+  for (const [sx, sy, dx, dy] of [[0, 0, x, y], [64, 0, x + w - C, y], [0, 64, x, y + h - C], [64, 64, x + w - C, y + h - C]]) c.drawImage(t, sx, sy, C, C, dx, dy, C, C);
+  for (let tx = x + C; tx < x + w - C; tx += C) {
+    const tw = Math.min(C, x + w - C - tx);
+    c.drawImage(t, C, 0, tw, C, tx, y, tw, C); c.drawImage(t, C, 64, tw, C, tx, y + h - C, tw, C);
+  }
+  for (let ty = y + C; ty < y + h - C; ty += C) {
+    const th = Math.min(C, y + h - C - ty);
+    c.drawImage(t, 0, C, C, th, x, ty, C, th); c.drawImage(t, 64, C, C, th, x + w - C, ty, C, th);
+  }
+  for (let ty = y + C; ty < y + h - C; ty += C) for (let tx = x + C; tx < x + w - C; tx += C) {
+    const tw = Math.min(C, x + w - C - tx), th = Math.min(C, y + h - C - ty);
+    c.drawImage(t, C, C, tw, th, tx, ty, tw, th);
+  }
+  c.restore(); return true;
+}
+/* 29장 개기월식 달: 픽셀아트 8프레임(128칸) — 그믐으로 가는 그림 자체를 프레임으로 쓴다 */
+const MOON29 = { file: 'dot/moon_eclipse_8f.png', n: 8, cell: 128 };
+const MOON29_IMG = new Image();
+MOON29_IMG.src = ASSET9 + MOON29.file;
+function moon29Sprite() { return (MOON29_IMG.complete && MOON29_IMG.naturalWidth) ? MOON29_IMG : null; }
 const snap2 = v => Math.round(v / 2) * 2;
 
 /* ---- pictures ---- */
@@ -15002,20 +15051,26 @@ function tg9Shape(c, t, p, blink, pal) {
     c.strokeStyle = blink ? '#FFFFFF' : pal.stroke; c.setLineDash([6, 4]); c.strokeRect(x0 + 1, y0 + 1, w - 2, h - 2); c.setLineDash([]);
     c.fillStyle = pal.stroke; c.fillRect(x0, snap2(gy - 4), w, 4);
     if (w >= 40) for (const ax of [x0 + 10, x0 + w - 10]) { c.fillStyle = blink ? '#FFFFFF' : pal.stroke; c.beginPath(); c.moveTo(ax, y0 - 12); c.lineTo(ax - 6, y0 - 4); c.lineTo(ax + 6, y0 - 4); c.closePath(); c.fill(); }   // ▲
-  } else if (t.kind === 'dash_line') {   // a band from the boss to where the charge ends, filling in its direction, >>> on it
+  } else if (t.kind === 'dash_line') {   // a pixel-art band from the boss to where the charge ends, chevrons point that way
     const xs = snap2(t.x), xe = snap2(t.targetX), left = Math.min(xs, xe), tw = Math.abs(xe - xs), h = snap2(t.height), y0 = snap2(t.y - h / 2), dir = xe >= xs ? 1 : -1;
-    c.fillStyle = `rgba(${pal.fill},0.14)`; c.fillRect(left, y0, tw, h);
-    const cw = snap2(tw * p); c.fillStyle = `rgba(${pal.fill},${fillA})`; c.fillRect(dir > 0 ? xs : xs - cw, y0, cw, h);
-    c.strokeStyle = blink ? '#FFFFFF' : pal.stroke; c.setLineDash([8, 4]); c.strokeRect(left + 1, y0 + 1, tw - 2, h - 2); c.setLineDash([]);
-    c.fillStyle = blink ? '#FFFFFF' : pal.stroke;
-    const n = Math.max(1, Math.floor(tw / 70)), off = (G.t * 160) % 70;
-    for (let i = 0; i < n; i++) { const ax = snap2(xs + dir * (30 + i * 70 + off)); if ((ax - left) < 8 || (left + tw - ax) < 8) continue; const cy = snap2(t.y); c.beginPath(); c.moveTo(ax + dir * 10, cy); c.lineTo(ax - dir * 4, cy - 10); c.lineTo(ax - dir * 4, cy + 10); c.closePath(); c.fill(); }
-  } else if (t.kind === 'vertical_beam') {   // a column from the sky to the floor, thin aim line widening to the real width
+    const cw = snap2(tw * p), bx = dir > 0 ? xs : xs - cw, tipA = blink ? 1 : 0.9;
+    const drawn = tgDotBox(c, 'dash', left, y0, tw, h, pal.fill, 0.34, dir < 0)
+      && tgDotBox(c, 'dash', bx, y0, cw, h, pal.fill, (0.55 + 0.45 * p) * tipA, dir < 0);
+    if (!drawn) {   // 그림이 없을 때만 예전 캔버스 연출
+      c.fillStyle = `rgba(${pal.fill},0.14)`; c.fillRect(left, y0, tw, h);
+      c.fillStyle = `rgba(${pal.fill},${fillA})`; c.fillRect(dir > 0 ? xs : xs - cw, y0, cw, h);
+      c.strokeStyle = blink ? '#FFFFFF' : pal.stroke; c.setLineDash([8, 4]); c.strokeRect(left + 1, y0 + 1, tw - 2, h - 2); c.setLineDash([]);
+    }
+  } else if (t.kind === 'vertical_beam') {   // a pixel-art column from the sky to the floor, thin aim line widening to the real width
     const gy = t.gy != null ? t.gy : GROUND, fw = snap2(t.width), cw = snap2(Math.max(2, fw * (0.08 + 0.92 * p))), x0 = snap2(t.x - fw / 2), cx0 = snap2(t.x - cw / 2), top = t.top != null ? t.top : -200;
-    c.fillStyle = `rgba(${pal.fill},0.10)`; c.fillRect(x0, top, fw, gy - top);
-    c.fillStyle = `rgba(${pal.fill},${fillA})`; c.fillRect(cx0, top, cw, gy - top);
-    c.strokeStyle = blink ? '#FFFFFF' : pal.stroke; c.setLineDash([6, 4]); c.strokeRect(x0 + 1, top, fw - 2, gy - top); c.setLineDash([]);
-    c.fillStyle = pal.stroke; c.fillRect(x0, snap2(gy - 4), fw, 4);
+    const tall = gy - top, drawn = tgDotBox(c, 'beam', x0, top, fw, tall, pal.fill, 0.26)
+      && tgDotBox(c, 'beam', cx0, top, cw, tall, pal.fill, (0.55 + 0.45 * p) * (blink ? 1 : 0.9));
+    if (!drawn) {
+      c.fillStyle = `rgba(${pal.fill},0.10)`; c.fillRect(x0, top, fw, gy - top);
+      c.fillStyle = `rgba(${pal.fill},${fillA})`; c.fillRect(cx0, top, cw, gy - top);
+      c.strokeStyle = blink ? '#FFFFFF' : pal.stroke; c.setLineDash([6, 4]); c.strokeRect(x0 + 1, top, fw - 2, gy - top); c.setLineDash([]);
+      c.fillStyle = pal.stroke; c.fillRect(x0, snap2(gy - 4), fw, 4);
+    }
   } else if (t.kind === 'aim_ray') {   // dotted lines from where it fires, growing toward their full length
     c.strokeStyle = blink ? '#FFFFFF' : pal.stroke; c.lineWidth = p > 0.75 ? 3 : 2; c.setLineDash([6, 6]);
     const L = t.rayLength * (0.4 + 0.6 * p);
@@ -16072,12 +16127,21 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261124l',   // 2026-11-24 열두 번째 패치(GAME_VER '261124-1930'): 궁수 S 덫을 바닥에 붙임
+  id: '261124m',   // 2026-11-24 열세 번째 패치(GAME_VER '261124-2100'): 보스·전조·달을 주인공과 같은 도트체로
   title: '패치 노트',
-  sub: '궁수의 덫을 바닥에 딱 붙였다',
+  sub: '보스와 전조, 달을 같은 도트로 다시 그렸다',
   versions: [
     {
-      ver: '261124-1930', date: '2026-11-24', name: '궁수의 덫을 바닥에 붙임', cur: 1,
+      ver: '261124-2100', date: '2026-11-24', name: '도트체 확정 · 17장·29장 보스 새 그림', cur: 1,
+      items: [
+        { t: '전투', h: '17장 검선 청운이 새 그림으로 움직인다', p: '대기 8 · 이동 14 · 공격 16 · 사망 10 프레임을 새로 그렸다. 여섯 자루 부유검은 모든 동작에서 그대로 따라다니고, 프레임마다 몸 크기가 흔들리지 않게 발끝 높이를 240으로 고정했다.' },
+        { t: '전투', h: '29장 핏빛 월식 기사의 그림도 새로 그렸다', p: '검은 판금·붉은 망토·월식 문장은 그대로 두고 화풍만 주인공과 같은 도트체로 맞췄다. 뒤에 깔려 있던 남색 판때기도 사라졌다.' },
+        { t: '연출', h: '29장 개기월식 달을 픽셀아트 달로 바꿨다', p: '매끈한 원판 대신 점으로 찍은 달이 8단계로 그림자에 먹히며 개기일식이 된다. 달무리 빛은 그대로 남겼다.' },
+        { t: '전투', h: '돌진·기둥 전조가 도트 틀로 바뀐다', p: '바닥에 뜨던 매끈한 사각형 대신 금테 두른 도트 틀과 화살표로 예고한다. 전조 색(보통·위험·얼음·독·모래)은 그대로 구분된다.' },
+      ],
+    },
+    {
+      ver: '261124-1930', date: '2026-11-24', name: '궁수의 덫을 바닥에 붙임', cur: 0,
       items: [
         { t: '전투', h: '궁수 S 덫이 공중에 뜨지 않고 바닥에 딱 붙는다', p: '섬광 덫 그림이 캐릭터 발끝보다 한 뼘쯤 위에 떠 있던 것을 고쳤다. 이제 덫 룬 고리의 바닥이 캐릭터가 딛고 서는 지면선과 정확히 같은 높이에 놓인다.', q: '놓인 룬(1프레임)과 발동 연출(사슬 → 점화 → 포획 3프레임)이 모두 같은 지면선에 닿는다. 피해(공격력 300%)·기절 1.5초·무장 0.4초·유지 8초는 그대로다.' },
       ],
