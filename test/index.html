@@ -397,6 +397,15 @@ button{font-family:inherit;color:inherit}
 .frame.touch .tb.ult{box-shadow:inset 0 0 calc(var(--u)*9) rgba(226,190,120,.4)}
 .frame.touch .tb.leg{box-shadow:inset 0 0 calc(var(--u)*9) rgba(180,120,255,.4)}
 .frame.touch .tb:active{filter:brightness(1.3)}
+/* 2026-11-24 (user): 기술 버튼은 목업처럼 동그란 금테 원형 — 아이콘은 원 안에 꽉 차게(네모 테두리는 원 밖으로) */
+.frame.touch .tb.rnd{border-radius:50%;border:calc(var(--u)*2.6) solid #c9a253;background:radial-gradient(circle at 50% 32%,rgba(40,44,60,.96) 0%,rgba(14,16,26,.97) 58%,rgba(7,8,14,.99) 100%);
+  box-shadow:0 0 0 calc(var(--u)*1.1) rgba(14,10,4,.95),0 0 0 calc(var(--u)*2.2) rgba(122,96,42,.55),inset 0 0 calc(var(--u)*10) rgba(0,0,0,.78),0 calc(var(--u)*2.5) calc(var(--u)*7) rgba(0,0,0,.5)}
+.frame.touch .tb.rnd .tbi{inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;transform:scale(1.2)}
+.frame.touch .tb.rnd.big{border-width:calc(var(--u)*3.4);box-shadow:0 0 0 calc(var(--u)*1.3) rgba(14,10,4,.95),0 0 0 calc(var(--u)*2.8) rgba(150,118,52,.6),inset 0 0 calc(var(--u)*12) rgba(0,0,0,.8),0 calc(var(--u)*3) calc(var(--u)*9) rgba(0,0,0,.55)}
+.frame.touch .tb.rnd.ult{box-shadow:0 0 0 calc(var(--u)*1.1) rgba(14,10,4,.95),0 0 0 calc(var(--u)*2.2) rgba(122,96,42,.55),inset 0 0 calc(var(--u)*10) rgba(0,0,0,.78),inset 0 0 calc(var(--u)*9) rgba(226,190,120,.4)}
+.frame.touch .tb.rnd.leg{box-shadow:0 0 0 calc(var(--u)*1.1) rgba(14,10,4,.95),0 0 0 calc(var(--u)*2.2) rgba(122,96,42,.55),inset 0 0 calc(var(--u)*10) rgba(0,0,0,.78),inset 0 0 calc(var(--u)*9) rgba(180,120,255,.4)}
+.frame.touch .tb.rnd .kb{left:calc(var(--u)*-1);top:calc(var(--u)*-1);border-radius:50%;background:rgba(8,10,16,.92)}
+.frame.touch .tb.rnd .cdv{border-radius:0 0 calc(var(--u)*40) calc(var(--u)*40)}
 /* 왼쪽 아래: 원형 조이스틱(joy_base + joy_knob) */
 .frame.touch #joy{position:absolute;left:calc(var(--u)*20);top:calc(var(--u)*314);width:calc(var(--u)*176);height:calc(var(--u)*176);pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent;z-index:2}
 .frame.touch #joy .jb{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;pointer-events:none;-webkit-user-drag:none}
@@ -666,7 +675,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261124-1310';
+const GAME_VER = '261124-1420';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -5891,7 +5900,10 @@ function after(t, fn) { G.timers.push({ t, fn }); }
 /* ---- Physics ---- */
 const GRAV = 1900, MAXFALL = 960, JUMP = 760;
 const FOCUS_T = 10, FOCUS_CD = 25;   // 2026-11-24 (user): 궁수 '집중' — Shift로 10초 데미지 2배, 재사용 25초
-const DJ_TAN = Math.tan(Math.PI / 6), DJ_XK = 1.15;   // 2026-11-24 (user): 도적 이단 도약 = 30° 낮고 긴 탄도 (수평 = 점프력 x1.15, 수직 = 수평 x tan30)
+const DJ_TAN = Math.tan(Math.PI / 6), DJ_XK = 1.15 * 0.80;   // 2026-11-24 (user): 도적 이단 도약 = 30° 낮고 긴 탄도 (수평 = 점프력 x0.92, 수직 = 수평 x tan30)
+/* 2026-11-24 (user): 이단 도약의 총 수평 이동 거리를 1/3 줄인다 (484 → 약 322).
+   발사각 30° 비율은 그대로 두고 속도만 0.80배. 체공 0.60초·상승 48px 였던 기준에서
+   거리 = 속도 x (오르는 시간 + 떨어지는 시간) → 0.80배로 줄이면 769→615px/s, 484 → 약 323px (2/3). */
 function moveBody(b, dt) {
   const hw = b.w / 2, plats = G.map.plats;
   b.hitWall = false;
@@ -13555,13 +13567,16 @@ function chipHost(id) {
 function buildTouch() {
   const btn = d => '<div class="tb ' + (d[4] || '') + '" data-k="' + d[0] + '" style="' + mobAt(d[1], d[2], d[3]) + '">'
     + '<img class="tbi" src="' + mobBtnIcon(d[0]) + '" alt=""><span class="kb"></span><small></small><i class="cdv"></i><em class="cdt"></em></div>';
-  // 두 열 · 네 줄: 안쪽(Z, X, C, 궁극기 V) · 바깥(각성 A, S, D · 무기 기술 F)
-  const SK = [
-    ['z', 826, 470, 74, 'big'], ['x', 826, 396, 62, 'skill'], ['c', 826, 322, 62, 'skill'], ['kv', 826, 248, 62, 'skill ult'],
-    ['ka', 898, 470, 62, 'skill'], ['ks', 898, 396, 62, 'skill'], ['kd', 898, 322, 62, 'skill'], ['kf', 898, 248, 62, 'skill leg'],
-  ];
-  // 위 한 줄: 상호작용 · 이동기 · 가드 · 점프
-  const ACT = [['up', 530, 182, 58, 'act'], ['shift', 610, 182, 58, 'act'], ['guard', 690, 182, 58, 'act'], ['jump', 770, 182, 58, 'act']];
+  /* 부채꼴 엄지 호 (2026-11-24 사용자): 큰 Z 를 중심으로 세 겹의 호를 그린다.
+     안쪽 호 X·C·V → 바깥 호 A·S·D·F(무기 기술 포함) → 최외곽 호 상호작용·Shift·가드·점프.
+     칸은 모두 원형(금테)이고, 원끼리도 사각 BoundingBox끼리도 겹치지 않게 각도를 잡았다 (844×390·932×430 확인). */
+  const ARC = (R, a) => { const t = a * Math.PI / 180; return [900 + R * Math.cos(t), 486 - R * Math.sin(t)]; };
+  const ring = (R, s, list) => list.map(([k, a, cls]) => { const c = ARC(R, a); return [k, c[0], c[1], s, cls]; });
+  const SK = [['z', 900, 486, 76, 'big rnd']]
+    .concat(ring(112, 58, [['kv', 96, 'skill ult rnd'], ['c', 141, 'skill rnd'], ['x', 186, 'skill rnd']]))
+    .concat(ring(198, 58, [['kf', 95, 'skill leg rnd'], ['kd', 119, 'skill rnd'], ['ks', 143, 'skill rnd'], ['ka', 167, 'skill rnd']]))
+    .concat(ring(270, 52, [['jump', 91, 'act'], ['guard', 106, 'act'], ['shift', 121, 'act'], ['up', 136, 'act']]));
+  const ACT = [];   // 동작 버튼도 최외곽 호로 들어갔다 (아래 ring 270)
   // 조이스틱 위: 연고 · 귀환
   const QK = [['pot', 74, 250, 64, 'act qk'], ['scroll', 146, 250, 64, 'act qk']];
   $('#touch').innerHTML = '<div id="joy"><img class="jb" src="assets/ui/joy_base.png" alt=""><img class="jk" id="joyKnob" src="assets/ui/joy_knob.png" alt=""></div>'
@@ -15893,12 +15908,32 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261124d',   // 2026-11-24 네 번째 패치(GAME_VER '261124-1310'): 휴대폰 화면 전용 조작(원형 조이스틱 · 두 줄 기술 · 접이식 메뉴)
+  id: '261124e',   // 2026-11-24 다섯 번째 패치(GAME_VER '261124-1420'): 원형 부채꼴 기술 버튼 · 도적·마법사 조정 · 랜덤 상자 타격감
   title: '패치 노트',
-  sub: '휴대폰 조작 새 단장 · 원형 조이스틱 · 기술 여덟 개를 두 줄로',
+  sub: '동그란 부채꼴 기술 버튼 · 상자 타격감 · 도적과 마법사 조정',
   versions: [
     {
-      ver: '261124-1310', date: '2026-11-24', name: '휴대폰 화면 전용 조작 — 조이스틱 · 두 줄 기술 · 접이식 메뉴', cur: 1,
+      ver: '261124-1420', date: '2026-11-24', name: '동그란 기술 버튼 · 상자 타격감 · 도적·마법사 조정', cur: 1,
+      items: [
+        { t: 'UI', h: '기술 버튼이 동그란 부채꼴 호로',
+          p: '휴대폰 기술 버튼이 금테를 두른 동그란 모양이 됐다. 오른쪽 아래 큰 Z(평타)를 중심으로 안쪽 호에 X·C, 그 위 궁극기(V), 바깥 호에 A·S·D와 무기 기술(F)이 부채꼴로 늘어서고, 가장 바깥 호에 상호작용(↑)·이동기·가드·점프가 자리잡는다.',
+          q: '아이폰 가로 화면 두 가지 크기(844×390 · 932×430)에서 버튼이 서로 겹치지 않는 것을 확인했다. 컴퓨터 화면은 그대로다.' },
+        { t: '보상', h: '상자 타격감 — 이제 상자가 잘 보인다',
+          p: '랜덤 상자를 1.3배 큼직하게 키우고, 스폰되면 티어 색 후광이 번진다. 때리는 동안 화면 위 중앙에 [황금 상자 95 / 180타] 같은 전용 게이지가 뜨고 맞을 때마다 바가 출렁인다.',
+          q: '상자 위 게이지와 남은 타수는 스킬 이펙트보다 위에 그려져 절대 가려지지 않고, 티어 색 얇은 윤곽선이 이펙트 위에 남아 실루엣이 보인다. 때리면 -1과 N HIT!가 톡톡 튀고, 50% 반파 순간에 깨지는 소리와 흔들림이 난다.' },
+        { t: '전투', h: '도적 이단 도약 거리를 1/3 줄였다',
+          p: '도적의 공중 2단 점프가 30도 낮은 각도 그대로, 나아가는 거리만 예전의 2/3(약 484 → 322)로 줄었다.',
+          q: '상승 높이도 함께 낮아지지만 30도 비율은 그대로다.' },
+        { t: '전투', h: '도적 X 스택이 맵을 넘어도 그대로',
+          p: '그림자 걸음의 남은 횟수(두 칸)가 보스 클리어 후 다음 장·야영지로 넘어갈 때 가득 찬 두 칸으로 되살아나던 문제를 고쳤다. 이제 남은 횟수와 차오르는 시간을 그대로 들고 가고, 화면의 숫자도 실제 남은 횟수와 똑같이 맞춰진다.',
+          q: '화면을 다시 열거나 잠깐 꺼 두었다 돌아와도 남은 횟수가 유지된다.' },
+        { t: '전투', h: '마법사 Z 부메랑 사거리 절반',
+          p: '마법사 평타 Z(공허 탄환)가 나아가는 가로 거리가 절반(약 503 → 253)이 됐다. 돌아오는 곡선은 그대로 부드럽다.',
+          q: 'Z 칸의 남은 시간도 회전/복귀 글자 대신 다른 기술처럼 초 숫자(1.1 · 0.6)로 줄어든다.' },
+      ],
+    },
+    {
+      ver: '261124-1310', date: '2026-11-24', name: '휴대폰 화면 전용 조작 — 조이스틱 · 두 줄 기술 · 접이식 메뉴',
       items: [
         { t: 'UI', h: '휴대폰으로 열면 조작 화면이 새로 짜인다',
           p: '휴대폰으로 열면 조작 화면이 통째로 새로 짜인다. 컴퓨터로 열 때의 화면과 조작은 하나도 달라지지 않는다.',
@@ -16855,7 +16890,8 @@ function mageStartAct(id, as) {
 function mageVoidBolt(mult, o) {
   const p = G.player, f = p.face || 1;
   if (!o.pierce) {   // [S5-2] 2026-11-23 (user): 법사 평타 = 부메랑. 몸 앞에서 시작해 돌아온다(왕복 2타)
-    proj({ x: p.x + f * 12, y: p.y - 54, vx: f * 470, w: 46, h: 36, mult: mult * MAGE_DMG_K, kind: 'void', maxDist: 420, life: 1.8, boomer: true, retK: 1.4, rsp: 470 * 1.4, home: 1, pick: 26, pierce: true, mageB: 1, basic: true, mfx: { i: 0, t: 0 } });   // [S5-4] 2026-11-23 (user): 돌아올 때 1.4배 · 캐릭터 중앙으로 회수 · 몹 관통
+    proj({ x: p.x + f * 12, y: p.y - 54, vx: f * 470, w: 46, h: 36, mult: mult * MAGE_DMG_K, kind: 'void', maxDist: 210, life: 1.8, boomer: true, retK: 1.4, rsp: 470 * 1.4, home: 1, pick: 26, pierce: true, mageB: 1, basic: true, mfx: { i: 0, t: 0 } });   // [S5-4] 2026-11-23 (user): 돌아올 때 1.4배 · 캐릭터 중앙으로 회수 · 몹 관통
+    /* 2026-11-24 (user): 가로 사거리 절반 — 이 블록은 아래 곡선형 부메랑으로 대체되어 실제로는 OUT_DIST(150) 를 쓴다 */
     mageImg('void_bolt'); sfx('void'); return;
   }
   proj({ x: p.x + f * 28, y: p.y - 54, vx: f * (o.speed || 520), w: o.pierce ? 44 : 40, h: 36, mult: mult * MAGE_DMG_K, kind: 'void', maxDist: 520, life: 1.2,
@@ -22563,11 +22599,40 @@ startAct = function (id) {
 /* 충전형: X 최대 2회. 한 칸이 차는 시간 = 원래 X 재사용 대기(4.5초 x 특성·쿨감 그대로). 남은 횟수가 있으면 0.2초 뒤 바로 다시 쓸 수 있고,
    0회일 때만 버튼이 어두워지며 다음 칸까지 남은 시간이 보인다. 게임의 p.cd.x 를 매 틱 이 값으로 맞춘다 (X 입력 판정은 그대로 cd.x <= 0). */
 const LY_CH = { max: 2, gap: 0.2 };
-function lyCh() { if (!G.lyCh || G.lyCh.save !== G.save) G.lyCh = { save: G.save, q: LY_CH.max, t: 0, full: 4.5, gap: 0 }; return G.lyCh; }
+/* 2026-11-24 (user) 버그 수정: 클리어 후 맵을 넘어갈 때 X 스택이 2로 되살아나던 문제.
+   원인은 두 가지였다.
+   (1) lyCh() 가 세이브 객체(G.save)가 바뀌면 상태를 **새로 만들어 q=2** 로 돌리던 것 — 세이브가 다시 읽히는 순간(화면 재로딩·다른 곳에서 startGame)
+       남은 스택과 충전 타이머가 사라지고 가득 찬 2로 보였다. 이제 세이브에 남긴 값(s.lyCh)을 이어받는다.
+   (2) 맵을 넘어간 뒤 HUD 배지(lyq)·터치 쿨타임 글이 이전 프레임 값을 그대로 들고 있어 실제 스택과 어긋났다.
+       맵을 읽을 때 lyChSync() 로 값을 다듬고(0~2, 타이머 0~full) p.cd 에 다시 앉히고 배지를 강제로 다시 그린다. */
+function lyCh() {
+  if (!G.lyCh || G.lyCh.save !== G.save) {
+    const sv = (G.save && G.save.lyCh) || null, keep = G.lyCh && G.lyCh.save !== G.save ? G.lyCh : null;   // 세이브가 바뀌어도 남은 스택은 들고 간다
+    G.lyCh = { save: G.save,
+      q: sv && sv.q != null ? clamp(Math.round(sv.q), 0, LY_CH.max) : keep ? clamp(Math.round(keep.q), 0, LY_CH.max) : LY_CH.max,
+      t: sv && sv.t > 0 ? sv.t : keep && keep.t > 0 ? keep.t : 0,
+      full: sv && sv.full > 0 ? sv.full : keep && keep.full > 0 ? keep.full : 4.5, gap: 0 };
+    if (G.lyCh.q >= LY_CH.max) G.lyCh.t = 0;
+  }
+  return G.lyCh;
+}
 function lyChApply(p) { const S = lyCh(); p.cdMax.x = S.q > 0 ? Math.max(LY_CH.gap, 0.01) : S.full; p.cd.x = S.q > 0 ? S.gap : S.t; }
 function lyChUse(p) {
   const S = lyCh(); if (p.cd.x > 0.5) S.full = p.cd.x;   // what the game just set for this cast (traits, cooldown reduction)
-  S.q = Math.max(0, S.q - 1); if (S.t <= 0) S.t = S.full; S.gap = LY_CH.gap; lyChApply(p);
+  S.q = Math.max(0, S.q - 1); if (S.t <= 0) S.t = S.full; S.gap = LY_CH.gap; lyChApply(p); lyChSave();
+}
+function lyChSave() { if (!G.save || !G.lyCh || G.save.char !== 'lykos') return; const o = G.save.lyCh || (G.save.lyCh = {}); o.q = G.lyCh.q; o.t = Math.round(G.lyCh.t * 100) / 100; o.full = Math.round(G.lyCh.full * 100) / 100; }
+/* 맵을 넘어올 때 한 번: 값이 범위를 벗어나 있으면 다듬고, 게임의 쿨타임과 HUD 글자를 실제 스택에 맞춘다 */
+function lyChSync() {
+  if (!G.save || G.save.char !== 'lykos') return;
+  const S = lyCh(), p = G.player;
+  S.q = clamp(Math.round(S.q) || 0, 0, LY_CH.max);
+  S.full = S.full > 0 ? S.full : 4.5;
+  S.t = S.q >= LY_CH.max ? 0 : clamp(S.t || 0, 0, S.full);
+  S.gap = 0;
+  if (p) lyChApply(p);
+  HUDC.lyq = -1; HUDC.tbx = undefined; HUDC.ttx = undefined;   // 배지·쿨타임 글 강제 갱신
+  lyChBadge(); lyChSave();
 }
 function lyChTick(dt) {
   const p = G.player; if (!p || !G.save || G.save.char !== 'lykos') return;
@@ -22575,6 +22640,7 @@ function lyChTick(dt) {
   if (G.devNoCd) { S.q = LY_CH.max; S.t = 0; }
   if (S.q < LY_CH.max) { S.t -= dt; if (S.t <= 0) { S.q++; S.t = S.q < LY_CH.max ? S.full : 0; } }
   lyChApply(p);
+  lyChSave();
 }
 function lyChBadge() {
   const on = !!(G.save && G.save.char === 'lykos'), q = on ? lyCh().q : -1;
@@ -22590,6 +22656,12 @@ const _updateHudLy = updateHud;
 updateHud = function () { const r = _updateHudLy.apply(this, arguments); try { lyChBadge(); } catch (e) { } return r; };
 const _updateSkillsLy = updateSkills;
 updateSkills = function (dt) { const r = _updateSkillsLy.apply(this, arguments); lyShadeTick(dt); lyChTick(dt); return r; };
+/* 맵(포탈·다음 장·야영지·보스 클리어 귀환)을 넘어올 때마다 스택을 실제 상태로 맞춘다 */
+const _loadMapLyCh = loadMap;
+loadMap = function (...a) { const r = _loadMapLyCh(...a); try { lyChSync(); } catch (e) { console.warn('[lyCh]', e); } return r; };
+/* 화면을 다시 열었을 때(아이폰이 백그라운드 탭을 다시 읽는 경우)도 세이브에 남긴 스택을 이어받는다 */
+const _startGameLyCh = startGame;
+startGame = function (...a) { const r = _startGameLyCh(...a); try { G.lyCh = null; lyChSync(); } catch (e) { } return r; };
 const _playerFigLy = playerFig;
 playerFig = function () { try { lyShadeDraw(ctx); } catch (e) { } return _playerFigLy.apply(this, arguments); };   // behind the hero
 const _renderWorldLy = renderWorld;
@@ -23864,7 +23936,9 @@ mageVoidBolt = function (mult, o) {
     pierce: true, mageB: 1, basic: true, mfx: { i: 0, t: 0 }, bph: 'out', bT: 0, bA: f > 0 ? 0 : Math.PI, bSp: 470, bLa: 0, pick: 26 });
   mageImg('void_bolt'); sfx('void');
 };
-const OUT_DIST = 400, TURN_T = 0.16;
+/* 2026-11-24 (user): 마법사 Z 부메랑 가로 사거리를 절반으로. 탄이 몸 앞에서 조금 떨어져 시작해 꺾이기 전까지 더 흘러가므로,
+   화면에서 보이는 최대 도달 거리가 예전 503px → 약 253px(절반)이 되도록 나가는 기준 거리를 400 → 150 으로 잡았다 (실측 확인). */
+const OUT_DIST = 150, TURN_T = 0.16;
 function boomerTick(dt) {
   const p = G.player;
   for (const q of G.projs) {
@@ -23922,7 +23996,13 @@ drawProjs = function (c) {
 /* 첫 X 시전에 그림이 늦게 뜨지 않게 시작할 때 미리 받아 둔다 */
 const _startGameX = startGame;
 startGame = function (...a) { const r = _startGameX(...a); try { if (G.save && G.save.char === 'mage') mageImg('x_bolt'); for (const k in CHEST_FILES) chestImg(k); } catch (e) { } return r; };
-/* HUD: 탄이 살아 돌아오는 동안 Z 칸에 오버레이(회전/복귀와 남은 비율) */
+/* HUD: 탄이 살아 돌아오는 동안 Z 칸에 오버레이. 2026-11-24 (user): '회전'/'복귀' 글자 대신 다른 기술처럼 남은 예상 시간(초)을 숫자로 센다.
+   나갈 때 = 남은 거리 / 나가는 속도, 돌아올 때 = 캐릭터까지 거리 / 돌아오는 속도(1.4배). 0.1초 단위로 줄어드는 것을 그대로 보여 준다. */
+function mageBoltLeft(q) {
+  if (!q) return 0;
+  if (q.bph === 'out') return Math.max(0, (OUT_DIST - (q.dist || 0)) / (q.bSp || 470));
+  return Math.hypot(G.player.x - q.x, (G.player.y - G.player.h / 2) - q.y) / (q.bSp || 658);
+}
 const _updateHud8 = updateHud;
 updateHud = function (force) {
   const r = _updateHud8(force);
@@ -23931,14 +24011,19 @@ updateHud = function (force) {
       const el = document.getElementById('sk0'); if (!el) return r;
       const q = G.projs.find(x => x.mageB && !x.dead);
       const cd = el.querySelector('.cd'), ct = el.querySelector('.ct');
+      const tb = document.querySelector('#touch .tb[data-k="z"]');
       if (q) {
         const left = q.bph === 'out' ? clamp(1 - q.dist / OUT_DIST, 0, 1) : clamp(Math.hypot(G.player.x - q.x, (G.player.y - G.player.h / 2) - q.y) / 420, 0.06, 1);
         if (cd) cd.style.height = Math.round(left * 100) + '%';
-        if (ct) ct.textContent = q.bph === 'out' ? '회전' : '복귀';
+        const sec = mageBoltLeft(q), h = (left * 100).toFixed(0) + '%', txt = sec > 0.05 ? sec.toFixed(1) : '';
+        if (HUDC.mzt !== txt) { HUDC.mzt = txt; if (ct) ct.textContent = txt; }
+        if (tb) { const v = tb.querySelector('.cdv'), t2 = tb.querySelector('.cdt'); if (v && HUDC.mzbv !== h) { HUDC.mzbv = h; v.style.height = h; } if (t2 && HUDC.mzbt !== txt) { HUDC.mzbt = txt; t2.textContent = txt; } }
         el.classList.add('cool');
-      } else if ((ct && (ct.textContent === '회전' || ct.textContent === '복귀'))) {
+      } else if (HUDC.mzt !== undefined && HUDC.mzt !== '') {
+        HUDC.mzt = ''; HUDC.mzbv = '0%'; HUDC.mzbt = '';
         if (cd) cd.style.height = '0%';
         if (ct) ct.textContent = '';
+        if (tb) { const v = tb.querySelector('.cdv'), t2 = tb.querySelector('.cdt'); if (v) v.style.height = '0%'; if (t2) t2.textContent = ''; }
         el.classList.remove('cool');
       }
     }
@@ -24144,9 +24229,10 @@ function fieldSpot(m) {
 }
 function spawnBox(m) {
   const T = boxTierPick(), x = fieldSpot(m); if (x == null) return null;
-  const b = { tid: BOX_TIERS.indexOf(T), tier: T, x, need: rndi(T.hits[0], T.hits[1]), hits: 0, bounce: 0, flash: 0, open: 0, ch: m.ch || 1 };
+  const b = { tid: BOX_TIERS.indexOf(T), tier: T, x, need: rndi(T.hits[0], T.hits[1]), hits: 0, bounce: 0, flash: 0, open: 0, ch: m.ch || 1, spawnT: G.t, hitAt: -99, half: 0 };
   G.boxes.push(b);
-  G.gimT.push({ rbox: b, x, y: GROUND, w: 44, h: 40, hp: 1e9, mhp: 1e9, d: { def: 0 }, st: 'idle', onHit: (e, dmg, o) => boxHit(b) });   // e.box 는 보스 패턴 것이라 이름을 다르게
+  /* 2026-11-24 (user): 상자를 1.3배 큼직하게 — 그림 60×45 → 78×58, 판정 44×40 → 57×52 */
+  G.gimT.push({ rbox: b, x, y: GROUND, w: 57, h: 52, hp: 1e9, mhp: 1e9, d: { def: 0 }, st: 'idle', onHit: (e, dmg, o) => boxHit(b) });   // e.box 는 보스 패턴 것이라 이름을 다르게
   return b;
 }
 function spawnShrine(m) {
@@ -24164,14 +24250,23 @@ function fieldObjects(m) {
   if (Math.random() < SHRINE_CHANCE && !(scd[m.id] != null && G.playT - scd[m.id] < SHRINE_CD)) { if (spawnShrine(m)) scd[m.id] = G.playT; }
 }
 /* ---- 상자 ---- */
+/* 2026-11-24 (user) 타격감: 일반 데미지 숫자 대신 '-1' 타수 팝업이 톡톡 튀고, 다섯 번마다 'N HIT!', 50%(반파) 순간엔 경쾌한 깨짐 소리와 흔들림 */
 function boxHit(b) {
   if (b.open) return;
-  b.hits++; b.bounce = 1; b.flash = 0.1;
+  b.hits++; b.bounce = 1; b.flash = 0.1; b.hitAt = G.t;
   sfx('boxhit');
-  const T = b.tier;
-  spark(b.x, GROUND - 16, 5, T.glow, 150);
+  const T = b.tier, bx = GROUND - 96;   // 상자 위 게이지·숫자보다 더 위에서 톡톡 튀어 오른다
+  const pop = (txt, size, dy) => { if (G.save && G.save.opt && G.save.opt.nums === false) return; G.nums.push({ x: b.x + (Math.random() < 0.5 ? -1 : 1) * rnd(8, 22), y: bx + (dy || 0), text: txt, col: '#fff3d6', size: size, t: 0, box: 1 }); };
+  /* 티어 색 파편·반짝이 */
+  spark(b.x, GROUND - 24, 6, T.glow, 190);
+  for (let i = 0; i < 4; i++) addPart({ x: b.x + rnd(-24, 24), y: GROUND - rnd(18, 52), vx: rnd(-90, 90), vy: rnd(-190, -60), g: 520, life: rnd(.25, .55), r: rnd(1.6, 3.2), col: T.glow, glow: 1 });
+  if (b.hits % 5 === 0) pop(b.hits + ' HIT!', 18, -6); else pop('-1', 13, 4);
+  if (!b.half && b.hits / b.need >= 0.5) {
+    b.half = 1; sfx('boxbreak'); shake(3.2);
+    for (let i = 0; i < 14; i++) addPart({ x: b.x + rnd(-30, 30), y: GROUND - rnd(10, 54), vx: rnd(-160, 160), vy: rnd(-260, -70), g: 620, life: rnd(.4, .8), r: rnd(1.8, 3.6), col: T.glow, glow: 1 });
+    numPop(b.x, GROUND - 76, '반파!', '#' + 'ffd06a', 15);
+  }
   if (b.hits >= b.need) boxOpen(b);
-  else if (b.hits % 25 === 0) numPop(b.x, GROUND - 46, b.hits + ' / ' + b.need, '#' + 'fff0c0', 13);
 }
 function boxOpen(b) {
   b.open = 1; b.bounce = 1;
@@ -24205,17 +24300,24 @@ function chestImg(id) {
   if (im.decode) im.decode().catch(() => { });
   return (CHEST_IMG[id] = im);
 }
+const BOX_W = 78, BOX_H = 58;   // 2026-11-24 (user): 60×45 의 약 1.3배 — 더 큼직하고 눈에 띄게
 function drawBoxes(c, cam) {
   for (const b of G.boxes) {
     if (b.x < cam.x - 80 || b.x > cam.x + W + 80) continue;
     const T = b.tier, x = Math.round(b.x), base = GROUND;
     const k = b.bounce > 0 ? 1 + 0.12 * Math.sin(Math.min(1, b.bounce) * Math.PI) : 1;   // 때리면 살짝 커졌다 작아진다
     const bob = b.open ? 0 : Math.sin(G.t * 2.4 + b.x * 0.01) * 1.2;
-    c.save(); c.globalCompositeOperation = 'lighter';   // 은은한 빛
-    const gl = c.createRadialGradient(x, base - 22, 2, x, base - 22, 52);
-    gl.addColorStop(0, `rgba(${T.glow},.20)`); gl.addColorStop(1, 'rgba(0,0,0,0)');
-    c.fillStyle = gl; c.fillRect(x - 52, base - 74, 104, 92); c.restore();
-    const img = chestImg(T.id), w = 60, h = 45;
+    const fresh = clamp(1 - (G.t - (b.spawnT || -9)) / 2.6, 0, 1);   // 스폰 직후엔 후광이 더 크게 번진다
+    c.save(); c.globalCompositeOperation = 'lighter';   // 티어 색 후광 (스폰 직후 강조)
+    const R = 62 + fresh * 26;
+    const gl = c.createRadialGradient(x, base - 28, 2, x, base - 28, R);
+    gl.addColorStop(0, `rgba(${T.glow},${(0.24 + fresh * 0.3).toFixed(2)})`); gl.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = gl; c.fillRect(x - R, base - 28 - R, R * 2, R * 2);
+    const gp = c.createRadialGradient(x, base, 1, x, base, R * 0.9);   // 바닥에 깔리는 빛
+    gp.addColorStop(0, `rgba(${T.glow},${(0.20 + fresh * 0.18).toFixed(2)})`); gp.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = gp; c.save(); c.translate(x, base); c.scale(1, 0.3); c.beginPath(); c.arc(0, 0, R * 0.9, 0, 6.283); c.fill(); c.restore();
+    c.restore();
+    const img = chestImg(T.id), w = BOX_W, h = BOX_H;
     c.save(); c.translate(x, base + bob); c.scale(k, k); c.imageSmoothingEnabled = false;
     if (img && img.complete && img.naturalWidth) {
       /* 상자 그림: 3프레임 가로 스트립(384×128, 셀 128)이 오면 0=닫힘 / 1=반쯤 열림(타수 50% 이상 또는 맞는 순간) / 2=부서짐.
@@ -24236,10 +24338,34 @@ function drawBoxes(c, cam) {
       if (b.flash > 0) { c.globalAlpha = Math.min(0.85, b.flash * 8); c.fillStyle = '#fff'; c.fillRect(-ww / 2, -hh, ww, hh); c.globalAlpha = 1; }
     }
     c.restore();
-    if (!b.open) {   // 남은 타수 게이지
-      const bw = 34, y0 = base - h - 10, kk = clamp(b.hits / b.need, 0, 1);
-      c.fillStyle = 'rgba(8,8,12,.72)'; c.fillRect(Math.round(x - bw / 2) - 1, Math.round(y0) - 1, bw + 2, 5);
-      c.fillStyle = `rgba(${T.glow},.95)`; c.fillRect(Math.round(x - bw / 2), Math.round(y0), Math.round(bw * kk), 3);
+  }
+}
+/* 2026-11-24 (user): 상자 게이지·남은 타수·윤곽선은 스킬 이펙트(lighter 포함) **위** 최상단 레이어에 그린다 — 이펙트가 덮어도 실루엣과 게이지가 보인다 */
+function drawBoxesTop(c, cam) {
+  for (const b of G.boxes) {
+    if (b.x < cam.x - 90 || b.x > cam.x + W + 90) continue;
+    const T = b.tier, x = Math.round(b.x), base = GROUND;
+    const k = b.bounce > 0 ? 1 + 0.12 * Math.sin(Math.min(1, b.bounce) * Math.PI) : 1;
+    const bob = b.open ? 0 : Math.sin(G.t * 2.4 + b.x * 0.01) * 1.2;
+    const w = BOX_W * k, h = BOX_H * k, top = base + bob - h;
+    /* 티어 색 얇은 글로우 윤곽선 — 이펙트가 겹쳐도 상자 모양이 남는다 */
+    c.save(); c.globalCompositeOperation = 'lighter';
+    const pulse = 0.34 + 0.16 * Math.sin(G.t * 3.4 + b.x * 0.02);
+    c.strokeStyle = `rgba(${T.glow},${pulse.toFixed(2)})`; c.lineWidth = 2;
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x - w / 2 - 2, top - 2, w + 4, h + 4, 5); else c.rect(x - w / 2 - 2, top - 2, w + 4, h + 4);
+    c.stroke();
+    c.strokeStyle = `rgba(${T.glow},${(pulse * 0.5).toFixed(2)})`; c.lineWidth = 5; c.stroke();
+    c.restore();
+    if (!b.open) {   // 남은 타수 게이지 + 숫자 (최상단)
+      const bw = 46, y0 = Math.round(top - 18), kk = clamp(b.hits / b.need, 0, 1);
+      c.fillStyle = 'rgba(8,8,12,.78)'; c.fillRect(Math.round(x - bw / 2) - 1, y0 - 1, bw + 2, 6);
+      c.fillStyle = `rgba(${T.glow},.98)`; c.fillRect(Math.round(x - bw / 2), y0, Math.round(bw * kk), 4);
+      c.strokeStyle = `rgba(${T.glow},.55)`; c.lineWidth = 1; c.strokeRect(Math.round(x - bw / 2) - 1.5, y0 - 1.5, bw + 3, 7);
+      c.font = `700 11px 'Noto Sans KR',sans-serif`; c.textAlign = 'center';
+      c.strokeStyle = 'rgba(0,0,0,.9)'; c.lineWidth = 3;
+      const txt = b.hits + ' / ' + b.need;
+      c.strokeText(txt, x, y0 - 5); c.fillStyle = '#fff3d2'; c.fillText(txt, x, y0 - 5);
     }
   }
 }
@@ -24321,6 +24447,9 @@ const _loadMapE = loadMap;
 loadMap = function (...a) { const r = _loadMapE(...a); try { fieldObjects(G.map); } catch (e) { console.warn('[field]', e); } return r; };
 const _drawPropsE = drawProps;
 drawProps = function (c, cam) { const r = _drawPropsE(c, cam); try { drawShrines(c, cam); drawBoxes(c, cam); } catch (e) { } return r; };
+/* 맨 마지막(스킬·파티클 레이어 다음)에 상자 윤곽선과 게이지를 한 번 더 그린다 */
+const _drawPartsE = drawParts;
+drawParts = function (c) { const r = _drawPartsE(c); try { drawBoxesTop(c, G.cam); } catch (e) { } return r; };
 /* 상호작용: 제단은 ↑ (원래 updateInteract 는 포탈·NPC·줍기만 본다) */
 updateInteract = function () {
   const p = G.player, m = G.map;
@@ -24341,7 +24470,42 @@ interact = function (it) { if (it && it.type === 'shrine') return shrineUse(it.o
 const _updateSkillsE = updateSkills;
 updateSkills = function (dt) { _updateSkillsE(dt); blessTick(dt); };
 const _updateHudE = updateHud;
-updateHud = function (f) { const r = _updateHudE(f); try { blessHud(); } catch (e) { } return r; };
+updateHud = function (f) { const r = _updateHudE(f); try { blessHud(); boxHud(); } catch (e) { } return r; };
+/* 2026-11-24 (user): 상자를 치는 동안 화면 상단 중앙(보스 HP바 자리)에 티어 색 전용 게이지 — 맞을 때마다 바가 출렁인다 */
+const BOX_BAR_CSS = `<style>
+#boxbar{position:absolute;left:50%;top:calc(var(--u)*9);transform:translateX(-50%);width:calc(var(--u)*340);display:none;text-align:center;pointer-events:none;z-index:13}
+#boxbar.on{display:block}
+#boxbar .bbh{display:flex;align-items:baseline;justify-content:center;gap:calc(var(--u)*9);text-shadow:0 2px 6px #000}
+#boxbar .bbh b{font-family:var(--font-display);font-weight:700;font-size:max(12px,calc(var(--u)*19));letter-spacing:.05em;color:var(--bb1,#ffd98a)}
+#boxbar .bbh span{font-variant-numeric:tabular-nums;font-weight:700;font-size:max(11px,calc(var(--u)*16));color:#fff9e8}
+#boxbar .bbt{position:relative;height:calc(var(--u)*15);margin-top:calc(var(--u)*4);background:rgba(6,7,12,.82);border:calc(var(--u)*1.6) solid rgba(0,0,0,.92);border-radius:calc(var(--u)*3);overflow:hidden;box-shadow:0 0 0 calc(var(--u)*1) rgba(255,255,255,.2),inset 0 0 calc(var(--u)*8) rgba(0,0,0,.85),0 0 calc(var(--u)*10) rgba(0,0,0,.5);transform-origin:50% 60%}
+#boxbar .bbt>i{display:block;height:100%;width:0%;background:linear-gradient(180deg,var(--bb1,#ffd98a),var(--bb2,#8a5a2e));box-shadow:0 0 calc(var(--u)*9) var(--bb1,#ffd98a);transition:width .1s linear}
+#boxbar .bbt>u{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0) 56%)}
+#boxbar.wob .bbt{animation:bbwob .24s ease-out}
+@keyframes bbwob{0%{transform:scale(1.02,.55)}40%{transform:scale(1,1.3)}72%{transform:scale(1,.94)}100%{transform:none}}
+</style>`;
+function boxHud() {
+  let el = document.getElementById('boxbar');
+  if (!el) {
+    if (!document.getElementById('game')) return;
+    document.head.insertAdjacentHTML('beforeend', BOX_BAR_CSS);
+    el = document.createElement('div'); el.id = 'boxbar';
+    el.innerHTML = '<div class="bbh"><b></b><span></span></div><div class="bbt"><i></i><u></u></div>';
+    document.getElementById('game').appendChild(el);
+  }
+  const live = G.boxes.filter(x => !x.open && G.t - (x.hitAt || -99) < 2.6).sort((a, b) => (b.hitAt || 0) - (a.hitAt || 0));
+  const b = G.scene === 'play' && live.length ? live[0] : null;
+  if (!b) { if (el.classList.contains('on')) el.classList.remove('on'); el.dataset.hits = ''; return; }
+  const T = b.tier, pct = Math.round(clamp(b.hits / b.need, 0, 1) * 1000) / 10;
+  el.style.setProperty('--bb1', 'rgb(' + T.glow + ')'); el.style.setProperty('--bb2', T.body);
+  const h = el.querySelector('.bbh b'), s = el.querySelector('.bbh span'), i = el.querySelector('.bbt>i');
+  if (h.textContent !== T.name) h.textContent = T.name;
+  const txt = b.hits + ' / ' + b.need + '타';
+  if (s.textContent !== txt) s.textContent = txt;
+  i.style.width = pct + '%';
+  if (el.dataset.hits !== String(b.hits)) { el.dataset.hits = String(b.hits); el.classList.remove('wob'); void el.offsetWidth; el.classList.add('wob'); }
+  el.classList.add('on');
+}
 /* 소리: 새 이름은 합성음으로 (파일이 없어도 난다) */
 const _sfxE = sfx;
 sfx = function (n, a) {
@@ -24349,6 +24513,7 @@ sfx = function (n, a) {
   if (n === 'xbolt') { tone(300, 0.16, 'sawtooth', 0.08, 900); noise(0.14, 0.05, 'bandpass', 1400, 500, 1.2); return; }
   if (n === 'boxhit') { tone(220 + Math.random() * 60, 0.06, 'square', 0.06, 160); noise(0.05, 0.05, 'lowpass', 900, 300, 1); return; }
   if (n === 'boxopen') { tone(523, 0.12, 'triangle', 0.09, 784, 0); tone(784, 0.18, 'triangle', 0.09, 1046, 0.1); tone(1046, 0.3, 'sine', 0.08, 1318, 0.2); return; }
+  if (n === 'boxbreak') { noise(0.13, 0.18, 'bandpass', 2600, 700, 1.3); tone(300, 0.1, 'square', 0.1, 110); tone(920, 0.22, 'triangle', 0.08, 1400, 0.02); return; }   // 50% 반파: 짧게 깨지는 소리
   if (n === 'shrine') { tone(392, 0.4, 'sine', 0.09, 587); tone(587, 0.5, 'sine', 0.07, 784, 0.12); noise(0.5, 0.03, 'highpass', 3000, 1200, 1); return; }
   return _sfxE(n, a);
 };
