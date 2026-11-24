@@ -692,7 +692,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261124-2100';
+const GAME_VER = '261124-2240';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -10773,7 +10773,7 @@ function drawHaz(c) {
     const warm = h.t < h.warn, k = clamp(h.t / h.warn, 0, 1);
     if (h.beam) {   // a line attack: blinking dotted line, then a wide beam
       if (warm) { const on = Math.floor(h.t * (6 + 12 * k)) % 2 === 0, L = Math.hypot(h.x1 - h.x0, h.y1 - h.y0), n = Math.max(1, Math.floor(L / 12)); c.fillStyle = `rgba(${h.col},${on ? 0.95 : 0.45})`; for (let i = 0; i <= n; i++) { const x = h.x0 + (h.x1 - h.x0) * i / n, y = h.y0 + (h.y1 - h.y0) * i / n; c.fillRect(Math.round(x) - 3, Math.round(y) - 3, 6, 6); } }
-      else { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(${h.col},.85)`; c.lineWidth = h.th; c.beginPath(); c.moveTo(h.x0, h.y0); c.lineTo(h.x1, h.y1); c.stroke(); c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = Math.max(3, h.th * 0.3); c.stroke(); c.restore(); }
+      else if (!(h.spr && beamDot(c, beamImg(h.spr), h))) { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(${h.col},.85)`; c.lineWidth = h.th; c.beginPath(); c.moveTo(h.x0, h.y0); c.lineTo(h.x1, h.y1); c.stroke(); c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = Math.max(3, h.th * 0.3); c.stroke(); c.restore(); }
       continue;
     }
     if (h.ring) {
@@ -12246,6 +12246,10 @@ drawHaz = function (c) {
   if (own.length) { G.haz = G.haz.filter(h => !own.includes(h)); _drawHaz4(c); G.haz = G.haz.concat(own); } else _drawHaz4(c);
   for (const h of own) {
     const ang = Math.atan2(h.y1 - h.y0, h.x1 - h.x0), L = Math.hypot(h.x1 - h.x0, h.y1 - h.y0), flick = 0.85 + Math.random() * 0.15;
+    if (h.spr && beamDot(c, beamImg(h.spr), h)) {   // 2026-11-25 2차 배치: 도트 스트립이 있으면 그 그림으로 (없으면 아래 예전 빛 연출)
+      if (Math.random() < 0.22) spark(h.x0, h.y0, 1, h.col, 130);
+      continue;
+    }
     c.save(); c.translate(h.x0, h.y0); c.rotate(ang); c.globalCompositeOperation = 'lighter';
     c.fillStyle = `rgba(${h.col},${0.35 * flick})`; c.fillRect(0, -h.th * 0.75, L, h.th * 1.5);           // glow, outside the hitbox
     c.fillStyle = `rgba(${h.col},${0.9 * flick})`; c.fillRect(0, -h.th / 2, L, h.th);                      // the beam = the hitbox width
@@ -15552,7 +15556,7 @@ function pool9(b, x, w, life, n, o) {
   return h;
 }
 /* the beam drawn by code (48c draws own beams once they fire; the warning is our aim ray) */
-function beam9(b, S, x0, y0, x1, y1, th, o) { o = o || {}; return line9(b, S, x0, y0, x1, y1, th, Object.assign({}, o, { haz: Object.assign({ own: true, hid9: false, hidWarm9: true, col: o.col || '255,80,60', multi: !!o.multi }, o.haz || {}) })); }
+function beam9(b, S, x0, y0, x1, y1, th, o) { o = o || {}; return line9(b, S, x0, y0, x1, y1, th, Object.assign({}, o, { haz: Object.assign({ own: true, hid9: false, hidWarm9: true, col: o.col || '255,80,60', multi: !!o.multi, spr: o.spr }, o.haz || {}) })); }
 
 /* ======== 11. 시계태엽 골렘 ======== */
 reg9('b11', {
@@ -15616,7 +15620,7 @@ reg9('b12', {
       },
       end(b) { b.yOff = 0; } },
     { name: '키메라 붉은 입 레이저', tel: 0.85, dmg: 34, gim: 'screenShake', mt: [2, 0], mc: [[2, 3]], mr: [[0, 2]], ct: 0.7, rt: 0.6,
-      tele(b, S) { const m = muzzle(b, 11), x1 = S.face > 0 ? arR() : arL(), px = G.player.x, k = (x1 - m.x) / ((px - m.x) || S.face), y1 = m.y + (GROUND - 40 - m.y) * (Math.abs(px - m.x) > 60 ? k : 1); S.m = m; beam9(b, S, m.x, m.y, x1, clamp(y1, GROUND - 60, GROUND - 24), 44, { act: 0.55, col: '255,40,70', multi: false }); },   // low across the room: jump it
+      tele(b, S) { const m = muzzle(b, 11), x1 = S.face > 0 ? arR() : arL(), px = G.player.x, k = (x1 - m.x) / ((px - m.x) || S.face), y1 = m.y + (GROUND - 40 - m.y) * (Math.abs(px - m.x) > 60 ? k : 1); S.m = m; beam9(b, S, m.x, m.y, x1, clamp(y1, GROUND - 60, GROUND - 24), 44, { act: 0.55, col: '255,40,70', multi: false, spr: 'chimera' }); },   // low across the room: jump it
       vfx: 3, vpos: (b, S) => [S.m.x + S.face * 90, S.m.y + 110], vo: { w: 240 } },
     { name: '[광폭화] 변이 혈청 폭주', berserk: 1, tel: 1.0, dmg: 20, gim: 'duoDesync', mt: [0, 0], mc: [[2, 1]], mr: [[0, 2]], ct: 0.6, rt: 0.4, heavy: 1,
       vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 260, flip: false },
@@ -15684,7 +15688,7 @@ reg9('b14', {
     { name: '라의 태양광선', tel: 0.75, dmg: 30, gim: 'screenShake', mt: [2, 0], mc: [[2, 1], [2, 2], [2, 3]], mr: [[0, 1]], ct: 1.3, rt: 0.5,
       tele(b, S) { const m = muzzle(b, 9); S.m = m; S.tx = G.player.x; tg9({ kind: 'aim_ray', src: b, x: m.x, y: m.y, angles: [Math.atan2(GROUND - m.y, S.tx - m.x)], rayLength: Math.hypot(GROUND - m.y, S.tx - m.x), width: 30, dur: S.tel }); },
       vfx: 0, vpos: (b, S) => [S.m.x, S.m.y + 110], vo: { w: 200, loop: true, life: 1.3 },
-      cast(b, S) { S.beams = [S]; if (b.berserk9) S.beams.push({ mirror: 1 }); S.hz = S.beams.map(() => addHaz({ src: b, beam: true, x0: S.m.x, y0: S.m.y, x1: S.tx, y1: GROUND, th: 40, warn: 0, act: 1.3, dmg: dmg9(b, 30), own: true, col: '255,220,90', pat: 'v9', kb: 200, up: 160 })); },
+      cast(b, S) { S.beams = [S]; if (b.berserk9) S.beams.push({ mirror: 1 }); S.hz = S.beams.map(() => addHaz({ src: b, beam: true, spr: 'solar', x0: S.m.x, y0: S.m.y, x1: S.tx, y1: GROUND, th: 40, warn: 0, act: 1.3, dmg: dmg9(b, 30), own: true, col: '255,220,90', pat: 'v9', kb: 200, up: 160 })); },
       castTick(b, S, dt, k) {   // follows you, at most 30 degrees from where it started
         const m = S.m, p = G.player, a0 = Math.atan2(GROUND - m.y, S.tx - m.x), want = Math.atan2(GROUND - m.y, p.x - m.x), a = a0 + clamp(want - a0, -0.52 * k, 0.52 * k);
         S.hz.forEach((h, i) => { const ang = i ? Math.PI - a : a, ox = i ? 2 * arM() - m.x : m.x, L = (GROUND - m.y) / Math.max(0.2, Math.sin(ang)); let x1 = ox + Math.cos(ang) * L, y1 = GROUND; const cut = pillarCut9(ox, m.y, x1, y1); if (cut) { x1 = cut.x; y1 = cut.y; b.pilHit = b.pilHit || new Set(); if (!b.pilHit.has(cut.g)) { b.pilHit.add(cut.g); shake(3); sfx('stone'); } } h.x0 = ox; h.y0 = m.y; h.x1 = x1; h.y1 = y1; if (Math.random() < 0.4) spark(x1, y1, 2, '255,220,120', 160); });
@@ -15889,7 +15893,7 @@ reg9('b19', {
     { name: '늑대의 절대영도 브레스', tel: 0.75, dmg: 28, mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 2]], ct: 1.5, rt: 0.6,
       tele(b, S) { const m = muzzle(b, 10); S.m = m; S.a = Math.atan2((GROUND - 30) - m.y, G.player.x - m.x); tg9({ kind: 'aim_ray', src: b, x: m.x, y: m.y, angles: [S.a - 0.2, S.a, S.a + 0.2], rayLength: 380, width: 40, dur: S.tel, tone: 'ice' }); },
       vfx: 1, vpos: (b, S) => [S.m.x + S.face * 120, S.m.y + 110], vo: { w: 260, loop: true, life: 1.5 },
-      cast(b, S) { S.h = addHaz({ src: b, beam: true, x0: S.m.x, y0: S.m.y, x1: S.m.x + Math.cos(S.a) * 420, y1: S.m.y + Math.sin(S.a) * 420, th: 54, warn: 0, act: 1.5, dmg: dmg9(b, 28), own: true, col: '150,225,255', pat: 'v9', multi: true, kb: 80, up: 40, onHit: p => gim9('slow', b, { t: 1.5 }) }); },
+      cast(b, S) { S.h = addHaz({ src: b, beam: true, spr: 'frost', x0: S.m.x, y0: S.m.y, x1: S.m.x + Math.cos(S.a) * 420, y1: S.m.y + Math.sin(S.a) * 420, th: 54, warn: 0, act: 1.5, dmg: dmg9(b, 28), own: true, col: '150,225,255', pat: 'v9', multi: true, kb: 80, up: 40, onHit: p => gim9('slow', b, { t: 1.5 }) }); },
       castTick(b, S, dt) { const p = G.player, want = Math.atan2((p.y - 30) - S.m.y, p.x - S.m.x); S.a += clamp(want - S.a, -0.5 * dt, 0.5 * dt); if (S.h) { S.h.x1 = S.m.x + Math.cos(S.a) * 420; S.h.y1 = Math.min(GROUND, S.m.y + Math.sin(S.a) * 420); } } },   // follows you, slowly
     { name: '고드름 창 비', tel: 0.6, dmg: 22, mt: [2, 1], mc: [[2, 3]], mr: [[0, 1]], ct: 0.7, rt: 0.5,
       tele(b, S) { const p = G.player; S.xs = [-3, -2, -1, 0, 1, 2, 3].map(i => clampX(p.x + i * 110 + rnd(-20, 20), 40)); S.xs.forEach((x, i) => col9(b, S, x, 50, { delay: i * 0.07, tone: 'ice', haz: { onFire: () => { fall9(b, 'pstone', x, 4); fx9(b, 2, x, GROUND + 10, 90, { flip: false }); } } })); } },
@@ -15922,7 +15926,7 @@ reg9('b20', {
       cast(b, S) { walker9(b, { x: b.x + S.face * 80, vx: S.face * 480, w: 70, h: 70, life: 2.4, n: 24, slot: 1, vw: 150, onHit: () => gim9('slow', b, { t: 2.5 }) }); } },   // runs along the floor, freezing it: jump over
     { name: 'X자 교차 참격', tel: 0.7, dmg: 34, gim: 'screenShake', mt: [2, 1], mc: [[2, 2], [2, 3]], mr: [[0, 2]], ct: 0.6, rt: 0.6,
       tele(b, S) { const p = G.player, cx = clampX(p.x, 100), cy = GROUND - 80, L = 520; S.c = [cx, cy];
-        for (const a of [0.62, Math.PI - 0.62]) beam9(b, S, cx - Math.cos(a) * L, cy - Math.sin(a) * L, cx + Math.cos(a) * L * 0.2, Math.min(GROUND, cy + Math.sin(a) * L * 0.2), 40, { act: 0.3, col: a < 1 ? '255,120,60' : '150,220,255' }); },
+        for (const a of [0.62, Math.PI - 0.62]) beam9(b, S, cx - Math.cos(a) * L, cy - Math.sin(a) * L, cx + Math.cos(a) * L * 0.2, Math.min(GROUND, cy + Math.sin(a) * L * 0.2), 40, { act: 0.3, col: a < 1 ? '255,120,60' : '150,220,255', spr: 'slash', haz: { sprSeed: a < 1 ? 0 : 2 } }); },
       vfx: 2, vpos: (b, S) => [S.c[0], GROUND + 10], vo: { w: 300, flip: false } },
     { name: '화빙 양분 충격파', tel: 0.85, dmg: 32, gim: 'thermalSplit', gimO: { t: 4 }, mt: [2, 1], mc: [[2, 2]], mr: [[0, 2]], ct: 0.6, rt: 0.5,
       tele(b, S) { zone9(b, S, arM(), arR() - arL() - 40, 50, { tone: 'danger' }); },   // a low wave over the whole floor: jump it, then mind which half you stand on
@@ -16129,12 +16133,22 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261124m',   // 2026-11-24 열세 번째 패치(GAME_VER '261124-2100'): 보스·전조·달을 주인공과 같은 도트체로
+  id: '261124n',   // 2026-11-24 열네 번째 패치(GAME_VER '261124-2240'): 2차 배치 — 22·26·28장 보스 + 코드 빔 4종 + 공용 전조 6종
   title: '패치 노트',
-  sub: '보스와 전조, 달을 같은 도트로 다시 그렸다',
+  sub: '보스 셋과 전조·빔을 도트 그림으로 바꿨다',
   versions: [
     {
-      ver: '261124-2100', date: '2026-11-24', name: '도트체 확정 · 17장·29장 보스 새 그림', cur: 1,
+      ver: '261124-2240', date: '2026-11-24', name: '2차 배치 · 22·26·28장 보스와 빔·전조', cur: 1,
+      items: [
+        { t: '전투', h: '22장 녹슨 대천사가 새 그림으로 움직인다', p: '낡은 판금·부러진 날개·붉은 창은 그대로 두고 화풍만 주인공과 같은 도트체로 다시 그렸다. 뒤에 깔려 있던 남색 판과 날개 사이 구멍도 사라졌다. 대기 8 · 이동 14 · 공격 16 · 사망 10 프레임.' },
+        { t: '전투', h: '26장 시간의 서기관, 28장 백은의 기계신도 같은 화풍', p: '모래시계와 시계 후광(26장), 은빛 판금과 네 개의 포신·황금 고리(28장)를 그대로 유지한 채 48프레임을 새로 찍었다. 공격 프레임에는 이펙트를 섞지 않았다.' },
+        { t: '전투', h: '코드로 그리던 빔 네 개가 도트 그림이 된다', p: '12장 키메라 붉은 입 레이저 · 14장 라의 태양광선 · 19장 절대영도 브레스 · 20장 X자 교차 참격. 굵은 선 한 줄 대신 4프레임 도트 스트립을 빔 길이로 이어 붙여 그린다. 판정 폭과 데미지는 그대로다.' },
+        { t: '연출', h: '바닥 장판·조준선·공중 사각형 전조도 그림으로', p: '점선 사각형과 >>> 를 캔버스로 그리던 것을 도트 9-slice 그림으로 바꿨다. 위험·얼음·독·모래 색 구분은 그대로 유지된다.' },
+        { t: '시스템', h: '전조 그림이 처음부터 바로 뜬다', p: '전조 여섯 장과 빔 네 장을 게임을 켤 때 미리 받아 두어, 첫 스킬에서 예전 연출이 잠깐 비치지 않는다.' },
+      ],
+    },
+    {
+      ver: '261124-2100', date: '2026-11-24', name: '도트체 확정 · 17장·29장 보스 새 그림', cur: 0,
       items: [
         { t: '전투', h: '17장 검선 청운이 새 그림으로 움직인다', p: '대기 8 · 이동 14 · 공격 16 · 사망 10 프레임을 새로 그렸다. 여섯 자루 부유검은 모든 동작에서 그대로 따라다니고, 프레임마다 몸 크기가 흔들리지 않게 발끝 높이를 240으로 고정했다.' },
         { t: '전투', h: '29장 핏빛 월식 기사의 그림도 새로 그렸다', p: '검은 판금·붉은 망토·월식 문장은 그대로 두고 화풍만 주인공과 같은 도트체로 맞췄다. 뒤에 깔려 있던 남색 판때기도 사라졌다.' },
@@ -20002,14 +20016,15 @@ bossStartPat = function (b, pat) {
 /* ============ STEP 5-B: the five shared telegraph sprites (assets/vfx/telegraph_*.png) inside tg9Shape / tg9Badge.
    Timing, hit boxes and patterns are untouched; with no file the canvas shapes stay. ============ */
 const TGSP = {
-  dir: 'assets/vfx/',
-  names: ['ground_zone', 'dash_line', 'vertical_beam', 'aim_ray', 'warn_badge'],
-  cell: { ground_zone: [256, 128], dash_line: [256, 128], vertical_beam: [128, 320], aim_ray: [256, 64], warn_badge: [64, 64] },
-  ink:  { ground_zone: [0, 8, 256, 120], dash_line: [0, 8, 256, 120], vertical_beam: [0, 0, 128, 320], aim_ray: [0, 8, 256, 56], warn_badge: [12, 8, 40, 48] },
+  dir: 'assets/dot/',   // 2026-11-25 2차 배치: 전조 6종을 전부 손으로 찍은 도트 그림으로 (예전 assets/vfx/*.png 는 쓰지 않는다)
+  names: ['ground_zone', 'dash_line', 'vertical_beam', 'aim_ray', 'box', 'warn_badge'],
+  cell: { ground_zone: [256, 128], dash_line: [256, 128], vertical_beam: [128, 320], aim_ray: [256, 64], box: [256, 128], warn_badge: [64, 64] },
+  ink:  { ground_zone: [0, 8, 256, 120], dash_line: [0, 8, 256, 120], vertical_beam: [0, 0, 128, 320], aim_ray: [0, 8, 256, 56], box: [0, 8, 256, 120], warn_badge: [12, 8, 40, 48] },
   cap:  { ground_zone: { l: 32, r: 32, t: 24, b: 32, tx: 64 },
           dash_line:   { l: 32, r: 32, t: 20, b: 20, tx: 64 },
-          vertical_beam: { l: 0, r: 0, t: 32, b: 32, ty: 64 },
+          vertical_beam: { l: 32, r: 32, t: 32, b: 32, ty: 64 },
           aim_ray:     { l: 0, r: 64, t: 0, b: 0, tx: 64 },
+          box:         { l: 32, r: 32, t: 32, b: 32 },
           warn_badge:  { l: 0, r: 0, t: 0, b: 0 } },
   img: {}, tint: {},
 };
@@ -20017,7 +20032,7 @@ function tgspLoad() {
   for (const n of TGSP.names) {
     if (TGSP.img[n]) continue;
     const im = new Image();
-    im.src = TGSP.dir + 'telegraph_' + n + '.png';
+    im.src = TGSP.dir + 'telegraph_' + n + '.png' + '?v=' + GAME_VER;   // 2차 배치: 같은 파일명으로 바뀌어도 캐시에 가리지 않게
     if (im.decode) im.decode().catch(() => {});
     TGSP.img[n] = im;
   }
@@ -20124,6 +20139,35 @@ function tgspDraw(c, name, fi, dx, dy, dw, dh, tone) {
 }
 const tgspFrame = (p, blink) => blink ? 3 : Math.min(3, Math.floor(p * 4));
 
+/* ============ 2026-11-25 2차 배치: 코드 빔(beam9 / addHaz{beam}) 4종을 도트 스트립으로 ============
+   12장#3 키메라 붉은 입 레이저 · 14장#0 라의 태양광선 · 19장#1 절대영도 브레스 · 20장#2 X자 교차 참격.
+   assets/dot/beam_*.png = 4프레임 가로 스트립(셀 256x64, 1도트 = 2px, 알파 0/255).
+   셀을 빔 길이 방향으로 타일로 깔고 진행 방향으로 회전시켜 그린다 — 늘려 그리지 않아 도트가 살아 있다.
+   그림이 없으면 예전 캔버스 선 연출로 그대로 돌아간다. */
+const BEAM_SPR = { chimera: 'dot/beam_chimera.png', solar: 'dot/beam_solar.png', frost: 'dot/beam_frost.png', slash: 'dot/beam_slash.png' };
+const BEAM_IMG = {};
+function beamImg(k) {
+  const f = BEAM_SPR[k]; if (!f) return null;
+  let im = BEAM_IMG[k];
+  if (!im) { im = BEAM_IMG[k] = new Image(); im.src = ASSET9 + f + '?v=' + GAME_VER; }
+  return (im.complete && im.naturalWidth) ? im : null;
+}
+function beamDot(c, im, h) {
+  const cw = 256, ch = 64;
+  const L = Math.hypot(h.x1 - h.x0, h.y1 - h.y0);
+  if (!(L > 4) || !im) return false;
+  const a = Math.atan2(h.y1 - h.y0, h.x1 - h.x0);
+  const th = Math.max(14, Math.round(h.th * (h.spr === 'slash' ? 0.8 : 1.0)));   // 참격은 칼날처럼 얇게
+  const tw = cw * (th / ch);
+  const fi = Math.floor(G.t * 14 + (h.sprSeed || 0)) % 4;
+  const prev = c.imageSmoothingEnabled; c.imageSmoothingEnabled = false;
+  c.save(); c.translate(Math.round(h.x0), Math.round(h.y0)); c.rotate(a);
+  for (let x = -tw * 0.3; x < L; x += tw) c.drawImage(im, fi * cw, 0, cw, ch, Math.round(x), -Math.round(th / 2), Math.ceil(tw) + 1, th);
+  c.restore();
+  if (prev) c.imageSmoothingEnabled = true;
+  return true;
+}
+
 function tgspShape(c, t, p, blink, pal) {
   const tone = tgspTone(pal);
   const fi = tgspFrame(p, blink);
@@ -20175,10 +20219,9 @@ function tgspShape(c, t, p, blink, pal) {
       c.translate(snap2(t.x), snap2(t.y));
       c.rotate(a);
       if (Math.cos(a) < 0) c.scale(1, -1);          // 왼쪽 조준에서 그림이 뒤집히지 않게
-      if (t.width > 24) {                            // 굵은 투사체 통로: 빔 스프라이트를 가로로
-        c.globalAlpha = 0.55;
-        tgspDraw(c, 'vertical_beam', fi, 0, -snap2(t.width) / 2, Math.round(L), snap2(t.width), tone);
-        c.globalAlpha = 1;
+      if (t.width > 24) {                            // 굵은 투사체 통로: 반투명 채움 (그 위에 점선 조준선 그림)
+        c.fillStyle = `rgba(${pal.fill},${fillA * 0.5})`;
+        c.fillRect(0, -snap2(t.width) / 2, Math.round(L), snap2(t.width));
       }
       tgspDraw(c, 'aim_ray', fi, 0, -32, Math.round(L), 64, tone);   // 그 위에 얇은 사이트라인 + 리티클
       c.restore();
@@ -20190,7 +20233,7 @@ function tgspShape(c, t, p, blink, pal) {
     c.fillStyle = `rgba(${pal.fill},${fillA * 0.45})`; c.fillRect(x0, y0, w, h);
     const fh = snap2(h * p);
     c.fillStyle = `rgba(${pal.fill},${fillA})`; c.fillRect(x0, y0 + h - fh, w, fh);
-    tgspDraw(c, 'ground_zone', fi, x0, y0, w, h, tone);
+    if (!tgspDraw(c, 'box', fi, x0, y0, w, h, tone)) tgspDraw(c, 'ground_zone', fi, x0, y0, w, h, tone);
 
   } else {
     /* ground_zone: 바닥선(gy)에 붙는 띠. x 는 중심, 위험 높이 h 가 gy 위로 h 만큼. */
@@ -20234,7 +20277,8 @@ tg9Badge = function (c, x, y, danger, blink, p, pal) {
   if (!tgspBadge(c, x, y, danger, blink, p, pal)) tg9BadgeCanvas(c, x, y, danger, blink, p, pal);
   c.restore();
 };
-tgspLoad();   // 5장(합 28KB) 프리로드. 보스 등장 시점이 아니라 시작 시 한 번이면 충분하다.
+tgspLoad();   // 6장 프리로드. 보스 등장 시점이 아니라 시작 시 한 번이면 충분하다.
+for (const k in BEAM_SPR) beamImg(k);   // 2026-11-25 빔 4종(합 3KB)도 시작 시 미리 받아 첫 프레임이 예전 연출로 뜨지 않게
 
 /* ============ 2026-11-22 story bible (art/boss30/story_1_to_50.md, user: "내가 보낸 파일 기준으로 1~50장"):
    chapter titles, the boss room's entry line, boss names and the HP 50% rage line for chapters 1-50.

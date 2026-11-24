@@ -12,6 +12,30 @@
 
 ## 옮길 것
 
+### 261124-2240  2차 배치 · 22·26·28장 보스 48f + 코드 빔 4종 + 공용 전조 6종   (대상: index.html / test/index.html + assets)
+지시서: 2026-11-24 사용자 "아까 말한거 다 진행해줘 보스 모션, 보스 스킬 이펙트, 보스 전조 이펙트" · "절대 그림체 바뀌지 않도록 깃허브에 올려줘".
+그림체는 `ART_STYLE.md` 그대로(주인공 도트 밀도, NEAREST ×2, 알파 0/255, 1px 외곽선, 발끝 240, 공격 행 VFX 금지).
+
+- **새 그림**
+  - `assets/boss/b22_48f.png` · `b26_48f.png` · `b28_48f.png` (각 2048×1536, 48프레임). 기존 디자인·포즈·무기 유지(녹슨 창 / 모래시계·시계 후광 / 은빛 판금·포신 4문·황금 고리). 뒤에 깔려 있던 남색 판과 날개 사이 남색 구멍 제거. 프레임별 몸높이: b22 198~222, b26 220~228, b28 222(사망 행 제외).
+  - `assets/dot/telegraph_ground_zone.png`(1024×128) · `telegraph_dash_line.png`(1024×128) · `telegraph_vertical_beam.png`(512×320) · `telegraph_aim_ray.png`(1024×64) · `telegraph_box.png`(1024×128) · `telegraph_warn_badge.png`(256×64) — 전부 4프레임 가로 스트립, 1도트 = 2px, **TGSP_BASE 11색만** 사용(게임이 톤별로 팔레트 스왑).
+  - `assets/dot/beam_chimera.png` · `beam_solar.png` · `beam_frost.png` · `beam_slash.png` (각 1024×64 = 256×64 셀 4프레임).
+  - `test/assets/` 에 위 전부 사본.
+- **(1) 보스 시트 교체** — 파일 이름·크기·칸 배치가 같아 코드 변경 없음. `bossSheetScale` b22 1.107 / b26 0.964 / b28 1.18, `bossRowK` 0.93~1.06.
+- **(2) 전조 6종** — `TGSP` 의 `dir` 을 `assets/vfx/` → `assets/dot/` 로 바꾸고 `box` 를 목록·셀·캡에 추가했다. 이제 `tg9Shape` 의 다섯 갈래 + box 가 전부 그림으로 그려진다(예전 `assets/vfx/telegraph_*.png` 는 쓰지 않는다).
+  - `tgspShape` 의 `box` 갈래는 `tgspDraw(c,'box',...)` 를 먼저 시도하고 실패하면 `ground_zone` 으로 떨어진다.
+  - `aim_ray` 에서 폭이 24보다 큰(굵은 통로) 경우, 예전에는 `vertical_beam` 그림을 가로로 늘여 깔았는데 캡이 뭉개져서 **반투명 채움 + 조준선 그림**으로 되돌렸다.
+  - 그림 로드 실패 시 예전 캔버스 연출로 그대로 돌아간다(폴백 유지).
+- **(3) 코드 빔 4종** — `BEAM_SPR`/`BEAM_IMG`/`beamImg()`/`beamDot()` 를 전조 블록 뒤에 추가.
+  - 그리는 법: 256×64 셀을 빔 길이 방향으로 **타일**로 깔고 진행 방향으로 회전. 두께 = `th × 1.0`(참격만 0.8), 최소 14px. 프레임 = `floor(G.t*14) % 4`. 늘여 그리지 않아 도트가 살아 있다.
+  - 연결: `beam9(...,{spr:'chimera'})` 처럼 `spr` 을 넘기면 `beam9` 가 haz 에 실어 보낸다. 14장·19장은 `addHaz({... spr:'solar'/'frost' ...})` 로 직접 붙였다. 20장 X자는 두 빔에 `haz:{sprSeed:0/2}` 로 프레임 위상을 어긋나게 했다.
+  - **중요**: 이 스킬들의 빔은 `own: true` 라서 `drawHaz` 4차 패치(12241행)의 'own 빔' 캔버스 연출이 따로 그린다. 그 블록 맨 앞에 `if (h.spr && beamDot(...)) continue;` 를 넣어 그림이 있으면 그림으로, 없으면 예전 빛 연출로 그린다.
+  - 시작 시 `for (const k in BEAM_SPR) beamImg(k)` 로 4장(합 3KB)을 미리 받는다(첫 빔이 예전 연출로 뜨지 않게).
+- **검증(헤드리스 크로뮴 1280×720, 로컬 서버)**: 22·26·28장 보스방 스폰·이동 스샷, 전조 6종 단독 스샷(`tg_*.png`), 빔 4종 스샷(`pc_beam_*.png`), 실제 보스전에서 네 스킬이 빔을 쏘는 순간 스샷(`pc_skill_*_act.png`). `pageerror 0`. `SPR.b22/b26/b28` 48프레임 확인.
+  증거: `handoffs/🎨-2차-배치-b22-b26-b28-코드-빔-4종-전조-3종-제작-배포/evidence/`.
+- **남은 것**: 나머지 보스 25종 시트(5·7·11~16·18~21·23~25·27·30), 보스 스킬 VFX 162장, 1~10장 낙석·응시 연출, 분노 링·pool·lane 연출. 진행표는 `work_master/progress.md`.
+- 원본 PC에서 할 일: `assets/boss`·`assets/dot` PNG 를 `art/` 원본에도 같은 이름으로 넣고, ① `TGSP` 정의/`tgspShape` 의 box 갈래 ② `BEAM_SPR`~`beamDot` 블록 ③ `drawHaz` 4차 패치의 own 빔 블록 ④ `beam9` 의 `spr:` 전달 ⑤ 네 스킬의 `spr` 인자 를 조각 파일에 같은 내용으로 옮긴다.
+
 ### 261124-2100  도트체 확정 · 17장·29장 보스 새 시트 + 전조/달 픽셀아트   (대상: index.html / test/index.html + assets)
 지시서: 2026-11-24 사용자 확정 "지금 이 그림체가 300배 나음 → 보스 모션·보스 스킬 이펙트·보스 전조 전부 이 그림체로".
 **그림체는 이제 `ART_STYLE.md`(저장소 루트) 규격으로 고정한다** — 기준 컷 `assets/dot/ART_STYLE_REF_b17.png`.
