@@ -622,7 +622,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261124-1040';
+const GAME_VER = '261124-1130';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -6030,7 +6030,7 @@ function updatePlayer(dt) {
   if (mob && ch === 'theron' && IN.press.shift && p.cd.s <= 0 && p.hurt <= 0) { p.sprint = 2; p.cd.s = p.cdMax.s; sfx('dash'); dust(p.x, p.y, 8); }
   if (p.onGround) { p.dj = false; p.djShift = false; p.ljT = 0; }
   const mv = a ? (a.id === 'z' && G.save.char === 'kallisto' && !p.onGround ? 1 : a.mv) : 1, maxV =   // the archer keeps full speed in the air while shooting
-    232 * (p.slowT > 0 ? 0.6 : 1) * (1 + S.spd / 100) * (p.sprint > 0 ? 1.6 : 1) * (p.haste > 0 ? 1.4 : 1);
+    232 * (p.slowT > 0 ? 0.6 : 1) * (1 + S.spd / 100) * (p.sprint > 0 ? 1.6 : 1) * (p.haste > 0 ? 1.4 : 1) * blessSpd();
   if (a && a.dash && a.t < a.dashT) p.vx = a.dir * a.dashV;
   else if (mv === 0 || p.hurt > 0) p.vx = approach(p.vx, 0, (p.onGround ? 2600 : 500) * dt * (p.hurt > 0 ? 0.35 : 1) * slipK(p));
   else if (p.ljT > 0 && !p.onGround && dir !== -sgn(p.vx)) p.ljT -= dt;   // the forward double jump keeps its speed a moment (pushing back cancels it)
@@ -6076,7 +6076,7 @@ function updatePlayer(dt) {
 }
 function front(rw, y0, h, xo) { const p = G.player; return { x: p.face > 0 ? p.x + (xo || 0) : p.x - (xo || 0) - rw, y: y0, w: rw, h }; }
 function startAct(id) {
-  const p = G.player, S = G.stats, ch = G.save.char, as = 1 + S.aspd / 100 + (p.haste > 0 ? 0.2 : 0);
+  const p = G.player, S = G.stats, ch = G.save.char, as = 1 + S.aspd / 100 + (p.haste > 0 ? 0.2 : 0) + blessAs();
   if (ch === 'theron') {
     const k2 = traitRank('th2');
     if (id === 'z') {
@@ -14361,7 +14361,7 @@ buyTrait = function (id) {
 };
 document.head.insertAdjacentHTML('beforeend', `<style>
 .tcols.t6c{grid-template-columns:repeat(3,1fr);gap:calc(var(--u)*8)}
-#pBox:has(.t6c){width:calc(var(--u)*940);max-width:98%;max-height:98%;padding:calc(var(--u)*12) calc(var(--u)*16)}
+#pBox:has(.t6c){width:calc(var(--u)*940);max-width:98%;max-height:98%;padding:calc(var(--u)*8) calc(var(--u)*14)}
 #pBox:has(.t6c) .ph{padding-bottom:calc(var(--u)*6);margin-bottom:calc(var(--u)*8)}
 #pBox:has(.t6c) .ph .sub{font-size:max(8px,calc(var(--u)*11))}
 #pBox:has(.t6c) > .tfoot{margin-top:calc(var(--u)*8)}
@@ -23408,6 +23408,629 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 #mapVeil{position:absolute;inset:0;background:#06070b;opacity:0;pointer-events:none;transition:opacity .16s linear;z-index:29}
 #mapVeil.on{opacity:1}
 </style>`);
+
+/* ============ 261124-1130  8개 항목 통합 패치 (특성 15단계 연출/합계, 마법사 X 이펙트, 전맵 포탈·가로등 겹침,
+   퍼펙트 가드, 랜덤 상자 · 축복의 제단, 마법사 Z 귀환 궤적 · HUD) ============
+   지시서: downloads/claude_code_8_traits_guard_shrine_prompt.txt (기준 cec0a79)
+   원본 조각으로 옮길 때: A=특성(55_growth/50_ui), B=마법사(56j_mage), C=가드(30_combat), D=맵(56g_maps/56q_props),
+   E=상자·제단(새 조각 63_box_shrine.js), F=HUD(50_ui). 자세한 대응은 HANDOFF.md 참고. */
+
+/* ---------------- A) 특성 1~15단계: 밸런스 수치 + 카드별 누적 합계 + 5/10/15 연출 ---------------- */
+/* TP 수급: 레벨 - 1 (MAX_LEVEL 150 → 149점). 특성 하나를 15단계까지 올리는 비용 30점(1×5 + 2×5 + 3×5),
+   여섯 특성 전부 180점 → 최대 레벨에서도 전부는 못 올린다(149/180 = 82.8%). 11~15단계 15점은 피해 +49%(=+6×4, 15단계 +25%),
+   재사용 -15%(15단계)로, 1~10단계(15점에 피해 +75% · 각성)보다 점당 효율이 낮게 잡혀 있어 후반 인플레 없이 성장 동기만 남긴다. */
+const TR_BAL = (() => {
+  const step = i => (i < 5 ? 1 : i < 10 ? 2 : 3);            // cost of rank i+1
+  const upto = r => Array.from({ length: r }, (_, i) => step(i)).reduce((a, b) => a + b, 0);
+  const dmgOf = r => (r >= 4 ? 15 : 0) + (r >= 5 ? 15 : 0) + (r >= 7 ? 20 : 0) + (r >= 9 ? 25 : 0) + (r > 10 ? 6 * (Math.min(r, 14) - 10) : 0) + (r >= 15 ? 25 : 0);
+  return { tpMax: MAX_LEVEL - 1, perTrait: upto(15), allSix: upto(15) * 6, oldDmg10: dmgOf(10), oldDmg15: dmgOf(15), freshDmg15: 5 * 15 + 25,
+    rows: [0, 5, 10, 11, 12, 13, 14, 15].map(r => ({ rank: r, cost: upto(r), oldDmg: dmgOf(r), tier: trTier(r) })) };
+})();
+/* 카드에 보여줄 "지금까지 이 특성으로 오른 수치" — 정의(랭크 문구)와 실제 적용식(tDmg·tCd·traitRank)을 그대로 따라 계산한다 */
+function traitTotals(t, rk) {
+  const r = rk == null ? traitRank(t.id) : rk;
+  const o = { dmg: 0, cd: 0, crit: 0, aspd: 0, note: '' };
+  if (!r) return o;
+  if (t.fresh) {
+    o.dmg = 5 * Math.min(r, 15) + (r >= 15 ? 25 : 0);
+    o.cd = Math.min(r, 15) + (r >= 10 ? 15 : 0);
+  } else {
+    /* tDmg/tCd 와 같은 식을 rk 로 직접 계산한다(패널은 저장값을, QA·미리보기는 임의 단계를 넣을 수 있게) */
+    const d = 1 + (r >= 4 ? 0.15 : 0) + (r >= 5 ? 0.15 : 0) + (r >= 7 ? 0.20 : 0) + (r >= 9 ? 0.25 : 0)
+      + (r > 10 ? 0.06 * (Math.min(r, 14) - 10) : 0) + (r >= 15 ? 0.25 : 0);
+    if (t.id === 'mg1') { o.dmg = Math.round((d - 1) * 50); o.note = '방어막'; }
+    else if (t.id === 'th_s') { o.dmg = 0; o.note = '지속 +' + (r >= 15 ? 2 : 0.4 * Math.min(r, 14)).toFixed(1) + '초'; }
+    else o.dmg = Math.round((d - 1) * 100);
+    if (r >= 6) o.cd = 20;
+    if (r >= 8) o.crit = 4;
+    if (t.key === 'z' && r >= 6) { o.aspd = 10; o.cd = 0; }   // 궁수 Z 특성 6단계는 공격 속도
+  }
+  return o;
+}
+function traitSumText(t, rk) {
+  const o = traitTotals(t, rk), bits = [];
+  if (o.dmg) bits.push((o.note || '피해') + ' +' + o.dmg + '%');
+  else if (o.note) bits.push(o.note);
+  if (o.cd) bits.push('재사용 -' + o.cd + '%');
+  if (o.crit) bits.push('치명타 +' + o.crit + '%p');
+  if (o.aspd) bits.push('공격 속도 +' + o.aspd + '%');
+  return bits.length ? bits.join(' · ') : '아직 없음';
+}
+/* 특성 창: 여섯 카드 + 카드마다 "누적" 줄, 아래에 여섯 특성 합계(스킬별 배율이라 단순 합으로 표기) */
+traitsHtml = function () {
+  const s = G.save, list = TRAITS[s.char], ch = CHARS[s.char];
+  const sum = { dmg: 0, cd: 0, crit: 0, aspd: 0 };
+  const cards = list.map(t => {
+    const rk = s.traits[t.id] || 0, next = t.ranks[rk], tier = trTier(rk), tt = traitTotals(t, rk);
+    sum.dmg += tt.dmg; sum.cd += tt.cd; sum.crit += tt.crit; sum.aspd += tt.aspd;
+    const miles = [4, 9, 14].map(i => `<div class="rk ${i < rk ? 'got' : ''} keyrk"><div class="pip"></div><div>${i + 1}단계 · ${t.ranks[i].t}</div></div>`).join('');
+    const btn = `<button class="gbtn" data-trait="${t.id}" ${next && s.tp >= next.cost ? '' : 'disabled'}>${next ? '올리기 (' + next.cost + ')' : 'MAX'}</button>`;
+    return `<div class="tcard t6"><div class="thd"><h4>${t.name} <span class="ttier tt${tier}">${TR_TIER[tier]}</span></h4>${btn}</div><div class="sk2">${t.skill} · ${rk}/15단계</div>
+      <div class="tsum1" data-tsum="${t.id}">누적 · ${rk ? traitSumText(t, rk) : '—'}</div>
+      <div class="tbar"><i style="width:${rk / 15 * 100}%"></i></div>
+      <div class="rks">${next ? `<div class="rk next"><div class="pip"></div><div>다음 ${rk + 1}단계 · ${next.t}<span class="cost">포인트 ${next.cost}</span></div></div>` : '<div class="rk got"><div class="pip"></div><div>모두 올렸다</div></div>'}${miles}</div></div>`;
+  }).join('');
+  const total = list.reduce((a, t) => a + t.ranks.reduce((b, r) => b + r.cost, 0), 0);
+  const sumLine = `<div class="tsum">합계(스킬별) · 피해 +${sum.dmg}%${sum.cd ? ' · 재사용 -' + sum.cd + '%' : ''}${sum.crit ? ' · 치명타 +' + sum.crit + '%p' : ''}${sum.aspd ? ' · 공격 속도 +' + sum.aspd + '%' : ''} <small>· 최대 레벨 특성 포인트 ${TR_BAL.tpMax} / 여섯 특성 전부 ${TR_BAL.allSix}</small></div>`;
+  return `<div class="ph"><h3>특성 · ${ch.name}</h3><span class="sub">레벨업마다 포인트 1 · 여러 특성을 함께 올릴 수 있다 · 1~5단계 1점, 6~10단계 2점, 11~15단계 3점 · 5·10·15단계에서 스킬 연출이 바뀐다</span><button class="xbtn" data-close="1">닫기 (${keyOf('m_traits')})</button></div>
+  ${sumLine}<div class="tcols t6c">${cards}</div>
+  <div class="tfoot"><span>남은 포인트 <b>${s.tp}</b> · 여섯 특성을 모두 끝까지 올리려면 ${total}포인트</span><button class="mini" data-reset="1">특성 초기화 (무료)</button></div>`;
+};
+document.head.insertAdjacentHTML('beforeend', `<style>
+.tsum1{font-size:max(8px,calc(var(--u)*10));line-height:1.3;color:#ffd88a;margin:0 0 calc(var(--u)*2);padding:calc(var(--u)*1) calc(var(--u)*4);background:rgba(255,200,110,.07);border-left:2px solid #8a6a2a;font-variant-numeric:tabular-nums}
+.tcard.t6 .rks{max-height:calc(var(--u)*200)}
+.tcard.t6{padding:calc(var(--u)*9)}
+.tcard.t6 .sk2{margin:calc(var(--u)*2) 0 calc(var(--u)*4)}
+.tcard.t6 .rks .rk{line-height:1.18}
+.tcard.t6 .tsum1{line-height:1.18}
+</style>`);
+/* 5/10/15단계에서 스킬 연출이 한 단계씩 진화한다: 5 증폭(금빛 스파크 + 얇은 금빛 고리),
+   10 각성(보랏빛 고리 + 진홍 스파크 + 잔상), 15 초월(금백 플래시 + 이중 고리 + 궤적 잔상).
+   pfx 안의 단계 연출(8-2)을 그대로 두고, 단계별 색/층을 뚜렷하게 갈라 다시 쓴다. */
+const TIER_FX = [
+  null,
+  { part: '255,206,110', ring: '255,206,120', R: 46, dur: 0.26, n: 14 },
+  { part: '198,86,236', ring: '176,80,240', R: 66, dur: 0.34, n: 20, crimson: 1 },
+  { part: '255,250,225', ring: '255,244,205', R: 88, dur: 0.42, n: 26, twin: 1, flash: 0.15 },
+];
+const _pfxTier = pfx;
+pfx = function (name, x, y, o) {
+  const r = _pfxTier(name, x, y, o);
+  try {
+    if (String(name).startsWith('impacts/')) return r;
+    const k = curSkillKey(), tier = k ? skillTier(k) : 0;
+    if (!tier) return r;
+    const F = TIER_FX[tier], ps = TIER_SC[tier];
+    G.fx.push({ k: 'ring', x, y, t: 0, dur: F.dur, R: F.R * ps, col: F.ring });
+    if (F.twin) after(0.06, () => G.fx.push({ k: 'ring', x, y, t: 0, dur: F.dur * 1.25, R: F.R * 1.5 * ps, col: '255,255,240' }));
+    for (let i = 0; i < F.n; i++) addPart({ x: x + rnd(-34, 34) * ps, y: y + rnd(-30, 14) * ps, vx: rnd(-45, 45), vy: rnd(-105, -35), g: 0, life: rnd(0.35, 0.75), r: rnd(1.5, 3), col: F.part, glow: 1 });
+    if (F.crimson) for (let i = 0; i < 7; i++) addPart({ x: x + rnd(-22, 22) * ps, y: y + rnd(-16, 10) * ps, vx: rnd(-70, 70), vy: rnd(-90, -20), g: 0, life: rnd(0.25, 0.5), r: rnd(1.5, 2.5), col: '235,70,120', glow: 1 });
+    if (F.flash) G.flashW = Math.max(G.flashW || 0, F.flash);
+    if (tier >= 3) for (let i = 0; i < 12; i++) addPart({ x: x - G.player.face * i * 10, y: y + rnd(-4, 4), vx: -G.player.face * rnd(20, 70), vy: 0, g: 0, life: rnd(0.3, 0.6), r: 3.2, col: '255,252,230', glow: 1 });
+  } catch (e) { }
+  return r;
+};
+/* 밟은 특성 단계가 가장 높은 색으로 발밑에 옅은 고리를 그린다(캐릭터당 최고 단계) */
+function topTraitTier() { const s = G.save; if (!s || !TRAITS[s.char]) return 0; let t = 0; for (const tr of TRAITS[s.char]) t = Math.max(t, trTier(s.traits[tr.id] || 0)); return t; }
+const TRAIT_AURA = [null, '255,206,120', '186,96,240', '255,246,214'];
+const _playerFigT = playerFig;
+playerFig = function () {
+  const tier = topTraitTier();
+  if (tier) {
+    const p = G.player, c = ctx, col = TRAIT_AURA[tier], R = 20 + tier * 3, t = G.t;
+    c.save(); c.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < (tier >= 3 ? 3 : tier >= 2 ? 2 : 1); i++) {
+      const rr = R + i * 5 + Math.sin(t * 2 + i) * 1.5, a = (tier >= 3 ? 0.30 : tier >= 2 ? 0.22 : 0.16) * (1 + Math.sin(t * 3 + i * 2) * 0.3);
+      c.fillStyle = `rgba(${col},${a.toFixed(2)})`;
+      for (let k = 0; k < 28; k++) { const an = k / 28 * 6.283 + t * (0.6 + i * 0.3); c.fillRect(Math.round((p.x + Math.cos(an) * rr) / 2) * 2 - 1, Math.round((p.y + Math.sin(an) * rr * 0.32)) * 1, 2, 2); }
+    }
+    c.restore();
+  }
+  return _playerFigT();
+};
+/* ---------------- B) 마법사 X 전용 이펙트 + Z 부메랑 궤적/HUD ---------------- */
+MAGE_VFX.x_bolt = { file: 'vfx/mage_x_bolt.png', ms: [60, 70, 80, 120], sc: 1 / 4, anchor: 'mid' };   // 스팀 폴리시 팩: 셀 256, 64px, F1 점화 → F2 응집 → F3 관통 → F4 분산
+const _mageVoidBolt8 = mageVoidBolt;
+mageVoidBolt = function (mult, o) {
+  o = o || {};
+  const p = G.player, f = p.face || 1;
+  if (o.pierce) {   /* X 관통 탄환: 전용 4프레임 스트립(mage_x_bolt)을 쓰는 별도 종류 */
+    proj({ x: p.x + f * 28, y: p.y - 54, vx: f * (o.speed || 620), w: 56, h: 40, mult: mult * MAGE_DMG_K, kind: 'voidx', maxDist: 560, life: 1.4,
+      pierce: true, pierceN: o.pierce || 3, basic: false, fx2: { i: 0, t: 0 } });
+    mageImg('x_bolt'); sfx('xbolt'); return;
+  }
+  /* Z 공허 탄환: 부메랑. 안쪽 boomer 대신 여기서 궤적을 굽는다(급격한 꺾임 없이 곡선으로 돌아온다) */
+  proj({ x: p.x + f * 14, y: p.y - 54, vx: f * 470, vy: 0, w: 46, h: 34, mult: mult * MAGE_DMG_K, kind: 'void', maxDist: 4000, life: 3.4,
+    pierce: true, mageB: 1, basic: true, mfx: { i: 0, t: 0 }, bph: 'out', bT: 0, bA: f > 0 ? 0 : Math.PI, bSp: 470, bLa: 0, pick: 26 });
+  mageImg('void_bolt'); sfx('void');
+};
+const OUT_DIST = 400, TURN_T = 0.16;
+function boomerTick(dt) {
+  const p = G.player;
+  for (const q of G.projs) {
+    if (q.bph == null || q.dead || q.from !== 'p') continue;
+    const hx = p.x, hy = p.y - p.h * 0.5;
+    q.bLa += dt;
+    if (q.bph === 'out') {
+      if (q.bLa > 0.05) addPart({ x: q.x - sgn(q.vx) * 12, y: q.y + rnd(-8, 8), vx: rnd(-30, 30), vy: rnd(-20, 20), g: 0, life: rnd(0.2, 0.4), r: rnd(1, 2.4), col: '170,110,255', glow: 1 });
+      if (q.dist >= OUT_DIST || p.dead > 0) { q.bph = 'turn'; q.bT = 0; q.bA = Math.atan2(q.vy, q.vx); q.bSp = Math.hypot(q.vx, q.vy) || 470; }
+    } else {
+      const dx = hx - q.x, dy = hy - q.y, dd = Math.hypot(dx, dy), want = Math.atan2(dy, dx);
+      let da = want - q.bA; while (da > Math.PI) da -= 6.283185; while (da < -Math.PI) da += 6.283185;
+      if (q.bph === 'turn') {
+        q.bT += dt; const k = Math.min(1, q.bT / TURN_T), e = k * k * (3 - 2 * k);   // smoothstep: 각도·속도를 함께 이징
+        q.bA += da * (e - (q.bE || 0)); q.bE = e;
+        q.bSp = 470 + (658 - 470) * e;
+        if (k >= 1) { q.bph = 'ret'; q.bE = 0; }
+      } else {
+        const rate = 7 + 20 * Math.min(1, Math.abs(da) / 1.1);   // 멀수록 세게, 가까우면 부드럽게 (오버슛 없음)
+        q.bA += clamp(da, -rate * dt, rate * dt); q.bSp = 658;
+      }
+      q.vx = Math.cos(q.bA) * q.bSp; q.vy = Math.sin(q.bA) * q.bSp;
+      if (Math.random() < 0.55) addPart({ x: q.x, y: q.y + rnd(-6, 6), vx: rnd(-18, 18), vy: rnd(-18, 18), g: 0, life: rnd(0.15, 0.35), r: rnd(1, 2.6), col: '190,150,255', glow: 1 });
+      if (dd <= (q.pick || 26) || p.dead > 0) { q.dead = true; q.picked = 1; spark(q.x, q.y, 6, '190,150,255', 160); }
+    }
+    if (q.bph === 'out') { q.vx = Math.cos(q.bA) * q.bSp; q.vy = Math.sin(q.bA) * q.bSp; }
+  }
+}
+const _updateProjsX = updateProjs;
+updateProjs = function (dt) {
+  boomerTick(dt);
+  for (const q of G.projs) {
+    if (q.kind !== 'voidx' || !q.fx2) continue;
+    q.fx2.t += dt * 1000;
+    while (q.fx2.i < 2 && q.fx2.t >= MAGE_VFX.x_bolt.ms[q.fx2.i]) { q.fx2.t -= MAGE_VFX.x_bolt.ms[q.fx2.i]; q.fx2.i++; }   // 점화 → 응집 → 관통
+    if (q.pierceN && q.hits.length >= q.pierceN) q.dead = true;
+  }
+  const tracked = G.projs.filter(q => q.kind === 'voidx');
+  _updateProjsX(dt);
+  for (const q of tracked) if (!G.projs.includes(q)) mfxAdd('x_bolt', q.x, q.y, { i: 3, end: 3, face: sgn(q.vx) || 1 });   // 끝난 자리에 F4 잔광
+};
+const _drawProjsX = drawProjs;
+drawProjs = function (c) {
+  const all = G.projs; G.projs = all.filter(q => q.kind !== 'voidx');
+  try { _drawProjsX(c); } finally { G.projs = all; }
+  for (const q of all) if (q.kind === 'voidx' && !q.dead) {
+    const dir = sgn(q.vx) || 1;
+    c.save(); c.globalCompositeOperation = 'lighter';
+    for (let i = 1; i <= 3; i++) { const a = 0.20 - i * 0.05; c.fillStyle = `rgba(150,220,255,${a.toFixed(2)})`; c.fillRect(Math.round(q.x - dir * (14 + i * 26)), Math.round(q.y - 2), 26, 4); }   // 궤적 줄기
+    c.restore();
+    mageStrip(c, 'x_bolt', q.fx2 ? q.fx2.i : 1, q.x, q.y, dir, 1);
+    mageStrip(c, 'x_bolt', 1, q.x - dir * 12, q.y, dir, 0.22);   // 잔상
+  }
+};
+/* 첫 X 시전에 그림이 늦게 뜨지 않게 시작할 때 미리 받아 둔다 */
+const _startGameX = startGame;
+startGame = function (...a) { const r = _startGameX(...a); try { if (G.save && G.save.char === 'mage') mageImg('x_bolt'); for (const k in CHEST_FILES) chestImg(k); } catch (e) { } return r; };
+/* HUD: 탄이 살아 돌아오는 동안 Z 칸에 오버레이(회전/복귀와 남은 비율) */
+const _updateHud8 = updateHud;
+updateHud = function (force) {
+  const r = _updateHud8(force);
+  try {
+    if (G.save && G.save.char === 'mage') {
+      const el = document.getElementById('sk0'); if (!el) return r;
+      const q = G.projs.find(x => x.mageB && !x.dead);
+      const cd = el.querySelector('.cd'), ct = el.querySelector('.ct');
+      if (q) {
+        const left = q.bph === 'out' ? clamp(1 - q.dist / OUT_DIST, 0, 1) : clamp(Math.hypot(G.player.x - q.x, (G.player.y - G.player.h / 2) - q.y) / 420, 0.06, 1);
+        if (cd) cd.style.height = Math.round(left * 100) + '%';
+        if (ct) ct.textContent = q.bph === 'out' ? '회전' : '복귀';
+        el.classList.add('cool');
+      } else if ((ct && (ct.textContent === '회전' || ct.textContent === '복귀'))) {
+        if (cd) cd.style.height = '0%';
+        if (ct) ct.textContent = '';
+        el.classList.remove('cool');
+      }
+    }
+  } catch (e) { }
+  return r;
+};
+/* ---------------- C) 퍼펙트 가드: 가드 시작 0.1초 안에 막으면 쿨타임 0(연속 가능) ---------------- */
+const PERFECT_GUARD_WIN = 0.1;         // 사용자 확정(2026-11-24): 가드 지속 GUARD_WIN 0.25초 그대로, 그중 시작 후 0.1초 이내가 퍼펙트
+const PGQ = [];                         // 금빛 스트립 큐 (assets/vfx/perfect_guard_fx.png)
+const PG_IMG = (() => { const im = new Image(); im.src = 'assets/vfx/perfect_guard_fx.png?v=' + (typeof GAME_VER !== 'undefined' ? GAME_VER : ''); return im; })();
+function perfectGuardFx(p) {
+  PGQ.push({ x: p.x + p.face * 14, y: p.y - 28, t: 0, dur: 0.43, face: p.face || 1 });
+  if (PGQ.length > 6) PGQ.shift();
+}
+function pgTick(dt) { for (const q of PGQ) q.t += dt; while (PGQ.length && PGQ[0].t >= PGQ[0].dur) PGQ.shift(); }
+function drawPerfectGuard(c) {
+  if (!PGQ.length) return;
+  const im = PG_IMG; if (!im.complete || !im.naturalWidth) return;
+  const cw = im.naturalWidth / 4, chh = im.naturalHeight;
+  c.save(); c.imageSmoothingEnabled = false; c.globalCompositeOperation = 'lighter';
+  const MS = [50, 60, 120, 200], tot = 430;
+  for (const q of PGQ) {
+    let ms = q.t * 1000, f = 0; while (f < 3 && ms >= MS[f]) { ms -= MS[f]; f++; }   // 50/60/120/200ms
+    const s = 0.5, w = cw * s, h = chh * s;                                          // 셀 256 → 화면 128px
+    c.save(); c.translate(Math.round(q.x), Math.round(q.y)); c.scale(q.face < 0 ? -1 : 1, 1);
+    c.globalAlpha *= Math.max(0, 1 - Math.max(0, q.t * 1000 - tot) / 120);
+    c.drawImage(im, f * cw, 0, cw, chh, Math.round(-w / 2), Math.round(-h / 2), Math.round(w), Math.round(h));
+    c.restore();
+  }
+  c.restore();
+}
+const _parry8 = parry;
+parry = function (src) {
+  const p = G.player, perfect = p.guard >= GUARD_WIN - PERFECT_GUARD_WIN;   // 가드 시작 0.1초 이내(남은 시간 0.15초 이상) = 퍼펙트
+  const r = _parry8(src);
+  if (perfect) {
+    p.cd.g = 0;                 // 쿨타임 즉시 초기화: 다음 프레임에 다시 가드할 수 있다
+    p.guardFlash = 0.3;
+    p.inv = Math.max(p.inv, 0.12);
+    perfectGuardFx(p);
+    numPop(p.x, p.y - 96, 'PERFECT GUARD!', '#ffe9a8', 22);
+    spark(p.x + p.face * 16, p.y - 30, 26, '255,236,160', 420);
+    G.fx.push({ k: 'ring', x: p.x + p.face * 16, y: p.y - 30, t: 0, dur: 0.32, R: 52, col: '255,232,150' });
+    G.hitstop = Math.max(G.hitstop, 0.1); shake(6); sfx('pguard');
+    G.save.pgCount = (G.save.pgCount || 0) + 1;   // 기록용(트로피·QA)
+  }
+  return r;
+};
+const _updateSkillsG = updateSkills;
+updateSkills = function (dt) { _updateSkillsG(dt); pgTick(dt); };
+const _playerFigG = playerFig;
+playerFig = function () { const r = _playerFigG(); try { drawPerfectGuard(ctx); } catch (e) { } return r; };
+/* 가드 설명에 퍼펙트 가드 추가 */
+const _skillTipG = skillTip;
+skillTip = function (act) {
+  const d = _skillTipG(act);
+  if (d && act === 'guard') { d.body += `<div><span>퍼펙트 가드</span><b>가드 시작 0.1초</b></div>`; d.t += ' 가드 시작 0.1초 안에 막으면 PERFECT GUARD — 가드 쿨타임이 바로 0이 되어 연속으로 막을 수 있다.'; }
+  return d;
+};
+document.head.insertAdjacentHTML('beforeend', `<style>
+.sk.pg #sk0x{outline:2px solid #f0c060}
+</style>`);
+/* ---------------- D) 전 맵(1~30장 · 캠프 · 아레나 · 잉여맵) 포탈/발판 · 가로등/발판 겹침 전수 점검 ---------------- */
+const MAP_PROP_SIZE = { fire: [58, 54], anvil: [120, 44], cart: [140, 70], torch: [48, 150], brazier: [64, 64], column: [70, 230], statue: [70, 130],
+  bone: [58, 176], stele: [80, 120], post: [80, 120], mask: [80, 120], gear: [80, 120], reeds: [80, 70] };
+const mapPropW = p => (MAP_PROP_SIZE[p.t] || [60, 100])[0];
+const mapPropH = p => (p.h || (MAP_PROP_SIZE[p.t] || [60, 100])[1]);
+const MAP_GAP = 8, PORTAL_GAP = 12, LEDGE_PAD = 14;
+const portalWH = pt => { try { const A = PORTAL_ART[portalKind(pt)]; return [A.w, A.h]; } catch (e) { return [80, 130]; } };
+const _sp = (x, w) => [x - w / 2, x + w / 2], _hit2 = (a, b, g) => a[0] < b[1] + g && b[0] < a[1] + g;
+const WALK_PROPS = new Set(['chain', 'bell']);   // 떠 있는 것 · 종은 바닥 소품이 아니다
+
+/* 한 맵의 겹침을 센다(고치지 않는다). 종류: portal-plat(포탈 위 발판) / prop-portal(포탈 위 소품) / prop-plat(발판을 뚫는 소품) */
+function mapOverlaps(m, portals) {
+  const rows = [];
+  if (!m || !m.plats) return rows;
+  const pts = (portals || m.portals || []).map(pt => { const [w, h] = portalWH(pt); return { id: pt.id, x: pt.x, w, h }; });
+  const ledges = m.plats.filter(pl => pl.t === 'oneway' && !pl.gim && !pl.off);
+  for (const pl of ledges) {
+    const r = [pl.x, pl.x + pl.w];
+    for (const pt of pts) if (_hit2(r, _sp(pt.x, pt.w), PORTAL_GAP) && (GROUND - pl.y) < pt.h + LEDGE_PAD) rows.push({ k: 'portal-plat', id: m.id, plat: pl.x, w: pl.w, y: pl.y, pt: pt.id, px: pt.x });
+  }
+  for (const p of m.props || []) {
+    if (WALK_PROPS.has(p.t) || p.y != null) continue;
+    const w = mapPropW(p), h = mapPropH(p), r = _sp(p.x, w);
+    for (const pt of pts) if (_hit2(r, _sp(pt.x, pt.w), MAP_GAP)) rows.push({ k: 'prop-portal', id: m.id, t: p.t, x: p.x, pt: pt.id, px: pt.x });
+    for (const pl of ledges) if (h >= GROUND - pl.y - 8 && _hit2(r, [pl.x, pl.x + pl.w], MAP_GAP)) { rows.push({ k: 'prop-plat', id: m.id, t: p.t, x: p.x, plat: pl.x, w: pl.w, y: pl.y }); break; }
+  }
+  return rows;
+}
+/* 전 맵 점검: {rows, byMap, total} */
+function mapAuditAll(portalsOf) {
+  const rows = [];
+  for (const id in MAPS) {
+    const m = MAPS[id]; if (!m || !m.plats) continue;
+    rows.push(...mapOverlaps(m, portalsOf ? portalsOf(m) : m.portals));
+  }
+  const by = {}; for (const r of rows) by[r.k] = (by[r.k] || 0) + 1;
+  return { total: rows.length, by, rows };
+}
+/* 고치기: 포탈은 절대 옮기지 않는다. 발판을 밀거나 줄이고, 소품(가로등·화로·기둥 …)을 가까운 빈 자리로 옮긴다. */
+function fixMapLayout(m, portals) {
+  if (!m || !m.plats) return { moved: 0, shrunk: 0, dropped: 0 };
+  const pts = (portals || m.portals || []).map(pt => { const [w, h] = portalWH(pt); return { id: pt.id, x: pt.x, w, h }; });
+  const ledges = m.plats.filter(pl => pl.t === 'oneway' && !pl.gim && !pl.off);
+  const npcs = m.npcs || [], lore = m.lore || [], W = m.w || 4000;
+  const chest = m.safe ? CHEST_X : -1e9;
+  const L = (m.arenaL || 0) + 24, R = (m.arenaR || W) - 24;
+  let moved = 0, shrunk = 0, dropped = 0;
+  const ledgeFree = (x, w, pl) => {
+    const r = [x, x + w];
+    if (x < L || x + w > R) return false;
+    if (pts.some(pt => _hit2(r, _sp(pt.x, pt.w), PORTAL_GAP) && (GROUND - pl.y) < pt.h + LEDGE_PAD)) return false;
+    if (npcs.some(n => _hit2(r, _sp(n.x, 80), 0))) return false;
+    if (lore.some(l => _hit2(r, [l.x - 16, l.x + 16], 0))) return false;
+    if (_hit2(r, _sp(chest, 70), 6)) return false;
+    if (ledges.some(o => o !== pl && Math.abs(o.y - pl.y) < 46 && _hit2(r, [o.x, o.x + o.w], 34))) return false;
+    return true;
+  };
+  /* 1) 포탈을 덮는 발판: 폭을 유지한 채 가까운 자리로, 자리가 없으면 포탈 반대쪽부터 줄인다 */
+  for (const pl of ledges) {
+    const bad = pts.some(pt => _hit2([pl.x, pl.x + pl.w], _sp(pt.x, pt.w), PORTAL_GAP) && (GROUND - pl.y) < pt.h + LEDGE_PAD);
+    if (!bad) continue;
+    let done = false;
+    for (let d = 10; d <= 620 && !done; d += 10) for (const nx of [pl.x - d, pl.x + d]) if (ledgeFree(nx, pl.w, pl)) { pl.x = nx; moved++; done = true; break; }
+    if (!done) {   // 폭을 지키는 자리를 넓게 찾고, 없으면 폭을 줄여 다시 찾는다 (최소 90px: 딛고 설 수 있는 폭)
+      for (let w = pl.w; w >= 90 && !done; w -= 10) {
+        for (let d = 0; d <= 900 && !done; d += 10) {
+          for (const nx of (d ? [pl.x - d, pl.x + d] : [pl.x, pl.x + (pl.w - w)])) {
+            if (ledgeFree(nx, w, pl)) { pl.x = nx; pl.w = w; shrunk++; done = true; break; }
+          }
+        }
+      }
+    }
+  }
+  /* 2) 소품: 포탈을 가리거나 발판을 뚫는 것만 가까운 빈 자리로 옮기고, 자리가 없으면 뺀다 */
+  const props = (m.props || []).filter(p => !WALK_PROPS.has(p.t) && p.y == null);
+  const propFree = (x, p) => {
+    const w = mapPropW(p), h = mapPropH(p), r = _sp(x, w);
+    if (r[0] < L || r[1] > R) return false;
+    if (pts.some(pt => _hit2(r, _sp(pt.x, pt.w), MAP_GAP))) return false;
+    if (p.t !== 'anvil' && npcs.some(n => _hit2(r, _sp(n.x, 52), MAP_GAP))) return false;
+    if (_hit2(r, _sp(chest, 66), MAP_GAP)) return false;
+    if (lore.some(l => _hit2(r, [l.x - 16, l.x + 16], MAP_GAP))) return false;
+    if (props.some(o => o !== p && _hit2(r, _sp(o.x, mapPropW(o)), MAP_GAP))) return false;
+    if (ledges.some(pl => h >= GROUND - pl.y - 8 && _hit2(r, [pl.x, pl.x + pl.w], MAP_GAP))) return false;
+    return true;
+  };
+  for (const p of props.slice()) {
+    const w = mapPropW(p), h = mapPropH(p), r = _sp(p.x, w);
+    const badP = pts.some(pt => _hit2(r, _sp(pt.x, pt.w), MAP_GAP));
+    const badL = ledges.some(pl => h >= GROUND - pl.y - 8 && _hit2(r, [pl.x, pl.x + pl.w], MAP_GAP));
+    if (!badP && !badL) continue;
+    let x = null;
+    for (let d = 10; d < W && x == null; d += 10) x = propFree(p.x - d, p) ? p.x - d : propFree(p.x + d, p) ? p.x + d : null;
+    if (x != null) { p.x = x; moved++; MAP_FIX_LOG.movedMaps.add(m.id); }
+    else { const i = m.props.indexOf(p); if (i >= 0) m.props.splice(i, 1); dropped++; MAP_FIX_LOG.dropped.push([m.id, p.t, p.x]); }
+  }
+  return { moved, shrunk, dropped };
+}
+/* 시작할 때 한 번: 모든 맵을 정적 포탈 기준으로 점검·보정하고 수치를 남긴다 */
+const MAP_FIX_LOG = { dropped: [], movedMaps: new Set() };
+const MAP_AUDIT_BEFORE = mapAuditAll();
+const MAP_FIX_STATIC = (() => { const o = { moved: 0, shrunk: 0, dropped: 0 }; for (const id in MAPS) { const m = MAPS[id]; if (!m || !m.plats) continue; const r = fixMapLayout(m, m.portals); o.moved += r.moved; o.shrunk += r.shrunk; o.dropped += r.dropped; } return o; })();
+const MAP_AUDIT_AFTER = mapAuditAll();
+try { window.__MAPFIX = { before: MAP_AUDIT_BEFORE, after: MAP_AUDIT_AFTER, fix: MAP_FIX_STATIC, audit: () => mapAuditAll(), overlaps: (id, pts) => mapOverlaps(MAPS[id], pts) }; } catch (e) { }
+try { console.log('[map-overlap] before', MAP_AUDIT_BEFORE.by, MAP_AUDIT_BEFORE.total, '→ after', MAP_AUDIT_AFTER.total, JSON.stringify(MAP_FIX_STATIC)); if (MAP_AUDIT_AFTER.total) console.warn('[map-overlap] 남은 겹침', MAP_AUDIT_AFTER.rows.slice(0, 8)); } catch (e) { }
+/* 맵에 들어갈 때마다(캠프 포탈은 진행도에 따라 바뀐다) 그 맵의 실제 포탈로 한 번 더 */
+const _loadMapD = loadMap;
+loadMap = function (...a) {
+  const r = _loadMapD(...a);
+  try { if (G.map) fixMapLayout(G.map, getPortals()); } catch (e) { console.warn('[map-overlap]', e); }
+  return r;
+};
+/* ---------------- E) 랜덤 상자(15분 쿨 · 25% 확률 · 1~300타 티어) + 축복의 제단(↑ · 3~5분 버프) ---------------- */
+const BOX_TIERS = [
+  { id: 'wood', name: '나무 상자', hits: [1, 50], body: '#8a5a2e', edge: '#c08a4a', band: '#5c3a1c', glow: '255,190,110', w: 5 },
+  { id: 'silver', name: '은 상자', hits: [51, 120], body: '#9aa4b4', edge: '#e0e8f4', band: '#5a6474', glow: '190,220,255', w: 28 },
+  { id: 'gold', name: '황금 상자', hits: [121, 220], body: '#b8862c', edge: '#ffe08a', band: '#6a4a10', glow: '255,214,110', w: 13 },
+  { id: 'myth', name: '신화 상자', hits: [221, 300], body: '#6a3a9a', edge: '#d0a0ff', band: '#3a1e5c', glow: '210,150,255', w: 4 },
+];
+/* 사용자 확정(2026-11-24): 타수 나무 1~50 / 은 51~120 / 황금 121~220 / 신화 221~300.
+   상자와 제단은 **이 기기에서만** 도는 로컬 오브젝트다 — 떠돌이 상인처럼 서버에 올리지 않고, live/party 기록에도 싣지 않는다.
+   그래서 파티원마다 25%(제단 35%) 확률과 맵별 15분(10분) 쿨이 각자의 클라이언트에서 따로 돈다(G.save.boxCd / G.save.shrineCd). */
+const BOX_CHANCE = 0.25, BOX_CD = 900, SHRINE_CHANCE = 0.35, SHRINE_CD = 600;
+G.boxes = []; G.shrines = []; G.bless = null;
+const boxTierPick = () => { let r = Math.random() * 100; for (const T of BOX_TIERS) { r -= T.w; if (r < 0) return T; } return BOX_TIERS[0]; };
+const boxClearX = (m, x) => {
+  const pts = (m.portals || []).concat(typeof getPortals === 'function' && G.map && G.map.id === m.id ? getPortals() : []);
+  if (pts.some(pt => Math.abs(x - pt.x) < 110)) return false;
+  if ((m.props || []).some(p => Math.abs(x - p.x) < 50 + mapPropW(p) / 2)) return false;
+  if ((m.lore || []).some(l => Math.abs(x - l.x) < 70)) return false;
+  if (m.safe && Math.abs(x - CHEST_X) < 90) return false;
+  if ((m.npcs || []).some(n => Math.abs(x - n.x) < 80)) return false;
+  return true;
+};
+function fieldSpot(m) {
+  const L = (m.arenaL || 0) + 160, R = (m.arenaR || m.w) - 160;
+  const cand = [];
+  for (let x = L; x <= R; x += 40) if (boxClearX(m, x)) cand.push(x);
+  return cand.length ? cand[Math.floor(Math.random() * cand.length)] : null;
+}
+function spawnBox(m) {
+  const T = boxTierPick(), x = fieldSpot(m); if (x == null) return null;
+  const b = { tid: BOX_TIERS.indexOf(T), tier: T, x, need: rndi(T.hits[0], T.hits[1]), hits: 0, bounce: 0, flash: 0, open: 0, ch: m.ch || 1 };
+  G.boxes.push(b);
+  G.gimT.push({ rbox: b, x, y: GROUND, w: 44, h: 40, hp: 1e9, mhp: 1e9, d: { def: 0 }, st: 'idle', onHit: (e, dmg, o) => boxHit(b) });   // e.box 는 보스 패턴 것이라 이름을 다르게
+  return b;
+}
+function spawnShrine(m) {
+  const x = fieldSpot(m); if (x == null) return null;
+  const s = { x, used: 0 };
+  G.shrines.push(s);
+  return s;
+}
+function fieldObjects(m) {
+  G.boxes = []; G.shrines = [];
+  if (!m || m.safe || m.boss || m.gate) return;
+  const s = G.save; if (!s) return;
+  const cd = s.boxCd || (s.boxCd = {}), scd = s.shrineCd || (s.shrineCd = {});
+  if (Math.random() < BOX_CHANCE && !(cd[m.id] != null && G.playT - cd[m.id] < BOX_CD)) { if (spawnBox(m)) cd[m.id] = G.playT; }
+  if (Math.random() < SHRINE_CHANCE && !(scd[m.id] != null && G.playT - scd[m.id] < SHRINE_CD)) { if (spawnShrine(m)) scd[m.id] = G.playT; }
+}
+/* ---- 상자 ---- */
+function boxHit(b) {
+  if (b.open) return;
+  b.hits++; b.bounce = 1; b.flash = 0.1;
+  sfx('boxhit');
+  const T = b.tier;
+  spark(b.x, GROUND - 16, 5, T.glow, 150);
+  if (b.hits >= b.need) boxOpen(b);
+  else if (b.hits % 25 === 0) numPop(b.x, GROUND - 46, b.hits + ' / ' + b.need, '#' + 'fff0c0', 13);
+}
+function boxOpen(b) {
+  b.open = 1; b.bounce = 1;
+  const s = G.save, ch = b.ch || mapChapter(), mt = 1 + 0.35 * (ch - 1), T = b.tier, got = [];
+  const grant = { gold: 0, potions: 0, mats: { pot: 0, qual: 0, inherit: 0, free: 0 }, item: null };
+  const addGold = v => { grant.gold += v; got.push('골드 ' + nf(v)); };
+  const addMat = (k, n) => { if (!n) return; grant.mats[k] = (grant.mats[k] || 0) + n; got.push(({ pot: '잠재석 ', qual: '품질석 ', inherit: '계승석 ', free: '무료 잠재 변경권 ' })[k] + n); };
+  if (T.id === 'wood') { addGold(Math.round(rnd(50, 120) * mt)); const n = rndi(1, 2); grant.potions += n; got.push('치유 연고 ' + n); }
+  else if (T.id === 'silver') { addGold(Math.round(rnd(280, 620) * mt)); addMat('pot', rndi(1, 2)); addMat('qual', rndi(1, 2)); }
+  else if (T.id === 'gold') { addGold(Math.round(rnd(900, 1800) * mt)); addMat('qual', rndi(2, 4)); addMat('pot', rndi(2, 4)); }
+  else { addGold(Math.round(rnd(2600, 5200) * mt)); addMat('free', 1); if (Math.random() < 0.6) addMat('inherit', rndi(1, 2)); else grant.item = makeItem(SLOTS[Math.floor(Math.random() * SLOTS.length)], s.char, 3, ch); }
+  for (let i = 0; i < 26; i++) addPart({ x: b.x + rnd(-16, 16), y: GROUND - 18 + rnd(-10, 10), vx: rnd(-150, 150), vy: rnd(-260, -60), g: 420, life: rnd(.5, 1.1), r: rnd(1.5, 3.4), col: T.glow, glow: 1 });
+  G.fx.push({ k: 'ring', x: b.x, y: GROUND - 18, t: 0, dur: 0.4, R: 46, col: T.glow });
+  sfx('boxopen'); shake(3);
+  /* 3프레임 그림의 2(부서짐)를 잠깐 보여 준 뒤 보상을 떨어뜨린다 (사용자: 파괴 시 잠시 유지 후 보상 드랍) */
+  after(0.34, () => {
+    if (!G.save || G.save !== s) return;
+    s.gold += grant.gold; s.potions += grant.potions;
+    for (const k in grant.mats) s.mats[k] = (s.mats[k] || 0) + grant.mats[k];
+    if (grant.item) { if (addItem(grant.item)) got.push('고급 장비 · ' + grant.item.name); }
+    toast(T.name + ' 개봉 · ' + got.join(' · '), 'gold'); writeSave(); updateHud(true);
+    for (let i = 0; i < 10; i++) addPart({ x: b.x + rnd(-10, 10), y: GROUND - 20, vx: rnd(-80, 80), vy: rnd(-220, -90), g: 420, life: rnd(.4, .8), r: rnd(1.5, 3), col: T.glow, glow: 1 });
+  });
+  after(0.62, () => { const i = G.boxes.indexOf(b); if (i >= 0) G.boxes.splice(i, 1); const g = G.gimT.find(e => e.rbox === b); if (g) { g.dead = true; } });
+}
+const CHEST_FILES = { wood: 'random_chest_wood', silver: 'random_chest_silver', gold: 'random_chest_gold', myth: 'random_chest_mythic' };
+const CHEST_IMG = {};
+function chestImg(id) {
+  if (CHEST_IMG[id] !== undefined) return CHEST_IMG[id];
+  const im = new Image(); im.src = ASSET9 + 'obj/' + (CHEST_FILES[id] || 'random_chest_wood') + '.png?v=' + (typeof GAME_VER !== 'undefined' ? GAME_VER : '');
+  if (im.decode) im.decode().catch(() => { });
+  return (CHEST_IMG[id] = im);
+}
+function drawBoxes(c, cam) {
+  for (const b of G.boxes) {
+    if (b.x < cam.x - 80 || b.x > cam.x + W + 80) continue;
+    const T = b.tier, x = Math.round(b.x), base = GROUND;
+    const k = b.bounce > 0 ? 1 + 0.12 * Math.sin(Math.min(1, b.bounce) * Math.PI) : 1;   // 때리면 살짝 커졌다 작아진다
+    const bob = b.open ? 0 : Math.sin(G.t * 2.4 + b.x * 0.01) * 1.2;
+    c.save(); c.globalCompositeOperation = 'lighter';   // 은은한 빛
+    const gl = c.createRadialGradient(x, base - 22, 2, x, base - 22, 52);
+    gl.addColorStop(0, `rgba(${T.glow},.20)`); gl.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = gl; c.fillRect(x - 52, base - 74, 104, 92); c.restore();
+    const img = chestImg(T.id), w = 60, h = 45;
+    c.save(); c.translate(x, base + bob); c.scale(k, k); c.imageSmoothingEnabled = false;
+    if (img && img.complete && img.naturalWidth) {
+      /* 상자 그림: 3프레임 가로 스트립(384×128, 셀 128)이 오면 0=닫힘 / 1=반쯤 열림(타수 50% 이상 또는 맞는 순간) / 2=부서짐.
+         아직 1프레임(128×128)이면 그대로 한 장만 그린다(폭으로 판별). */
+      const fw = img.naturalWidth >= 380 ? Math.floor(img.naturalWidth / 3) : img.naturalWidth;
+      const three = img.naturalWidth >= 380;
+      let f = 0;
+      if (b.open) f = 2; else if (three && (b.hits / b.need >= 0.5 || b.flash > 0)) f = 1;
+      if (b.flash > 0) c.filter = `brightness(${(1 + b.flash * 14).toFixed(1)})`;   // 흰색 히트 플래시
+      c.drawImage(img, three ? f * fw : 0, 0, fw, img.naturalHeight, Math.round(-w / 2), -h, w, h);
+      c.filter = 'none';
+      if (b.open) { c.globalAlpha = 0.5; c.fillStyle = '#fff6d8'; c.fillRect(-w / 2 + 6, -h, w - 12, 4); c.globalAlpha = 1; }
+    } else {   // 그림을 못 불러오면 예전 픽셀 상자
+      const ww = 32, hh = 24;
+      c.fillStyle = b.open ? 'rgba(20,14,10,.9)' : T.body; c.fillRect(-ww / 2, -hh, ww, hh);
+      c.fillStyle = T.edge; c.fillRect(-ww / 2, -hh, ww, 3); c.fillRect(-ww / 2, -12, ww, 2); c.fillRect(-ww / 2, -hh, 2, hh); c.fillRect(ww / 2 - 2, -hh, 2, hh);
+      c.fillStyle = T.band; c.fillRect(-4, -hh, 8, hh);
+      if (b.flash > 0) { c.globalAlpha = Math.min(0.85, b.flash * 8); c.fillStyle = '#fff'; c.fillRect(-ww / 2, -hh, ww, hh); c.globalAlpha = 1; }
+    }
+    c.restore();
+    if (!b.open) {   // 남은 타수 게이지
+      const bw = 34, y0 = base - h - 10, kk = clamp(b.hits / b.need, 0, 1);
+      c.fillStyle = 'rgba(8,8,12,.72)'; c.fillRect(Math.round(x - bw / 2) - 1, Math.round(y0) - 1, bw + 2, 5);
+      c.fillStyle = `rgba(${T.glow},.95)`; c.fillRect(Math.round(x - bw / 2), Math.round(y0), Math.round(bw * kk), 3);
+    }
+  }
+}
+/* ---- 축복의 제단 ---- */
+const SHRINE_IMG = (() => { const im = new Image(); im.src = 'assets/obj/blessing_shrine.png?v=' + (typeof GAME_VER !== 'undefined' ? GAME_VER : ''); return im; })();
+const BLESS_KINDS = [
+  { k: 'atk', name: '공격의 축복', desc: '공격력 +20%', col: '255,190,120' },
+  { k: 'haste', name: '속도의 축복', desc: '공격 속도·이동 속도 +15%', col: '150,230,255' },
+  { k: 'xp', name: '지혜의 축복', desc: '경험치 +30%', col: '190,255,180' },
+  { k: 'heal', name: '회복의 축복', desc: 'HP 전부 회복', col: '255,150,170' },
+];
+function drawShrines(c, cam) {
+  for (const s of G.shrines) {
+    if (s.x < cam.x - 90 || s.x > cam.x + W + 90) continue;
+    const x = Math.round(s.x), t = G.t;
+    const img = SHRINE_IMG; let drawn = false;
+    if (img && img.complete && img.naturalWidth) { c.save(); c.imageSmoothingEnabled = false; c.drawImage(img, x - 30, GROUND - 61, 60, 61); c.restore(); drawn = true; }   // 스팀 팩: 128×160 파일 = 월드 60×61, 바닥 중앙
+    if (!drawn) {   // 그림이 없을 때: 돌 제단 + 촛불
+      c.fillStyle = '#2a2c36'; c.fillRect(x - 22, GROUND - 30, 44, 30);
+      c.fillStyle = '#4a4e5e'; c.fillRect(x - 26, GROUND - 34, 52, 6); c.fillRect(x - 22, GROUND - 44, 44, 10);
+      c.fillStyle = '#ffe8b0'; c.fillRect(x - 3, GROUND - 52, 6, 8);
+    }
+    c.save(); c.globalCompositeOperation = 'lighter';
+    const gl = c.createRadialGradient(x, GROUND - 46, 3, x, GROUND - 46, 54);
+    const pulse = 0.16 + Math.sin(t * 2.2) * 0.06;
+    gl.addColorStop(0, `rgba(255,236,180,${pulse + 0.10})`); gl.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = gl; c.fillRect(x - 54, GROUND - 100, 108, 108);
+    c.restore();
+    for (let i = 0; i < 3; i++) { const yy = GROUND - 52 + Math.sin(t * 1.6 + i * 2) * 6; pxSq(c, x + Math.sin(t * 1.2 + i) * 10, yy, 2, 'rgba(255,238,180,.75)'); }
+  }
+}
+function shrineUse(s) {
+  if (!s || s.used) return;
+  const b = BLESS_KINDS[Math.floor(Math.random() * BLESS_KINDS.length)];
+  const dur = b.k === 'heal' ? 6 : rndi(180, 300);
+  G.bless = { k: b.k, name: b.name, desc: b.desc, col: b.col, t: dur, dur };
+  if (b.k === 'heal') G.player.hp = G.player.mhp;
+  s.used = 1;
+  const i = G.shrines.indexOf(s); if (i >= 0) G.shrines.splice(i, 1);
+  G.fx.push({ k: 'ring', x: s.x, y: GROUND - 40, t: 0, dur: 0.6, R: 80, col: b.col });
+  for (let j = 0; j < 24; j++) addPart({ x: s.x + rnd(-20, 20), y: GROUND - rnd(10, 90), vx: rnd(-40, 40), vy: rnd(-140, -40), g: -20, life: rnd(.6, 1.2), r: rnd(1.5, 3), col: b.col, glow: 1 });
+  sfx('shrine'); toast('축복의 제단 · ' + b.name + ' — ' + b.desc + (b.k === 'heal' ? '' : ' · ' + Math.round(dur / 60) + '분'), 'gold');
+  updateHud(true);
+}
+const blessAtk = () => (G.bless && G.bless.k === 'atk' ? 1.2 : 1);
+const blessSpd = () => (G.bless && G.bless.k === 'haste' ? 1.15 : 1);
+const blessAs = () => (G.bless && G.bless.k === 'haste' ? 0.15 : 0);
+/* 버프 적용: 공격력/경험치는 기존 계산 지점을 감싸고, 이동·공격 속도는 updatePlayer 두 줄(아래 D-1, D-2)에 붙인다 */
+const _dealDamage8 = dealDamage;
+dealDamage = function (e, mult, o) { return _dealDamage8(e, mult * blessAtk(), o); };
+const _gainXp8 = gainXp;
+gainXp = function (n) { return _gainXp8(G.bless && G.bless.k === 'xp' ? Math.round(n * 1.3) : n); };
+function blessTick(dt) {
+  for (const b of G.boxes) { if (b.bounce > 0) b.bounce = Math.max(0, b.bounce - dt * 6); if (b.flash > 0) b.flash = Math.max(0, b.flash - dt * 0.5); }
+  if (!G.bless) return;
+  G.bless.t -= dt;
+  if (G.bless.t <= 0) { toast(G.bless.name + '이 끝났다', ''); G.bless = null; }
+  else if (G.bless.k === 'heal' && G.player.hp < G.player.mhp) G.player.hp = G.player.mhp;
+}
+const FOCUS_CHIP_CSS = `<style>
+#blessChip{position:absolute;left:calc(var(--u)*14);bottom:calc(var(--u)*132);display:none;align-items:center;gap:calc(var(--u)*6);
+padding:calc(var(--u)*4) calc(var(--u)*8);background:rgba(10,8,14,.78);border:1px solid #6a5a30;border-radius:calc(var(--u)*4);
+font-size:max(9px,calc(var(--u)*11));color:#f0e6cf;pointer-events:none;z-index:12}
+#blessChip.on{display:flex}#blessChip b{color:#ffe6a8}#blessChip i{font-style:normal;font-variant-numeric:tabular-nums;color:#fff}
+#blessChip u{text-decoration:none;color:#a99c84}
+</style>`;
+document.head.insertAdjacentHTML('beforeend', FOCUS_CHIP_CSS);
+function blessHud() {
+  let el = document.getElementById('blessChip');
+  if (!el) { el = document.createElement('div'); el.id = 'blessChip'; (document.getElementById('game') || document.body).appendChild(el); }
+  if (!G.bless || G.scene !== 'play') { el.classList.remove('on'); return; }
+  const b = G.bless, m = Math.floor(b.t / 60), sec = Math.floor(b.t % 60);
+  const txt = `<b>${b.name}</b><u>${b.desc}</u><i>${m}:${String(sec).padStart(2, '0')}</i>`;
+  if (el.dataset.v !== txt) { el.dataset.v = txt; el.innerHTML = txt; }
+  el.classList.add('on');
+}
+/* 맵에 들어갈 때 상자·제단 배치, 그리고 그리기/상호작용 연결 */
+const _loadMapE = loadMap;
+loadMap = function (...a) { const r = _loadMapE(...a); try { fieldObjects(G.map); } catch (e) { console.warn('[field]', e); } return r; };
+const _drawPropsE = drawProps;
+drawProps = function (c, cam) { const r = _drawPropsE(c, cam); try { drawShrines(c, cam); drawBoxes(c, cam); } catch (e) { } return r; };
+/* 상호작용: 제단은 ↑ (원래 updateInteract 는 포탈·NPC·줍기만 본다) */
+updateInteract = function () {
+  const p = G.player, m = G.map;
+  let best = null, bd = 1e9;
+  const consider = (type, obj, x, y, range, text) => { const d = Math.abs(p.x - x); if (d < range && d < bd) { bd = d; best = { type, obj, x, y, text }; } };
+  const floorOk = p.onGround && p.y > GROUND - 30;
+  if (floorOk) for (const pt of getPortals()) consider('portal', pt, pt.x, GROUND - 100, 46, pt.req() ? pt.label : '[잠김] ' + (pt.lockT || '닫혀 있다'));
+  for (const n of visibleNpcs()) consider('npc', n, n.x, GROUND - 112, 60, n.title ? n.title + ' ' + n.name : n.name);
+  for (const g of gatherSpotsHere()) if (!g.done) consider('gather', g, g.x, g.y - 40, 42, (g.spot === 'brazier' ? '불 붙이기' : g.spot === 'grave' ? '읽기' : '줍기') + ' · ' + g.item);
+  for (const l of m.lore) consider('lore', l, l.x, l.y - 54, 40, '기록 읽기');
+  for (const s of G.shrines || []) if (!s.used) consider('shrine', s, s.x, GROUND - 70, 52, '축복의 제단 · ↑');
+  if (m.safe) consider('storage', null, CHEST_X, GROUND - 50, 34, '창고');
+  G.interact = best;
+  if (best && IN.press.up && p.dead <= 0 && p.hurt <= 0 && !(p.cast > 0)) interact(best);
+};
+const _interactE = interact;
+interact = function (it) { if (it && it.type === 'shrine') return shrineUse(it.obj); return _interactE(it); };
+const _updateSkillsE = updateSkills;
+updateSkills = function (dt) { _updateSkillsE(dt); blessTick(dt); };
+const _updateHudE = updateHud;
+updateHud = function (f) { const r = _updateHudE(f); try { blessHud(); } catch (e) { } return r; };
+/* 소리: 새 이름은 합성음으로 (파일이 없어도 난다) */
+const _sfxE = sfx;
+sfx = function (n, a) {
+  if (n === 'pguard') { tone(880, 0.10, 'square', 0.10, 1320); tone(1320, 0.34, 'sine', 0.12, 1760, 0.03); noise(0.18, 0.06, 'highpass', 2400, 900, 1); return; }
+  if (n === 'xbolt') { tone(300, 0.16, 'sawtooth', 0.08, 900); noise(0.14, 0.05, 'bandpass', 1400, 500, 1.2); return; }
+  if (n === 'boxhit') { tone(220 + Math.random() * 60, 0.06, 'square', 0.06, 160); noise(0.05, 0.05, 'lowpass', 900, 300, 1); return; }
+  if (n === 'boxopen') { tone(523, 0.12, 'triangle', 0.09, 784, 0); tone(784, 0.18, 'triangle', 0.09, 1046, 0.1); tone(1046, 0.3, 'sine', 0.08, 1318, 0.2); return; }
+  if (n === 'shrine') { tone(392, 0.4, 'sine', 0.09, 587); tone(587, 0.5, 'sine', 0.07, 784, 0.12); noise(0.5, 0.03, 'highpass', 3000, 1200, 1); return; }
+  return _sfxE(n, a);
+};
 
 applyBossDefs();
 loadSprites();

@@ -12,6 +12,44 @@
 
 ## 옮길 것
 
+### 261124-1130  8개 항목: 특성 15단계 연출·누적 수치 · 마법사 X 전용 이펙트 · 전맵 포탈/가로등 겹침 · 퍼펙트 가드 · 랜덤 상자·축복의 제단 · Z 귀환/HUD   (대상: index.html / test/index.html + assets)
+지시서: `claude_code_8_traits_guard_shrine_prompt.txt` (기준 cec0a79). index.html 을 직접 고쳤고
+test/index.html 에 같은 자리로 넣었다(1·3행만 다르고 4행부터 같음, 둘 다 24,041행). 원본 조각으로 옮길 때의 대상:
+
+- **(1) 특성 15단계 밸런스·연출** `55_growth.js`(추정) + `50_ui.js`:
+  `TR_BAL`(tpMax 149 · 특성당 30 · 여섯 180 · 누적 피해 5/10/11~14/15단계 = 30/75/81~99/124%) 상수로 감사표를 남김.
+  `traitTotals/traitSumText` 추가(tDmg·tCd·traitRank 를 그대로 따라 계산, ka1 공속·mg1 방어막·th_s 지속 예외),
+  `traitsHtml` 새 판 — 카드마다 `<div class="tsum1">누적 · …</div>`, 위 합계 줄은 여섯 특성 합 + 포인트 한도,
+  초기화 버튼 유지. CSS `.tsum1`·`.tcard.t6` 여백/행높이/#pBox 패딩(창이 스크롤 없이 들어오게).
+  `pfx` 래퍼: `TIER_FX` 표(5 금빛 / 10 보라+진홍 / 15 금백+이중 고리+플래시)로 단계별 색·층 분리('impacts/' 통과),
+  `topTraitTier`+`TRAIT_AURA` 로 발밑 단계 고리. 실측: rank0/5/10/15 → 고리 0/255,206,120/176,80,240/255,244,205,
+  스파크 0/14/27/38, TIER_SC 1/1.1/1.2/1.3.
+- **(2) 마법사 X 전용 이펙트** `56j_mage.js`: `MAGE_VFX.x_bolt`(1024×256, 셀 256, sc 1/4, ms 60/70/80/120),
+  `mageVoidBolt` 래퍼의 pierce 경로를 `kind:'voidx'`(w 56 h 40, pierceN, fx2)로, updateProjs 래퍼가 0→1→2 프레임·
+  3관통 폭발·F4 잔광, drawProjs 래퍼가 궤적 줄기+잔상, startGame 에서 `mageImg('x_bolt')` 예열.
+- **(3) 전맵 겹침** `56g_maps.js`/`56q_props.js` 끝: `MAP_PROP_SIZE`·`mapOverlaps`/`mapAuditAll`/`fixMapLayout`,
+  시작 시 전 맵 1회 + `loadMap` 래퍼마다 `getPortals()` 로 재점검. 발판은 옮기고(폭 유지 → 최소 90px 축소),
+  소품은 가까운 빈 자리로 옮기고 자리가 없으면 뺀다. 포탈은 옮기지 않는다.
+  실측 580건(portal-plat 85 · prop-portal 67 · prop-plat 428, 159개 맵) → 0건. 소품 466 이동 · 발판 26 · 소품 35 제거, 158개 맵 변화.
+- **(4) 퍼펙트 가드** `30_combat.js`+`50_ui.js`: `PERFECT_GUARD_WIN = 0.1`, `parry` 래퍼에서
+  `p.guard >= GUARD_WIN - 0.1` 이면 `p.cd.g = 0`·`pgCount++`·PERFECT GUARD! 팝·금빛 4프레임·`sfx('pguard')`,
+  기본 청록 hit_guard 스트립은 큐에서 제거. `skillTip('guard')` 에 0.25초/0.1초 문구. GUARD_WIN 0.25 는 그대로.
+  실측: 0.02/0.05/0.099/0.1초 → cd 0, 0.101/0.15/0.2초 → cd 3, 연속 2회 성공.
+- **(5) 랜덤 상자·축복의 제단** 새 조각 `63_box_shrine.js`(권장): `BOX_TIERS`(나무 1~50 / 은 51~120 / 황금 121~220 /
+  신화 221~300, 가중 55/28/13/4), `BOX_CHANCE .25`·`BOX_CD 900`, `SHRINE_CHANCE .35`·`SHRINE_CD 600`,
+  `G.save.boxCd/shrineCd`(플레이어별 로컬 — live/party 기록에 싣지 않는다), `spawnBox`(gimT 에 **`rbox`** 로 등록),
+  `boxHit`(bounce/flash/게이지), `boxOpen`(0.34초 뒤 보상, 0.62초 뒤 제거), `drawBoxes`(obj/random_chest_*, 60×45,
+  3프레임 384×128 판별), `spawnShrine`/`shrineUse`/`blessTick`/`blessHud`(`#blessChip`), `updateInteract`·`interact`
+  래퍼(제단 ↑), `dealDamage`·`gainXp` 래퍼 + updatePlayer 이동·공격속도 두 줄에 `blessSpd()/blessAs()`.
+  실측: 400회 진입 → 상자 30.8%·제단 33.8%, 15분 쿨 차단, 4티어 보상, 0.34초 지연 지급, 파티 2클라이언트 독립.
+- **(6) Z 귀환 궤적·HUD** `56j_mage.js`+`50_ui.js`: 부메랑을 `bph out/turn/ret` 로 직접 굽는다(400px 에서 0.16초
+  smoothstep 각도·속도 이징, 470→658, `rate = 7 + 20×min(1,|da|/1.1)`, 26px 회수). `updateHud` 래퍼가 `#sk0` 에
+  '회전/복귀' + 남은 비율. 실측: 최대 프레임 각도 변화 0.45rad(이전 즉시 π 반전), 왕복 1.6초, HUD 100→4% / 100→13%.
+- 새 자산(assets/ 와 test/assets/ 같은 경로): `vfx/mage_x_bolt.png`(1024×256) `vfx/perfect_guard_fx.png`(1024×256)
+  `obj/random_chest_{wood,silver,gold,mythic}.png`(128×128, 3프레임 스트립으로 교체 예정) `obj/blessing_shrine.png`(128×160)
+  — 출처 `downloads/steam_polish_assets_pack/`.
+- 버전: GAME_VER '261124-1130', version.json(루트·test) 동일.
+
 ### 261124-1040  12개 개선 + 궁수 집중 + 29장 개기일식 + 프리로드 + 보스 다리 복구   (대상: index.html / test/index.html + assets)
 지시서: `claude_code_12_polish_eclipse_prompt.txt` (기준 bc0ca55). index.html 을 직접 고쳤고
 test/index.html 에 같은 자리로 넣었다(1~3행만 다르고 4행부터 완전히 같음, 둘 다 23,420행).
