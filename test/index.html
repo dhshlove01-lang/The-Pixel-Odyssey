@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1810';
+const GAME_VER = '261125-1840';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16263,12 +16263,18 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125j',   // 2026-11-25 스물다섯 번째 패치(GAME_VER '261125-1810'): 묶음 6 보완
+  id: '261125k',   // 2026-11-25 스물여섯 번째 패치(GAME_VER '261125-1840'): 묶음 7 그림이 곧 판정
   title: '패치 노트',
   sub: '29장 월식이 화면을 삼키고, 거꾸로 나가던 보스 스킬을 바로잡았다',
   versions: [
     {
-      ver: '261125-1810', date: '2026-11-25', name: '보스 스킬은 선명하게 · 전조만 반투명', cur: 1,
+      ver: '261125-1840', date: '2026-11-25', name: '보스 스킬: 보이는 그림이 곧 판정', cur: 1,
+      items: [
+        { t: '보스', h: '보이는 스킬 그림이 그대로 날아와 맞는다', p: '그림과 실제로 맞는 탄이 따로 놀던 보스 스킬 17가지를 고쳤다. 작은 탄은 없어지고, 보스가 쏜 그림(단검 부채·깃털·해골·초승달·해일 등)이 그대로 날아와 그 그림에 닿으면 맞는다. 피하려면 구르기·가드·점프를 쓴다.', q: '11장 부품 사출 탄막 · 13장 원혼 해골 · 14장 스카라브 군단·황금 깃털 부채 · 15장 도깨비불 대포 · 16장 해일 · 17장 비검 사격 · 20장 홍련의 화염검기 · 21장 별빛 단검 부채·일식 연사 · 22장 부러진 날개 폭풍 · 23장 거울 파편 · 24장 역병 탄환·까마귀 떼 · 29장 핏빛 초승달. 12장 대폭발과 26장 모래 폭풍은 그 자리에서 터지는 동안 맞는다.' },
+      ],
+    },
+    {
+      ver: '261125-1810', date: '2026-11-25', name: '보스 스킬은 선명하게 · 전조만 반투명',
       items: [
         { t: '보스', h: '피할 수 있는 보스 스킬은 선명하게', p: '반투명은 바닥 경고·조준선·! 같은 전조에만 적용된다. 실제로 날아오고 터지는 스킬 그림은 다시 선명하게 보인다.' },
         { t: '보스', h: '맵 전체를 덮는 피할 수 없는 스킬은 흐리게', p: '경기장 대부분을 덮는 스킬 그림(20장 화빙 양분 충격파 등)은 반투명하게 그려 캐릭터와 보스가 가려지지 않는다.' },
@@ -26693,5 +26699,86 @@ vfx9Draw = function (c) {
   try { return _fb6vfx9Draw(c); } finally { for (const [v, dy] of moved) v.y -= dy; for (const [v, a] of faded) v.alpha = a; }
 };
 tuneAdd({ k: 'wide9A', g: 'boss', sec: '모든 보스', n: '맵 전체 스킬 그림 진하기', help: '경기장 폭의 70% 이상을 덮는 피할 수 없는 스킬 그림의 불투명도 (피할 수 있는 스킬은 항상 선명)', get: () => WIDE9_ALPHA, set: v => { WIDE9_ALPHA = v; }, min: 10, max: 100, step: 5, pct: true });
+
+/* ============ 2026-11-25 사용자 피드백 묶음 7 — 보스 스킬: 그림이 곧 판정 ============
+   그림(4프레임 스트립)과 실제 판정 탄(작은 도트 탄)이 따로 놀던 스킬(검수 23개 중 19개). 사용자 선택: "그림을 판정으로".
+   - fly : 그 스킬이 쏜 작은 탄을 없애고, 그림이 보스가 보는 쪽으로 날아가며 그림의 보이는 부분(가장자리 15% 안쪽)에 닿으면 한 번 맞는다.
+           속도 = 없앤 탄들의 평균 가로 속도(없으면 380), 피해 = 그 탄 하나의 피해.
+   - stay: 그 자리에서 터지는 동안(그림이 보이는 동안) 닿으면 한 번 맞는다(작은 탄은 없앤다).
+   떨어지는 탄과 그 자리 충돌 그림이 짝인 것(15장 현측 포격·17장 검진·만검우·19장 고드름 창)은 그대로. */
+const FB7 = {   // [보스, 스킬 순번]: 'fly' | 'stay'
+  b11: { 2: 'fly' }, b12: { 5: 'stay' }, b13: { 2: 'fly' }, b14: { 1: 'fly', 2: 'fly' }, b15: { 1: 'fly' }, b16: { 0: 'fly' }, b17: { 0: 'fly' },
+  b20: { 0: 'fly' }, b21: { 0: 'fly', 3: 'fly' }, b22: { 1: 'fly' }, b23: { 0: 'fly' }, b24: { 0: 'fly', 1: 'fly' }, b26: { 0: 'stay' }, b29: { 1: 'fly' },
+};
+let FB7_SHRINK = 0.15, FB7_SPEED = 1;   // let: 마스터 콘솔
+function img9Boxes(im) {   // 프레임마다 보이는 부분의 상자(파일 px)
+  if (im.box9) return im.box9;
+  const fw = Math.floor(im.naturalWidth / 4), fh = im.naturalHeight, out = [];
+  try {
+    const cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = fh;
+    const x = cv.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, cv.width, fh).data;
+    for (let k = 0; k < 4; k++) { let x0 = fw, y0 = fh, x1 = -1, y1 = -1;
+      for (let y = 0; y < fh; y++) for (let i = 0; i < fw; i++) if (d[(y * cv.width + k * fw + i) * 4 + 3] > 60) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      out.push(x1 < 0 ? null : [x0, y0, x1 + 1, y1 + 1]); }
+  } catch (e) { }
+  return (im.box9 = out);
+}
+function vfx9HitBox(v) {   // 지금 프레임의 보이는 부분을 월드 좌표로 (vfx9Draw 와 같은 배치: 바닥 붙이기 포함)
+  if (!img9Ready(v.img)) return null;
+  const fw = Math.floor(v.img.naturalWidth / 4), fh = v.img.naturalHeight, f = clamp(vfx9Frame(v), 0, 3), B = img9Boxes(v.img)[f]; if (!B) return null;
+  const dw = Math.round(v.w), dh = Math.round(v.w * fh / fw), k = dw / fw;
+  let top = v.anchor === 'bottom' ? v.y - dh : v.y - dh / 2;
+  if (v.anchor !== 'bottom' && top + dh > GROUND) top -= top + dh - GROUND;
+  if (v.anchor === 'bottom' && Math.abs(v.y - GROUND) <= 12 && !v.noSnap) top += Math.max(0, img9BottomGap(v.img)[f] * k - Math.max(0, v.y - GROUND));
+  let x0 = B[0] * k - dw / 2, x1 = B[2] * k - dw / 2; if (v.flip) [x0, x1] = [-x1, -x0];
+  const sx = (x1 - x0) * FB7_SHRINK, sy = (B[3] - B[1]) * k * FB7_SHRINK;
+  return { x0: v.x + x0 + sx, x1: v.x + x1 - sx, y0: top + B[1] * k + sy, y1: top + B[3] * k - sy };
+}
+const _fb7updateWorld = updateWorld;
+updateWorld = function (rdt) {
+  const r = _fb7updateWorld(rdt);
+  try { fb7Tick(rdt * (G.timeScale || 1)); } catch (e) { console.warn('[fb7]', e); }
+  return r;
+};
+function fb7Tick(dt) {
+  const b = G.boss, S = b && b.s9, mode = S && FB7[b.id] && FB7[b.id][S.idx];
+  if (mode && S && !S.v && S.k !== 'tele') {   // 그림을 시전 안에서 따로 만든 스킬(16장 해일): 이 스킬 동안 새로 생긴 그림을 이어받는다
+    const nv = (G.vfx9 || []).filter(v => !v.mv && v.t < 0.25 && v.img && IMG9[b.id] && IMG9[b.id].includes(v.img)).pop(); if (nv) S.v = nv;
+  }
+  if (mode && !G.cine && !G.death && S.v) {   // 그림이 있을 때만 (그림 없이 탄만 지우면 보이지 않는 판정이 된다)
+    const F = S.fb7 || (S.fb7 = { n: 0, vx: 0, dmg: 0, kb: 200 });
+    for (const q of G.projs) if (q.src === b && !q.dead && !q.fb7) {   // 이 스킬이 쏜 작은 탄: 속도·피해만 가져오고 없앤다
+      q.fb7 = 1; q.dead = true; F.n++; F.vx += Math.abs(q.vx || 0); F.dmg = Math.max(F.dmg, q.dmg || 0); F.kb = q.kb || F.kb; }
+    G.projs = G.projs.filter(q => !(q.fb7 && q.dead));
+    const v = S.v;
+    if (v && !v.mv && (S.k !== 'tele')) {
+      v.mv = { mode, dir: S.face || b.face || -1, sp: 0, dmg: 0, kb: F.kb, src: b, hit: false, F };
+      v.noClamp = true;
+      if (mode === 'fly') {
+        v.loop = false; v.life = 6; v.noSnap = true; v.follow = null;
+        const hb = vfx9HitBox(v), P = G.player;   // 시전 순간 플레이어 몸 높이로 (바닥 아래로는 안 내려간다)
+        if (hb) { const want = P.y - P.h / 2, mid = (hb.y0 + hb.y1) / 2; let dy = want - mid; if (hb.y1 + dy > GROUND) dy = GROUND - hb.y1; v.y += dy; }
+      }
+    }
+  }
+  for (const v of G.vfx9 || []) {
+    const M = v.mv; if (!M) continue;
+    const F = M.F; M.dmg = Math.max(M.dmg, F.dmg || 0) || dmg9(M.src, 20); M.sp = F.n ? F.vx / F.n : 380;
+    if (M.mode === 'fly') {
+      if (v.fixed == null && v.t >= v.step * 2) v.fixed = 2;   // 날아가는 동안은 가장 큰 프레임으로
+      v.x += M.dir * Math.max(200, M.sp) * FB7_SPEED * dt * (typeof BOSS_PACE === 'number' ? BOSS_PACE : 1);
+      const L = G.map.arenaL != null ? G.map.arenaL : 0, R = G.map.arenaR != null ? G.map.arenaR : G.map.w;
+      if ((M.dir < 0 && v.x + v.w / 2 < L - 40) || (M.dir > 0 && v.x - v.w / 2 > R + 40)) { if (v.life > v.t) v.life = v.t; }
+    }
+    if (M.hit || v.t > v.life) continue;
+    const p = G.player, hb = vfx9HitBox(v); if (!hb || p.dead > 0) continue;
+    if (ov(hb.x0, hb.y0, hb.x1 - hb.x0, hb.y1 - hb.y0, p.x - p.w / 2, p.y - p.h, p.w, p.h)) {
+      const guarded = p.guard > 0, h = hurtPlayer(M.dmg, p.x - M.dir * 30, { kb: M.kb || 200, src: M.src });
+      if (h || guarded || G.devGod) M.hit = true;   // 한 번 닿으면 끝 (무적 중이면 지나간 뒤 다시 닿을 때)
+    }
+  }
+}
+tuneAdd({ k: 'fb7Shrink', g: 'boss', sec: '모든 보스', n: '그림 판정 여백', help: '그림이 곧 판정인 스킬(단검 부채·깃털·초승달 등)에서 그림 가장자리를 판정에서 빼는 비율', get: () => FB7_SHRINK, set: v => { FB7_SHRINK = v; }, min: 0, max: 40, step: 1, pct: true });
+tuneAdd({ k: 'fb7Speed', g: 'boss', sec: '모든 보스', n: '날아가는 스킬 그림 속도', help: '그림이 곧 판정인 날아가는 스킬의 속도 배율', get: () => FB7_SPEED, set: v => { FB7_SPEED = v; }, min: 0.3, max: 3, step: 0.05, u: '×' });
 </script>
 </body></html>
