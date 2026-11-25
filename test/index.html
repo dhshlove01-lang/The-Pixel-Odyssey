@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1910';
+const GAME_VER = '261125-1930';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16303,12 +16303,18 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125l',   // 2026-11-25 스물일곱 번째 패치(GAME_VER '261125-1910'): 묶음 8 작은 개선 모음
+  id: '261125m',   // 2026-11-25 스물여덟 번째 패치(GAME_VER '261125-1930'): 묶음 9 25장 무중력·블랙홀
   title: '패치 노트',
   sub: '29장 월식이 화면을 삼키고, 거꾸로 나가던 보스 스킬을 바로잡았다',
   versions: [
     {
-      ver: '261125-1910', date: '2026-11-25', name: '창고 · 설정 · 직업 손보기 · 남던 판정', cur: 1,
+      ver: '261125-1930', date: '2026-11-25', name: '25장: 무중력과 블랙홀', cur: 1,
+      items: [
+        { t: '보스', h: '중력의 거인의 새 패턴 · 특이점 · 무중력', p: '거인이 중력을 지우면 10초 동안 거인과 내가 함께 떠오른다. 점프가 높아지고 천천히 떨어진다. 곧 경기장 가운데 위에 블랙홀이 생겨 나를 끌어당긴다.', q: '블랙홀에 붙잡히면 움직일 수 없고 공격만 된다. 공격 10번으로 부수면 풀려나고, 5초 안에 못 부수면 최대 체력의 60% 피해를 받고 튕겨 나온다(가드로 못 막는다).' },
+      ],
+    },
+    {
+      ver: '261125-1910', date: '2026-11-25', name: '창고 · 설정 · 직업 손보기 · 남던 판정',
       items: [
         { t: '보스', h: '공격 그림이 사라지면 판정도 같이 끝난다', p: '보스 스킬 그림이 사라진 뒤에도 잠깐씩 맞던 것을 고쳤다(24장 시체꽃 만개·11장 오일 채찍·25장 룬 석주 등). 그림 없이 터지던 바닥 구역(30장 성좌 붕괴 등)에는 그 자리에 그림이 나온다.' },
         { t: 'UI', h: '창고: 여러 개 골라 옮기기 · 골드는 금액을 적어서', p: '아이템을 눌러 여러 개 고른 뒤 맡기기·꺼내기로 한 번에 옮긴다. 골드 버튼을 누르면 금액을 적는 창이 뜨고, 모두 넣기·모두 꺼내기도 있다.' },
@@ -25690,7 +25696,7 @@ function mcQuick(inGame) {
       <div class="mcr"><select data-mobch>${Array.from({ length: CH_LAST }, (_, i) => `<option value="${i + 1}" ${mch === i + 1 ? 'selected' : ''}>${i + 1}장 몹</option>`).join('')}</select><select data-mob>${mobOpts}</select></div>
       <div class="mcr mcg">${btn('mob:1', '몹 1마리', '', no)}${btn('mob:5', '5마리', '', no)}${btn('mob:10', '10마리', '', no)}${btn('mobclear', '몹 전부 없애기', '', no)}</div></section>
     <section class="mcsec"><h6>보스·퀘스트 시험 <small>2026-11-25 묶음 5</small></h6>
-      <div class="mcr mcg">${btn('defend', '🛡 지키기 시작 (이 자리 · 몹 ' + DEFEND_MUL + '배)', '', no)}${btn('petclear', '🐾 쁘띠 도감 비우기 (확률 시험)', '', no)}${btn('retry', '🔁 보스 재도전', '', no)}</div></section>
+      <div class="mcr mcg">${btn('defend', '🛡 지키기 시작 (이 자리 · 몹 ' + DEFEND_MUL + '배)', '', no)}${btn('petclear', '🐾 쁘띠 도감 비우기 (확률 시험)', '', no)}${btn('retry', '🔁 보스 재도전', '', no)}${btn('zerog', '🌀 25장 무중력·블랙홀 (그 보스방에서)', '', no)}</div></section>
     <section class="mcsec"><h6>허수아비 <small>DPS·총 피해·시간 측정</small></h6>
       <div class="mcr"><span>방어력</span><select id="opsDumDef"><option value="0">0 (순수 피해)</option>${Array.from({ length: CH_LAST }, (_, i) => `<option value="${i + 1}">${i + 1}장 보스와 같게</option>`).join('')}</select></div>
       <div class="mcr mcg">${btn('ops:dummy', '🎯 허수아비 세우기', '', no)}${btn('ops:dummyx', '치우기', '', no)}${btn('ops:nospawn', G.devNoSpawn ? '몹 다시 나오게' : '몹 안 나오게 (훈련장)', G.devNoSpawn ? 'on' : '', no)}</div></section>
@@ -25932,6 +25938,7 @@ function masterAct(a) {
   }
   if (cmd === 'defend') { if (m.safe || m.boss) return devMsg('사냥터에서 쓰자'); return devMsg(fb5DefendHere()); }
   if (cmd === 'petclear') { const n = Object.keys(s.pets || {}).length; s.pets = {}; s.pet = null; G.pet = null; writeSave(); return devMsg('쁘띠 ' + n + '개를 지웠다 · 1장 보스는 확정, 나머지는 ' + Math.round(PET_DROP * 1000) / 10 + '%'); }
+  if (cmd === 'zerog') { const b = G.boss; if (!b || b.id !== 'b25' || b.st === 'die') return devMsg('25장 보스방(중력의 거인)에서 쓰자'); closePanel(); b.s9 = null; b.zgLast = null; G.zeroG = null; start9(b, 6); b.st = 'x_v9'; return devMsg('무중력·블랙홀 발동'); }
   if (cmd === 'retry') { if (!m.boss) return devMsg('보스방에서 쓰자'); closePanel(); bossRetryGo(); return devMsg('보스 재도전'); }
   if (cmd === 'shrine') { if (m.safe || m.boss) return devMsg('사냥터에서 쓰자'); return devMsg(spawnShrine(m) ? '축복의 제단 소환' : '제단 놓을 자리가 없다'); }
   if (cmd === 'mer') { if (m.safe || m.boss) return devMsg('사냥터에서 쓰자'); G.devMerT = 15 * 60; G.devMerMap = G.mapId; merSetHour(merHour()); return devMsg('떠돌이 상인이 이 맵에 15분간 선다'); }
@@ -26934,5 +26941,140 @@ tickHaz = function (dt) {
   }
   return _fb8tickHaz2(dt);
 };
+
+/* ============ 2026-11-25 사용자 피드백 묶음 9 — 25장 중력의 거인: 무중력 + 블랙홀 ============
+   사용자 선택: 25장 · 패턴으로 10초씩 · 블랙홀은 10번 때리면 부서지고 5초 안에 못 부수면 최대 체력 60% 피해.
+   7번째 스킬 '특이점 · 무중력' (S9.b25.skills[6]):
+   - 무중력 ZG.t(10초): 플레이어와 보스가 떠오른다. 플레이어는 중력이 ZG.grav(30%)만 걸려 높이 뛰고 천천히 떨어진다. 보스는 공중에 떠서 흔들린다.
+   - 2초 뒤 경기장 가운데 위에 블랙홀: 플레이어를 가운데로 끌어당긴다(멀수록 약하게). 가운데에 닿으면 붙잡혀 움직일 수 없고 공격만 된다.
+   - 붙잡힌 동안 Z·X·C 공격 한 번 = 블랙홀 1타. ZG.hits(10)번이면 부서져 풀려난다. ZG.hold(5초) 안에 못 부수면 최대 체력의 ZG.dmg(60%) 피해(가드 무시)와 함께 튕겨 나온다.
+   - 무중력이 끝나면 블랙홀도 사라진다. 한 번 쓰면 ZG.cd(25초) 동안 다시 고르지 않는다. */
+const ZG = { t: 10, grav: 0.3, lift: 520, bhAt: 2, pull: 230, hits: 10, hold: 5, dmg: 0.6, cd: 25, bossLift: 70 };
+function zgStart(b) {
+  if (G.zeroG) return;
+  const p = G.player;
+  G.zeroG = { b, t: ZG.t, bhT: ZG.bhAt, bh: null };
+  b.zgLast = G.t;
+  if (p && p.dead <= 0) { p.vy = -ZG.lift; p.onGround = false; }
+  toast('무중력 · ' + ZG.t + '초 — 곧 블랙홀이 생긴다', 'bad'); sfx('void'); shake(6);
+}
+function zgEnd() {
+  const Z = G.zeroG; if (!Z) return;
+  if (Z.bh && Z.bh.v) Z.bh.v.life = Math.min(Z.bh.v.life, Z.bh.v.t);
+  if (Z.b) Z.b.zgOff = 0;
+  G.zeroG = null;
+}
+function zgTick(dt) {
+  const Z = G.zeroG; if (!Z) return;
+  const b = Z.b, p = G.player;
+  if (!b || G.boss !== b || b.st === 'die' || G.death || !p) { zgEnd(); return; }
+  Z.t -= dt;
+  b.zgOff = -ZG.bossLift * Math.min(1, (ZG.t - Z.t) / 0.8) + Math.sin(G.t * 2.2) * 8;   // 보스가 떠 있다 (그릴 때만 위로)
+  if (!p.onGround && !(Z.bh && Z.bh.cap)) p.vy -= GRAV * (1 - ZG.grav) * dt;   // 플레이어: 중력 30%
+  if (!Z.bh && Z.t > 0.5) { Z.bhT -= dt; if (Z.bhT <= 0) {
+    const x = arM(), y = GROUND - 220;
+    Z.bh = { x, y, hp: ZG.hits, cap: false, capT: 0, v: vfx9(b.id, 0, x, y, { w: 230, anchor: 'center', loop: true, life: 30, step: 0.08, flip: false, noFit: true, add: true }) };
+    toast('블랙홀 · 빨려 들어가면 공격으로 ' + ZG.hits + '번 부숴라', 'bad'); sfx('void'); } }
+  const H = Z.bh;
+  if (H && p.dead <= 0) {
+    const cy = p.y - p.h / 2, dx = H.x - p.x, dy = H.y - cy, d = Math.hypot(dx, dy) || 1;
+    if (!H.cap) {
+      const v = ZG.pull * (0.55 + 0.45 * clamp(1 - d / 700, 0, 1));
+      p.x += dx / d * Math.min(v * dt, d); p.y += dy / d * Math.min(v * dt, d); if (dy < 0) { p.onGround = false; p.vy = Math.min(p.vy, 0); }
+      if (d < 36) { H.cap = true; H.capT = ZG.hold; p.vx = 0; p.vy = 0; toast('블랙홀에 붙잡혔다 · 공격해서 부숴라!', 'bad'); sfx('hurt'); shake(5); }
+    } else {
+      p.x = H.x; p.y = H.y + p.h / 2; p.vx = 0; p.vy = 0; p.onGround = false;
+      H.capT -= dt;
+      if (H.capT <= 0) {
+        const keepInv = p.inv; p.inv = 0; p.shield = 0;
+        hurtPlayer(Math.round(p.mhp * ZG.dmg) + 1, H.x, { src: b, kb: 320, up: 260, shake: 14, inv: 0.8, pure: true });
+        if (p.inv < keepInv) p.inv = keepInv;
+        zgBreak(false);
+      }
+    }
+  }
+  if (Z.t <= 0) zgEnd();
+}
+function zgBreak(won) {
+  const Z = G.zeroG, H = Z && Z.bh; if (!H) return;
+  if (H.v) H.v.life = Math.min(H.v.life, H.v.t);
+  spark(H.x, H.y, 30, won ? '220,200,255' : '160,90,255', 320); shake(won ? 8 : 14); sfx(won ? 'frag' : 'boom');
+  if (won) toast('블랙홀을 부쉈다', 'good');
+  const p = G.player; p.vy = -260; p.vx = (p.x < arM() ? -1 : 1) * 200;
+  Z.bh = null; Z.bhT = 99;   // 이번 무중력에는 다시 생기지 않는다
+}
+/* 붙잡힌 동안: 공격(Z·X·C) 한 번 = 1타 */
+const _fb9startAct = startAct;
+startAct = function (id) {
+  const H = G.zeroG && G.zeroG.bh;
+  if (H && H.cap && (id === 'z' || id === 'x' || id === 'c')) {
+    H.hp--; spark(H.x + rnd(-20, 20), H.y + rnd(-20, 20), 10, '200,160,255', 220); sfx('hit'); numPop(H.x, H.y - 70, H.hp > 0 ? String(H.hp) : '파괴', '#e0c8ff', 22);
+    if (H.hp <= 0) { zgBreak(true); }
+  }
+  return _fb9startAct(id);
+};
+const _fb9updateWorld = updateWorld;
+updateWorld = function (rdt) {
+  const r = _fb9updateWorld(rdt);
+  try { if (!G.cine && !(G.hitstop > 0)) zgTick(rdt * (G.timeScale || 1)); } catch (e) { console.warn('[zg]', e); }
+  return r;
+};
+const _fb9resetArena = resetBossArenaState;
+resetBossArenaState = function () { _fb9resetArena(); G.zeroG = null; };
+/* 보스가 떠 있는 모습: 그릴 때만 yOff 를 더한다 (판정은 예전 자리 — 플레이어도 떠 있어서 맞는다) */
+const _fb9drawBossSprite = drawBossSprite;
+drawBossSprite = function (c, b, x, y, o) { return _fb9drawBossSprite(c, b, x, y + (b && b.zgOff || 0), o); };
+/* 블랙홀 남은 타수·시간, 무중력 남은 시간 */
+const _fb9vfx9Draw = vfx9Draw;
+vfx9Draw = function (c) {
+  const r = _fb9vfx9Draw(c), Z = G.zeroG; if (!Z) return r;
+  c.save();
+  const H = Z.bh;
+  if (H) {
+    const R = 54 + Math.sin(G.t * 6) * 3;
+    c.globalCompositeOperation = 'source-over';
+    const g = c.createRadialGradient(H.x, H.y, 4, H.x, H.y, R); g.addColorStop(0, H.cap ? 'rgba(0,0,0,.55)' : 'rgba(0,0,0,1)'); g.addColorStop(0.6, H.cap ? 'rgba(10,0,20,.6)' : 'rgba(10,0,20,.92)');   // 붙잡힌 동안은 안의 캐릭터가 비친다 g.addColorStop(1, 'rgba(120,60,200,0)');
+    c.fillStyle = g; c.beginPath(); c.arc(H.x, H.y, R, 0, 6.283); c.fill();
+    c.strokeStyle = 'rgba(210,170,255,.85)'; c.lineWidth = 2; c.beginPath(); c.arc(H.x, H.y, R * 0.72, G.t * 3, G.t * 3 + 4.4); c.stroke();
+    c.font = "700 14px 'Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillStyle = '#f0e2ff';
+    const pips = '●'.repeat(Math.max(0, H.hp)) + '○'.repeat(Math.max(0, ZG.hits - H.hp));
+    c.fillText(pips, H.x, H.y - R - 12);
+    if (H.cap) { c.fillStyle = '#ffd0d0'; c.font = "700 16px 'Noto Sans KR',sans-serif"; c.fillText('공격해서 부숴라 · ' + Math.max(0, H.capT).toFixed(1) + '초', H.x, H.y + R + 22); }
+  }
+  c.restore();
+  return r;
+};
+/* HUD: 무중력 남은 시간 (화면 위 가운데, 보스 체력바 아래) */
+setInterval(() => {
+  let el = document.getElementById('zgHud');
+  const Z = G.zeroG, on = !!(Z && G.scene === 'play');
+  if (!el) { if (!on) return; el = document.createElement('div'); el.id = 'zgHud'; el.style.cssText = 'position:absolute;left:50%;top:calc(var(--u)*92);transform:translateX(-50%);z-index:12;pointer-events:none;color:#d8c8ff;font-weight:700;font-size:max(12px,calc(var(--u)*16));text-shadow:0 2px 6px #000;letter-spacing:.04em'; ($('#game') || document.body).appendChild(el); }
+  el.style.display = on ? 'block' : 'none';
+  if (on) el.textContent = '무중력 ' + Math.max(0, Z.t).toFixed(1) + '초';
+}, 100);
+/* 7번째 스킬 등록 + 보스 패턴 칸(v9_6) + 너무 자주 고르지 않게 */
+if (S9.b25) S9.b25.skills.push({
+  name: '특이점 · 무중력', tel: a3s(800), dmg: 0, mt: [2, 0], mc: [[2, 1], [2, 2]], mr: [[0, 1]], ct: a3s(320), rt: a3s(400),
+  vfx: 4, vpos: b => [b.x, GROUND], vo: { w: 360, flip: false },
+  tele(b, S) { tg9({ kind: 'ground_zone', src: b, x: arM(), width: arR() - arL() - 40, height: 90, dur: S.tel, tone: 'ice' }); toast('중력이 사라진다', 'bad'); },
+  cast(b) { zgStart(b); },
+});
+BOSS_EXT.v9_6 = { start(b) { if (sk9(b) && sk9(b)[6]) start9(b, 6); else b.st = 'idle'; }, tick: BOSS_EXT.v9_0.tick };
+const _fb9pick9 = pick9;
+pick9 = function (b) {
+  let i = _fb9pick9(b);
+  for (let n = 0; n < 6 && b.id === 'b25' && i === 6 && (G.zeroG || G.t - (b.zgLast == null ? -999 : b.zgLast) < ZG.cd); n++) i = _fb9pick9(b);
+  if (b.id === 'b25' && i === 6 && (G.zeroG || G.t - (b.zgLast == null ? -999 : b.zgLast) < ZG.cd)) i = 0;
+  return i;
+};
+for (const [k, n, help, mn, mx, st, u, pct] of [
+  ['t', '무중력 시간', '보스와 플레이어가 떠 있는 시간', 3, 30, 0.5, '초'],
+  ['grav', '무중력 중 중력', '플레이어에게 걸리는 중력 (100% = 평소)', 5, 100, 5, '', true],
+  ['pull', '블랙홀 끌어당김', '초당 끌려가는 거리 (가까울수록 이만큼, 멀면 55%)', 50, 600, 10, 'px/초'],
+  ['hits', '블랙홀 부수는 타수', '붙잡힌 동안 공격 몇 번에 부서지나', 1, 40, 1, '번'],
+  ['hold', '블랙홀 제한 시간', '붙잡힌 뒤 이 안에 못 부수면 큰 피해', 1, 15, 0.5, '초'],
+  ['dmg', '블랙홀 실패 피해', '최대 체력의 몇 % (가드 무시)', 5, 100, 5, '', true],
+  ['cd', '무중력 다시 쓰기까지', '한 번 쓰면 이 시간 동안 다시 고르지 않는다', 5, 120, 1, '초'],
+]) tuneAdd({ k: 'zg_' + k, g: 'bossOne', boss: 'b25', sec: '25장 중력의 거인 · 무중력·블랙홀', n, help, get: () => ZG[k], set: v => { ZG[k] = v; }, min: mn, max: mx, step: st, u, pct });
 </script>
 </body></html>
