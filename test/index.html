@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1630';
+const GAME_VER = '261125-1640';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -19900,7 +19900,9 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 #tutCard .tch .tcn{display:inline-flex;align-items:center;justify-content:center;min-width:calc(var(--u)*20);height:calc(var(--u)*20);border:1px solid #b8933f;color:#ffe6a8;font-size:max(9px,calc(var(--u)*12))}
 #tutCard .tch small{margin-left:auto;color:#b8ab90;font-family:var(--font-ui);font-weight:500;font-size:max(9px,calc(var(--u)*11))}
 #tutBook .tbd{overflow-y:auto;min-height:0}#tutBook .tbd .tci{max-height:calc(var(--u)*190);width:auto;max-width:100%;object-fit:contain}
-#tutCard .tci,#tutBook .tci{display:block;width:100%;height:auto;margin:calc(var(--u)*10) 0 0;border:1px solid #6a5430;image-rendering:auto;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+#tutCard .tcp{max-height:calc(100% - 4px);overflow-y:auto}#tutCard .tci{max-height:calc(var(--u)*220);width:auto;max-width:100%;margin-left:auto;margin-right:auto;object-fit:contain}
+#tutCard .tci,#tutBook .tci{display:block;height:auto;margin:calc(var(--u)*10) 0 0;border:1px solid #6a5430;image-rendering:auto;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+#tutCard .tci{margin-left:auto;margin-right:auto}
 #tutCard .tct{margin:calc(var(--u)*10) 0 0;font-size:max(10px,calc(var(--u)*14));line-height:1.6;color:#e6dcc6}
 .tck{display:flex;flex-wrap:wrap;gap:calc(var(--u)*5);margin-top:calc(var(--u)*12)}
 .tck kbd{font-family:var(--font-ui);background:#1c2030;border:1px solid #4a4f66;color:#ffe6a8;font-weight:700;padding:calc(var(--u)*2) calc(var(--u)*7);font-size:max(9px,calc(var(--u)*12))}
