@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1530';
+const GAME_VER = '261125-1600';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -1744,7 +1744,7 @@ function genField(id, n, def, theme, mons, rng) {
   const order = []; mons.forEach(([t, c]) => { const n2 = (MON[t] && MON[t].elite) ? c : Math.max(1, Math.round(c * 1.5)); for (let i = 0; i < n2; i++) order.push(t); });   // [S6-2] 2026-11-23 (user): 잡몹만 1.5배(정예는 그대로)
   for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
   order.forEach((t, i) => {
-    const d = MON[t], sx = 380 + (w - 640) * (i + 0.5) / total + (rng() - 0.5) * 80;
+    const d = MON[t], sx = 380 + (w - 640) * (i + 0.5) / order.length + (rng() - 0.5) * 80;   // 2026-11-25 (user: 몹이 오른쪽에 몰림): 잡몹 1.5배 뒤에도 total 로 나눠 1/3 이 오른쪽 벽에 쌓이던 것 — 실제 마릿수로 나눈다
     if (d.kind === 'flyer') { spawns.push({ type: t, x: Math.round(sx), y: Math.round(250 + rng() * 60) }); return; }
     const upChance = d.kind === 'shooter' ? 0.7 : d.kind === 'caster' ? 0.45 : d.armor ? 0 : 0.25;
     if (rng() < upChance) {
@@ -5421,7 +5421,7 @@ function bossEntry(n) { const C = CHAPTERS[n]; for (const id of C.gates || []) i
       if (base.elite) elites = [ELITE_DEFS[n][0]];
       else { MON[id] = makeEliteDef(Object.assign({}, base, { name: '정예 ' + base.name, frag: 0 })); elites = [id]; }
     }
-    if (!B.spawns.some(s => MON[s.type] && MON[s.type].elite && s.wave2)) B.spawns.push({ type: elites[0], x: Math.round(B.w * 0.78), respawn: 90, wave2: 1 });   // field B: the first elite (spec wave 2)
+    if (!B.spawns.some(s => MON[s.type] && MON[s.type].elite && s.wave2)) B.spawns.push({ type: elites[0], x: Math.round(B.w * 0.38), respawn: 90, wave2: 1 });   /* 2026-11-25: 0.78 → 0.38 (다른 정예 0.62 와 좌우로 나눠 선다) */   // field B: the first elite (spec wave 2)
     for (let i = 0; i < k; i++) {
       const id = gateId(n, i), last = i === k - 1, w = 2200 + 300 * i, total = 10 + 2 * i + Math.floor(n / 4);
       const mons = pool.map((t, j) => [t, Math.max(2, Math.round(total / pool.length) + (j === 0 ? total % pool.length : 0))]);
@@ -6608,7 +6608,7 @@ function updateSpawns(dt) {
   const p = G.player;
   gateTick(); if (G.map.water) waterTick(dt);
   if (G.anon) return;
-  if (G.map.gate) return;   // 3차 패치 P3: a room before the boss never refills (before: it refilled like a hunting ground once cleared)
+  if (G.map.gate && G.gateMode !== 'regen') return;   // 3차 패치 P3 → 2026-11-25 (user): 걸어 들어온 '깬 방'은 일반 사냥터처럼 리젠, 보스 포탈·이동으로 들어오면 한 번만 채움
   for (const sl of G.slots) {
     if (sl.m) continue;
     sl.timer -= dt;
@@ -7099,7 +7099,15 @@ function moonDoom(b) {
 /* the eclipse itself: a soft moon disc, then a black disc sliding across it */
 function drawMoon29(c) {
   if (!G.moon || !G.boss || G.boss.id !== 'b29') return;
-  const e = moonK(), cx = G.cam.x + W * 0.78, cy = 176, R = 62, M = G.moon;   // 화면 오른쪽 하늘에 고정(카메라를 따라 흐르지 않게)
+  const e = moonK(), M = G.moon;
+  /* 2026-11-25 (user): 배경 그림(ch29_boss.png) 가운데 위의 월식 달과 항상 겹치게 — drawMap9 과 같은 확대(MAP9_PAR)·패럴랙스로 그 자리를 계산한다.
+     배경 달: 그림 960×540 에서 중심 (485, 113), 테두리 반지름 74. 배경 그림이 없으면 예전처럼 화면 오른쪽 하늘. */
+  let cx = G.cam.x + W * 0.78, cy = 176, R = 62;
+  if (typeof map9Now === 'function' && map9Now()) {
+    const m = G.map, sc = W * MAP9_PAR / 960, span = Math.max(1, (m && m.w ? m.w : W) - W), t = m && m.w > W ? clamp(G.cam.x / span, 0, 1) : 0.5;
+    const dx = -(W * MAP9_PAR - W) * t, dy = -(H * MAP9_PAR - H) * (GROUND / H);
+    cx = G.cam.x + dx + MOON29_BG.x * sc; cy = dy + MOON29_BG.y * sc; R = MOON29_BG.r * sc - 2;
+  }
   c.save();
   // corona: a warm halo that grows as the cover comes in
   const halo = 0.10 + 0.30 * e * e;
@@ -10878,11 +10886,12 @@ function pixbCanvas(k) {
   B.m.forEach((r, j) => [...r].forEach((ch, i) => { if (B.p[ch]) { x.fillStyle = B.p[ch]; x.fillRect(i, j, 1, 1); } }));
   return (PIXB_CV[k] = cv);
 }
+const PIXB_FACE = new Set(['pcres']);   // 그림이 오른쪽을 향해 그려진 탄 — 날아가는 방향으로 항상 뒤집는다
 function drawPixb(c, q) {
   const cv = q.cv || pixbCanvas(q.kind), s = q.sc || (q.cv ? 3 : PIXB[q.kind].s), w = cv.width * s, h = cv.height * s;
   c.rotate(-Math.atan2(q.vy, q.vx));   // drawProjs rotated to the velocity; undo unless asked
   if (q.spin) c.rotate(G.t * q.spin); else if (q.aim) c.rotate(Math.atan2(q.vy, q.vx));
-  if (q.flipX) c.scale(sgn(q.vx) || 1, 1);   // 8차 배치: 진행 방향으로 뒤집는 탄(박쥐·충격파)
+  if (q.flipX || PIXB_FACE.has(q.kind)) c.scale(sgn(q.vx) || 1, 1);   // 8차 배치: 진행 방향으로 뒤집는 탄(박쥐·충격파) · 2026-11-25 (user): 초승달 검기(pcres)는 그림이 오른쪽을 향하므로 왼쪽으로 날 때 뒤집는다
   c.imageSmoothingEnabled = false;
   if (q.glow) { c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.35; c.drawImage(cv, -w * 0.62, -h * 0.62, w * 1.24, h * 1.24); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; }
   c.drawImage(cv, Math.round(-w / 2), Math.round(-h / 2), w, h);
@@ -15088,6 +15097,7 @@ function tgDotBox(c, kind, x, y, w, h, col, alpha, mirror) {
 }
 /* 29장 개기월식 달: 픽셀아트 8프레임(128칸) — 그믐으로 가는 그림 자체를 프레임으로 쓴다 */
 const MOON29 = { file: 'dot/moon_eclipse_8f.png', n: 8, cell: 128 };
+const MOON29_BG = { x: 485, y: 113, r: 74 };   // 29장 보스 배경 그림 속 달의 중심·반지름 (그림 픽셀)
 const MOON29_IMG = new Image();
 MOON29_IMG.src = ASSET9 + MOON29.file;
 function moon29Sprite() { return (MOON29_IMG.complete && MOON29_IMG.naturalWidth) ? MOON29_IMG : null; }
@@ -16979,7 +16989,7 @@ updateWorld = function (rdt) { if (G.zoom && !G.death && !G.cine) G.zoom = null;
 const _loadMapP3 = loadMap;
 loadMap = function (id, ...rest) {
   const r = _loadMapP3(id, ...rest), m = G.map;
-  if (m && m.gate && gateCleared(m.id)) { for (const sl of G.slots) if (sl.m) { sl.m.remove = true; sl.m = null; } G.mons = G.mons.filter(x => !x.remove && x.slot == null || x.minion); G.slots = []; }
+  /* 2026-11-25 (user): 깬 방을 다시 와도 비우지 않는다 — 들어올 때 채우고, 걸어 들어왔으면 리젠(G.gateMode, 아래 '피드백 묶음') */
   return r;
 };
 
@@ -26369,5 +26379,20 @@ bgmPick = function (key, ch) { return MCS.force || _mcbgmPick(key, ch); };
 function mcMusicRefresh() { if (MCS.want) setMusic(MCS.want.key, MCS.want.ch); }
 const _mcSndTuneApply = tuneApply;
 tuneApply = function (over) { const before = JSON.stringify(Object.keys(TUNE.cur).filter(k => k.startsWith('bgm:')).map(k => TUNE.cur[k])); _mcSndTuneApply(over); const after = JSON.stringify(Object.keys(TUNE.cur).filter(k => k.startsWith('bgm:')).map(k => TUNE.cur[k])); if (before !== after) try { mcMusicRefresh(); } catch (e) { } };
+
+/* ============ 2026-11-25 사용자 피드백 묶음 1 — 맵 리젠·보스 포탈 ============
+   보스 앞 방(어귀·회랑·문턱, m.gate): 앞 사냥터·앞 방에서 걸어 들어왔고 이미 깬 방이면 일반 사냥터처럼 리젠(G.gateMode = 'regen'),
+   그 밖(보스 포탈·이동 창으로 바로 들어옴, 또는 아직 안 깬 방 — 다 잡아야 문이 열린다)은 들어올 때 한 번만 채운다('once').
+   야영지의 보스 문은 없앤다 — 깬 보스는 이동 창에서 순간이동(가이드로 알린다). */
+for (const id in MAPS) { const m = MAPS[id]; if (!m.safe || !m.portals) continue;
+  m.portals = m.portals.filter(pt => { let to; try { to = pt.to; } catch (e) { return true; } const T = MAPS[to]; return !(T && (T.gate || T.boss)); }); }
+const _fb1loadMap = loadMap;
+loadMap = function (id, ...rest) {
+  const prev = G.mapId && MAPS[G.mapId], to = MAPS[id];
+  const walked = !!(prev && to && to.gate && !prev.safe && (prev.ch || 1) === (to.ch || 1) && (prev.portals || []).some(pt => { try { return pt.to === id; } catch (e) { return false; } }));
+  const r = _fb1loadMap(id, ...rest);
+  G.gateMode = to && to.gate && walked && gateCleared(id) ? 'regen' : 'once';
+  return r;
+};
 </script>
 </body></html>
