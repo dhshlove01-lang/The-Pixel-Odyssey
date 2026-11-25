@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1720';
+const GAME_VER = '261125-1750';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -8848,7 +8848,7 @@ function drawProps(c, cam) {
   // portals: 3 kinds (normal / boss / next chapter) x ON (4-frame strip) / OFF (dormant), pixel art (56q_props.js, 2026-11-21 portal spec).
   // A locked portal is the dormant picture, no red X (the [잠김] prompt still says why); before the pictures load, the old arch.
   for (const pt of getPortals()) {
-    const kind = portalKind(pt), A = PORTAL_ART[kind], ok = pt.req(), x = Math.round(pt.x), y = GROUND;
+    const kind = portalKind(pt), A0 = PORTAL_ART[kind], k = pt.sc || 1, kx = k * (pt.scX || 1), A = k === 1 && kx === 1 ? A0 : { w: Math.round(A0.w * kx), h: Math.round(A0.h * k), fx: A0.fx && A0.fx.map(v => v * kx) }, ok = pt.req(), x = Math.round(pt.x), y = GROUND;   // pt.sc: 야영지 포탈 1.5배 (2026-11-25)
     if (x < cam.x - A.w || x > cam.x + W + A.w) continue;
     const col = ok ? (kind === 'boss' ? '255,74,96' : kind === 'next' ? '255,196,110' : '150,240,224') : '96,120,140';
     const cy = y - A.h * 0.52, R = Math.round(A.w * 1.15), aura = c.createRadialGradient(x, cy, 4, x, cy, R);
@@ -10893,7 +10893,7 @@ function drawPixb(c, q) {
   const cv = q.cv || pixbCanvas(q.kind), s = q.sc || (q.cv ? 3 : PIXB[q.kind].s), w = cv.width * s, h = cv.height * s;
   c.rotate(-Math.atan2(q.vy, q.vx));   // drawProjs rotated to the velocity; undo unless asked
   if (q.spin) c.rotate(G.t * q.spin); else if (q.aim) c.rotate(Math.atan2(q.vy, q.vx));
-  if (q.flipX || PIXB_FACE.has(q.kind)) c.scale(sgn(q.vx) || 1, 1);   // 8차 배치: 진행 방향으로 뒤집는 탄(박쥐·충격파) · 2026-11-25 (user): 초승달 검기(pcres)는 그림이 오른쪽을 향하므로 왼쪽으로 날 때 뒤집는다
+  if (q.flipX || (PIXB_FACE.has(q.kind) && !q.aim && !q.spin)) c.scale(sgn(q.vx) || 1, 1);   // 2026-11-25 (user): 진행 방향으로 이미 돌린 탄(aim, shot9·pbul 기본)은 다시 뒤집지 않는다 — 두 번 뒤집혀 거꾸로 나갔다   // 8차 배치: 진행 방향으로 뒤집는 탄(박쥐·충격파) · 2026-11-25 (user): 초승달 검기(pcres)는 그림이 오른쪽을 향하므로 왼쪽으로 날 때 뒤집는다
   c.imageSmoothingEnabled = false;
   if (q.glow) { c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.35; c.drawImage(cv, -w * 0.62, -h * 0.62, w * 1.24, h * 1.24); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; }
   c.drawImage(cv, Math.round(-w / 2), Math.round(-h / 2), w, h);
@@ -16263,12 +16263,21 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125h',   // 2026-11-25 스물세 번째 패치(GAME_VER '261125-1720'): 사용자 피드백 묶음 5
+  id: '261125i',   // 2026-11-25 스물네 번째 패치(GAME_VER '261125-1750'): 사용자 피드백 묶음 6
   title: '패치 노트',
-  sub: '보스방은 퇴장·재도전 버튼으로, 쁘띠는 이제 운이 필요하다',
+  sub: '29장 월식이 화면을 삼키고, 거꾸로 나가던 보스 스킬을 바로잡았다',
   versions: [
     {
-      ver: '261125-1720', date: '2026-11-25', name: '보스맵 퇴장·재도전 · 쁘띠 확률 · 지키기 대군', cur: 1,
+      ver: '261125-1750', date: '2026-11-25', name: '월식의 어둠 · 스킬 방향 · 야영지 포탈', cur: 1,
+      items: [
+        { t: '보스', h: '29장: 달이 삼켜질수록 화면이 어두워진다', p: '보름달이 검은 원에 덮여 갈수록 검투장이 붉은 어둠에 잠기고, 개기일식 직전에 가장 어둡다. 월식이 끝나면 천천히 밝아진다. 바닥 경고와 전조는 어둠 위에 그대로 보인다.' },
+        { t: '보스', h: '거꾸로 나가던 보스 스킬 11가지를 바로잡았다', p: '보스가 왼쪽을 볼 때 그림이 반대로 뒤집혀 보스 쪽으로 날아가던 스킬: 15장 도깨비불 대포, 21장 별빛 단검 부채·일식 연사, 22장 부러진 날개 폭풍, 23장 거울 파편 사격, 24장 까마귀 떼, 26장 모래 폭풍·시계바늘 베기, 29장 핏빛 초승달(붉은 참격과 파란 초승달 탄 모두), 30장 성운의 손.' },
+        { t: '보스', h: '바닥 효과가 바닥에 붙는다', p: '20장 이중 지면 균열, 25장 중력 우물, 26장 시간 감속 장판, 28·30장 심판·초신성 같은 바닥 효과가 그림 아래 빈칸만큼 떠 보이던 것을 바닥에 붙였다.' },
+        { t: '맵', h: '야영지 포탈은 둘만, 크게', p: '야영지에는 다음 장으로 가는 포탈과 그 장 첫 사냥터 포탈 두 개만 남고, 더 크게 나란히 선다. 이전 장과 둘째 사냥터는 M 전체 지도의 순간이동으로 간다(둘째 사냥터는 첫 사냥터 끝에서도 이어진다).' },
+      ],
+    },
+    {
+      ver: '261125-1720', date: '2026-11-25', name: '보스맵 퇴장·재도전 · 쁘띠 확률 · 지키기 대군',
       items: [
         { t: '보스', h: '보스를 쓰러뜨려도 포탈이 생기지 않는다 · 재도전 버튼', p: '오른쪽 위 \'보스맵 퇴장\'으로 들어오기 직전 자리로 나가고, 그 옆 \'재도전\'으로 보스와 내 체력이 가득 찬 채 바로 다시 싸운다. 싸우는 중에 누르면 한 번 묻는다.', q: '다시 싸워 이기면 예전 재처치 보상(골드·경험치 일부, 장비, 계승석)을 받는다.' },
         { t: '맵', h: '깬 보스의 마지막 맵 포탈 정리 · 야영지 포탈 자리', p: '이미 쓰러뜨린 보스는 그 장 마지막 맵 끝의 보스방 포탈이 사라진다. M 전체 지도의 순간이동이나 보스방의 재도전으로 다시 싸운다. 야영지는 보스 문이 빠진 자리 없이 포탈을 고르게 다시 놓았다.' },
@@ -19019,7 +19028,7 @@ function portalVector(c, x, y, ok, col, t, stone) {
    nearest free spot (8 px clear of every portal and of the cart / fire), once, when the maps are built */
 (function propsClearOfPortals() {
   const PW = { torch: 48, brazier: 64 }, OW = { cart: 140, fire: 58, anvil: 120 };
-  const clear = (m, x, w, self) => (m.portals || []).every(pt => { let k = 'normal'; try { k = portalKind(pt); } catch (e) { } return Math.abs(x - pt.x) - (w + PORTAL_ART[k].w) / 2 >= 8; })
+  const clear = (m, x, w, self) => (m.portals || []).every(pt => { let k = 'normal'; try { k = portalKind(pt); } catch (e) { } return Math.abs(x - pt.x) - (w + PORTAL_ART[k].w * (pt.sc || 1) * (pt.scX || 1)) / 2 >= 8; })
     && (m.props || []).every(o => o === self || !OW[o.t] || Math.abs(x - o.x) - (w + OW[o.t]) / 2 >= 8) && x > w && x < (m.w || 99999) - w;
   for (const id in MAPS) {
     const m = MAPS[id];
@@ -23857,7 +23866,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 const CC_GAP = 8;
 const CC_SIZE = { fire: [58, 54], cart: [140, 70], torch: [48, 150], brazier: [64, 64], bone: [58, 176], stele: [80, 120], post: [80, 120],
   mask: [80, 120], gear: [80, 120], reeds: [80, 70], anvil: [180, 44], column: [70, 230], statue: [70, 130] };
-const ccPortalW = pt => { try { return PORTAL_ART[portalKind(pt)].w; } catch (e) { return 80; } };
+const ccPortalW = pt => { try { return PORTAL_ART[portalKind(pt)].w * (pt.sc || 1) * (pt.scX || 1); } catch (e) { return 80; } };
 function campClear(m) {
   if (!m || !m.safe) return 0;
   const pts = getPortals().map(pt => ({ x: pt.x, w: ccPortalW(pt) })), npcs = m.npcs || [], skip = typeof map9Now === 'function' && map9Now() ? MAP9_SKIP_PROPS : new Set(),
@@ -24862,7 +24871,7 @@ const MAP_PROP_SIZE = { fire: [58, 54], anvil: [120, 44], cart: [140, 70], torch
 const mapPropW = p => (MAP_PROP_SIZE[p.t] || [60, 100])[0];
 const mapPropH = p => (p.h || (MAP_PROP_SIZE[p.t] || [60, 100])[1]);
 const MAP_GAP = 8, PORTAL_GAP = 12, LEDGE_PAD = 14;
-const portalWH = pt => { try { const A = PORTAL_ART[portalKind(pt)]; return [A.w, A.h]; } catch (e) { return [80, 130]; } };
+const portalWH = pt => { try { const A = PORTAL_ART[portalKind(pt)], k = pt.sc || 1; return [A.w * k * (pt.scX || 1), A.h * k]; } catch (e) { return [80, 130]; } };
 const _sp = (x, w) => [x - w / 2, x + w / 2], _hit2 = (a, b, g) => a[0] < b[1] + g && b[0] < a[1] + g;
 const WALK_PROPS = new Set(['chain', 'bell']);   // 떠 있는 것 · 종은 바닥 소품이 아니다
 
@@ -26505,14 +26514,19 @@ getPortals = function () {
   return list.filter(pt => { let T; try { T = MAPS[pt.to]; } catch (e) { return true; } return !(T && T.boss && S.flags['boss_' + T.boss]); });
 };
 (function campPortalLayout() {
-  const XS = { 1: [1500], 2: [1320, 1580], 3: [1300, 1460, 1620] };
+  /* 2026-11-25 (user, 두 번째 지시): 야영지에는 포탈 2개만 — 다음 장(위층) · 그 장 첫 사냥터. 이전 장 포탈(p_up)과 둘째 사냥터 포탈은 없앤다
+     (이전 장·둘째 사냥터는 M 지도 순간이동, 둘째 사냥터는 첫 사냥터 끝에서도 이어진다). 남은 둘은 1.5배 크기로 오른쪽에 나란히. */
+  const SC = 1.5, SCX = 1.2, NEXT_X = 1430, FIELD_X = 1590, ONLY_X = 1560;   // SCX: 가로만 1.2배 더 (사용자, 같은 날)
   for (const id in MAPS) { const m = MAPS[id]; if (!m.safe || !m.portals) continue;
-    const right = m.portals.filter(pt => pt.x > m.w / 2).sort((a, b) => a.x - b.x), xs = XS[right.length]; if (!xs) continue;
-    right.forEach((pt, i) => {
-      const old = pt.x, nx = xs[i]; if (old === nx) return; pt.x = nx;
+    const C = CHAPTERS[m.ch || 1], first = C && C.a;
+    const keep = m.portals.filter(pt => { let to; try { to = pt.to; } catch (e) { return false; } const T = MAPS[to]; return !!T && (T.safe ? (T.ch || 1) > (m.ch || 1) : to === first); });
+    if (!keep.length) continue;
+    m.portals = keep;
+    const next = keep.find(pt => { try { return MAPS[pt.to].safe; } catch (e) { return false; } }), field = keep.find(pt => pt !== next);
+    const place = (pt, nx) => { if (!pt) return; const old = pt.x; pt.x = nx; pt.sc = SC; pt.scX = SCX;
       let to; try { to = pt.to; } catch (e) { return; } const T = MAPS[to]; if (!T) return;
-      for (const q of T.portals || []) { let qt; try { qt = q.to; } catch (e) { continue; } if (qt === id && typeof q.toX === 'number') q.toX += nx - old; }
-    });
+      for (const q of T.portals || []) { let qt; try { qt = q.to; } catch (e) { continue; } if (qt === id && typeof q.toX === 'number') q.toX += nx - old; } };
+    if (next && field) { place(next, NEXT_X); place(field, FIELD_X); } else place(next || field, ONLY_X);
   }
 })();
 
@@ -26616,5 +26630,55 @@ tuneAdd({ k: 'tgAlpha', g: 'boss', sec: '모든 보스', n: '보스 전조 진�
 tuneAdd({ k: 'defMul', g: 'combat', sec: '지키기 퀘스트', n: '몰려오는 몹 배율', help: '한 번 몰려올 때 양쪽 합쳐 이만큼 (예전 1마리씩)', get: () => DEFEND_MUL, set: v => { DEFEND_MUL = v; }, min: 1, max: 10, step: 1, u: '×' });
 tuneAdd({ k: 'defCap', g: 'combat', sec: '지키기 퀘스트', n: '동시에 살아 있는 몹 최대', help: '이 수가 넘으면 더 나오지 않는다 (렉 방지)', get: () => DEFEND_CAP, set: v => { DEFEND_CAP = v; }, min: 5, max: 120, step: 1, u: '마리' });
 tuneAdd({ k: 'defDps', g: 'combat', sec: '지키기 퀘스트', n: '붙은 몹 1마리당 NPC 피해', help: 'NPC 체력 100 기준 · 초당', get: () => DEFEND_DPS, set: v => { DEFEND_DPS = v; }, min: 0, max: 30, step: 0.5, u: '/초' });
+
+/* ============ 2026-11-25 사용자 피드백 묶음 6 — 29장: 달이 삼켜질수록 화면이 어두워진다 ============
+   moonK()(0 보름달 → 1 개기일식)에 맞춰 붉은빛 어둠을 장면 위(전조·경고·HUD 아래)에 덮는다. 즉사 경고 동안 가장 어둡고,
+   월식이 끝나 달이 다시 차면 천천히(약 2초) 밝아진다. 진하기 최대치는 마스터 콘솔 👹 보스 '29장 월식 어둠'. */
+let MOON_DARK = 0.55;   // let: 마스터 콘솔
+const _fb6renderLighting = renderLighting;
+renderLighting = function (cam) {
+  const r = _fb6renderLighting(cam);
+  const on = G.moon && G.boss && G.boss.id === 'b29' && G.boss.st !== 'die';
+  const want = on ? (G.moon.warn > 0 ? 1 : Math.pow(moonK(), 1.3)) : 0;
+  G.moonDarkS = (G.moonDarkS || 0) + (want - (G.moonDarkS || 0)) * (want > (G.moonDarkS || 0) ? 0.2 : 0.008);
+  const a = G.moonDarkS * MOON_DARK;
+  if (a > 0.005) { ctx.save(); ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = `rgba(14,2,6,${a.toFixed(3)})`; ctx.fillRect(-20, -20, W + 40, H + 40);
+    const g = ctx.createRadialGradient(W / 2, H * 0.55, H * 0.25, W / 2, H * 0.55, W * 0.75); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, `rgba(40,0,8,${(a * 0.6).toFixed(3)})`);
+    ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, H + 40); ctx.restore(); }
+  return r;
+};
+tuneAdd({ k: 'moonDark', g: 'boss', sec: '모든 보스', n: '29장 월식 어둠', help: '달이 다 삼켜졌을 때 화면이 어두워지는 최대치 (0% = 안 어두워짐)', get: () => MOON_DARK, set: v => { MOON_DARK = v; }, min: 0, max: 90, step: 5, pct: true });
+
+/* ---- 2026-11-25 (user): 거꾸로 나가던 보스 스킬 그림. 4프레임 스트립은 '오른쪽을 보고 그렸다'고 보고 보스가 왼쪽을 보면 뒤집는데,
+   아래 그림들은 처음부터 왼쪽을 보고 그려져 있어서 뒤집으면 반대로 나갔다(보스 쪽으로 날아가는 단검·초승달 등).
+   전수 점검(11~30장 보스 126개 스킬을 보스가 왼쪽을 보게 세워 하나씩 발동·촬영)에서 찾은 것: [보스, 스킬 순번] ---- */
+const ART9_LEFT = [['b15', 1], ['b21', 0], ['b21', 3], ['b22', 1], ['b23', 0], ['b24', 1], ['b26', 0], ['b26', 1], ['b29', 1], ['b30', 1]];
+for (const [id, i] of ART9_LEFT) { const s = S9[id] && S9[id].skills[i]; if (s) s.vo = Object.assign({}, s.vo || {}, { artLeft: 1 }); }
+const _fb6vfx9 = vfx9;
+vfx9 = function (id, slot, x, y, o) { const v = _fb6vfx9(id, slot, x, y, o); if (v && o && o.artLeft) v.flip = !v.flip; return v; };
+
+/* ---- 2026-11-25 (user): 바닥 효과가 떠 보이던 것 — 바닥(GROUND)에 바닥 기준(anchor bottom)으로 놓는 4프레임 스트립은
+   그림 아래의 투명 여백만큼 내려서 그린다(그림마다 한 번 재서 기억). 공중 탄(바닥에서 12px 넘게 위)은 그대로. ---- */
+function img9BottomGap(im) {
+  if (im.gap9 != null) return im.gap9;
+  try {
+    const fw = Math.floor(im.naturalWidth / 4), fh = im.naturalHeight, cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = fh;
+    const x = cv.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, cv.width, fh).data;
+    let best = fh;
+    for (let k = 0; k < 4; k++) { let g = fh; for (let y = fh - 1; y >= 0; y--) { let hit = false; for (let i = k * fw; i < (k + 1) * fw; i++) if (d[(y * cv.width + i) * 4 + 3] > 40) { hit = true; break; } if (hit) { g = fh - 1 - y; break; } } best = Math.min(best, g); }
+    im.gap9 = best >= fh ? 0 : best;
+  } catch (e) { im.gap9 = 0; }
+  return im.gap9;
+}
+const _fb6vfx9Draw = vfx9Draw;
+vfx9Draw = function (c) {
+  const L = G.vfx9 || [], moved = [];
+  for (const v of L) {
+    if (v.anchor !== 'bottom' || !img9Ready(v.img) || Math.abs(v.y - GROUND) > 12 || v.noSnap) continue;
+    const fw = Math.floor(v.img.naturalWidth / 4), g = img9BottomGap(v.img) * Math.round(v.w) / fw;
+    if (g >= 4) { const dy = Math.min(g, 60) - Math.max(0, v.y - GROUND); if (dy > 0) { v.y += dy; moved.push([v, dy]); } }
+  }
+  try { return _fb6vfx9Draw(c); } finally { for (const [v, dy] of moved) v.y -= dy; }
+};
 </script>
 </body></html>
