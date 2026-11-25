@@ -12,6 +12,23 @@
 
 ## 옮길 것
 
+### 261125-1100  7차 배치 · 2막(11~20장) 스킬 VFX 60장 도트화 + 전조 장판·기둥 내부 패턴 교정   (대상: `assets/vfx/boss_11~20` 60장 · `assets/dot/telegraph_{ground_zone,vertical_beam,hatch}.png` · `index.html` / `test/index.html` 의 GAME_VER·NEWS·tgspShape `vertical_beam` 코어)
+지시서: 2026-11-25 예약 배치 "7차 배치: 2막(11~20장) 보스 VFX 60장 도트화·배포 + 전조 격자 디더 다듬기".
+
+- **2막 스킬 VFX 60장(11~20장 × 6종) 도트체 리뉴얼** — `assets/vfx/boss_11/b11_s1_gear_saw.png` … `boss_20/b20_s6_apocalypse_eclipse.png` (같은 파일명 덮어쓰기, `test/assets/vfx/` 사본 동일).
+  - 원본은 2026-11-20에 만든 `downloads/vfx_4frames_pack/boss_11~20`(4프레임 가로 스트립). 파이프라인은 6차와 같다: `work/dot7/vfx_dot7.py` — 4프레임 분할 → 알파 4×4 베이어 디더 이진화(0/255) → 블록(3~4px, 셀 폭/4가 100~190) 다운스케일 → **프레임 4장 공용 16색 팔레트**(median cut) → NEAREST ×블록. 그림의 모양·색·구도 유지.
+  - 검증: 전 60장 **알파 0/255**, 가장자리 접촉 0, 셀 폭 원본 대비 0~4px 차(예 2740→2736, 3000→2992 — 잘라낸 오른쪽 열에 내용 0), 픽셀 면적 보존 1.01~1.03배.
+  - 다시 만들 때: `python3 work/dot7/vfx_dot7.py` → `work/dot7/out/boss_NN/` → 복사(`work/dot7/report_vfx.json` 에 60장 수치).
+- **전조 장판·기둥 내부 패턴 교정** (6차 보고의 "큰 장판·기둥에서 내부 디더가 격자로 보임") — 생성기 `work/dot7/tg7.py` → `work/dot7/tg/`, 규격(셀·잉크·9-slice 캡)은 그대로:
+  - `telegraph_hatch.png` 32×32 4프레임: 45도 **직선 빗금 → 3px 격자에 흩뿌린 도트 안개**(프레임 0→3 으로 밀도 46→78%). 색은 회색조(게임이 위험색을 곱한다), 32 주기라 이음매 없음.
+  - `telegraph_ground_zone.png` 256×128 4프레임: 위험 테이프 주기를 12→**8도트**(32도트 타일의 약수)로 바꿔 타일 경계에서 위상이 끊기지 않게, 안쪽 눈금도 32도트 주기 고정. 내부는 투명(채움은 안개 타일).
+  - `telegraph_vertical_beam.png` 128×320 4프레임: 가장자리 32px 캡에 단면 디테일(1:1, 안 늘어남), **가운데는 한 가지 톤 + 성긴 가로 줄**만 두어 폭이 늘어나도 무늬가 뭉개지지 않게. 아래 캡의 삼각 장식은 9-slice 모서리(1:1)로 옮김.
+  - 코드: `tgspShape` 의 `vertical_beam` 분기에서 스프라이트를 그린 뒤 **코어를 4px(가운데 HOT)+좌우 4px 광으로 직접 그린다**. 코어가 폭에 비례해 납작하게 퍼지던 것을 막는다(좁은 기둥은 스프라이트와 겹쳐도 같은 색).
+  - `GAME_VER '261125-1100'`, `NEWS.id '261125d'` + `versions[0]` 카드, `version.json` / `test/version.json` 동기, `test/index.html` 동일.
+- **검증(헤드리스 크로뮴 1280×720 · deviceScaleFactor 2)**: 로컬 http + GitHub Pages 라이브에서 11~20장 보스방마다 스트립 6종 로드(`naturalWidth>0`), 스킬 6종씩 총 60회 캐스트 스샷, 전조 6종·TGD 8종 로드, `pageerror 0`. 스샷은 `handoffs/🎨-7차-배치-2막-11-20장-보스-vfx-60장-도트화-배포/evidence/`, 정리본 `downloads/batch7_vfx_preview.png`.
+- **메모**: 이 PC 의 체크아웃은 sparse(화이트리스트)라 `assets/vfx/boss_11~20` 이 로컬에 없어 보인다(저장소에는 있음). `git status` 에도 안 보이므로, 2막 VFX 를 만질 때는 `git ls-tree -r --name-only HEAD -- assets/vfx` 로 확인할 것.
+- **남은 것(다음 배치)**: ①21~30장 스킬 VFX 120장은 아직 원본(부드러운 붓) ②`telegraph_box`·`telegraph_dash_line` 내부는 이번에 손대지 않음 ③`retburst`·`ultslash` 등 다른 `G.fx` 종류와 구형 텍스트 라벨(#11)·탄(#16·#17)은 그대로.
+
 ### 261125-1000  6차 배치 · 1막 스킬 VFX 42장 도트화 + 남은 코드 도형(해치·장판·링·웅덩이·박쥐 띠·종 아치)   (대상: `assets/dot` 8종 신규 · `assets/vfx/boss_01~10` 42장 · `index.html` / `test/index.html` 의 GAME_VER·NEWS·TGD 블록·drawHaz·tgspShape·drawBossExtras·TELE_DRAW.bell·drawFx ring·drawProjs)
 지시서: 2026-11-25 예약 배치 "6차 배치: 부실 이펙트·남은 도형 연출·1막 VFX 44장 도트화".
 

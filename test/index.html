@@ -690,7 +690,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1000';
+const GAME_VER = '261125-1100';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16209,10 +16209,20 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125c',   // 2026-11-25 열여덟 번째 패치(GAME_VER '261125-1000'): 6차 배치 — 1막 스킬 이펙트 42장 + 남은 코드 도형 도트화
+  id: '261125d',   // 2026-11-25 열아홉 번째 패치(GAME_VER '261125-1100'): 7차 배치 — 2막 스킬 이펙트 60장 도트화 + 전조 장판·기둥 다듬기
   title: '패치 노트',
-  sub: '1막 스킬 이펙트가 도트로 바뀌고, 바닥 경고가 도트 장판이 된다',
+  sub: '2막 보스 스킬 이펙트 60종이 도트로 바뀌고, 큰 경고 장판이 또렷해진다',
   versions: [
+    {
+      ver: '261125-1100', date: '2026-11-25', name: '7차 배치 · 2막 스킬 이펙트 60종', cur: 1,
+      items: [
+        { t: '연출', h: '11~20장 보스의 스킬 이펙트 60종을 도트체로 다시 그렸다', p: '시계태엽 골렘의 톱니 돌진부터 이그니스의 종말 일식까지, 열 보스가 저마다 여섯 가지 스킬을 쓴다. 스킬마다 4프레임 이펙트를 주인공과 같은 고밀도 도트로 통일했다. 스킬의 색·모양·구도는 그대로 두고 부드러운 붓 터치만 또렷한 픽셀로 바꿨다.' },
+        { t: '연출', h: '2막의 큰 기술도 형태가 뭉개지지 않는다', p: '2막 스킬은 장판·기둥·부채가 화면을 크게 덮는 기술이 많다. 알파를 0과 255로 끊고 프레임 네 장이 같은 16색만 쓰게 해, 크게 그려도 반투명으로 흐려지지 않고 형태가 남는다.' },
+        { t: '연출', h: '큰 바닥 경고의 빗금이 격자로 보이던 것을 고쳤다', p: '넓은 장판 안쪽이 45도 빗금 격자로 보이던 부분을 고른 도트 안개로 바꿨다. 경고가 차오를수록 점이 촘촘해지고, 바닥 아래 테이프 무늬도 끊기지 않고 이어진다.' },
+        { t: '연출', h: '하늘에서 내리꽂히는 기둥 경고가 폭에 휘둘리지 않는다', p: '폭이 넓은 기둥에서 가운데 코어와 가로 띠가 납작하게 늘어나던 것을 고쳐, 코어는 어떤 폭에서도 2px, 띠는 같은 굵기로 반복된다. 좁은 기둥도 같은 모양을 유지한다.' },
+        { t: '시스템', h: '판정·피해·보상은 그대로', p: '이번 배치는 그림만 바꿨다. 스킬의 피해량·경고 시간·판정 범위와 보스 체력·보상·저장은 이전 판과 같다.' },
+      ],
+    },
     {
       ver: '261125-1000', date: '2026-11-25', name: '6차 배치 · 1막 스킬 이펙트 · 도형 연출', cur: 1,
       items: [
@@ -20438,6 +20448,15 @@ function tgspShape(c, t, p, blink, pal) {
     tgEdge(c, pal.fill, snap2(t.x - core / 2) - 3, top, 2, gy - top);
     tgEdge(c, pal.fill, snap2(t.x + core / 2) + 1, top, 2, gy - top);
     tgspDraw(c, 'vertical_beam', fi, x0, top, fw, gy - top, tone);
+    /* 7차: 기둥 코어는 폭과 무관하게 2px 코어 + 좌우 4px 광 — 스프라이트를 가로로 늘리면
+       코어가 납작하게 퍼지던 것을 막는다. 좁은 기둥에서는 스프라이트 코어와 겹쳐도 같은 색이라 티가 없다. */
+    const ccx = snap2(t.x), chh = gy - top;
+    if (chh > 4) {
+      c.fillStyle = `rgba(${pal.fill},${0.30 + 0.30 * p})`;
+      c.fillRect(ccx - 6, top, 4, chh); c.fillRect(ccx + 3, top, 4, chh);
+      c.fillStyle = `rgba(255,243,208,${0.55 + 0.35 * p})`;
+      c.fillRect(ccx - 2, top, 4, chh);
+    }
 
   } else if (t.kind === 'aim_ray') {
     /* 조준선: 발사점에서 각도 방향으로. 포물선(arc)은 직선 스프라이트로 못 그리니 기존 점선 유지. */
