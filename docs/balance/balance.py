@@ -18,10 +18,12 @@ SKK = ['z', 'x', 'c', 'move', 'a', 's', 'd', 'v']
 by = {}
 for r in rows: by.setdefault(r['n'], {})[r['ch']] = r
 
-def mix(r, key):   # 반지 기대값 40%
+RP = json.load(open(os.path.join(D, 'randpot_k.json'), encoding='utf-8'))   # 장비의 무작위 잠재(측정 때 빠져 있던 것)를 넣었을 때 공격 기대값 비율 — 공격 쪽 값에 곱한다
+def mix(r, key):   # 반지 기대값 40% · 무작위 잠재 보정
     k = (r.get('ring') or {}).get('off', 1)
-    return r[key] * (1 + 0.4 * (k - 1))
-def stuck(r): return not r.get('bossDps') or r['bossDps'] < 0.15 * max(1, r.get('dpsSus') or 0)
+    rp = RP.get(str(r['n']) + ':' + r['ch'], {}).get('off', 1) if key in ('dpsSus', 'dpsUlt', 'bossDps') else 1
+    return r[key] * (1 + 0.4 * (k - 1)) * rp
+def stuck(r): return not r.get('bossDps') or r['bossDps'] < 0.15 * max(1, r.get('dpsSus') or 0)   # 원측정값끼리 비교
 
 ratio = {c: [] for c in CH}
 for n, d in by.items():

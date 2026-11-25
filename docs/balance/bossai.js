@@ -36,6 +36,8 @@ const INJECT = () => {
       const g = i < P.leg ? 3 : i < P.uniq ? 2 : n >= 2 ? 1 : 0;
       const it = makeItem(k, s.char, g, n, s); it.q = i < P.q3 ? 3 : AF ? (i < P.q3 + P.q2n ? 2 : 1) : P.q2 ? 2 : 1;
       it.pot = POT9.slice(0, AF ? Math.min(POT_LINES[g], P.lines[i] || 0) : POT_LINES[g]).map(([pk, v]) => ({ k: pk, v: Math.round(v * (1 + g * 0.25) * P.potK * 10) / 10 }));
+      if (AF && window.__randPot !== false && typeof rollPot === 'function') {   // 장비는 등급만큼 무작위 잠재를 달고 나온다 — 리롤로 맞춘 줄만 좋은 옵션으로 바꾼다
+        const rnd = rollPot(g, k); for (let j = it.pot.length; j < rnd.length; j++) it.pot.push(rnd[j]); }
       it.opts = it.opts || []; s.equip[k] = it;
     });
     Math.random = rnd0;
