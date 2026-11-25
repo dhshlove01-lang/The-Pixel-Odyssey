@@ -1,10 +1,10 @@
 """보스·직업·재화 밸런스 보고서 HTML (→ pdf.js 로 PDF)
-입력: balance_261125.json · bossai_verify_261125.json · econ_plan.json · econ_261125.json · bossai_names.json · balance_preset.json
+입력: balance_261125.json · bossai_final_261125.json(final_fix.py) · econ_plan.json · econ_261125.json · bossai_names.json · balance_preset.json
 실행: python3 docs/balance/report_final.py → docs/balance/밸런스_보고서_261125.html"""
 import json, os, math, statistics as st, html
 D = os.path.dirname(os.path.abspath(__file__))
 L = lambda f: json.load(open(os.path.join(D, f), encoding='utf-8'))
-B = L('balance_261125.json'); V = [r for r in (json.load(open(os.environ['VERIFY'])) if os.environ.get('VERIFY') else L('bossai_verify_261125.json')) if not r.get('err')]
+B = L('balance_261125.json'); V = [r for r in (json.load(open(os.environ['VERIFY'])) if os.environ.get('VERIFY') else L('bossai_final_261125.json')) if not r.get('err')]
 EP = L('econ_plan.json'); E0 = {r['n']: r for r in L('econ_261125.json')}; NAMES = L('bossai_names.json'); PRE = L('balance_preset.json')
 RP = L('randpot_k.json')
 CH = ['theron', 'kallisto', 'lykos', 'mage']; KO = {'theron': '전사', 'kallisto': '궁수', 'lykos': '도적', 'mage': '마법사'}
@@ -58,10 +58,12 @@ for n in range(1, 31):
     sus = avg([mixv(d[x], 'dpsSus') for x in CH if x in d]); ult = avg([mixv(d[x], 'dpsUlt') for x in CH if x in d]); bd = avg([mixv(d[x], 'bossDps') for x in ok])
     cp = avg([d[x]['cp'] for x in CH if x in d])
     tcls = ''.join(f"<td{' class=dim' if x not in ok else ''}>{round(times[x]) if x in times else '-'}</td>" for x in CH)
-    off = '' if tv is None else ('ok' if abs(tv - tgt(n)) <= 0.2 * tgt(n) else 'bad')
-    boss_rows.append(f"<tr><td class=c>{n}</td><td class=l>{esc(NAMES.get(str(n), ''))}</td><td>{tgt(n)}</td><td>{round(c['tNow'])}</td><td>×{c['hpMult']}</td><td>{nf(d['theron']['bossHp'] if 'theron' in d else c['newHp'])}</td>"
-                     f"<td class='{off}'><b>{round(tv) if tv else '-'}</b></td>{tcls}<td>{nf(sus)}</td><td>{nf(ult)}</td><td>{nf(bd)}</td><td>{nf(cp)}</td><td>{nf(ai)}</td><td class=rec>{nf(rec)}</td></tr>")
-within = sum(1 for _, t, v in summary_t if v and abs(v - t) <= 0.2 * t)
+    r0 = next(iter(d.values())); tm = r0.get('tMeas'); fx = r0.get('hpFix', 1)
+    off = '' if tm is None else ('ok' if abs(tm - tgt(n)) <= 0.1 * tgt(n) else 'bad')
+    summary_t[-1] = (n, tgt(n), tm)
+    boss_rows.append(f"<tr><td class=c>{n}</td><td class=l>{esc(NAMES.get(str(n), ''))}</td><td>{tgt(n)}</td><td>{round(c['tNow'])}</td><td class='{off}'>{round(tm) if tm else '-'}</td><td>{'×' + format(fx, '.2f') if fx != 1 else ''}</td><td><b>×{PRE['b:b' + str(n) + ':hp']}</b></td><td>{nf(r0['bossHp'])}</td>"
+                     f"<td><b>{round(tv) if tv else '-'}</b></td>{tcls}<td>{nf(sus)}</td><td>{nf(ult)}</td><td>{nf(bd)}</td><td>{nf(cp)}</td><td>{nf(ai)}</td><td class=rec>{nf(rec)}</td></tr>")
+within = sum(1 for _, t, v in summary_t if v and abs(v - t) <= 0.1 * t); nfix = 30 - within
 
 # ---- 3) 재화 표 ----
 eco_rows = []
@@ -106,10 +108,11 @@ td.ok {{ color:var(--ok); }} td.bad {{ color:var(--bad); }}
 <h2>1. 요약</h2>
 <ul>
 <li><b>목표</b>: '열심히 한 플레이어'(재화로 가능한 스펙) 4직업 평균 AI 보스 처치 시간 — 보통 90초, 5·15·25장 120초, 10·20·30장 180초.</li>
-<li><b>검증 결과</b>: 조정값을 넣고 다시 돌린 AI 보스전에서 30장 중 <b>{within}장</b>이 목표 ±20% 안(아래 표 '검증 평균').</li>
+<li><b>검증 결과</b>: 조정값을 넣고 4직업 30장을 다시 싸워 본 결과 30장 중 <b>{within}장</b>이 목표 ±10% 안. 벗어난 {nfix}장(최대 ×1.40, 11장)은 처치 시간이 체력에 비례하므로 체력 배율을 그만큼 더 고쳤다(표 '검증 보정').</li>
 <li><b>직업</b>: 허수아비 DPS(근접=1) 궁수 {B['classMedianRatio']['kallisto']:.2f} · 마법사 {B['classMedianRatio']['mage']:.2f} → 스킬 피해 배율로 궁수 1.10(Shift 집중 포함) · 마법사 0.90 에 맞춤 (궁수 ×{B['classMult']['kallisto']}, 마법사 ×{B['classMult']['mage']}). 전투력 숫자는 그대로.</li>
 <li><b>재화</b>: 결정(품질석·잠재석)은 그대로(사용자: 지금 양이 적당, 플레이 시간). 리롤 골드는 아이템 레벨에 따라 몹 골드와 같은 비율로, 강화 골드 +25%, 21~30장 퀘스트·몹 골드 ×{EP['K3']} → 30장까지 남는 골드 {round(EP['leftBefore'] / EP['incomeBefore'] * 100)}% → {round(EP['leftRatio'] * 100)}% (스펙은 그대로).</li>
-<li><b>가장 큰 발견</b>: 지금 보스 체력은 '잠재 3줄을 좋은 옵션으로 다 맞춘 스펙'에 맞춰져 있는데, 결정 양으로는 보통 진행에서 잠재를 거의 맞출 수 없다. 그래서 목표 시간에 맞추면 12장 이후 보스 체력이 크게 내려간다(21~29장 약 ×0.10~0.15). 결정을 늘리거나 잠재 의존을 줄이면 이 배율은 다시 올라간다.</li>
+<li><b>가장 큰 발견</b>: 지금 보스 체력은 '잠재 3줄을 좋은 옵션으로 다 맞춘 스펙'에 맞춰져 있는데, 결정 양으로는 보통 진행에서 잠재를 거의 맞출 수 없다. 그래서 목표 시간에 맞추면 12장 이후 보스 체력이 크게 내려간다(21~29장 약 ×0.08~0.15). 결정을 늘리거나 잠재 의존을 줄이면 이 배율은 다시 올라간다.</li>
+<li><b>권장 전투력</b>: 사람 기준(AI 보다 DPS 70%, 받는 피해 2배)이라 '열심히 한 스펙' 전투력의 약 1.4~2.3배로 나온다. AI 와 사람의 차이는 test 서버 기록이 쌓이면 관리자 창에서 두 값을 맞춘다(그러면 권장 전투력도 바로 바뀐다).</li>
 <li><b>적용</b>: 모든 값은 test 서버에만 — 관리자 창 📊 DPS → 'AI 밸런스 값 적용 (test)'. 📜 내역에 남고 각 값의 되돌리기 버튼으로 되돌린다. 정식은 🚀 정식 적용 전까지 그대로.</li>
 </ul>
 
@@ -127,8 +130,8 @@ td.ok {{ color:var(--ok); }} td.bad {{ color:var(--bad); }}
 <p class="sub">마법사 배율이 ×{B['classMult']['mage']} 로 크다. 허수아비는 이동이 없는 측정이라 AI 조작 차이보다는 직업 수치 차이로 보인다. 마법사 Z(되돌아오는 탄) 구조 때문에 피해 빈도가 낮다.</p>
 
 <h2 class="pb">4. 보스별 처치 시간 · 체력 · DPS · 권장 전투력</h2>
-<table><tr><th>장</th><th class=l>보스</th><th>목표(초)</th><th>조정 전 AI(초)</th><th>체력 배율</th><th>새 체력</th><th>검증 평균(초)</th>{''.join(f'<th>{KO[c]}(초)</th>' for c in CH)}<th>허수아비 지속</th><th>궁극기 포함</th><th>AI 보스전 DPS</th><th>스펙 전투력</th><th>AI 필요</th><th>권장(사람)</th></tr>{''.join(boss_rows)}</table>
-<p class="sub">DPS·전투력은 4직업 평균. 녹색 = 목표 ±20% 안, 빨강 = 밖. 회색 칸 = AI 가 막힌 전투(평균에서 뺌).</p>
+<table><tr><th>장</th><th class=l>보스</th><th>목표(초)</th><th>조정 전 AI(초)</th><th>1차 검증(초)</th><th>검증 보정</th><th>최종 체력 배율</th><th>최종 체력</th><th>최종 예상(초)</th>{''.join(f'<th>{KO[c]}(초)</th>' for c in CH)}<th>허수아비 지속</th><th>궁극기 포함</th><th>AI 보스전 DPS</th><th>스펙 전투력</th><th>AI 필요</th><th>권장(사람)</th></tr>{''.join(boss_rows)}</table>
+<p class="sub">DPS·전투력은 4직업 평균. 1차 검증: 녹색 = 목표 ±10% 안, 빨강 = 밖(그만큼 체력을 비례로 고침). 최종 예상 = 고친 체력 ÷ 검증 때 잰 DPS. 직업별 시간도 최종 체력 기준. 회색 칸 = AI 가 막힌 전투(평균에서 뺌).</p>
 
 <h2 class="pb">5. 재화 (조정 후)</h2>
 <table><tr><th>장</th><th>골드 수입</th><th>지출</th><th>남은 골드(누적)</th><th>결정 수입</th><th>리롤 1회 골드</th><th>강화</th><th>상급 부위</th><th>최상급</th><th>맞춘 잠재 줄(6부위 합)</th></tr>{''.join(eco_rows)}</table>

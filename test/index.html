@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-2010';
+const GAME_VER = '261125-2200';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16303,12 +16303,18 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125n',   // 2026-11-25 스물아홉 번째 패치(GAME_VER '261125-2010'): 묶음 10 가이드 16개
+  id: '261125o',   // 2026-11-25 서른 번째 패치(GAME_VER '261125-2200'): 묶음 11 권장 전투력(AI 시뮬레이션)·보스전 DPS
   title: '패치 노트',
   sub: '29장 월식이 화면을 삼키고, 거꾸로 나가던 보스 스킬을 바로잡았다',
   versions: [
     {
-      ver: '261125-2010', date: '2026-11-25', name: '처음 하는 사람을 위한 가이드 16개', cur: 1,
+      ver: '261125-2200', date: '2026-11-25', name: '권장 전투력 다시 재기', cur: 1,
+      items: [
+        { t: '보스', h: '권장 전투력을 실제 전투로 다시 쟀다', p: '네 직업이 그 장까지 모을 수 있는 장비로 30장 보스를 모두 직접 싸워 보고, 그 결과로 보스마다 권장 전투력을 새로 정했다. 치유 연고로 버티는 것까지 넣었다.' },
+      ],
+    },
+    {
+      ver: '261125-2010', date: '2026-11-25', name: '처음 하는 사람을 위한 가이드 16개',
       items: [
         { t: 'UI', h: '가이드가 30개로 늘었다', p: '그 상황이 처음 올 때 실제 게임 그림과 함께 한 번 뜨고, ? 가이드북에 남는다. 보스 앞 방 · 보스맵 퇴장·재도전 · 광폭화 · 권장 전투력 · 29장 개기일식 · 무중력과 블랙홀 · 지키기 의뢰 · 장비 등급·품질·잠재 · 대장장이 · 팔기와 분해 · 특성 5·10·15단계 · 일일 의뢰 · 랜덤 상자·축복의 제단 · 떠돌이 상인 · 창고 · 파티·거래.', q: '장비·분해·특성·일일 의뢰·파티처럼 언제 봐도 되는 가이드는 앞 가이드와 30초 띄워서 나온다. 쁘띠 가이드는 5% 규칙에 맞게 고쳤다.' },
       ],
@@ -27181,5 +27187,139 @@ if (IS_DEV_BUILD) {
     if (cmd === 'play') { if (G.scene !== 'play') return; devPanelToggle(); tutPlay([id]); }
   }, true);
 }
+
+
+/* ============ 2026-11-25 사용자 피드백 묶음 11 — 보스 권장 전투력(AI 시뮬레이션) + 보스전 DPS ============
+   BOSSAI: docs/balance/bossai.js 가 '열심히 한 플레이어' 스펙(장마다)으로 4직업을 돌린 결과(장 × 직업):
+     cp 전투력 · hp · off 공격 기대값 · sus 허수아비 지속 DPS(궁극기 없이) · ult 궁극기 포함 DPS · bdps 실제 보스전 DPS · dtps 보스전 초당 받은 피해 · bhp 보스 체력
+   필요 전투력 = 전투력을 k 배 하면 주는 피해 k 배 · 받는 피해 1/k 배라고 보고, ① 잡는 시간 ≤ 버티는 시간(체력 ÷ (초당 받은 피해 - 치유 연고 회복)) ② 잡는 시간 ≤ 그 장 목표 시간(90/120/180초 × BAI.lk) 을 둘 다 만족하는 가장 작은 k × 전투력.
+   사람 기준 = AI 보다 DPS 는 BAI.hd 배(0.7), 받는 피해는 BAI.ht 배(2.0)로 보고 같은 계산 — AI 와 사람의 차이는 test 서버의 실제 기록(dev_bossrec)으로 맞춘다.
+   권장 전투력(게임 표기, 보정 없이) = 4직업 사람 기준 필요 전투력의 평균. */
+const BOSSAI = {"1":{"theron":{"cp":774,"hp":368,"off":50,"sus":142,"ult":144,"bdps":101,"dtps":18,"bhp":7211,"hm":1.928,"am":0.98},"kallisto":{"cp":739,"hp":295,"off":62,"sus":72,"ult":79,"bdps":51,"dtps":20,"bhp":7211,"hm":1.928,"am":1.24},"lykos":{"cp":714,"hp":286,"off":50,"sus":168,"ult":156,"bdps":94,"dtps":24,"bhp":7211,"hm":1.928,"am":1.02},"mage":{"cp":716,"hp":271,"off":50,"sus":178,"ult":162,"bdps":114,"dtps":18,"bhp":7211,"hm":1.928,"am":3.16}},"2":{"theron":{"cp":1360,"hp":604,"off":95,"sus":239,"ult":258,"bdps":204,"dtps":12,"bhp":10374,"hm":1.247,"am":0.98},"kallisto":{"cp":1265,"hp":483,"off":118,"sus":126,"ult":122,"bdps":67,"dtps":9,"bhp":10374,"hm":1.247,"am":1.24},"lykos":{"cp":1421,"hp":468,"off":121,"sus":362,"ult":351,"bdps":137,"dtps":16,"bhp":10374,"hm":1.247,"am":1.02},"mage":{"cp":1325,"hp":444,"off":106,"sus":290,"ult":295,"bdps":132,"dtps":6,"bhp":10374,"hm":1.247,"am":3.16}},"3":{"theron":{"cp":3490,"hp":1188,"off":314,"sus":717,"ult":734,"bdps":522,"dtps":37,"bhp":29643,"hm":3.181,"am":0.98},"kallisto":{"cp":2958,"hp":950,"off":326,"sus":504,"ult":447,"bdps":267,"dtps":34,"bhp":29643,"hm":3.181,"am":1.24},"lykos":{"cp":2877,"hp":922,"off":244,"sus":715,"ult":716,"bdps":311,"dtps":36,"bhp":29643,"hm":3.181,"am":1.02},"mage":{"cp":3106,"hp":874,"off":271,"sus":683,"ult":667,"bdps":306,"dtps":12,"bhp":29643,"hm":3.181,"am":3.16}},"4":{"theron":{"cp":5076,"hp":1533,"off":478,"sus":1144,"ult":1122,"bdps":579,"dtps":37,"bhp":42348,"hm":2.361,"am":0.98},"kallisto":{"cp":4468,"hp":1227,"off":515,"sus":1163,"ult":930,"bdps":533,"dtps":30,"bhp":42348,"hm":2.361,"am":1.24},"lykos":{"cp":4299,"hp":1190,"off":415,"sus":1100,"ult":1100,"bdps":436,"dtps":51,"bhp":42348,"hm":2.361,"am":1.02},"mage":{"cp":4185,"hp":1129,"off":391,"sus":860,"ult":935,"bdps":384,"dtps":15,"bhp":42348,"hm":2.361,"am":3.16}},"5":{"theron":{"cp":5749,"hp":1913,"off":527,"sus":1018,"ult":1119,"bdps":867,"dtps":69,"bhp":86606,"hm":2.545,"am":0.98},"kallisto":{"cp":6219,"hp":1530,"off":843,"sus":1551,"ult":1358,"bdps":972,"dtps":87,"bhp":86606,"hm":2.545,"am":1.24},"lykos":{"cp":5410,"hp":1484,"off":586,"sus":1345,"ult":1291,"bdps":786,"dtps":62,"bhp":86606,"hm":2.545,"am":1.02},"mage":{"cp":5368,"hp":1408,"off":524,"sus":1149,"ult":1390,"bdps":414,"dtps":74,"bhp":86606,"hm":2.545,"am":3.16}},"6":{"theron":{"cp":7709,"hp":2286,"off":820,"sus":1449,"ult":1539,"bdps":1405,"dtps":44,"bhp":100186,"hm":1.576,"am":0.98},"kallisto":{"cp":7763,"hp":1829,"off":1169,"sus":1993,"ult":1649,"bdps":1264,"dtps":75,"bhp":100186,"hm":1.576,"am":1.24},"lykos":{"cp":6533,"hp":1774,"off":784,"sus":1479,"ult":1425,"bdps":1069,"dtps":44,"bhp":100186,"hm":1.576,"am":1.02},"mage":{"cp":6963,"hp":1683,"off":749,"sus":1302,"ult":1748,"bdps":707,"dtps":43,"bhp":100186,"hm":1.576,"am":3.16}},"7":{"theron":{"cp":10095,"hp":2875,"off":1127,"sus":2072,"ult":1995,"bdps":1402,"dtps":56,"bhp":125500,"hm":0.653,"am":0.98},"kallisto":{"cp":10260,"hp":2300,"off":1401,"sus":2614,"ult":2200,"bdps":1416,"dtps":46,"bhp":125500,"hm":0.653,"am":1.24},"lykos":{"cp":10551,"hp":2231,"off":1437,"sus":2575,"ult":2639,"bdps":1575,"dtps":62,"bhp":125500,"hm":0.653,"am":1.02},"mage":{"cp":10155,"hp":2116,"off":1162,"sus":2007,"ult":2510,"bdps":1097,"dtps":33,"bhp":125500,"hm":0.653,"am":3.16}},"8":{"theron":{"cp":20074,"hp":3943,"off":3112,"sus":4217,"ult":4296,"bdps":1365,"dtps":106,"bhp":146036,"hm":0.962,"am":0.98},"kallisto":{"cp":18675,"hp":3154,"off":2694,"sus":4835,"ult":4634,"bdps":2209,"dtps":126,"bhp":146036,"hm":0.962,"am":1.24},"lykos":{"cp":17884,"hp":3060,"off":2296,"sus":4672,"ult":4600,"bdps":0,"dtps":161,"bhp":146036,"hm":0.962,"am":1.02},"mage":{"cp":20343,"hp":2902,"off":2814,"sus":4508,"ult":5152,"bdps":1507,"dtps":80,"bhp":146036,"hm":0.962,"am":3.16}},"9":{"theron":{"cp":21702,"hp":4382,"off":2814,"sus":5235,"ult":5216,"bdps":3001,"dtps":26,"bhp":208550,"hm":1.281,"am":0.98},"kallisto":{"cp":22436,"hp":3506,"off":3733,"sus":5788,"ult":4822,"bdps":1861,"dtps":147,"bhp":208550,"hm":1.281,"am":1.24},"lykos":{"cp":24487,"hp":3401,"off":3911,"sus":6044,"ult":5898,"bdps":2358,"dtps":88,"bhp":208550,"hm":1.281,"am":1.02},"mage":{"cp":24592,"hp":3225,"off":3759,"sus":5571,"ult":6916,"bdps":801,"dtps":92,"bhp":208550,"hm":1.281,"am":3.16}},"10":{"theron":{"cp":29805,"hp":4824,"off":4717,"sus":7329,"ult":6798,"bdps":2415,"dtps":195,"bhp":378461,"hm":1.724,"am":0.98},"kallisto":{"cp":26662,"hp":3860,"off":4495,"sus":6432,"ult":5547,"bdps":1849,"dtps":193,"bhp":378461,"hm":1.724,"am":1.24},"lykos":{"cp":30521,"hp":3744,"off":4565,"sus":7909,"ult":7959,"bdps":764,"dtps":139,"bhp":378461,"hm":1.724,"am":1.02},"mage":{"cp":29239,"hp":3551,"off":4715,"sus":6582,"ult":7127,"bdps":2119,"dtps":156,"bhp":378461,"hm":1.724,"am":3.16}},"11":{"theron":{"cp":69650,"hp":9013,"off":9895,"sus":17054,"ult":16564,"bdps":9456,"dtps":264,"bhp":886471,"hm":0.617,"am":0.98},"kallisto":{"cp":57907,"hp":7211,"off":9806,"sus":13508,"ult":11471,"bdps":10769,"dtps":205,"bhp":886471,"hm":0.617,"am":1.24},"lykos":{"cp":68892,"hp":6994,"off":10158,"sus":16557,"ult":16527,"bdps":10051,"dtps":271,"bhp":886471,"hm":0.617,"am":1.02},"mage":{"cp":56576,"hp":6634,"off":7966,"sus":11351,"ult":14059,"bdps":9259,"dtps":184,"bhp":886471,"hm":0.617,"am":3.16}},"12":{"theron":{"cp":66738,"hp":9623,"off":9526,"sus":15315,"ult":16009,"bdps":7759,"dtps":212,"bhp":715495,"hm":0.358,"am":0.98},"kallisto":{"cp":65699,"hp":7699,"off":10701,"sus":14972,"ult":13297,"bdps":8224,"dtps":197,"bhp":715495,"hm":0.358,"am":1.24},"lykos":{"cp":64042,"hp":7468,"off":9484,"sus":14292,"ult":14180,"bdps":6786,"dtps":224,"bhp":715495,"hm":0.358,"am":1.02},"mage":{"cp":68314,"hp":7083,"off":10139,"sus":13620,"ult":16255,"bdps":6610,"dtps":100,"bhp":715495,"hm":0.358,"am":3.16}},"13":{"theron":{"cp":76561,"hp":10276,"off":12320,"sus":16564,"ult":16412,"bdps":10692,"dtps":305,"bhp":815613,"hm":0.37,"am":0.98},"kallisto":{"cp":75447,"hp":8221,"off":15284,"sus":18986,"ult":15343,"bdps":12563,"dtps":340,"bhp":815613,"hm":0.37,"am":1.24},"lykos":{"cp":73900,"hp":7974,"off":12313,"sus":17397,"ult":17026,"bdps":8001,"dtps":336,"bhp":815613,"hm":0.37,"am":1.02},"mage":{"cp":75325,"hp":7563,"off":12479,"sus":14230,"ult":16775,"bdps":7893,"dtps":209,"bhp":815613,"hm":0.37,"am":3.16}},"14":{"theron":{"cp":84979,"hp":10941,"off":12961,"sus":19363,"ult":19808,"bdps":12951,"dtps":149,"bhp":1111025,"hm":0.37,"am":0.98},"kallisto":{"cp":95500,"hp":8753,"off":18791,"sus":25444,"ult":20043,"bdps":15163,"dtps":260,"bhp":1111025,"hm":0.37,"am":1.24},"lykos":{"cp":85295,"hp":8490,"off":13531,"sus":19783,"ult":19440,"bdps":11344,"dtps":201,"bhp":1111025,"hm":0.37,"am":1.02},"mage":{"cp":85546,"hp":8053,"off":13465,"sus":16182,"ult":20194,"bdps":8594,"dtps":75,"bhp":1111025,"hm":0.37,"am":3.16}},"15":{"theron":{"cp":94246,"hp":14544,"off":13934,"sus":19453,"ult":18873,"bdps":12724,"dtps":235,"bhp":1274258,"hm":0.342,"am":0.98},"kallisto":{"cp":89356,"hp":11635,"off":14836,"sus":24114,"ult":19609,"bdps":11888,"dtps":488,"bhp":1274258,"hm":0.342,"am":1.24},"lykos":{"cp":85825,"hp":11286,"off":14823,"sus":17193,"ult":17053,"bdps":12316,"dtps":357,"bhp":1274258,"hm":0.342,"am":1.02},"mage":{"cp":75514,"hp":10704,"off":11054,"sus":13404,"ult":16778,"bdps":7955,"dtps":319,"bhp":1274258,"hm":0.342,"am":3.16}},"16":{"theron":{"cp":121211,"hp":15763,"off":18510,"sus":25319,"ult":25589,"bdps":15706,"dtps":362,"bhp":1202203,"hm":0.264,"am":0.98},"kallisto":{"cp":141000,"hp":12610,"off":24793,"sus":34318,"ult":30793,"bdps":18019,"dtps":489,"bhp":1202203,"hm":0.264,"am":1.24},"lykos":{"cp":98478,"hp":12232,"off":15072,"sus":21849,"ult":21466,"bdps":12403,"dtps":291,"bhp":1202203,"hm":0.264,"am":1.02},"mage":{"cp":102762,"hp":11601,"off":17069,"sus":17462,"ult":21232,"bdps":9050,"dtps":142,"bhp":1202203,"hm":0.264,"am":3.16}},"17":{"theron":{"cp":123777,"hp":17011,"off":19090,"sus":22830,"ult":24073,"bdps":13824,"dtps":247,"bhp":1212387,"hm":0.207,"am":0.98},"kallisto":{"cp":120256,"hp":13609,"off":19175,"sus":25470,"ult":21188,"bdps":13423,"dtps":276,"bhp":1212387,"hm":0.207,"am":1.24},"lykos":{"cp":140690,"hp":13200,"off":24518,"sus":28099,"ult":27513,"bdps":15422,"dtps":355,"bhp":1212387,"hm":0.207,"am":1.02},"mage":{"cp":119765,"hp":12520,"off":18434,"sus":18634,"ult":23227,"bdps":10501,"dtps":130,"bhp":1212387,"hm":0.207,"am":3.16}},"18":{"theron":{"cp":149799,"hp":19213,"off":21946,"sus":27199,"ult":28317,"bdps":14544,"dtps":426,"bhp":1355407,"hm":0.19,"am":0.98},"kallisto":{"cp":142238,"hp":15370,"off":24979,"sus":31649,"ult":29068,"bdps":17077,"dtps":293,"bhp":1355407,"hm":0.19,"am":1.24},"lykos":{"cp":129889,"hp":14909,"off":19307,"sus":25567,"ult":24668,"bdps":13437,"dtps":372,"bhp":1355407,"hm":0.19,"am":1.02},"mage":{"cp":170680,"hp":14140,"off":28991,"sus":25977,"ult":31038,"bdps":15658,"dtps":106,"bhp":1355407,"hm":0.19,"am":3.16}},"19":{"theron":{"cp":173789,"hp":20286,"off":28107,"sus":29955,"ult":30312,"bdps":16086,"dtps":419,"bhp":1512126,"hm":0.142,"am":0.98},"kallisto":{"cp":169422,"hp":16229,"off":33104,"sus":34675,"ult":28369,"bdps":20862,"dtps":505,"bhp":1512126,"hm":0.142,"am":1.24},"lykos":{"cp":160180,"hp":15742,"off":26501,"sus":30188,"ult":29088,"bdps":16669,"dtps":242,"bhp":1512126,"hm":0.142,"am":1.02},"mage":{"cp":181578,"hp":14931,"off":30372,"sus":27841,"ult":33400,"bdps":14709,"dtps":167,"bhp":1512126,"hm":0.142,"am":3.16}},"20":{"theron":{"cp":157936,"hp":21284,"off":22765,"sus":26853,"ult":29102,"bdps":17832,"dtps":420,"bhp":3617467,"hm":0.216,"am":0.98},"kallisto":{"cp":227749,"hp":17027,"off":38066,"sus":48629,"ult":40163,"bdps":23512,"dtps":1003,"bhp":3617467,"hm":0.216,"am":1.24},"lykos":{"cp":176461,"hp":16516,"off":26967,"sus":34850,"ult":34286,"bdps":20379,"dtps":481,"bhp":3617467,"hm":0.216,"am":1.02},"mage":{"cp":201406,"hp":15665,"off":31128,"sus":32639,"ult":37815,"bdps":17535,"dtps":561,"bhp":3617467,"hm":0.216,"am":3.16}},"21":{"theron":{"cp":175529,"hp":25456,"off":26261,"sus":27775,"ult":27712,"bdps":15387,"dtps":200,"bhp":1620859,"hm":0.106,"am":0.98},"kallisto":{"cp":251808,"hp":20365,"off":44620,"sus":52133,"ult":47167,"bdps":24099,"dtps":357,"bhp":1620859,"hm":0.106,"am":1.24},"lykos":{"cp":214520,"hp":19754,"off":34939,"sus":39270,"ult":38480,"bdps":22873,"dtps":307,"bhp":1620859,"hm":0.106,"am":1.02},"mage":{"cp":192313,"hp":18735,"off":28449,"sus":28757,"ult":33205,"bdps":13465,"dtps":172,"bhp":1620859,"hm":0.106,"am":3.16}},"22":{"theron":{"cp":227444,"hp":27164,"off":33166,"sus":39015,"ult":39210,"bdps":21710,"dtps":340,"bhp":1910607,"hm":0.119,"am":0.98},"kallisto":{"cp":211130,"hp":21731,"off":33344,"sus":43009,"ult":38457,"bdps":21725,"dtps":493,"bhp":1910607,"hm":0.119,"am":1.24},"lykos":{"cp":222848,"hp":21079,"off":33585,"sus":41698,"ult":40778,"bdps":22029,"dtps":405,"bhp":1910607,"hm":0.119,"am":1.02},"mage":{"cp":256898,"hp":19993,"off":42678,"sus":36439,"ult":43245,"bdps":25143,"dtps":175,"bhp":1910607,"hm":0.119,"am":3.16}},"23":{"theron":{"cp":262686,"hp":29536,"off":38596,"sus":42630,"ult":44441,"bdps":23356,"dtps":273,"bhp":1891375,"hm":0.11,"am":0.98},"kallisto":{"cp":225910,"hp":23628,"off":38224,"sus":42565,"ult":36313,"bdps":22965,"dtps":395,"bhp":1891375,"hm":0.11,"am":1.24},"lykos":{"cp":247195,"hp":22920,"off":39950,"sus":43409,"ult":42597,"bdps":21217,"dtps":146,"bhp":1891375,"hm":0.11,"am":1.02},"mage":{"cp":298729,"hp":21738,"off":51304,"sus":44094,"ult":51184,"bdps":26103,"dtps":82,"bhp":1891375,"hm":0.11,"am":3.16}},"24":{"theron":{"cp":338739,"hp":31506,"off":51185,"sus":56218,"ult":59487,"bdps":29662,"dtps":226,"bhp":1674437,"hm":0.084,"am":0.98},"kallisto":{"cp":253832,"hp":25205,"off":40123,"sus":47126,"ult":43363,"bdps":17804,"dtps":416,"bhp":1674437,"hm":0.084,"am":1.24},"lykos":{"cp":239232,"hp":24449,"off":35448,"sus":38846,"ult":38369,"bdps":17086,"dtps":372,"bhp":1674437,"hm":0.084,"am":1.02},"mage":{"cp":281782,"hp":23189,"off":42470,"sus":39690,"ult":48429,"bdps":15017,"dtps":126,"bhp":1674437,"hm":0.084,"am":3.16}},"25":{"theron":{"cp":343431,"hp":34077,"off":51297,"sus":56081,"ult":55535,"bdps":29406,"dtps":215,"bhp":3377795,"hm":0.146,"am":0.98},"kallisto":{"cp":342559,"hp":27261,"off":62768,"sus":60830,"ult":51283,"bdps":34038,"dtps":512,"bhp":3377795,"hm":0.146,"am":1.24},"lykos":{"cp":294248,"hp":26444,"off":48171,"sus":48290,"ult":47567,"bdps":26830,"dtps":421,"bhp":3377795,"hm":0.146,"am":1.02},"mage":{"cp":267048,"hp":25081,"off":44281,"sus":35823,"ult":40837,"bdps":21111,"dtps":124,"bhp":3377795,"hm":0.146,"am":3.16}},"26":{"theron":{"cp":324713,"hp":36215,"off":49290,"sus":49491,"ult":48639,"bdps":26860,"dtps":179,"bhp":2277163,"hm":0.09,"am":0.98},"kallisto":{"cp":319354,"hp":28972,"off":54421,"sus":54627,"ult":48834,"bdps":28922,"dtps":170,"bhp":2277163,"hm":0.09,"am":1.24},"lykos":{"cp":343450,"hp":28102,"off":52375,"sus":56799,"ult":56198,"bdps":24676,"dtps":268,"bhp":2277163,"hm":0.09,"am":1.02},"mage":{"cp":303657,"hp":26654,"off":45186,"sus":43724,"ult":52547,"bdps":21853,"dtps":113,"bhp":2277163,"hm":0.09,"am":3.16}},"27":{"theron":{"cp":361684,"hp":38985,"off":56021,"sus":55461,"ult":53712,"bdps":38073,"dtps":334,"bhp":3201273,"hm":0.116,"am":0.98},"kallisto":{"cp":324691,"hp":31188,"off":51358,"sus":56411,"ult":49064,"bdps":37332,"dtps":529,"bhp":3201273,"hm":0.116,"am":1.24},"lykos":{"cp":355520,"hp":30252,"off":58764,"sus":53962,"ult":52624,"bdps":33932,"dtps":331,"bhp":3201273,"hm":0.116,"am":1.02},"mage":{"cp":449902,"hp":28693,"off":76306,"sus":57638,"ult":71261,"bdps":43605,"dtps":159,"bhp":3201273,"hm":0.116,"am":3.16}},"28":{"theron":{"cp":338801,"hp":41134,"off":48739,"sus":48988,"ult":50407,"bdps":24122,"dtps":306,"bhp":2593577,"hm":0.105,"am":0.98},"kallisto":{"cp":319549,"hp":32907,"off":58259,"sus":54957,"ult":47992,"bdps":32369,"dtps":655,"bhp":2593577,"hm":0.105,"am":1.24},"lykos":{"cp":329504,"hp":31920,"off":48978,"sus":50377,"ult":49059,"bdps":29010,"dtps":287,"bhp":2593577,"hm":0.105,"am":1.02},"mage":{"cp":504551,"hp":30275,"off":78585,"sus":67154,"ult":84929,"bdps":24720,"dtps":199,"bhp":2593577,"hm":0.105,"am":3.16}},"29":{"theron":{"cp":386878,"hp":43511,"off":61635,"sus":54177,"ult":52770,"bdps":35202,"dtps":1145,"bhp":3513688,"hm":0.102,"am":0.98},"kallisto":{"cp":511209,"hp":34809,"off":84675,"sus":89775,"ult":82065,"bdps":44327,"dtps":1652,"bhp":3513688,"hm":0.102,"am":1.24},"lykos":{"cp":507728,"hp":33764,"off":89451,"sus":78125,"ult":77123,"bdps":46560,"dtps":892,"bhp":3513688,"hm":0.102,"am":1.02},"mage":{"cp":391016,"hp":32024,"off":58926,"sus":54171,"ult":60888,"bdps":32512,"dtps":956,"bhp":3513688,"hm":0.102,"am":3.16}},"30":{"theron":{"cp":461476,"hp":45024,"off":69162,"sus":66658,"ult":64927,"bdps":41320,"dtps":391,"bhp":7934229,"hm":0.213,"am":0.98},"kallisto":{"cp":562484,"hp":36019,"off":100744,"sus":100663,"ult":85551,"bdps":55430,"dtps":790,"bhp":7934229,"hm":0.213,"am":1.24},"lykos":{"cp":389605,"hp":34939,"off":58796,"sus":56529,"ult":55739,"bdps":32716,"dtps":410,"bhp":7934229,"hm":0.213,"am":1.02},"mage":{"cp":587538,"hp":33138,"off":92302,"sus":72746,"ult":89238,"bdps":38534,"dtps":353,"bhp":7934229,"hm":0.213,"am":3.16}}};
+const BAI_PRESET = {"sk:theron:z:dmg":0.98,"sk:theron:x:dmg":0.98,"sk:theron:c:dmg":0.98,"sk:theron:move:dmg":0.98,"sk:theron:a:dmg":0.98,"sk:theron:s:dmg":0.98,"sk:theron:d:dmg":0.98,"sk:theron:v:dmg":0.98,"sk:kallisto:z:dmg":1.24,"sk:kallisto:x:dmg":1.24,"sk:kallisto:c:dmg":1.24,"sk:kallisto:move:dmg":1.24,"sk:kallisto:a:dmg":1.24,"sk:kallisto:s:dmg":1.24,"sk:kallisto:d:dmg":1.24,"sk:kallisto:v:dmg":1.24,"sk:lykos:z:dmg":1.02,"sk:lykos:x:dmg":1.02,"sk:lykos:c:dmg":1.02,"sk:lykos:move:dmg":1.02,"sk:lykos:a:dmg":1.02,"sk:lykos:s:dmg":1.02,"sk:lykos:d:dmg":1.02,"sk:lykos:v:dmg":1.02,"sk:mage:z:dmg":3.16,"sk:mage:x:dmg":3.16,"sk:mage:c:dmg":3.16,"sk:mage:move:dmg":3.16,"sk:mage:a:dmg":3.16,"sk:mage:s:dmg":3.16,"sk:mage:d:dmg":3.16,"sk:mage:v:dmg":3.16,"b:b1:hp":1.928,"b:b2:hp":1.247,"b:b3:hp":3.181,"b:b4:hp":2.361,"b:b5:hp":2.545,"b:b6:hp":1.576,"b:b7:hp":0.653,"b:b8:hp":0.962,"b:b9:hp":1.281,"b:b10:hp":1.724,"b:b11:hp":0.617,"b:b12:hp":0.358,"b:b13:hp":0.37,"b:b14:hp":0.37,"b:b15:hp":0.342,"b:b16:hp":0.264,"b:b17:hp":0.207,"b:b18:hp":0.19,"b:b19:hp":0.142,"b:b20:hp":0.216,"b:b21:hp":0.106,"b:b22:hp":0.119,"b:b23:hp":0.11,"b:b24:hp":0.084,"b:b25:hp":0.146,"b:b26:hp":0.09,"b:b27:hp":0.116,"b:b28:hp":0.105,"b:b29:hp":0.102,"b:b30:hp":0.213,"rrGrow":1.0,"gold3":0.4,"enhGold":3.0};   // AI 밸런스 값 (관리자 창 📊 DPS → 'AI 밸런스 값 적용' 이 test 에 넣는다)
+const BAI = { hd: 0.7, ht: 2.0, lk: 1 };
+const baiTarget = n => n % 10 === 0 ? 180 : n % 5 === 0 ? 120 : 90;   // 사용자: 보통 90초 · 5장 단위 120초 · 10장 단위 180초 (AI 기준)
+const BAI_CH = ['theron', 'kallisto', 'lykos', 'mage'];
+function baiNow(n, ch) {   // 표 값을 지금 관리자 값(보스 체력 배율·직업 공격력 배율)에 맞춘다
+  const r = BOSSAI[n] && BOSSAI[n][ch]; if (!r) return null;
+  const hmNow = TUNE.cur['b:b' + n + ':hp'] ?? 1, amNow = (TUNE.cur['sk:' + ch + ':z:dmg'] ?? 1) * (TUNE.cur['st:' + ch + ':atk'] ?? 1);   // 직업 보정 = 스킬 피해 배율(전투력은 그대로)
+  const kh = hmNow / (r.hm || 1), ka = amNow / (r.am || 1);
+  return Object.assign({}, r, { bhp: r.bhp * kh, bdps: r.bdps * ka, sus: r.sus * ka, ult: r.ult * ka });
+}
+function baiNeedK(r, hd, ht, n) {   // 전투력 k 배 = 주는 피해 k 배 · 받는 피해 1/k 배. 치유 연고(최대 체력 POTION_HEAL 를 POTION_CD 초마다)는 체력 비율이라 그대로
+  if (!r || !(r.bdps > 0)) return null;
+  const tKill = r.bhp / (r.bdps * hd), heal = POTION_HEAL / POTION_CD;
+  const survOk = k => { const net = r.dtps * ht / k / r.hp - heal; return net <= 0 || 1 / net >= tKill / k; };   // 버티는 시간 ≥ 잡는 시간
+  let lo = 0.2, hi = 20; if (survOk(lo)) hi = lo; else if (!survOk(hi)) lo = hi; else for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (survOk(m)) hi = m; else lo = m; }
+  return Math.max(hi, tKill / (baiTarget(n) * BAI.lk), 0.2);
+}
+function baiNeed(n, ch, human) { const r = baiNow(n, ch); const k = baiNeedK(r, human ? BAI.hd : 1, human ? BAI.ht : 1, n); return k == null ? null : Math.round(r.cp * k); }
+function baiRec(n) { const v = BAI_CH.map(c => baiNeed(n, c, true)).filter(x => x > 0); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : 0; }
+function baiAvg(n, key) { const v = BAI_CH.map(c => { const r = baiNow(n, c); return r && r[key]; }).filter(x => x > 0); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : 0; }
+const _baiRecCp = recCp;
+recCp = function (n) { return baiRec(n) || _baiRecCp(n); };   // 사용자: 보정(2/3) 없이 그대로
+/* 공격 기대값: 전투력 식의 공격 부분과 같은 항목 (보스 피해는 보스에게 실제로 곱해지는 대로) */
+const baiOff = st => st.atk * (1 + Math.min(100, st.crit) / 100 * (CRIT_MULT - 1 + (st.critDmg || 0) / 100)) * (1 + (st.bossDmg || 0) / 100) * (1 + (st.pen || 0) / 300) * (1 + (st.aspd || 0) / 100);
+/* 장착 장비 기준 예상 DPS = 그 장·직업의 AI 측정 DPS × (내 공격 기대값 / AI 스펙 공격 기대값) */
+function baiExpect(n) {
+  const r = baiNow(n, G.save.char); if (!r || !r.off) return null;
+  const k = baiOff(G.stats) / r.off;
+  return { sus: Math.round(r.sus * k), ult: Math.round(r.ult * k), boss: Math.round(r.bdps * k), k };
+}
+for (const [k, n, help, mn, mx, st, u, pct] of [
+  ['hd', '사람 DPS / AI DPS', '사람이 AI 만큼 못 때리는 정도 (권장 전투력 계산)', 20, 150, 5, '', true],
+  ['ht', '사람 받는 피해 / AI', '사람이 AI 보다 더 맞는 정도', 0.5, 5, 0.1, '×'],
+  ['lk', '보스 처치 목표 시간 배율', '목표(보통 90초 · 5장 단위 120초 · 10장 단위 180초) × 이 값 안에 잡을 수 있어야 권장 전투력', 0.3, 3, 0.05, '×'],
+]) tuneAdd({ k: 'bai_' + k, g: 'boss', sec: '권장 전투력 (AI 시뮬레이션)', n, help, get: () => BAI[k], set: v => { BAI[k] = v; }, min: mn, max: mx, step: st, u, pct });
+
+
+/* ---- 재화 (사용자 선택: 결정은 그대로 · 리롤 골드 장 비례 · 강화 +25% · 21~30장 골드 줄이기) — 기본값은 지금 그대로, 바꾼 값은 AI 밸런스 값(test)으로 ----
+   RR_GROW: 리롤 1회 골드 = 200 × 1.22^((아이템 레벨-1) × RR_GROW)  (0 = 예전처럼 200 고정, 1 = 몹 골드와 같은 비율로 오른다)
+   GOLD3: 21~30장 퀘스트 골드·몹 골드 배율 (docs/balance/econ_spec.py: 0.4 이면 스펙은 그대로, 30장까지 남는 골드 59% → 15%) */
+let RR_GROW = 0, GOLD3 = 1;
+const _ecRerollCost = rerollCost;
+rerollCost = function (it, kind) {
+  const c = _ecRerollCost(it, kind), lv = Math.max(1, (it && it.ilvl) || 1), k = Math.pow(1.22, (lv - 1) * RR_GROW);
+  return k === 1 ? c : Object.assign({}, c, { gold: Math.round(c.gold * k) });
+};
+function gold3Apply() { for (const id in QUESTS) { const q = QUESTS[id]; if (!q.rew || !q.rew.gold || !(q.ch > 20)) continue; if (q.rew._gb == null) q.rew._gb = q.rew.gold; q.rew.gold = Math.round(q.rew._gb * GOLD3 / 5) * 5; } }
+const _ecDropLoot = dropLoot;
+dropLoot = function (m) { const g = GOLD_DROP_X, n = typeof mapChapter === 'function' ? mapChapter() : 1; if (n > 20 && GOLD3 !== 1) GOLD_DROP_X = g * GOLD3; try { return _ecDropLoot(m); } finally { GOLD_DROP_X = g; } };
+tuneAdd({ k: 'rrGrow', g: 'econ', sec: '강화', n: '리롤 골드 장 비례', help: '품질·잠재 리롤 1회 골드 = 200 × 1.22^((아이템 레벨-1) × 이 값) · 0 = 200 고정, 1 = 몹 골드와 같은 비율', get: () => RR_GROW, set: v => { RR_GROW = v; }, min: 0, max: 1.5, step: 0.05, u: '' });
+tuneAdd({ k: 'gold3', g: 'econ', sec: '성장', n: '21~30장 골드 배율', help: '21~30장 퀘스트 골드와 몹 골드에 곱한다', get: () => GOLD3, set: v => { GOLD3 = v; gold3Apply(); }, min: 0.05, max: 3, step: 0.05, u: '×' });
+if (IS_DEV_BUILD) {
+  /* ---- test 서버 전용: 보스전 DPS 창 + 사람 기록(dev_bossrec) ---- */
+  const BF = { b: null, t0: 0, hp0: 0, dealt: 0, taken: 0, lastHp: 0, sent: false };
+  const _bfHurt = hurtPlayer;
+  hurtPlayer = function (raw, sx, o) { const p = G.player, before = p ? p.hp : 0, r = _bfHurt(raw, sx, o); if (BF.b && p) BF.taken += Math.max(0, before - p.hp); return r; };
+  function bfStart(b) { Object.assign(BF, { b, t0: G.t, hp0: b.hp, dealt: 0, taken: 0, lastHp: b.hp, sent: false, n: b.d && b.d.ch, maxT: 0 }); }
+  async function bfSend(result) {
+    if (BF.sent || !BF.b) return; BF.sent = true;
+    const secs = G.t - BF.t0; if (secs < 5) return;
+    const n = BF.n, st = G.stats, ex = baiExpect(n) || {};
+    const rec = { at: Date.now(), by: (typeof AUTH !== 'undefined' && AUTH.id) || G.uid || null, char: G.save.char, lv: G.save.level, ch: n, boss: BF.b.id, result,
+      secs: Math.round(secs * 10) / 10, dps: Math.round(BF.dealt / secs), dtps: Math.round(BF.taken / secs), cp: Math.round(st.cp), hp: Math.round(st.hp), off: Math.round(baiOff(st)),
+      exp: ex.boss || 0, ai: BOSSAI[n] && BOSSAI[n][G.save.char] ? BOSSAI[n][G.save.char].bdps : 0, rec: recCp(n), ver: GAME_VER };
+    BF.lastRec = rec;
+    try { if (CLOUD.dbUrl && !window.DEV_LOCAL && AUTH.token) await tuneSend(dbUrl('bossrec'), 'POST', rec); } catch (e) { console.warn('[bossrec]', e.message); }
+  }
+  setInterval(() => {
+    const b = G.boss;
+    if (b && b !== BF.b && b.isBoss && b.id !== 'anon' && b.st !== 'wait' && b.st !== 'die' && G.map && G.map.boss) bfStart(b);
+    if (BF.b) {
+      if (G.boss === BF.b && BF.b.hp < BF.lastHp) BF.dealt += BF.lastHp - BF.b.hp;
+      if (G.boss === BF.b) BF.lastHp = BF.b.hp;
+      const over = G.boss !== BF.b || BF.b.st === 'die' || BF.b.hp <= 0;
+      if (over && !BF.sent) bfSend(BF.b.hp <= 0 || BF.b.st === 'die' ? 'kill' : G.player && G.player.dead > 0 ? 'death' : 'exit');
+      if (over) BF.b = null;
+    }
+    let el = document.getElementById('bfHud');
+    const on = !!(BF.b && G.scene === 'play');
+    if (!el) { if (!on) return; el = document.createElement('div'); el.id = 'bfHud'; el.style.cssText = 'position:absolute;left:calc(var(--u)*14);bottom:calc(var(--u)*120);z-index:12;pointer-events:none;background:rgba(8,10,18,.78);border:1px solid #6a5326;padding:calc(var(--u)*6) calc(var(--u)*10);color:#e8dcc0;font-size:max(10px,calc(var(--u)*12));line-height:1.5;font-variant-numeric:tabular-nums'; ($('#game') || document.body).appendChild(el); }
+    el.style.display = on ? 'block' : 'none'; if (!on) return;
+    const secs = Math.max(0.1, G.t - BF.t0), dps = BF.dealt / secs, ex = baiExpect(BF.n) || {}, n = BF.n;
+    const col = ex.boss ? (dps >= ex.boss * 0.9 ? '#8fd48c' : dps >= ex.boss * 0.6 ? '#f0d070' : '#ff8d80') : '#fff';
+    el.innerHTML = `<b style="color:#ffe6a8">보스전 DPS · test</b><br>지금 <b style="color:${col}">${nf(Math.round(dps))}</b> · ${secs.toFixed(0)}초 · 받은 피해 ${nf(Math.round(BF.taken / secs))}/초<br>`
+      + `내 장비 예상 보스전 <b>${nf(ex.boss || 0)}</b> · 허수아비 ${nf(ex.sus || 0)} / 궁극기 포함 ${nf(ex.ult || 0)}<br>`
+      + `AI(열심히 한 스펙) 4직업 평균 보스전 ${nf(baiAvg(n, 'bdps'))} · 권장 전투력 ${nf(recCp(n))}`;
+  }, 250);
+
+  /* 관리자 창 📊 DPS 탭: 장마다 AI 표 + 사람 기록 평균 */
+  window.mcBaiHtml = function () {
+    const H = window.BAI_HUMAN || null, rows = [];
+    for (let n = 1; n <= 30; n++) {
+      if (!BOSSAI[n]) continue;
+      const hum = H && H[n];
+      rows.push(`<tr><td>${n}</td><td>${esc2(BOSSES['b' + n] ? BOSSES['b' + n].name : '')}</td><td>${nf(baiAvg(n, 'cp'))}</td><td>${nf(BAI_CH.map(c => baiNeed(n, c, false)).filter(x => x).reduce((a, b, _, A) => a + b / A.length, 0) | 0)}</td><td><b>${nf(recCp(n))}</b></td>`
+        + `<td>${nf(baiAvg(n, 'sus'))}</td><td>${nf(baiAvg(n, 'ult'))}</td><td>${nf(baiAvg(n, 'bdps'))}</td><td>${(() => { const t = BAI_CH.map(c => { const r = baiNow(n, c); return r && r.bdps ? r.bhp / r.bdps : 0; }).filter(x => x); return t.length ? Math.round(t.reduce((a, b) => a + b, 0) / t.length) : '-'; })()}</td><td>${baiTarget(n)}</td>`
+        + `<td>${hum ? nf(hum.dps) + ' (' + hum.k + '회)' : '-'}</td><td>${hum ? Math.round(hum.win * 100) + '%' : '-'}</td><td>${hum ? nf(hum.cp) : '-'}</td></tr>`);
+    }
+    return `<section class="mcsec"><h6>보스 권장 전투력 · DPS <small>AI = 열심히 한 스펙 4직업 평균 (docs/balance/bossai.js) · 사람 = test 서버 보스전 기록</small></h6>
+      <div class="mcr"><button data-baiapply="1">AI 밸런스 값 적용 (test)</button><small>직업 스킬 피해 배율(궁수·마법사 등) · 보스 체력 배율 30개 · 리롤 골드 장 비례 · 21~30장 골드 배율 · 강화 골드 를 test 에 넣는다 (📜 내역에 남고 각 값의 되돌리기로 되돌린다)</small></div>
+      <div class="mcr"><button data-baiload="1">사람 기록 불러오기</button><small>${H ? '불러옴 · ' + H._n + '전' : '관리자만 읽을 수 있다'}</small></div>
+      <div style="overflow:auto;max-height:60vh"><table class="baitab"><tr><th>장</th><th>보스</th><th>AI 스펙 전투력</th><th>AI 필요</th><th>권장(사람)</th><th>허수아비 지속</th><th>궁극기 포함</th><th>AI 보스전</th><th>AI 처치(초)</th><th>목표</th><th>사람 보스전 DPS</th><th>사람 처치율</th><th>사람 평균 전투력</th></tr>${rows.join('')}</table></div></section>`;
+  };
+  const esc2 = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const st2 = document.createElement('style');
+  st2.textContent = 'html #devPanel .baitab{border-collapse:collapse;font-size:11px;width:100%}html #devPanel .baitab td,html #devPanel .baitab th{border:1px solid #333;padding:2px 5px;text-align:right;white-space:nowrap}html #devPanel .baitab th{background:#1c1622;color:#e0b860;position:sticky;top:0}html #devPanel .baitab td:nth-child(2){text-align:left}';
+  document.head.appendChild(st2);
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('#devPanel [data-baiapply]'); if (!b) return; e.stopPropagation();
+    if (!window.confirm('AI 밸런스 값(직업 스킬 피해 배율 · 보스 체력 30 · 리롤 골드 · 21~30장 골드 · 강화 골드)을 test 서버에 넣을까?\n정식에는 🚀 정식 적용을 눌러야 나간다.')) return;
+    let n = 0; for (const k in BAI_PRESET) if (TUNE.byK[k]) { window.mcTuneSet(k, BAI_PRESET[k]); n++; }
+    devMsg('AI 밸런스 값 ' + n + '개를 test 에 넣었다'); devRender();
+  }, true);
+  document.addEventListener('click', async e => {
+    const b = e.target.closest && e.target.closest('#devPanel [data-baiload]'); if (!b) return; e.stopPropagation();
+    try {
+      const j = await tuneGet(dbUrl('bossrec', 'orderBy=%22$key%22&limitToLast=2000')) || {};
+      const H = { _n: 0 };
+      for (const id in j) { const r = j[id]; if (!r || !r.ch) continue; H._n++; const h = H[r.ch] || (H[r.ch] = { k: 0, dps: 0, win: 0, cp: 0 }); h.k++; h.dps += r.dps || 0; h.cp += r.cp || 0; if (r.result === 'kill') h.win++; }
+      for (const n in H) if (n !== '_n') { const h = H[n]; h.dps = Math.round(h.dps / h.k); h.cp = Math.round(h.cp / h.k); h.win = h.win / h.k; }
+      window.BAI_HUMAN = H; devRender();
+    } catch (er) { devMsg('사람 기록 읽기 실패 · ' + er.message); }
+  }, true);
+}
+
 </script>
 </body></html>
