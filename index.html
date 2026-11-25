@@ -690,7 +690,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1100';
+const GAME_VER = '261125-1200';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -7601,6 +7601,21 @@ const MARK_DRAW = {
   seal(c, m, pr, gy) { c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(${m.col},${0.25 + pr * 0.5})`; c.fillRect(m.x - 7, gy - 34 - pr * 6, 14, 26); c.fillStyle = `rgba(255,255,255,${0.3 + pr * 0.5})`; c.fillRect(m.x - 4, gy - 30 - pr * 6, 8, 2); c.fillRect(m.x - 4, gy - 24 - pr * 6, 8, 2); c.restore(); },
   erase(c, m, pr, gy) { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(${m.col},${0.3 + pr * 0.6})`; c.lineWidth = 1; for (let i = 0; i < 5; i++) { const y = gy - 10 - i * 14 * pr; c.beginPath(); c.moveTo(m.x - m.r * 0.6, y); c.lineTo(m.x + m.r * 0.6, y - 3); c.stroke(); } c.restore(); },
 };
+/* 8차 배치: 캔버스 한글 안내 라벨 -> Galmuri 13px + 1px 모서리를 자른 다크 픽셀 배지 (전 장 공통) */
+function dotLabel(c, text, x, y, col) {
+  c.save();
+  c.font = "700 13px 'Galmuri','Noto Sans KR',sans-serif"; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  const tw = Math.ceil(c.measureText(text).width), pad = 6, Hd = 19;
+  const L = Math.round(x - tw / 2 - pad), T = Math.round(y - 15), Wd = tw + pad * 2;
+  c.fillStyle = 'rgba(10,8,14,.86)';
+  c.fillRect(L + 1, T, Wd - 2, Hd); c.fillRect(L, T + 1, Wd, Hd - 2);   // 모서리 1px 컷
+  c.fillStyle = 'rgba(150,138,118,.55)';
+  c.fillRect(L + 1, T, Wd - 2, 1); c.fillRect(L + 1, T + Hd - 1, Wd - 2, 1);
+  c.fillRect(L, T + 1, 1, Hd - 2); c.fillRect(L + Wd - 1, T + 1, 1, Hd - 2);
+  c.fillStyle = col || 'rgba(255,226,196,.96)';
+  c.fillText(text, L + pad, T + 14);
+  c.restore();
+}
 const TELE_DRAW = {
   bell(c, b, tl, pulse) { const pr = clamp(tl.t / tl.dur, 0, 1);
     const cv = tgdCanvas('bell', '', Math.min(3, Math.floor(pr * 4)));   // 6차 배치: 동심 타원 3개 -> 도트 지면 아치
@@ -7612,10 +7627,10 @@ const TELE_DRAW = {
     } else {
       c.strokeStyle = `rgba(255,200,120,${0.3 + pr * 0.5})`; c.lineWidth = 2; for (let i = 0; i < 3; i++) { c.beginPath(); c.ellipse(b.x, GROUND - 4, 60 + i * 50 + pr * 30, 8 + i * 3, 0, 0, 6.283); c.stroke(); }
     }
-    c.fillStyle = 'rgba(255,220,200,.9)'; c.font = "700 13px 'Galmuri','Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('충격파 세 번', b.x, GROUND - b.h - 20); },
+    dotLabel(c, '충격파 세 번', b.x, GROUND - b.h - 16, 'rgba(255,232,190,.96)'); },
   cast(c, b, tl, pulse) { const pr = clamp(tl.t / tl.dur, 0, 1), col = bossRageCol(b); c.save(); c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(b.x, b.y - b.h * 0.55, 4, b.x, b.y - b.h * 0.55, 60 + pr * 30); g.addColorStop(0, `rgba(${col},${0.35 + pulse * 0.3})`); g.addColorStop(1, `rgba(${col},0)`); c.fillStyle = g; c.fillRect(b.x - 100, b.y - b.h * 0.55 - 100, 200, 200); c.restore(); },
-  chainLo(c, b, tl, pulse) { const pr = clamp(tl.t / tl.dur, 0, 1), L = G.map.arenaL, R = G.map.arenaR; c.fillStyle = `rgba(220,60,50,${0.12 + pr * 0.3 + pulse * 0.1})`; c.fillRect(L, GROUND - 38, R - L, 38); c.strokeStyle = 'rgba(255,140,110,.7)'; c.strokeRect(L + .5, GROUND - 38 + .5, R - L, 38); c.fillStyle = 'rgba(255,220,200,.9)'; c.font = "700 14px 'Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('낮은 사슬 · 뛰어넘기', (L + R) / 2, GROUND - 46); },
-  chainHi(c, b, tl, pulse) { const pr = clamp(tl.t / tl.dur, 0, 1), L = G.map.arenaL, R = G.map.arenaR; c.fillStyle = `rgba(220,60,50,${0.12 + pr * 0.3 + pulse * 0.1})`; c.fillRect(L, GROUND - 160, R - L, 80); c.strokeStyle = 'rgba(255,140,110,.7)'; c.strokeRect(L + .5, GROUND - 160 + .5, R - L, 80); c.fillStyle = 'rgba(255,220,200,.9)'; c.font = "700 14px 'Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('높은 사슬 · 땅에 붙어 있기', (L + R) / 2, GROUND - 168); },
+  chainLo(c, b, tl, pulse) { const pr = clamp(tl.t / tl.dur, 0, 1), L = G.map.arenaL, R = G.map.arenaR; c.fillStyle = `rgba(220,60,50,${0.12 + pr * 0.3 + pulse * 0.1})`; c.fillRect(L, GROUND - 38, R - L, 38); c.strokeStyle = 'rgba(255,140,110,.7)'; c.strokeRect(L + .5, GROUND - 38 + .5, R - L, 38); dotLabel(c, '낮은 사슬 · 뛰어넘기', (L + R) / 2, GROUND - 42, 'rgba(255,216,200,.96)'); },
+  chainHi(c, b, tl, pulse) { const pr = clamp(tl.t / tl.dur, 0, 1), L = G.map.arenaL, R = G.map.arenaR; c.fillStyle = `rgba(220,60,50,${0.12 + pr * 0.3 + pulse * 0.1})`; c.fillRect(L, GROUND - 160, R - L, 80); c.strokeStyle = 'rgba(255,140,110,.7)'; c.strokeRect(L + .5, GROUND - 160 + .5, R - L, 80); dotLabel(c, '높은 사슬 · 땅에 붙어 있기', (L + R) / 2, GROUND - 164, 'rgba(255,216,200,.96)'); },
 };
 function drawBossExtras(c) {
   for (const q of G.pools) {
@@ -7647,8 +7662,7 @@ function drawBossExtras(c) {
     } else {
       c.fillStyle = `rgba(200,40,60,${0.12 + pr * 0.3})`; c.fillRect(L, l.y - h / 2, R - L, h);
     }
-    c.fillStyle = 'rgba(255,220,210,.92)'; c.font = "700 13px 'Galmuri','Noto Sans KR',sans-serif"; c.textAlign = 'center';
-    c.fillText(l.low ? '낮은 박쥐 떼 · 뛰어넘기' : '높은 박쥐 떼 · 땅에 붙어 있기', (L + R) / 2, l.y - h / 2 - 6);
+    dotLabel(c, l.low ? '낮은 박쥐 떼 · 뛰어넘기' : '높은 박쥐 떼 · 땅에 붙어 있기', (L + R) / 2, l.y - h / 2 - 2, 'rgba(255,224,212,.96)');
   }
   for (const i of G.illus) {
     const b = i.src, a = i.st === 'gone' ? Math.max(0, i.t / 0.3) * 0.55 : 0.55;
@@ -7656,15 +7670,16 @@ function drawBossExtras(c) {
     drawBossSprite(c, { id: b.id, anim: G.t, st: i.st === 'run' ? 'dash' : 'dash_w', h: b.h, phase: 2, d: b.d }, i.x, GROUND, { face: i.dir, alpha: a });
   }
 }
+/* 8차 배치: 손으로 그리던 벡터 탄 8종 -> 도트 탄 (PIXB). 원래 탄의 인상(단검·도깨비불·침·주사기·바위·박쥐·하트·쪽지)과 색만 유지 */
 const PROJ_DRAW = {
-  knife(c, q) { c.rotate(G.t * 18); dagger(c, -8, 0, 0, 1.2, 1); },
-  wisp(c, q) { c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(0, 0, 1, 0, 0, 16); g.addColorStop(0, 'rgba(230,255,245,.95)'); g.addColorStop(0.4, 'rgba(120,255,200,.7)'); g.addColorStop(1, 'rgba(80,220,160,0)'); c.fillStyle = g; c.beginPath(); c.ellipse(-4, 0, 18, 11, 0, 0, 6.283); c.fill(); },
-  spit(c, q) { c.fillStyle = '#6a9a30'; c.beginPath(); c.arc(0, 0, 7, 0, 6.283); c.fill(); c.fillStyle = '#a8e060'; c.beginPath(); c.arc(-2, -2, 3, 0, 6.283); c.fill(); },
-  syringe(c, q) { c.fillStyle = '#d8eef0'; c.fillRect(-10, -3, 16, 6); c.fillStyle = '#70f0d0'; c.fillRect(-8, -2, 10, 4); c.fillStyle = '#c0c8cc'; c.fillRect(6, -0.6, 8, 1.2); c.fillRect(-13, -4, 3, 8); },
-  boulder(c, q) { c.rotate(-Math.atan2(q.vy, q.vx)); c.rotate(q.x * 0.03); c.fillStyle = '#6e5a48'; c.beginPath(); c.arc(0, 0, 20, 0, 6.283); c.fill(); c.fillStyle = '#8e7a64'; c.beginPath(); c.arc(-6, -6, 8, 0, 6.283); c.fill(); c.strokeStyle = '#2a2018'; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 20, 0, 6.283); c.stroke(); c.beginPath(); c.moveTo(-8, 4); c.lineTo(6, 10); c.stroke(); },
-  batp(c, q) { c.rotate(-Math.atan2(q.vy, q.vx)); c.scale(sgn(q.vx), 1); const f = Math.sin(G.t * 30 + q.x * 0.1); c.fillStyle = '#2a1018'; c.beginPath(); c.ellipse(0, 0, 7, 5, 0, 0, 6.283); c.fill(); c.beginPath(); c.moveTo(-2, 0); c.lineTo(-16, -8 * f - 2); c.lineTo(-10, 2); c.closePath(); c.fill(); c.beginPath(); c.moveTo(2, 0); c.lineTo(16, -8 * f - 2); c.lineTo(10, 2); c.closePath(); c.fill(); c.fillStyle = '#ff4050'; c.fillRect(3, -2, 2, 1.5); },
-  heart(c, q) { c.rotate(-Math.atan2(q.vy, q.vx)); c.globalCompositeOperation = 'lighter'; const s = 1 + Math.sin(G.t * 12) * 0.12; c.scale(s, s); c.fillStyle = 'rgba(255,120,210,.9)'; c.beginPath(); c.moveTo(0, 8); c.bezierCurveTo(-14, -2, -8, -14, 0, -6); c.bezierCurveTo(8, -14, 14, -2, 0, 8); c.fill(); },
-  tag(c, q) { c.fillStyle = '#e8e2cc'; c.fillRect(-9, -6, 18, 12); c.fillStyle = '#5a4a3a'; c.fillRect(-6, -3, 9, 1.4); c.fillRect(-6, 0, 12, 1.4); c.fillRect(-6, 3, 7, 1.4); },
+  knife(c, q) { drawPixb(c, Object.assign({}, q, { kind: 'pknife', spin: 6 })); },
+  wisp(c, q) { drawPixb(c, Object.assign({}, q, { kind: 'pwispG' })); },
+  spit(c, q) { drawPixb(c, Object.assign({}, q, { kind: 'pacid' })); },
+  syringe(c, q) { drawPixb(c, Object.assign({}, q, { kind: 'psyr', aim: true })); },
+  boulder(c, q) { drawPixb(c, Object.assign({}, q, { kind: 'prock', sc: 6, spin: 3 })); },
+  batp(c, q) { drawPixb(c, Object.assign({}, q, { kind: 'pbat', flipX: true })); },
+  heart(c, q) { drawPixb(c, Object.assign({}, q, { kind: 'pheart', sc: 3 * (1 + Math.sin(G.t * 12) * 0.12) })); },
+  tag(c, q) { drawPixb(c, Object.assign({}, q, { kind: 'ptag' })); },
 };
 /* tinted copy of a boss frame for the enraged look, made once per colour */
 function tintedFrame(fr, col) {
@@ -9096,7 +9111,7 @@ function drawTelegraphs(c) {
     c.fillStyle = on ? 'rgba(200,255,170,.45)' : `rgba(220,60,50,${0.12 + pr * 0.25 + pulse * 0.15})`;
     c.fillRect(L, GROUND - 64, R - L, 64);
     c.strokeStyle = on ? 'rgba(230,255,200,.9)' : 'rgba(255,140,110,.7)'; c.lineWidth = 1.5; c.strokeRect(L + .5, GROUND - 64 + .5, R - L, 64);
-    if (!on) { c.fillStyle = 'rgba(255,230,210,.92)'; c.font = "700 13px 'Galmuri','Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('뛰어오르거나 발판 위로!', (L + R) / 2, GROUND - 74); }
+    if (!on) dotLabel(c, '뛰어오르거나 발판 위로!', (L + R) / 2, GROUND - 70, 'rgba(255,232,210,.96)');
   } else if (TELE_DRAW[tl.k]) TELE_DRAW[tl.k](c, b, tl, pulse);
 }
 function drawFx(c) {
@@ -9170,15 +9185,15 @@ function drawProjs(c) {
     }
     if (q.focus) { c.save(); c.globalCompositeOperation = 'lighter'; const gf = c.createLinearGradient(-34, 0, 6, 0); gf.addColorStop(0, 'rgba(255,190,80,0)'); gf.addColorStop(1, 'rgba(255,226,150,.55)'); c.fillStyle = gf; c.fillRect(-34, -2.5, 40, 5); c.restore(); }
     if (q.pfxOn) { c.restore(); continue; }
-    if (q.kind === 'bolt') { c.fillStyle = '#d8c8a0'; c.fillRect(-11, -1.5, 22, 3); c.fillStyle = '#fff1c8'; c.fillRect(4, -1.5, 8, 3); }
-    else if (q.kind === 'pbolt') { c.globalCompositeOperation = 'lighter'; const g = c.createLinearGradient(-q.w / 2, 0, q.w / 2, 0); g.addColorStop(0, 'rgba(255,200,120,0)'); g.addColorStop(1, 'rgba(255,245,215,.95)'); c.fillStyle = g; c.fillRect(-q.w / 2, -3, q.w, 6); }
-    else if (q.kind === 'fire') { c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(0, 0, 2, 0, 0, 22); g.addColorStop(0, 'rgba(255,240,190,.95)'); g.addColorStop(0.4, 'rgba(255,150,70,.7)'); g.addColorStop(1, 'rgba(255,80,20,0)'); c.fillStyle = g; c.beginPath(); c.ellipse(0, 0, 26, 16, 0, 0, 6.283); c.fill(); }
-    else if (q.kind === 'arrow') { c.fillStyle = '#c9b48a'; c.fillRect(-11, -1, 22, 2); c.fillStyle = '#e8dcc0'; c.fillRect(6, -2, 6, 4); }
-    else if (q.kind === 'dagger') { c.rotate(G.t * 30); dagger(c, -6, 0, 0, 0.9, 1); if (q.poison) { c.globalCompositeOperation = 'lighter'; c.fillStyle = 'rgba(140,230,90,.35)'; c.beginPath(); c.arc(0, 0, 6, 0, 6.283); c.fill(); } }
-    else if (q.kind === 'orb') { c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(0, 0, 1, 0, 0, 12); g.addColorStop(0, 'rgba(255,250,235,.95)'); g.addColorStop(0.4, `rgba(${q.col},.8)`); g.addColorStop(1, `rgba(${q.col},0)`); c.fillStyle = g; c.beginPath(); c.arc(0, 0, 12, 0, 6.283); c.fill(); }
+    if (q.kind === 'bolt') drawPixb(c, Object.assign({}, q, { kind: 'pboltA', aim: true, sc: Math.max(2, Math.min(5, Math.round((q.w || 39) / 13))) }));
+    else if (q.kind === 'pbolt') drawPixb(c, Object.assign({}, q, { kind: 'pboltB', aim: true, glow: true, sc: Math.max(2, Math.min(6, Math.round((q.w || 39) / 13))) }));
+    else if (q.kind === 'fire') drawPixb(c, Object.assign({}, q, { kind: 'pfire', glow: true, sc: 4 }));
+    else if (q.kind === 'arrow') drawPixb(c, Object.assign({}, q, { kind: 'parrow', aim: true }));
+    else if (q.kind === 'dagger') { drawPixb(c, Object.assign({}, q, { kind: 'pknife', spin: 24 })); if (q.poison) { c.fillStyle = 'rgba(150,240,110,.55)'; c.fillRect(-9, -8, 3, 3); c.fillRect(9, 5, 3, 3); c.fillRect(0, 10, 2, 2); } }
+    else if (q.kind === 'orb') drawPixb(c, Object.assign({}, q, { cv: orbPixelCanvas(q.col), glow: true, sc: 3 }));
     else if (q.pfxOn) { /* drawn by the pixel effect layer */ }
     else if (q.kind === 'quake' || q.kind === 'gale' || q.kind === 'rain' || q.kind === 'sorb') drawSkillProj(c, q);
-    else if (q.kind === 'shock') { c.rotate(-Math.atan2(q.vy, q.vx)); c.globalCompositeOperation = 'lighter'; const dir = sgn(q.vx); const g = c.createLinearGradient(-dir * 30, 0, dir * 8, 0); g.addColorStop(0, 'rgba(255,100,70,0)'); g.addColorStop(1, 'rgba(255,170,130,.9)'); c.fillStyle = g; c.beginPath(); c.moveTo(-dir * 34, 14); c.lineTo(dir * 14, 14); c.quadraticCurveTo(dir * 6, -2, dir * 2, -16); c.lineTo(-dir * 34, 14); c.fill(); }
+    else if (q.kind === 'shock') drawPixb(c, Object.assign({}, q, { kind: 'pshockA', flipX: true }));
     else if (PROJ_DRAW[q.kind]) PROJ_DRAW[q.kind](c, q);
     c.restore();
   }
@@ -10861,14 +10876,38 @@ function pixbCanvas(k) {
   return (PIXB_CV[k] = cv);
 }
 function drawPixb(c, q) {
-  const cv = pixbCanvas(q.kind), s = q.sc || PIXB[q.kind].s, w = cv.width * s, h = cv.height * s;
+  const cv = q.cv || pixbCanvas(q.kind), s = q.sc || (q.cv ? 3 : PIXB[q.kind].s), w = cv.width * s, h = cv.height * s;
   c.rotate(-Math.atan2(q.vy, q.vx));   // drawProjs rotated to the velocity; undo unless asked
   if (q.spin) c.rotate(G.t * q.spin); else if (q.aim) c.rotate(Math.atan2(q.vy, q.vx));
+  if (q.flipX) c.scale(sgn(q.vx) || 1, 1);   // 8차 배치: 진행 방향으로 뒤집는 탄(박쥐·충격파)
   c.imageSmoothingEnabled = false;
   if (q.glow) { c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.35; c.drawImage(cv, -w * 0.62, -h * 0.62, w * 1.24, h * 1.24); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; }
   c.drawImage(cv, Math.round(-w / 2), Math.round(-h / 2), w, h);
 }
 for (const k in PIXB) PROJ_DRAW[k] = drawPixb;
+/* 8차 배치: 기본탄(bolt·pbolt·arrow·shock)과 녹색 도깨비불의 도트 맵 + 색을 받는 orb */
+Object.assign(PIXB, {
+  pboltA: { s: 3, p: { k: '#2a2216', Y: '#d8c8a0', y: '#fff1c8', D: '#8a7a5a' }, m: ['.......kkkk..', '.kkkkkkkyyyk.', 'kYYYYYYYYyyyk', '.kkkkkkkyyyk.', '.......kkkk..'] },
+  pboltB: { s: 3, p: { k: '#3a2408', Y: '#ffb850', y: '#fffbe6', D: '#c07a20' }, m: ['........kkkk.', '..kkkkkkkyyyk', 'kYWWWWWWWyyyk', '..kkkkkkkyyyk', '........kkkk.'] },
+  parrow: { s: 3, p: { k: '#2a2016', Y: '#c9b48a', W: '#e8dcc0', D: '#8a7a5a' }, m: ['..k..........', 'kkYkkkkkkkk..', 'kYWWWWWWWWWWk', 'kkYkkkkkkkk..', '..k..........'] },
+  pshockA: { s: 3, p: { k: '#3a0a0a', R: '#ff5a3a', r: '#ffb090', Y: '#ffd8b0' }, m: ['.............', '........kkk..', '.....kkkRrk..', '..kkkRRRRRrk.', 'kkRRRRRRRYrrk', '..kkkRRRRRrk.', '.....kkkRrk..', '........kkk..'] },
+  pwispG: { s: 3, p: { k: '#043a2a', C: '#5affc0', c: '#eafff6', B: '#1a9a6a' }, m: ['...kk...', '..kCCk..', '.kCccCk.', 'kCcccCBk', '.kCcCBk.', '..kBBk..', '...kk...'] },
+});
+const ORB_CV = {};
+function orbPixelCanvas(col) {   // orb 탄은 색이 q.col 로 바뀌므로 색마다 한 번만 만든다
+  const key = col || '255,200,120';
+  if (ORB_CV[key]) return ORB_CV[key];
+  const [r, g, b] = key.split(',').map(Number);
+  const hx = (rr, gg, bb) => '#' + [rr, gg, bb].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+  const up = t => hx(r + (255 - r) * t, g + (255 - g) * t, b + (255 - b) * t);
+  const dn = t => hx(r * (1 - t), g * (1 - t), b * (1 - t));
+  const M = ['...kkk...', '..kMMMk..', '.kMCCCWk.', 'kMCCWWWDk', 'kMCWWWWCk', 'kMCCWWWDk', '.kMCCCWk.', '..kDDDk..', '...kkk...'];
+  const P = { k: dn(0.78), M: up(0.55), C: hx(r, g, b), W: up(0.92), D: dn(0.35) };
+  const cv = document.createElement('canvas'); cv.width = 9; cv.height = 9;
+  const x = cv.getContext('2d');
+  M.forEach((row, j) => [...row].forEach((ch, i) => { if (P[ch]) { x.fillStyle = P[ch]; x.fillRect(i, j, 1, 1); } }));
+  return (ORB_CV[key] = cv);
+}
 /* extra bullet paths: sine wave, bounces, boomerang, spread-then-converge, slow float */
 function newProjTick(q, dt) {
   if (q.from !== 'm') return;
@@ -15236,7 +15275,7 @@ drawTelegraphs = function (c) {
     else if (tl.k === 'leap') tg9Shape(c, { kind: 'ground_zone', x: tl.x, width: 190, height: 90 }, p, blink, pal);
     else if (tl.k === 'gaze' || tl.k === 'gazeOn') {
       tg9Shape(c, { kind: 'ground_zone', x: (L + R) / 2, width: R - L, height: 64 }, tl.k === 'gazeOn' ? 1 : p, blink, tl.k === 'gazeOn' ? TG9_COL.danger : pal);
-      if (tl.k === 'gaze') { c.fillStyle = 'rgba(255,235,215,.92)'; c.font = "700 13px 'Galmuri','Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('뛰어오르거나 발판 위로!', (L + R) / 2, GROUND - 76); }
+      if (tl.k === 'gaze') dotLabel(c, '뛰어오르거나 발판 위로!', (L + R) / 2, GROUND - 72, 'rgba(255,235,215,.96)');
     }
     if (tl.k !== 'gazeOn') tg9Badge(c, b.x, b.y + (b.yOff || 0) - b.h - 18, b.phase >= 2, blink, p, pal);
   }
@@ -16209,10 +16248,19 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125d',   // 2026-11-25 열아홉 번째 패치(GAME_VER '261125-1100'): 7차 배치 — 2막 스킬 이펙트 60장 도트화 + 전조 장판·기둥 다듬기
+  id: '261125e',   // 2026-11-25 스무 번째 패치(GAME_VER '261125-1200'): 8차(최종) 배치 — 3막 스킬 이펙트 60장 도트화 + 벡터 탄·안내 라벨 도트화
   title: '패치 노트',
-  sub: '2막 보스 스킬 이펙트 60종이 도트로 바뀌고, 큰 경고 장판이 또렷해진다',
+  sub: '3막 보스 스킬 이펙트 60종까지 도트로 바뀌고, 날아다니던 도형 탄이 도트 탄이 된다',
   versions: [
+    {
+      ver: '261125-1200', date: '2026-11-25', name: '8차(최종) 배치 · 3막 스킬 이펙트 · 도트 탄', cur: 1,
+      items: [
+        { t: '연출', h: '21~30장 보스의 스킬 이펙트 60종을 도트체로 다시 그렸다', p: '성운 추적자의 별빛 단검부터 아스트라온의 마지막 초신성까지, 3막 열 보스의 스킬 여섯 가지씩을 주인공과 같은 고밀도 도트로 통일했다. 스킬의 색·모양·구도는 그대로 두고 부드러운 붓 터치만 또렷한 픽셀로 바꿨다. 이걸로 1~30장 보스 스킬 이펙트 162장이 모두 도트가 됐다.' },
+        { t: '연출', h: '날아다니던 도형 탄이 도트 탄으로 바뀐다', p: '보스가 쏘던 단검·도깨비불·독침·주사기·바위·박쥐·하트·쪽지와, 기본탄(막대·화염·화살·회전 단검·구슬·충격파)을 캔버스 도형 대신 또렷한 도트 스프라이트로 그린다. 탄의 색과 크기, 맞았을 때의 피해는 그대로다.' },
+        { t: 'UI', h: '바닥 안내 문구가 어두운 배지 위에 또렷하게 읽힌다', p: '「뛰어오르거나 발판 위로!」「낮은 사슬 · 뛰어넘기」「충격파 세 번」처럼 화면에 뜨던 안내 문구를 Galmuri 13px 픽셀 글씨와 1px 모서리를 자른 어두운 배지로 통일했다. 밝은 바닥에서도 글자가 묻히지 않는다.' },
+        { t: '시스템', h: '판정·피해·보상은 그대로', p: '이번 배치는 그림만 바꿨다. 스킬의 피해량·경고 시간·판정 범위와 보스 체력·보상·저장은 이전 판과 같다.' },
+      ],
+    },
     {
       ver: '261125-1100', date: '2026-11-25', name: '7차 배치 · 2막 스킬 이펙트 60종', cur: 1,
       items: [

@@ -12,6 +12,24 @@
 
 ## 옮길 것
 
+### 261125-1200  8차(최종) 배치 · 3막(21~30장) 스킬 VFX 60장 도트화 + 벡터 탄·안내 라벨 도트화   (대상: `assets/vfx/boss_21~30` 60장 · `index.html` / `test/index.html` 의 `dotLabel`·`PROJ_DRAW` 8종·`drawProjs` 기본탄 분기·`PIXB` 신규 5종+`orbPixelCanvas`·`drawPixb` 옵션)   
+지시서: 2026-11-25 10:29 예약 배치 "8차(최종) 배치: 3막 VFX 60장·남은 탄환 도트화·배포·메일 발송".
+
+- **3막 스킬 VFX 60장(21~30장 × 6종) 도트체 리뉴얼** — `assets/vfx/boss_21/b21_s1_starlight_dagger_fan.png` … `boss_30/b30_s6_final_supernova.png` (같은 파일명 덮어쓰기, `test/assets/vfx/` 사본 동일).
+  - 원본은 `downloads/vfx_4frames_pack_21_30/boss_21~30`(4프레임 가로 스트립, 파일 해시가 저장소 HEAD 와 일치함을 `git hash-object` 로 확인).
+  - 파이프라인은 6·7차와 같다: `work/dot8/vfx_dot8.py`(6차 `vfx_dot.py` 복사, SRC/OUT/장 범위만 변경) — 4프레임 분할 → 알파 4×4 베이어 디더 이진화(0/255) → 블록 4px 다운스케일 → **프레임 4장 공용 16색 팔레트** → NEAREST ×4.
+  - 검증(`work/dot8/verify8.py` → `work/dot8/report_verify.json`): 전 60장 **알파 0/255**, 프레임 네 칸 모두 가장자리 접촉 0(잘림 없음), 픽셀 면적 보존 1.003~1.034배, 색 16 이하.
+  - 다시 만들 때: `python3 work/dot8/vfx_dot8.py` → `work/dot8/out/boss_NN/` → 복사. 장별 전/후는 `work/dot8/prev/boss_NN.png`, 통합본 `downloads/batch8_vfx_preview.png`.
+- **벡터 탄 → 도트 탄 (#16)** — `PROJ_DRAW` 의 손그림 8종을 `drawPixb` 맵으로 교체: `knife`→`pknife`(회전), `wisp`→`pwispG`(녹색 신규), `spit`→`pacid`, `syringe`→`psyr`, `boulder`→`prock`(sc6), `batp`→`pbat`, `heart`→`pheart`(박동 스케일), `tag`→`ptag`. 모양·색·크기는 원래 탄과 같게 맞췄다.
+- **기본탄 → 도트 탄 (#17)** — `drawProjs` 의 `bolt`→`pboltA`, `pbolt`→`pboltB`(sc = q.w/13, 2~6), `fire`→`pfire`(sc4+glow), `arrow`→`parrow`, `dagger`→`pknife`(spin 24, 독은 픽셀 점 3개), `orb`→`orbPixelCanvas(q.col)`(색마다 캔버스 1회 생성, 9×9 맵), `shock`→`pshockA`. 판정·피해·수명은 그대로(그리기만 교체).
+- **`drawPixb` 확장(다른 탄에 영향 없음)** — `q.cv`(직접 만든 캔버스), `q.flipX`(진행 방향으로 뒤집기), `q.cv` 일 때 기본 배율 3.
+- **안내 라벨 → Galmuri 13px + 다크 배지 (#11)** — 새 `dotLabel(c, text, x, y, col)` 하나로 통일: 1px 모서리를 자른 어두운 판(테두리 1px 회색) + `700 13px Galmuri`. 적용한 곳은 `TELE_DRAW.bell`("충격파 세 번"), `TELE_DRAW.chainLo/chainHi`("낮은/높은 사슬…"), `drawBossExtras` 박쥐 띠("낮은/높은 박쥐 떼…"), `drawTelegraphs` gaze 2곳("뛰어오르거나 발판 위로!"). 예전 `Noto Sans KR 14px` 텍스트는 이 배지로 바뀌었다.
+- **#18 `PIXB` 코드 픽셀탄 32종은 그대로** — 이미 도트맵이므로 손대지 않았다(색도 보스 색과 맞춰져 있음). 감사 보고서의 "색만 통일 검토"는 이번에 하지 않음.
+- `GAME_VER '261125-1200'`, `NEWS.id '261125e'` + `versions[0]` 카드(4항목), `version.json` / `test/version.json` = `{"v": "261125-1200"}`, `test/index.html` 은 `index.html` 과 **바이트 동일**(`cp`).
+- **검증(헤드리스 크로뮴 1280×720 · deviceScaleFactor 2)**: 로컬 http 에서 21~30장 보스방마다 스트립 6종 로드(`naturalWidth>0`)·스킬 6종씩 60회 캐스트, `pageerror 0`. 도트 탄 15종·라벨 배지는 게임 함수(`drawProjs`·`dotLabel`)를 그대로 불러 캔버스에 그려 4·6배 확대 확인. 증거 `handoffs/🎨-8차-최종-배치-3막-vfx-60장-남은-탄환-도트화-배포-메일-발송/evidence/`.
+- **메모**: 이 PC 의 체크아웃은 sparse 라 `assets/vfx/boss_21~30` 이 처음엔 작업 트리에 없었다(저장소에는 있음, 7차 메모와 같은 상황). `git status` 에 `M` 으로 60장이 잡히면 정상. `git sparse-checkout add` 는 sparse 밖에 만든 tracked 파일을 지울 수 있으니 **reapply 하지 말 것**. 로컬 QA 에 Galmuri 폰트가 필요하면 `git sparse-checkout add assets/fonts`.
+- **남은 것**: ①`telegraph_box`·`dash_line` 내부 패턴 ②`retburst`·`ultslash` 등 `G.fx` 종류 ③`MARK_DRAW.knife`(이름 없는 자 낙석 표식)는 아직 벡터 단검 ④`tide16` 벡터 물벽.
+
 ### 261125-1100  7차 배치 · 2막(11~20장) 스킬 VFX 60장 도트화 + 전조 장판·기둥 내부 패턴 교정   (대상: `assets/vfx/boss_11~20` 60장 · `assets/dot/telegraph_{ground_zone,vertical_beam,hatch}.png` · `index.html` / `test/index.html` 의 GAME_VER·NEWS·tgspShape `vertical_beam` 코어)
 지시서: 2026-11-25 예약 배치 "7차 배치: 2막(11~20장) 보스 VFX 60장 도트화·배포 + 전조 격자 디더 다듬기".
 
