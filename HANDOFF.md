@@ -12,6 +12,35 @@
 
 ## 옮길 것
 
+### 261125-1000  6차 배치 · 1막 스킬 VFX 42장 도트화 + 남은 코드 도형(해치·장판·링·웅덩이·박쥐 띠·종 아치)   (대상: `assets/dot` 8종 신규 · `assets/vfx/boss_01~10` 42장 · `index.html` / `test/index.html` 의 GAME_VER·NEWS·TGD 블록·drawHaz·tgspShape·drawBossExtras·TELE_DRAW.bell·drawFx ring·drawProjs)
+지시서: 2026-11-25 예약 배치 "6차 배치: 부실 이펙트·남은 도형 연출·1막 VFX 44장 도트화".
+
+- **1막 스킬 VFX 42장(1~6·8~10장 각 4종 + 7장 6종) 도트체 리뉴얼** — `assets/vfx/boss_01/b01_s1_bell_slam.png` … `boss_10/b10_s4_surgical_cross_slash.png` (같은 파일명 덮어쓰기, `test/assets/vfx/` 사본 동일).
+  - 파이프라인 `work/dot6/vfx_dot.py`: 원본을 4프레임으로 자름 → 알파를 4×4 베이어 디더로 이진화(0/255) → 블록(3~4px, 셀 폭/4가 100~190이 되게) 다운스케일 → **프레임 4장 공용 16색 팔레트**(median cut) → NEAREST ×블록 업스케일. 그림의 모양·색·구도는 원본 그대로, 부드러운 붓·반투명 뭉개짐만 픽셀로 바뀐다.
+  - 셀 크기가 원본과 1~4px 다르다(예 492×405 → 492×404, 618×508 → 616×508). 게임은 `naturalWidth / 4` 로 자르고 `w` 로 그리므로 무해. 전 42장 알파 0/255, 가장자리 접촉 0(잘림 없음).
+  - 다시 만들 때: `python3 work/dot6/vfx_dot.py` → `work/dot6/out/boss_NN/` → 복사.
+- **새 도트 그림 8종** (`assets/dot/`, 생성기 `work/dot6/gen6.py`, 전부 4프레임 가로 스트립 · 알파 0/255):
+  - `telegraph_hatch.png` 32×32 — 위험 대기 빗금 타일(회색조, 게임에서 위험색 곱)
+  - `telegraph_dotfill.png` 32×32 — 위험 대기 안개 점 타일
+  - `haz_fill.png` 32×32 — 발동 중 장판 채움 점 타일
+  - `haz_box.png` 128×64 — 발동 중 장판 테두리 9-slice(모서리 16px, 가운데는 타일)
+  - `haz_ring.png` 32×32 — 충격파 띠 조각(원주에 이어 붙임)
+  - `pool_glow.png` 128×48 — 바닥 웅덩이(끓는 점·잔물결)
+  - `lane_bats.png` 256×64 — 6장 박쥐 떼 가로 띠(가로 타일)
+  - `bell_arc.png` 256×96 — 1장 종울림 지면 아치 4겹
+- **코드** — `TGSP`/`beamDot` 뒤에 **TGD 블록** 추가: `tgdImg`(프리로드) · `tgdCanvas`(프레임·색별 틴트 캐시, getImageData 로 회색조×위험색, file:// 는 source-atop 폴백) · `tgdPat` · `tgdFill` · `tgdBox`(9-slice) · `ringDot`(원주에 띠 조각 타일) · `tgEdge`(차오르는 2px 점선).
+  - `drawHaz`: warm = 안개+빗금+`haz_box`(0.55), active = `haz_fill`(0.7)+`haz_box`(1.0), ring = `ringDot`(웜은 점선 링). 셋 다 그림이 없으면 예전 캔버스 연출로 폴백. ※웜 장판은 `_drawHaz9`(15186)가 `tg9Shape` 로 먼저 그리므로 실제 화면은 tg9 그림 + 이 채움이다.
+  - `tgspShape`: **평면 반투명 `fillRect` 전부 제거**, 차오르는 경계만 `tgEdge` 점선으로. (8장 응시·12장 가스처럼 화면 절반을 덮던 반투명 사각형이 사라진 원인)
+  - `drawBossExtras`: pool 타원+보케 → `pool_glow`, lane 띠+텍스트 → `lane_bats`(가로 타일). 텍스트는 Galmuri 13px 로.
+  - `TELE_DRAW.bell`: 동심 타원 3개 → `bell_arc`(512px 폭, 아래 기준).
+  - `drawFx` `k:'ring'`(분노 링·종울림 파동): arc 한 줄 → `ringDot`(band 16, alpha 1-pr).
+  - `drawProjs`: `pskull`(13장 원혼 해골) 뒤에 도트 꼬리 4점.
+  - `tgspShape` aim_ray: 선 위에 2px 도트(1px 그림자 포함)를 10px 간격으로 얹어 옅은 점선을 또렷하게(13장 해골 조준선 포함 전 장).
+  - `hatchPat()` 은 이름만 유지하고 도트 타일 패턴을 돌려준다(현재 호출부는 drawHaz warm 하나).
+  - 프리로드: `for (const k in TGD.files) tgdImg(k)` — 시작 시 8종.
+- **검증(헤드리스 크로뮴 1280×720, 로컬 http + GitHub Pages 라이브)**: 42장 로드·`pageerror 0`, 1~10장 보스방 패턴 캐스트(각 2패턴), 11·12·14·15·16·18장 스킬 6종씩 캐스트, 손으로 만든 장면(웜/발동 장판·링·웅덩이·박쥐 띠·종 아치·응시) 스샷. `downloads/batch6_vfx_preview.png` 에 42장+8종+인게임 4컷 정리.
+- **남은 것 / 다음 배치 메모**: ①`telegraph_ground_zone`·`vertical_beam` 스프라이트 **내부 디더**가 큰 장판·기둥에서 격자로 보인다(2차 배치 그림 자체, 필요하면 내부 디더 레벨을 낮춰 재생성) ②16장 촉수 3연쇄의 tentacle 스트립 정렬은 2막 VFX 가 로컬 sparse 체크아웃에 없어 라이브 스샷으로만 확인 가능 ③`G.fx 'ring'` 은 이제 도트 띠지만 `retburst`·`ultslash` 등 다른 fx 종류는 그대로 ④11~30장 스킬 VFX 120장은 여전히 원본(부드러운 붓)이다.
+
 ### 261125-0700  5차 배치 · 1막 보스 10종(1~10장) 48f 도트체   (대상: assets/boss 10장 + index.html / test/index.html 의 GAME_VER·NEWS·BOSS_SHEET_FILE·BOSS_ART·BOSS_SIZE10)
 지시서: 2026-11-25 예약 배치 "5차 배치: 1막 보스 10종(b1~b10) 48프레임 도트체 제작·검증·main 배포".
 그림체는 `ART_STYLE.md` 그대로(스프라이트 밀도 ~110px, NEAREST ×2, 알파 0/255, 1px 외곽선, 발끝 y=240, 공격 행 VFX 금지).

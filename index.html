@@ -690,7 +690,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-0700';
+const GAME_VER = '261125-1000';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -7602,7 +7602,17 @@ const MARK_DRAW = {
   erase(c, m, pr, gy) { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(${m.col},${0.3 + pr * 0.6})`; c.lineWidth = 1; for (let i = 0; i < 5; i++) { const y = gy - 10 - i * 14 * pr; c.beginPath(); c.moveTo(m.x - m.r * 0.6, y); c.lineTo(m.x + m.r * 0.6, y - 3); c.stroke(); } c.restore(); },
 };
 const TELE_DRAW = {
-  bell(c, b, tl, pulse) { const pr = clamp(tl.t / tl.dur, 0, 1); c.strokeStyle = `rgba(255,200,120,${0.3 + pr * 0.5})`; c.lineWidth = 2; for (let i = 0; i < 3; i++) { c.beginPath(); c.ellipse(b.x, GROUND - 4, 60 + i * 50 + pr * 30, 8 + i * 3, 0, 0, 6.283); c.stroke(); } c.fillStyle = 'rgba(255,220,200,.85)'; c.font = "700 14px 'Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('충격파 세 번', b.x, GROUND - b.h - 20); },
+  bell(c, b, tl, pulse) { const pr = clamp(tl.t / tl.dur, 0, 1);
+    const cv = tgdCanvas('bell', '', Math.min(3, Math.floor(pr * 4)));   // 6차 배치: 동심 타원 3개 -> 도트 지면 아치
+    if (cv) {
+      const dw = 512, dh = Math.round(dw * 96 / 256);
+      c.save(); c.imageSmoothingEnabled = false; c.globalAlpha = 0.5 + pr * 0.5;
+      c.drawImage(cv, Math.round(b.x - dw / 2), Math.round(GROUND + 10 - dh), dw, dh);
+      c.restore();
+    } else {
+      c.strokeStyle = `rgba(255,200,120,${0.3 + pr * 0.5})`; c.lineWidth = 2; for (let i = 0; i < 3; i++) { c.beginPath(); c.ellipse(b.x, GROUND - 4, 60 + i * 50 + pr * 30, 8 + i * 3, 0, 0, 6.283); c.stroke(); }
+    }
+    c.fillStyle = 'rgba(255,220,200,.9)'; c.font = "700 13px 'Galmuri','Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('충격파 세 번', b.x, GROUND - b.h - 20); },
   cast(c, b, tl, pulse) { const pr = clamp(tl.t / tl.dur, 0, 1), col = bossRageCol(b); c.save(); c.globalCompositeOperation = 'lighter'; const g = c.createRadialGradient(b.x, b.y - b.h * 0.55, 4, b.x, b.y - b.h * 0.55, 60 + pr * 30); g.addColorStop(0, `rgba(${col},${0.35 + pulse * 0.3})`); g.addColorStop(1, `rgba(${col},0)`); c.fillStyle = g; c.fillRect(b.x - 100, b.y - b.h * 0.55 - 100, 200, 200); c.restore(); },
   chainLo(c, b, tl, pulse) { const pr = clamp(tl.t / tl.dur, 0, 1), L = G.map.arenaL, R = G.map.arenaR; c.fillStyle = `rgba(220,60,50,${0.12 + pr * 0.3 + pulse * 0.1})`; c.fillRect(L, GROUND - 38, R - L, 38); c.strokeStyle = 'rgba(255,140,110,.7)'; c.strokeRect(L + .5, GROUND - 38 + .5, R - L, 38); c.fillStyle = 'rgba(255,220,200,.9)'; c.font = "700 14px 'Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('낮은 사슬 · 뛰어넘기', (L + R) / 2, GROUND - 46); },
   chainHi(c, b, tl, pulse) { const pr = clamp(tl.t / tl.dur, 0, 1), L = G.map.arenaL, R = G.map.arenaR; c.fillStyle = `rgba(220,60,50,${0.12 + pr * 0.3 + pulse * 0.1})`; c.fillRect(L, GROUND - 160, R - L, 80); c.strokeStyle = 'rgba(255,140,110,.7)'; c.strokeRect(L + .5, GROUND - 160 + .5, R - L, 80); c.fillStyle = 'rgba(255,220,200,.9)'; c.font = "700 14px 'Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('높은 사슬 · 땅에 붙어 있기', (L + R) / 2, GROUND - 168); },
@@ -7610,15 +7620,34 @@ const TELE_DRAW = {
 function drawBossExtras(c) {
   for (const q of G.pools) {
     const a = Math.min(1, q.t / 0.3, (q.dur - q.t) / 0.5);
-    c.save(); c.globalAlpha = a; c.fillStyle = `rgba(${q.col},.28)`; c.beginPath(); c.ellipse(q.x, GROUND - 3, q.r, 8, 0, 0, 6.283); c.fill();
-    c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(${q.col},.5)`;
-    for (let i = 0; i < 4; i++) { const ph = (G.t * 1.3 + i * 0.27 + q.x * 0.01) % 1; c.beginPath(); c.arc(q.x + Math.sin(i * 2.3 + q.x) * q.r * 0.6, GROUND - 4 - ph * 18, 2.5 * (1 - ph) + 0.5, 0, 6.283); c.fill(); }
-    c.restore();
+    const cv = a > 0 ? tgdCanvas('pool', q.col, Math.floor(G.t * 8 + q.x * 0.01)) : null;   // 6차 배치: 평면 타원 -> 도트 웅덩이
+    if (cv) {
+      const dw = Math.max(64, Math.round(q.r * 3.0)), dh = Math.round(dw * 48 / 128);
+      c.save(); c.globalAlpha = a; c.imageSmoothingEnabled = false;
+      c.drawImage(cv, Math.round(q.x - dw / 2), Math.round(GROUND + 2 - dh), dw, dh);
+      c.restore();
+    } else {
+      c.save(); c.globalAlpha = a; c.fillStyle = `rgba(${q.col},.28)`; c.beginPath(); c.ellipse(q.x, GROUND - 3, q.r, 8, 0, 0, 6.283); c.fill();
+      c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(${q.col},.5)`;
+      for (let i = 0; i < 4; i++) { const ph = (G.t * 1.3 + i * 0.27 + q.x * 0.01) % 1; c.beginPath(); c.arc(q.x + Math.sin(i * 2.3 + q.x) * q.r * 0.6, GROUND - 4 - ph * 18, 2.5 * (1 - ph) + 0.5, 0, 6.283); c.fill(); }
+      c.restore();
+    }
   }
   for (const l of G.lanes) if (!l.fired) {
     const pr = clamp(l.t / l.dur, 0, 1), L = G.map.arenaL, R = G.map.arenaR, h = 30;
-    c.fillStyle = `rgba(200,40,60,${0.12 + pr * 0.3})`; c.fillRect(L, l.y - h / 2, R - L, h);
-    c.fillStyle = 'rgba(255,200,200,.9)'; c.font = "700 13px 'Noto Sans KR',sans-serif"; c.textAlign = 'center';
+    const cv = tgdCanvas('lane', '', Math.floor(G.t * 10));   // 6차 배치: 가로 띠 + 캔버스 텍스트 -> 도트 박쥐 떼 띠
+    if (cv) {
+      const dh = l.low ? 54 : 66, tw = Math.round(dh * 256 / 64);
+      c.save(); c.globalAlpha = 0.55 + 0.45 * pr; c.imageSmoothingEnabled = false;
+      for (let x = L; x < R; x += tw) {
+        const cut = Math.min(tw, R - x);
+        c.drawImage(cv, 0, 0, Math.round(256 * cut / tw), 64, Math.round(x), Math.round(l.y - dh / 2), cut, dh);
+      }
+      c.restore();
+    } else {
+      c.fillStyle = `rgba(200,40,60,${0.12 + pr * 0.3})`; c.fillRect(L, l.y - h / 2, R - L, h);
+    }
+    c.fillStyle = 'rgba(255,220,210,.92)'; c.font = "700 13px 'Galmuri','Noto Sans KR',sans-serif"; c.textAlign = 'center';
     c.fillText(l.low ? '낮은 박쥐 떼 · 뛰어넘기' : '높은 박쥐 떼 · 땅에 붙어 있기', (L + R) / 2, l.y - h / 2 - 6);
   }
   for (const i of G.illus) {
@@ -9067,7 +9096,7 @@ function drawTelegraphs(c) {
     c.fillStyle = on ? 'rgba(200,255,170,.45)' : `rgba(220,60,50,${0.12 + pr * 0.25 + pulse * 0.15})`;
     c.fillRect(L, GROUND - 64, R - L, 64);
     c.strokeStyle = on ? 'rgba(230,255,200,.9)' : 'rgba(255,140,110,.7)'; c.lineWidth = 1.5; c.strokeRect(L + .5, GROUND - 64 + .5, R - L, 64);
-    if (!on) { c.fillStyle = 'rgba(255,220,200,.85)'; c.font = "700 14px 'Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('뛰어오르거나 발판 위로!', (L + R) / 2, GROUND - 74); }
+    if (!on) { c.fillStyle = 'rgba(255,230,210,.92)'; c.font = "700 13px 'Galmuri','Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('뛰어오르거나 발판 위로!', (L + R) / 2, GROUND - 74); }
   } else if (TELE_DRAW[tl.k]) TELE_DRAW[tl.k](c, b, tl, pulse);
 }
 function drawFx(c) {
@@ -9083,8 +9112,9 @@ function drawFx(c) {
       c.restore();
     } else if (f.k === 'band') {   // a chain sweep crossing the whole room
       const L = G.map.arenaL || 0, R = G.map.arenaR || G.map.w; c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(${f.col},${0.6 * (1 - pr)})`; c.fillRect(L, f.y - 6, R - L, 12); c.restore();
-    } else if (f.k === 'ring') {
-      c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(${f.col},${1 - pr})`; c.lineWidth = 3 * (1 - pr); c.beginPath(); c.arc(f.x, f.y, f.R * pr, 0, 6.283); c.stroke(); c.restore();
+    } else if (f.k === 'ring') {   // 6차 배치: arc 한 줄 -> 도트 충격파 띠 (분노 링·종울림 파동)
+      if (ringDot(c, { x: f.x, y: f.y, col: f.col, band: 16, alpha: Math.max(0, 1 - pr) }, f.R * pr, 16, false)) { }
+      else { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(${f.col},${1 - pr})`; c.lineWidth = 3 * (1 - pr); c.beginPath(); c.arc(f.x, f.y, f.R * pr, 0, 6.283); c.stroke(); c.restore(); }
     } else if (f.k === 'retburst') {   // 2026-11-24: 귀환 도착 — 사방으로 열리는 금빛 고리 세 겹 + 서는 빛기둥 + 흰 중심
       const fade = Math.max(0, 1 - pr), punch = Math.max(0, 1 - pr * 3.4);
       c.save(); c.globalCompositeOperation = 'lighter';
@@ -9133,6 +9163,11 @@ function drawFx(c) {
 function drawProjs(c) {
   for (const q of G.projs) {
     c.save(); c.translate(q.x, q.y); c.rotate(Math.atan2(q.vy, q.vx));
+    if (q.kind === 'pskull') {   // 6차 배치: 원혼 해골 추적탄에 도트 꼬리 (점선 전조가 약해 보이던 것 보강)
+      c.save(); c.globalCompositeOperation = 'lighter';
+      for (let i = 1; i <= 4; i++) { c.fillStyle = `rgba(130,240,255,${0.5 - i * 0.1})`; const s = i < 3 ? 3 : 2; c.fillRect(-i * 5, (i % 2 ? -1 : 0), s, s); }
+      c.restore();
+    }
     if (q.focus) { c.save(); c.globalCompositeOperation = 'lighter'; const gf = c.createLinearGradient(-34, 0, 6, 0); gf.addColorStop(0, 'rgba(255,190,80,0)'); gf.addColorStop(1, 'rgba(255,226,150,.55)'); c.fillStyle = gf; c.fillRect(-34, -2.5, 40, 5); c.restore(); }
     if (q.pfxOn) { c.restore(); continue; }
     if (q.kind === 'bolt') { c.fillStyle = '#d8c8a0'; c.fillRect(-11, -1.5, 22, 3); c.fillStyle = '#fff1c8'; c.fillRect(4, -1.5, 8, 3); }
@@ -10760,37 +10795,46 @@ function tickHaz(dt) {
   G.haz = G.haz.filter(h => !h.dead);
 }
 const HATCH = {};
-function hatchPat(c, col, a10) {
-  const key = col + a10; if (HATCH[key]) return HATCH[key];
-  const cv = document.createElement('canvas'); cv.width = cv.height = 14; const x = cv.getContext('2d'); x.fillStyle = `rgba(${col},${a10 / 10})`;
-  for (let i = 0; i < 14; i++) { x.fillRect(i, 13 - i, 3, 1); x.fillRect(i - 14, 13 - i, 3, 1); }
-  return (HATCH[key] = c.createPattern(cv, 'repeat'));
+function hatchPat(c, col, a10) {   // 6차 배치: 코드 빗금 -> 도트 빗금 타일 (색·프레임별 캐시)
+  const fr = Math.floor(G.t * 6) % 4, key = col + '|' + fr + '|' + (a10 || 0);
+  if (HATCH[key]) return HATCH[key];
+  return (HATCH[key] = tgdPat(c, 'hatch', col, fr));
 }
 function drawHaz(c) {
   for (const h of G.haz) {
-    const warm = h.t < h.warn, k = clamp(h.t / h.warn, 0, 1);
+    const warm = h.t < h.warn, k = clamp(h.t / h.warn, 0, 1), fr = Math.floor(G.t * 10);
     if (h.beam) {   // a line attack: blinking dotted line, then a wide beam
       if (warm) { const on = Math.floor(h.t * (6 + 12 * k)) % 2 === 0, L = Math.hypot(h.x1 - h.x0, h.y1 - h.y0), n = Math.max(1, Math.floor(L / 12)); c.fillStyle = `rgba(${h.col},${on ? 0.95 : 0.45})`; for (let i = 0; i <= n; i++) { const x = h.x0 + (h.x1 - h.x0) * i / n, y = h.y0 + (h.y1 - h.y0) * i / n; c.fillRect(Math.round(x) - 3, Math.round(y) - 3, 6, 6); } }
       else if (!(h.spr && beamDot(c, beamImg(h.spr), h))) { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(${h.col},.85)`; c.lineWidth = h.th; c.beginPath(); c.moveTo(h.x0, h.y0); c.lineTo(h.x1, h.y1); c.stroke(); c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = Math.max(3, h.th * 0.3); c.stroke(); c.restore(); }
       continue;
     }
-    if (h.ring) {
-      if (warm) { const on = Math.floor(h.t * (6 + 10 * k)) % 2 === 0; c.strokeStyle = `rgba(${h.col},${on ? 0.95 : 0.4})`; c.lineWidth = 4; c.beginPath(); c.arc(h.x, h.y, 26 + 10 * k, 0, 6.283); c.stroke(); continue; }
+    if (h.ring) {   // 6차 배치: arc 한 줄 -> 도트 띠 조각을 원주에 이어 붙인 충격파 링
+      if (warm) {
+        const on = Math.floor(h.t * (6 + 10 * k)) % 2 === 0;
+        if (on && ringDot(c, h, 26 + 10 * k, Math.max(8, h.band * 0.55), true)) continue;
+        if (!on) continue;
+        c.strokeStyle = `rgba(${h.col},${on ? 0.95 : 0.4})`; c.lineWidth = 4; c.beginPath(); c.arc(h.x, h.y, 26 + 10 * k, 0, 6.283); c.stroke(); continue;
+      }
+      if (ringDot(c, h, h.r, h.band, false)) continue;
       c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(${h.col},.85)`; c.lineWidth = h.band; c.beginPath(); c.arc(h.x, h.y, h.r, 0, 6.283); c.stroke();
       c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 3; c.beginPath(); c.arc(h.x, h.y, h.r, 0, 6.283); c.stroke(); c.restore(); continue;
     }
     const x = Math.round(h.x), y = Math.round(h.y), w = Math.round(h.w), hh = Math.round(h.h);
-    if (warm) {
+    if (warm) {   // 6차 배치: 반투명 단색 사각형 + 3px 선 -> 도트 안개·빗금 타일 + 2px 픽셀 테두리
       const on = Math.floor(h.t * (5 + 12 * k)) % 2 === 0;
-      c.fillStyle = `rgba(${h.col},${0.1 + 0.18 * k})`; c.fillRect(x, y, w, hh);
-      c.fillStyle = hatchPat(c, h.col, Math.round((0.25 + 0.2 * k) * 10)); c.fillRect(x, y, w, hh);   // hatching from a cached stripe tile
-      c.fillStyle = `rgba(${h.col},${on ? 1 : 0.45})`;   // thick pixel outline
-      c.fillRect(x, y, w, 3); c.fillRect(x, y + hh - 3, w, 3); c.fillRect(x, y, 3, hh); c.fillRect(x + w - 3, y, 3, hh);
+      tgdFill(c, 'mist', h.col, fr, 0.5 + 0.35 * k, x, y, w, hh);
+      tgdFill(c, 'hatch', h.col, fr, 0.5 + 0.3 * k, x, y, w, hh);
+      if (!tgdBox(c, x, y, w, hh, fr, 0.55)) {
+        c.fillStyle = `rgba(${h.col},${on ? 1 : 0.45})`;   // thick pixel outline (그림이 없을 때)
+        c.fillRect(x, y, w, 3); c.fillRect(x, y + hh - 3, w, 3); c.fillRect(x, y, 3, hh); c.fillRect(x + w - 3, y, 3, hh);
+      }
       c.fillStyle = `rgba(${h.col},.9)`; c.fillRect(x, y + hh - 6, Math.round(w * k), 3);   // fill bar: how soon
-    } else {
-      c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(${h.col},.5)`; c.fillRect(x, y, w, hh);
-      c.fillStyle = 'rgba(255,255,255,.35)'; for (let i = 0; i < 6; i++) c.fillRect(x + Math.floor(Math.random() * w), y + Math.floor(Math.random() * hh), 4, 4);
-      c.restore(); c.fillStyle = 'rgba(255,255,255,.9)'; c.fillRect(x, y, w, 2); c.fillRect(x, y + hh - 2, w, 2);
+    } else {   // 6차 배치: 평면 반투명 채움 + 랜덤 흰 사각형 -> 도트 채움 타일 + 도트 테두리
+      tgdFill(c, 'fill', h.col, fr, 0.7 + 0.2 * Math.sin(G.t * 9), x, y, w, hh);
+      if (!tgdBox(c, x, y, w, hh, fr, 1)) {
+        c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(${h.col},.5)`; c.fillRect(x, y, w, hh); c.restore();
+        c.fillStyle = 'rgba(255,255,255,.9)'; c.fillRect(x, y, w, 2); c.fillRect(x, y + hh - 2, w, 2);
+      }
     }
   }
 }
@@ -15098,8 +15142,7 @@ function tg9Shape(c, t, p, blink, pal) {
     const tall = gy - top, drawn = tgDotBox(c, 'beam', x0, top, fw, tall, pal.fill, 0.26)
       && tgDotBox(c, 'beam', cx0, top, cw, tall, pal.fill, (0.55 + 0.45 * p) * (blink ? 1 : 0.9));
     if (!drawn) {
-      c.fillStyle = `rgba(${pal.fill},0.10)`; c.fillRect(x0, top, fw, gy - top);
-      c.fillStyle = `rgba(${pal.fill},${fillA})`; c.fillRect(cx0, top, cw, gy - top);
+        c.fillStyle = `rgba(${pal.fill},${fillA})`; c.fillRect(cx0, top, cw, gy - top);
       c.strokeStyle = blink ? '#FFFFFF' : pal.stroke; c.setLineDash([6, 4]); c.strokeRect(x0 + 1, top, fw - 2, gy - top); c.setLineDash([]);
       c.fillStyle = pal.stroke; c.fillRect(x0, snap2(gy - 4), fw, 4);
     }
@@ -15192,7 +15235,7 @@ drawTelegraphs = function (c) {
     else if (tl.k === 'leap') tg9Shape(c, { kind: 'ground_zone', x: tl.x, width: 190, height: 90 }, p, blink, pal);
     else if (tl.k === 'gaze' || tl.k === 'gazeOn') {
       tg9Shape(c, { kind: 'ground_zone', x: (L + R) / 2, width: R - L, height: 64 }, tl.k === 'gazeOn' ? 1 : p, blink, tl.k === 'gazeOn' ? TG9_COL.danger : pal);
-      if (tl.k === 'gaze') { c.fillStyle = 'rgba(255,230,210,.9)'; c.font = "700 14px 'Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('뛰어오르거나 발판 위로!', (L + R) / 2, GROUND - 76); }
+      if (tl.k === 'gaze') { c.fillStyle = 'rgba(255,235,215,.92)'; c.font = "700 13px 'Galmuri','Noto Sans KR',sans-serif"; c.textAlign = 'center'; c.fillText('뛰어오르거나 발판 위로!', (L + R) / 2, GROUND - 76); }
     }
     if (tl.k !== 'gazeOn') tg9Badge(c, b.x, b.y + (b.yOff || 0) - b.h - 18, b.phase >= 2, blink, p, pal);
   }
@@ -16165,10 +16208,20 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125b',   // 2026-11-25 열일곱 번째 패치(GAME_VER '261125-0700'): 5차 배치 — 1막 보스 10종(1~10장) 새 그림
+  id: '261125c',   // 2026-11-25 열여덟 번째 패치(GAME_VER '261125-1000'): 6차 배치 — 1막 스킬 이펙트 42장 + 남은 코드 도형 도트화
   title: '패치 노트',
-  sub: '1막 보스 열이 새 그림으로 움직인다',
+  sub: '1막 스킬 이펙트가 도트로 바뀌고, 바닥 경고가 도트 장판이 된다',
   versions: [
+    {
+      ver: '261125-1000', date: '2026-11-25', name: '6차 배치 · 1막 스킬 이펙트 · 도형 연출', cur: 1,
+      items: [
+        { t: '연출', h: '1막 열 보스의 스킬 이펙트 42종을 도트체로 다시 그렸다', p: '리토스의 종울림부터 키루르고스의 수술칼까지, 스킬마다 4프레임 이펙트를 주인공과 같은 고밀도 도트로 통일했다. 스킬의 색·모양·구도는 그대로 두고 부드러운 붓 터치만 또렷한 픽셀로 바꿨다.' },
+        { t: '연출', h: '바닥 위험 표시가 반투명 사각형에서 도트 장판으로', p: '위험을 알리는 빗금·안개가 도트 타일로 깔리고, 발동 순간의 채움도 점 무늬와 도트 테두리로 바뀌었다. 화면 절반을 덮던 반투명 주황 사각형이 사라져 바닥과 보스가 잘 보인다.' },
+        { t: '연출', h: '원형 충격파·바닥 웅덩이·박쥐 떼·종울림도 새 그림', p: 'arc 한 줄이던 충격파 링은 굵기가 일정한 도트 띠로, 평면 타원이던 독·기름 웅덩이는 끓는 도트 웅덩이로, 6장 박쥐 떼는 날갯짓하는 도트 띠로 바뀌었다. 1장 종울림은 지면에 퍼지는 도트 아치로 보인다.' },
+        { t: '연출', h: '13장 원혼 해골 추적탄이 더 또렷하게', p: '다섯 방향에서 날아오는 해골의 조준선에 도트 점을 얹고, 날아가는 해골 뒤에 짧은 꼬리를 붙였다. 밝은 사막 바닥에서도 궤적이 읽힌다.' },
+        { t: '시스템', h: '판정·체력·보상은 그대로', p: '이번 배치는 그림만 바꿨다. 스킬의 피해량·경고 시간·판정 범위와 보스 체력·보상·저장은 이전 판과 같다.' },
+      ],
+    },
     {
       ver: '261125-0700', date: '2026-11-25', name: '5차 배치 · 1막 보스 10종', cur: 1,
       items: [
@@ -20234,6 +20287,128 @@ function beamDot(c, im, h) {
   return true;
 }
 
+/* ============ 2026-11-25 6차 배치: 남은 코드 도형 연출 -> 도트 그림 ============
+   warm 해치/안개, 발동 중 장판 채움·테두리, 원형 링(충격파), 바닥 웅덩이, 박쥐 떼 띠, 종울림 아치.
+   전부 assets/dot/ 의 4프레임 도트 스트립이고, 회색조 그림은 위험 색(h.col)으로 곱해 쓴다.
+   그림이 아직 안 떴으면 각 그리는 곳이 예전 캔버스 연출로 돌아간다. */
+const TGD = {
+  files: { hatch: 'telegraph_hatch.png', mist: 'telegraph_dotfill.png', fill: 'haz_fill.png',
+           box: 'haz_box.png', ring: 'haz_ring.png', pool: 'pool_glow.png', lane: 'lane_bats.png', bell: 'bell_arc.png' },
+  cell: { hatch: [32, 32], mist: [32, 32], fill: [32, 32], box: [128, 64], ring: [32, 32],
+          pool: [128, 48], lane: [256, 64], bell: [256, 96] },
+  img: {}, tint: {}, pat: {},
+};
+function tgdImg(n) {
+  if (TGD.img[n]) return TGD.img[n];
+  const f = TGD.files[n]; if (!f) return null;
+  const im = new Image(); im.src = TGSP.dir + f + '?v=' + GAME_VER;
+  if (im.decode) im.decode().catch(() => {});
+  return (TGD.img[n] = im);
+}
+const tgdHas = n => { const im = TGD.img[n] || (typeof n === 'string' && tgdImg(n)); return !!(im && im.complete && im.naturalWidth > 0); };
+/* 회색조 타일 한 프레임을 위험 색으로 곱해 캔버스로 (색·프레임별 캐시) */
+function tgdCanvas(n, col, frame) {
+  frame = ((frame | 0) % 4 + 4) % 4;
+  const key = n + '|' + (col || '') + '|' + frame;
+  if (TGD.tint[key]) return TGD.tint[key];
+  const im = tgdImg(n); if (!(im && im.complete && im.naturalWidth)) return null;
+  const cw = TGD.cell[n][0], ch = TGD.cell[n][1];
+  const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+  const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+  g.drawImage(im, frame * cw, 0, cw, ch, 0, 0, cw, ch);
+  if (col) {                                   // 회색조 -> 위험 색 (http 에서는 정확히, file:// 폴백은 덧입힘)
+    let exact = false;
+    try {
+      const d = g.getImageData(0, 0, cw, ch), px = d.data, c = col.split(',').map(Number);
+      const cr = c[0] / 255, cg = (c[1] == null ? c[0] : c[1]) / 255, cb = (c[2] == null ? c[0] : c[2]) / 255;
+      for (let i = 0; i < px.length; i += 4) {
+        if (!px[i + 3]) continue;
+        px[i] = px[i] * cr; px[i + 1] = px[i + 1] * cg; px[i + 2] = px[i + 2] * cb;
+      }
+      g.putImageData(d, 0, 0); exact = true;
+    } catch (e) { /* file:// */ }
+    if (!exact) {
+      g.globalCompositeOperation = 'source-atop'; g.globalAlpha = 0.62;
+      g.fillStyle = 'rgb(' + col + ')'; g.fillRect(0, 0, cw, ch);
+      g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+    }
+  }
+  return (TGD.tint[key] = cv);
+}
+function tgdPat(c, n, col, frame) {
+  const key = n + '|' + (col || '') + '|' + (((frame | 0) % 4 + 4) % 4);
+  if (TGD.pat[key]) return TGD.pat[key];
+  const cv = tgdCanvas(n, col, frame); if (!cv) return null;
+  return (TGD.pat[key] = c.createPattern(cv, 'repeat'));
+}
+/* 도트 타일로 사각형을 채운다 (없으면 옅은 단색) */
+function tgdFill(c, n, col, frame, alpha, x, y, w, h) {
+  if (!(w > 0) || !(h > 0) || alpha <= 0) return false;
+  const p = tgdPat(c, n, col, frame);
+  c.save(); c.imageSmoothingEnabled = false; c.globalAlpha *= alpha;
+  if (p) { c.fillStyle = p; c.fillRect(x, y, w, h); }
+  else { c.fillStyle = 'rgba(' + col + ',' + Math.min(1, alpha * 0.7) + ')'; c.fillRect(x, y, w, h); }
+  c.restore();
+  return !!p;
+}
+/* 위험 장판이 '차오르는 선' — 면 채움 대신 2px 도트 점선 (여러 장판이 겹쳐도 화면이 덮이지 않는다) */
+function tgEdge(c, col, x, y, w, h) {
+  c.fillStyle = `rgba(${col},.62)`;
+  if (w > h) { for (let i = 0; i < w; i += 8) c.fillRect(x + i, y, Math.min(5, w - i), 2); }
+  else { for (let i = 0; i < h; i += 8) c.fillRect(x, y + i, 2, Math.min(5, h - i)); }
+}
+/* 발동 중 장판 테두리: haz_box 9-slice (모서리 16px, 가운데는 타일로 늘린다) */
+function tgdBox(c, x, y, w, h, frame, alpha) {
+  const cv = tgdCanvas('box', '', frame); if (!cv) return false;
+  const CW = 128, CH = 64;
+  const capX = Math.min(16, Math.floor(w / 3)), capY = Math.min(16, Math.floor(h / 3));
+  const sx = [0, 16, CW - 16], sw = [16, CW - 32, 16];
+  const sy = [0, 16, CH - 16], sh = [16, CH - 32, 16];
+  const dx = [x, x + capX, x + w - capX], dw = [capX, w - 2 * capX, capX];
+  const dy = [y, y + capY, y + h - capY], dh = [capY, h - 2 * capY, capY];
+  c.save(); c.imageSmoothingEnabled = false; c.globalAlpha *= alpha;
+  for (const [i, j] of [[0, 0], [0, 2], [2, 0], [2, 2]]) {          // 네 모서리
+    if (dw[j] > 0 && dh[i] > 0) c.drawImage(cv, sx[j], sy[i], sw[j], sh[i], dx[j], dy[i], dw[j], dh[i]);
+  }
+  for (const j of [0, 2]) {                                          // 위/아래 변
+    if (!(dh[0] > 0)) continue;
+    let px = x + capX, left = w - 2 * capX;
+    while (left > 0) { const cut = Math.min(96, left); c.drawImage(cv, 16, sy[j], Math.min(96, cut), sh[j], px, dy[j], cut, dh[j]); px += cut; left -= cut; }
+  }
+  for (const j of [0, 2]) {                                          // 좌/우 변
+    if (!(dw[0] > 0)) continue;
+    let py = y + capY, left = h - 2 * capY;
+    while (left > 0) { const cut = Math.min(32, left); c.drawImage(cv, sx[j], 16, sw[j], cut, dx[j], py, dw[j], cut); py += cut; left -= cut; }
+  }
+  c.restore();
+  return true;
+}
+/* 원형 링(충격파): 띠 조각(haz_ring)을 원주에 이어 붙인다 — 반지름이 커져도 도트 굵기 일정 */
+function ringDot(c, h, R, band, dashed) {
+  const cv0 = tgdCanvas('ring', h.col, Math.floor(G.t * 12));
+  if (!cv0 || !(R > 2)) return false;
+  const chunk = Math.max(12, Math.min(96, Math.round(2 * Math.PI * R / 48), Math.round(band * 1.6)));   // 작은 링도 각지지 않게 조각을 잘게
+  const n = Math.max(8, Math.ceil(2 * Math.PI * R / chunk));
+  const step = 2 * Math.PI / n;
+  const fi = Math.floor(G.t * 12) % 4, cv = tgdCanvas('ring', h.col, fi);
+  const prev = c.imageSmoothingEnabled; c.imageSmoothingEnabled = false;
+  c.save();
+  if (h.add !== false) c.globalCompositeOperation = 'lighter';
+  c.globalAlpha *= (h.alpha == null ? 1 : h.alpha);
+  for (let i = 0; i < n; i++) {
+    if (dashed && (i % 3)) continue;
+    const a = i * step, ca = Math.cos(a), sa = Math.sin(a);
+    c.save();
+    c.translate(Math.round(h.x + ca * R), Math.round(h.y + sa * R));
+    c.rotate(a + Math.PI / 2);
+    c.drawImage(cv, Math.round(-chunk / 2), Math.round(-band / 2), chunk, Math.max(6, Math.round(band)));
+    c.restore();
+  }
+  c.restore();
+  if (prev) c.imageSmoothingEnabled = true;
+  return true;
+}
+
 function tgspShape(c, t, p, blink, pal) {
   const tone = tgspTone(pal);
   const fi = tgspFrame(p, blink);
@@ -20245,10 +20420,8 @@ function tgspShape(c, t, p, blink, pal) {
     const xs = snap2(t.x), xe = snap2(t.targetX);
     const left = Math.min(xs, xe), tw = snap2(Math.abs(xe - xs));
     const h = snap2(t.height), y0 = snap2(t.y - h / 2), dir = xe >= xs ? 1 : -1;
-    c.fillStyle = `rgba(${pal.fill},0.14)`; c.fillRect(left, y0, tw, h);
     const cw = snap2(tw * p);
-    c.fillStyle = `rgba(${pal.fill},${fillA})`;
-    c.fillRect(dir > 0 ? xs : xs - cw, y0, cw, h);
+    tgEdge(c, pal.fill, (dir > 0 ? xs + cw : xs - cw) - 1, y0, 2, h);   // 6차: 면 채움 -> 차오르는 도트 점선
     c.save();
     if (dir < 0) { c.translate(left + tw, 0); c.scale(-1, 1); tgspDraw(c, 'dash_line', fi, 0, y0, tw, h, tone); }
     else tgspDraw(c, 'dash_line', fi, left, y0, tw, h, tone);
@@ -20261,7 +20434,8 @@ function tgspShape(c, t, p, blink, pal) {
     const core = snap2(Math.max(2, fw * (0.08 + 0.92 * p)));
     const x0 = snap2(t.x - fw / 2);
     c.fillStyle = `rgba(${pal.fill},0.10)`; c.fillRect(x0, top, fw, gy - top);
-    c.fillStyle = `rgba(${pal.fill},${fillA})`; c.fillRect(snap2(t.x - core / 2), top, core, gy - top);
+    tgEdge(c, pal.fill, snap2(t.x - core / 2) - 3, top, 2, gy - top);
+    tgEdge(c, pal.fill, snap2(t.x + core / 2) + 1, top, 2, gy - top);
     tgspDraw(c, 'vertical_beam', fi, x0, top, fw, gy - top, tone);
 
   } else if (t.kind === 'aim_ray') {
@@ -20285,9 +20459,18 @@ function tgspShape(c, t, p, blink, pal) {
       c.translate(snap2(t.x), snap2(t.y));
       c.rotate(a);
       if (Math.cos(a) < 0) c.scale(1, -1);          // 왼쪽 조준에서 그림이 뒤집히지 않게
-      if (t.width > 24) {                            // 굵은 투사체 통로: 반투명 채움 (그 위에 점선 조준선 그림)
-        c.fillStyle = `rgba(${pal.fill},${fillA * 0.5})`;
-        c.fillRect(0, -snap2(t.width) / 2, Math.round(L), snap2(t.width));
+      if (t.width > 24) {                            // 굵은 투사체 통로: 도트 안개 (그 위에 점선 조준선 그림)
+        tgEdge(c, pal.fill, Math.round(L) - 2, -snap2(t.width) / 2, 2, snap2(t.width));
+      }
+      if (L > 40) {                                   // 6차: 점선이 옅어 보이던 조준선에 2px 도트를 얹어 또렷하게
+        const n = Math.max(2, Math.round(L / 10));
+        for (let i = 1; i <= n; i++) {
+          const dx = Math.round(L * i / n) - 2;
+          c.fillStyle = 'rgba(24,8,12,.55)'; c.fillRect(dx, 0, 5, 3);          // 밝은 바닥에서도 읽히게 1px 그림자
+          c.fillStyle = `rgba(${pal.fill},${0.55 + 0.4 * p})`; c.fillRect(dx, -1, 4, 2);
+        }
+        c.fillStyle = 'rgba(24,8,12,.6)'; c.fillRect(-3, -3, 7, 7);
+        c.fillStyle = `rgba(${pal.fill},${0.7 + 0.3 * p})`; c.fillRect(-2, -2, 5, 5);
       }
       tgspDraw(c, 'aim_ray', fi, 0, -32, Math.round(L), 64, tone);   // 그 위에 얇은 사이트라인 + 리티클
       c.restore();
@@ -20296,9 +20479,8 @@ function tgspShape(c, t, p, blink, pal) {
   } else if (t.kind === 'box') {
     /* 발판·공중 장판: x,y 가 좌상단(기존 규칙 그대로). 아래에서 위로 차오른다. */
     const x0 = snap2(t.x), y0 = snap2(t.y), w = snap2(t.width), h = snap2(t.height);
-    c.fillStyle = `rgba(${pal.fill},${fillA * 0.45})`; c.fillRect(x0, y0, w, h);
     const fh = snap2(h * p);
-    c.fillStyle = `rgba(${pal.fill},${fillA})`; c.fillRect(x0, y0 + h - fh, w, fh);
+    tgEdge(c, pal.fill, x0, snap2(y0 + h - fh), w, 2);
     if (!tgspDraw(c, 'box', fi, x0, y0, w, h, tone)) tgspDraw(c, 'ground_zone', fi, x0, y0, w, h, tone);
 
   } else {
@@ -20306,7 +20488,7 @@ function tgspShape(c, t, p, blink, pal) {
     const x0 = snap2(t.x - t.width / 2), w = snap2(t.width), h = snap2(t.height), y0 = snap2(gy - h);
     c.fillStyle = `rgba(${pal.fill},${fillA * 0.45})`; c.fillRect(x0, y0, w, h);
     const fh = snap2(h * p);
-    c.fillStyle = `rgba(${pal.fill},${fillA})`; c.fillRect(x0, snap2(gy - fh), w, fh);
+    tgEdge(c, pal.fill, x0, snap2(gy - fh), w, 2);
     tgspDraw(c, 'ground_zone', fi, x0, y0, w, h, tone);
   }
 }
@@ -20345,6 +20527,7 @@ tg9Badge = function (c, x, y, danger, blink, p, pal) {
 };
 tgspLoad();   // 6장 프리로드. 보스 등장 시점이 아니라 시작 시 한 번이면 충분하다.
 for (const k in BEAM_SPR) beamImg(k);   // 2026-11-25 빔 4종(합 3KB)도 시작 시 미리 받아 첫 프레임이 예전 연출로 뜨지 않게
+for (const k in TGD.files) tgdImg(k);   // 6차: 해치·안개·장판·링·웅덩이·박쥐·종아치 8종도 미리 받는다
 
 /* ============ 2026-11-22 story bible (art/boss30/story_1_to_50.md, user: "내가 보낸 파일 기준으로 1~50장"):
    chapter titles, the boss room's entry line, boss names and the HP 50% rage line for chapters 1-50.
