@@ -618,7 +618,7 @@ button{font-family:inherit;color:inherit}
           <button class="hbtn" id="bChat" title="채팅 (Enter)"><img class="hico" src="assets/ui/btn_chat_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><path d="M2 3.2h12v7.4H7.2L4 13.2v-2.6H2z"/></svg></button>
           <button class="hbtn" id="bNet" title="온라인 (다른 사람과 함께)"><img class="hico" src="assets/ui/btn_online_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c-2.2 2-2.2 10.4 0 12.4M8 1.8c2.2 2 2.2 10.4 0 12.4"/></svg></button>
           <button class="hbtn" id="bTrophy" title="보스 트로피"><img class="hico" src="assets/ui/btn_trophy_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><path d="M4.6 2h6.8v3.2a3.4 3.4 0 0 1-6.8 0z"/><path d="M4.6 3.2H2.4v1.3c0 1.2 1 2.2 2.2 2.2M11.4 3.2h2.2v1.3c0 1.2-1 2.2-2.2 2.2M8 8.6v3.1M5.4 14h5.2l-.6-2.3H6z"/></svg><kbd data-k="m_trophy">Y</kbd></button>
-          <button class="hbtn" id="bKeys" title="키 설정"><img class="hico" src="assets/ui/btn_keys_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="1.2"/><path d="M4 6.6h.6M6.6 6.6h.6M9.2 6.6h.6M11.8 6.6h.6M4.4 9.4h7.2"/></svg><kbd data-k="m_keys"></kbd></button>
+          <button class="hbtn" id="bKeys" title="설정"><img class="hico" src="assets/ui/btn_keys_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8" rx="1.2"/><path d="M4 6.6h.6M6.6 6.6h.6M9.2 6.6h.6M11.8 6.6h.6M4.4 9.4h7.2"/></svg><kbd data-k="m_keys"></kbd></button>
           <button class="hbtn" id="bHelp" title="가이드 · 조작법"><img class="hico" src="assets/ui/btn_help_icon.png" alt="" onload="this.parentNode.classList.add('ico')"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.4"/><path d="M6.1 6.2a1.9 1.9 0 1 1 2.6 1.8c-.4.2-.7.5-.7 1v.6M8 11.5v.1"/></svg><kbd data-k="m_help"></kbd></button>
         </div>
         <canvas id="mini" width="400" height="112"></canvas>
@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1840';
+const GAME_VER = '261125-1910';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -5652,7 +5652,7 @@ const KEY_ACTIONS = [
   ['기술', 'ka', '각성 기술 A', ['KeyA']], ['기술', 'ks', '각성 기술 S', ['KeyS']], ['기술', 'kd', '각성 기술 D', ['KeyD']], ['기술', 'kv', '궁극기', ['KeyV']], ['기술', 'kf', '레전드 기술', ['KeyF']],
   ['물건', 'pot', '치유 연고', ['Digit1', 'Numpad1']], ['물건', 'scroll', '귀환 주문서', ['Digit2', 'Numpad2']],
   ['메뉴', 'm_gear', '장비 · 가방', ['KeyI']], ['메뉴', 'm_traits', '특성', ['KeyT']], ['메뉴', 'm_map', '미니맵', ['KeyN']], ['메뉴', 'm_music', '음악', []],   // 2026-11-24 (user): 화면에 없는 B 키로 배경음이 꺼지지 않는다
-  ['메뉴', 'm_worldmap', '전체 맵', ['KeyM']], ['메뉴', 'm_quest', '퀘스트 · 일일 의뢰', ['KeyQ']], ['메뉴', 'm_wm_prev', '전체 맵 이전 페이지', []], ['메뉴', 'm_wm_next', '전체 맵 다음 페이지', ['KeyE']],['메뉴', 'm_trophy', '트로피 도감', ['KeyY']], ['메뉴', 'm_mute', '소리', ['KeyU']], ['메뉴', 'm_party', '파티 · 닉네임', ['KeyP']], ['메뉴', 'm_help', '가이드 · 조작법', ['KeyH']], ['메뉴', 'm_keys', '키 설정', ['KeyO']],
+  ['메뉴', 'm_worldmap', '전체 맵', ['KeyM']], ['메뉴', 'm_quest', '퀘스트 · 일일 의뢰', ['KeyQ']], ['메뉴', 'm_wm_prev', '전체 맵 이전 페이지', []], ['메뉴', 'm_wm_next', '전체 맵 다음 페이지', ['KeyE']],['메뉴', 'm_trophy', '트로피 도감', ['KeyY']], ['메뉴', 'm_mute', '소리', ['KeyU']], ['메뉴', 'm_party', '파티 · 닉네임', ['KeyP']], ['메뉴', 'm_help', '가이드 · 조작법', ['KeyH']], ['메뉴', 'm_keys', '설정', ['KeyO']],
 ];
 const KEYS_STORE = 'devil-renown-keys';   // 2026-11-24 (user): 저장 슬롯(캐릭터)마다 키세팅을 따로 기억한다
 const bindsKey = ch => KEYS_STORE + ':' + (ch || 'default');
@@ -13240,7 +13240,7 @@ function renderKeyHelp() {
   const box = $('#help .keys');
   if (box) box.innerHTML = KEY_ACTIONS.filter(([, a]) => a !== 'down').map(([, a, label]) => `<kbd>${BINDS[a].map(keyName).join(' / ')}</kbd><span>${label}</span>`).join('') + '<kbd>↓ + 점프</kbd><span>얇은 발판 아래로 내려가기</span>';
   const bar = $('.help');
-  if (bar) bar.innerHTML = [['left', '이동'], ['jump', '점프'], ['z', '공격'], ['x', '스킬'], ['guard', '가드'], ['up', '대화'], ['m_gear', '장비'], ['m_keys', '키 설정']].map(([a, l]) => `<span><kbd>${a === 'left' ? keyOf('left') + ' ' + keyOf('right') : a === 'x' ? keyOf('x') + ' ' + keyOf('c') : keyOf(a)}</kbd> ${l}</span>`).join('');
+  if (bar) bar.innerHTML = [['left', '이동'], ['jump', '점프'], ['z', '공격'], ['x', '스킬'], ['guard', '가드'], ['up', '대화'], ['m_gear', '장비'], ['m_keys', '설정']].map(([a, l]) => `<span><kbd>${a === 'left' ? keyOf('left') + ' ' + keyOf('right') : a === 'x' ? keyOf('x') + ' ' + keyOf('c') : keyOf(a)}</kbd> ${l}</span>`).join('');
   if (G.scene === 'play' && G.save) buildSkills();
 }
 function OPT(k) { const o = (G.save && G.save.opt) || {}; return o[k] == null ? true : !!o[k]; }   // [S7-1] 기본은 모두 켜짐
@@ -13380,7 +13380,7 @@ $('#dialog').addEventListener('click', e => { const b = e.target.closest('[data-
 
 /* ---- Panels ---- */
 function openPanel(n) { G.ui.panel = n; G.ui.enhMsg = ''; if (n === 'shop') { G.ui.shopTab = 'buy'; G.ui.shopLine = null; G.ui.sellArm = null; } if (n === 'trade') G.ui.trDrawn = ''; if (isUiWin(n)) { $('#panel').classList.remove('on'); uiRefresh(); } else { renderPanel(); $('#panel').classList.add('on'); } sfx('click'); $('#game').focus({ preventScroll: true }); }
-function closePanel() { G.ui.rebind = null; G.ui.panel = null; G.ui.gearMode = null; G.ui.bagSel = null; G.ui.whSel = null; $('#uiwin').classList.remove('on'); $('#sktip').classList.remove('on', 'pxf'); $('#panel').classList.remove('on'); }
+function closePanel() { G.ui.rebind = null; G.ui.panel = null; G.ui.gearMode = null; G.ui.bagSel = null; G.ui.whSel = null; G.ui.whSels = []; G.ui.whGold = 0; $('#uiwin').classList.remove('on'); $('#sktip').classList.remove('on', 'pxf'); $('#panel').classList.remove('on'); }
 function togglePanel(n) {
   if (G.scene !== 'play' || G.ui.dialog || G.ui.intro || G.ui.ending || G.ui.help || !G.save) return;
   if (G.ui.panel === n) closePanel(); else { if (n === 'gear') G.ui.gearMode = null; openPanel(n); }
@@ -14203,23 +14203,25 @@ function drawShopPortrait() {
 }
 /* ---- storage ---- */
 function storeWin() {
-  const s = G.save, box = storeNow().storage, sel = G.ui.whSel;
+  const s = G.save, box = storeNow().storage, sels = G.ui.whSels || (G.ui.whSels = []), side = sels.length ? sels[0][0] : '', on = c => sels.includes(c);   // 2026-11-25 (user): 여러 개 골라 한 번에
   const cellsL = [`<button class="cell wh cons" data-whm="pot:1" data-tipk="pot">${pimg('potion')}<em>${s.potions}</em></button>`, `<button class="cell wh cons" data-whm="scroll:1" data-tipk="scroll">${pimg('scroll')}<em>${s.scrolls}</em></button>`]
-    .concat(bagList().map(it => `<button class="cell wh ${sel === 'b' + it.uid ? 'on' : ''}" style="--gc:${gcol(it)}" data-whsel="b${it.uid}" data-tipk="it:${it.uid}">${itemImg(it)}${it.ilvl ? `<i>${it.ilvl}</i>` : ''}</button>`)).join('');
+    .concat(bagList().map(it => `<button class="cell wh ${on('b' + it.uid) ? 'on' : ''}" style="--gc:${gcol(it)}" data-whsel="b${it.uid}" data-tipk="it:${it.uid}">${itemImg(it)}${it.ilvl ? `<i>${it.ilvl}</i>` : ''}</button>`)).join('');
   const cellsR = [`<button class="cell wh cons" data-whm="pot:-1" data-tipk="spot">${pimg('potion')}<em>${box.potions}</em></button>`, `<button class="cell wh cons" data-whm="scroll:-1" data-tipk="sscroll">${pimg('scroll')}<em>${box.scrolls}</em></button>`]
-    .concat(box.items.map(it => `<button class="cell wh ${sel === 's' + it.uid ? 'on' : ''}" style="--gc:${gcol(it)}" data-whsel="s${it.uid}" data-tipk="sit:${it.uid}">${itemImg(it)}${it.ilvl ? `<i>${it.ilvl}</i>` : ''}</button>`)).join('');
+    .concat(box.items.map(it => `<button class="cell wh ${on('s' + it.uid) ? 'on' : ''}" style="--gc:${gcol(it)}" data-whsel="s${it.uid}" data-tipk="sit:${it.uid}">${itemImg(it)}${it.ilvl ? `<i>${it.ilvl}</i>` : ''}</button>`)).join('');
   return `<div class="uttl" style="${mp(70, 56, 460, 150)}">${ttl('가방', 'INVENTORY')}</div>
     <div class="uttl" style="${mp(915, 56, 1205, 150)}">${ttl('창고', 'WAREHOUSE')}</div>
     <div class="ugrid wh" data-keep-scroll="whL" style="${mp(74, 168, 558, 618)}">${cellsL}</div>
     <div class="ugrid wh" data-keep-scroll="whR" style="${mp(816, 168, 1314, 618)}">${cellsR}</div>
-    <button class="ubtn" style="${mp(600, 310, 778, 372)}" data-whgo="in" ${sel && sel[0] === 'b' ? '' : 'disabled'}>맡기기 ▶</button>
-    <button class="ubtn" style="${mp(600, 402, 778, 462)}" data-whgo="out" ${sel && sel[0] === 's' ? '' : 'disabled'}>◀ 꺼내기</button>
-    <button class="ubtn sm" style="${mp(583, 522, 682, 575)}" data-whgold="1" title="누르면 1할, 우클릭은 전부">골드 ▶</button>
-    <button class="ubtn sm" style="${mp(695, 522, 793, 575)}" data-whgold="-1" title="누르면 1할, 우클릭은 전부">◀ 골드</button>
+    <button class="ubtn" style="${mp(600, 290, 778, 350)}" data-whgo="in" ${side === 'b' ? '' : 'disabled'}>맡기기 ▶${side === 'b' && sels.length > 1 ? ' ' + sels.length : ''}</button>
+    <button class="ubtn" style="${mp(600, 366, 778, 426)}" data-whgo="out" ${side === 's' ? '' : 'disabled'}>◀ 꺼내기${side === 's' && sels.length > 1 ? ' ' + sels.length : ''}</button>
+    <button class="ubtn sm" style="${mp(600, 442, 778, 486)}" data-whclr="1" ${sels.length ? '' : 'disabled'}>선택 풀기</button>
+    <button class="ubtn sm" style="${mp(583, 522, 682, 575)}" data-whgold="1" title="얼마 맡길지 적는다">골드 ▶</button>
+    <button class="ubtn sm" style="${mp(695, 522, 793, 575)}" data-whgold="-1" title="얼마 꺼낼지 적는다">◀ 골드</button>
+    ${G.ui.whGold ? whGoldBox(s, box) : ''}
     <div class="ucnt" style="${mp(250, 640, 395, 678)}">${s.items.length} / ${BAG_MAX}</div>
     <div class="ucnt" style="${mp(990, 640, 1135, 678)}">${box.items.length} / ${STORAGE_ITEMS_MAX}</div>
     <div class="ubar flat" style="${mp(1150, 655, 1340, 700)}">${pimg('coin')}<b class="gold">${nf(s.gold)}</b><span class="dim">창고 ${nf(box.gold)}</span></div>
-    <div class="ufoot c" style="${mp(380, 716, 996, 758)}">우클릭으로 바로 옮긴다 · 이 아이디의 세 인물이 함께 쓴다</div>
+    <div class="ufoot c" style="${mp(380, 716, 996, 758)}">눌러서 여러 개 고르기 · 우클릭으로 하나 바로 옮기기 · 이 아이디의 세 인물이 함께 쓴다</div>
     <button class="ubtn" style="${mp(10, 705, 155, 762)}" data-close="1">닫기</button>
     <button class="ubtn" style="${mp(1222, 705, 1366, 762)}" data-sort="1">${SORTS.find(x => x[0] === (G.ui.bagSort || 'grade'))[1]}</button>`;
 }
@@ -14227,11 +14229,41 @@ function whMove(code, all) {
   const [k, d] = code.split(':'); const key = k === 'pot' ? 'potions' : 'scrolls';
   storageMove(key, all ? 'all' : 1, +d);
 }
-function whMoveItem(sel) {
-  if (!sel) return;
-  if (sel[0] === 'b') itemToStorage(+sel.slice(1)); else itemFromStorage(+sel.slice(1));
-  G.ui.whSel = null; uiRefresh();
+function whMoveItem(sel) {   // sel: 'b123' 하나 또는 ['b1','b2'] 여럿 (맡기기·꺼내기 버튼은 고른 것 전부)
+  const list = Array.isArray(sel) ? sel.slice() : sel ? [sel] : []; if (!list.length) return;
+  const box = storeNow().storage, s = G.save; let n = 0, full = false;
+  for (const c of list) {
+    const uid = +c.slice(1);
+    if (c[0] === 'b') { if (box.items.length >= STORAGE_ITEMS_MAX) { full = true; break; } const i = s.items.findIndex(it => it.uid === uid); if (i >= 0) { box.items.push(s.items.splice(i, 1)[0]); n++; } }
+    else { if (s.items.length >= BAG_MAX) { full = true; break; } const i = box.items.findIndex(it => it.uid === uid); if (i >= 0) { const it = box.items.splice(i, 1)[0]; s.nextUid++; it.uid = s.nextUid; s.items.push(it); n++; } }
+  }
+  if (n) { sfx('click'); writeSave(); }
+  if (full) toast((list[0][0] === 'b' ? '창고' : '가방') + '이 가득 찼다 · ' + n + '개만 옮겼다', 'bad');
+  G.ui.whSels = []; uiRefresh();
 }
+/* 골드 맡기기·꺼내기: 금액을 적는 작은 창 (2026-11-25 user) */
+function whGoldBox(s, box) {
+  const d = G.ui.whGold, have = d > 0 ? s.gold : box.gold, v = G.ui.whGoldV == null ? '' : G.ui.whGoldV;
+  return `<div class="whgbox" style="${mp(470, 240, 900, 500)}"><b>${d > 0 ? '골드 맡기기' : '골드 꺼내기'}</b><small>${d > 0 ? '가진 골드' : '창고 골드'} ${nf(have)}</small>
+    <input id="whGoldIn" type="text" inputmode="numeric" autocomplete="off" placeholder="금액" value="${v}">
+    <div class="whgb"><button class="ubtn sm" data-whgok="1">${d > 0 ? '맡기기' : '꺼내기'}</button><button class="ubtn sm" data-whgall="1">${d > 0 ? '모두 넣기' : '모두 꺼내기'}</button><button class="ubtn sm" data-whgx="1">취소</button></div></div>`;
+}
+function whGoldOk(all) {
+  const d = G.ui.whGold; if (!d) return;
+  const v = all ? 'all' : Math.floor(+String(G.ui.whGoldV || '').replace(/[^0-9]/g, '') || 0);
+  if (v === 'all' || v > 0) storageMove('gold', v, d);
+  G.ui.whGold = 0; G.ui.whGoldV = ''; uiRefresh();
+}
+(function whGoldUi() {
+  const st = document.createElement('style');
+  st.textContent = '#uiwin .whgbox{position:absolute;z-index:6;display:flex;flex-direction:column;gap:calc(var(--u)*8);padding:calc(var(--u)*14);background:rgba(16,12,22,.97);border:2px solid #e0b860;box-shadow:0 8px 30px rgba(0,0,0,.6);color:#f2e6cf;font-size:max(11px,calc(var(--u)*14))}'
+    + '#uiwin .whgbox small{color:#c8b898}#uiwin .whgbox input{background:#0c1018;border:1px solid #8a6a2a;color:#ffe6a8;font:inherit;font-size:max(13px,calc(var(--u)*18));padding:calc(var(--u)*6) calc(var(--u)*10);font-variant-numeric:tabular-nums}'
+    + '#uiwin .whgbox .whgb{display:flex;gap:calc(var(--u)*6)}#uiwin .whgbox .whgb .ubtn{position:static;flex:1;height:auto;min-height:calc(var(--u)*34);padding:calc(var(--u)*6) 0;background:#3a2a40;border:1px solid #8a7a98;color:#fff;font:inherit;font-weight:700;cursor:pointer;background-image:none}#uiwin .whgbox .whgb .ubtn:first-child{background:#6a4a1a;border-color:#f0c060;color:#ffe6a8}#uiwin .whgbox .whgb .ubtn:hover{filter:brightness(1.2)}';
+  document.head.appendChild(st);
+  const W0 = $('#uiwin');
+  W0.addEventListener('input', e => { if (e.target.id === 'whGoldIn') { const t = e.target.value.replace(/[^0-9]/g, ''); G.ui.whGoldV = t; if (e.target.value !== (t ? Number(t).toLocaleString('ko-KR') : '')) e.target.value = t ? Number(t).toLocaleString('ko-KR') : ''; } });
+  W0.addEventListener('keydown', e => { if (e.target.id !== 'whGoldIn') return; e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); whGoldOk(false); } else if (e.key === 'Escape') { G.ui.whGold = 0; uiRefresh(); } }, true);
+})();
 
 /* ---- hover details for anything in these windows ---- */
 function uwTip(code) {
@@ -14294,10 +14326,18 @@ function uwClick(t, right) {
   if (D.gsel) { const sel = G.ui.sellSel || (G.ui.sellSel = {}); sel[D.gsel] = !sel[D.gsel]; uiRefresh(); return; }
   if (D.bulk) { const sel = G.ui.sellSel || {}; sellItems(s.items.filter(it => it.type !== 'soul' && sel[it.grade]).map(it => it.uid)); uiRefresh(); return; }
   // storage
-  if (D.whsel) { if (right) whMoveItem(D.whsel); else { G.ui.whSel = G.ui.whSel === D.whsel ? null : D.whsel; sfx('click'); uiRefresh(); } return; }
-  if (D.whgo) { whMoveItem(G.ui.whSel); return; }
+  if (D.whsel) {
+    if (right) { whMoveItem(D.whsel); return; }
+    let L = G.ui.whSels || []; if (L.length && L[0][0] !== D.whsel[0]) L = [];   // 반대쪽을 고르면 새로
+    G.ui.whSels = L.includes(D.whsel) ? L.filter(c => c !== D.whsel) : L.concat([D.whsel]); sfx('click'); uiRefresh(); return;
+  }
+  if (D.whgo) { whMoveItem(G.ui.whSels || []); return; }
+  if (D.whclr) { G.ui.whSels = []; uiRefresh(); return; }
   if (D.whm) { whMove(D.whm, false); uiRefresh(); return; }
-  if (D.whgold) { const have = +D.whgold > 0 ? s.gold : storeNow().storage.gold; storageMove('gold', right ? 'all' : Math.max(1, Math.round(have * 0.1)), +D.whgold); uiRefresh(); return; }
+  if (D.whgold) { if (right) { storageMove('gold', 'all', +D.whgold); uiRefresh(); return; } G.ui.whGold = +D.whgold; G.ui.whGoldV = ''; uiRefresh(); setTimeout(() => { const i = $('#whGoldIn'); if (i) i.focus(); }, 30); return; }
+  if (D.whgok) { whGoldOk(false); return; }
+  if (D.whgall) { whGoldOk(true); return; }
+  if (D.whgx) { G.ui.whGold = 0; G.ui.whGoldV = ''; uiRefresh(); return; }
 }
 $('#uiwin').addEventListener('click', e => { const t = e.target.closest('button'); if (!t) { if (e.target.id === 'uiwin') closePanel(); return; } if (t.disabled) return; uwClick(t, false); });
 $('#uiwin').addEventListener('contextmenu', e => { const t = e.target.closest('button'); e.preventDefault(); if (!t || t.disabled) return; uwClick(t, true); });
@@ -14803,7 +14843,7 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 /* ---- 연금 결정: dismantling bag items ---- */
 /* 2026-11-23 (user): dismantling gives 품질석 and 잠재석 straight away, a little more each grade (연금 결정 is gone):
    일반 one of the two (50%), 레어 1 each, 유니크 2 each, 레전드 5 each */
-const DIS_STONES = [0, 1, 2, 5];
+const DIS_STONES = [0, 1, 2, 15];   // 2026-11-25 (user): 레전드 5 → 15 (팔기·분해가 다 애매하다) · 마스터 콘솔 '레전드 분해 결정'
 const disLabel = it => (it.grade || 0) === 0 ? '품질석·잠재석 중 1 (50%)' : '품질석 ' + DIS_STONES[it.grade] + ' · 잠재석 ' + DIS_STONES[it.grade];
 const disShort = it => (it.grade || 0) === 0 ? '50%' : '각 ' + DIS_STONES[it.grade];
 function dismantle(uid) {   // returns [품질석, 잠재석], or null when nothing was dismantled
@@ -16263,12 +16303,23 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125k',   // 2026-11-25 스물여섯 번째 패치(GAME_VER '261125-1840'): 묶음 7 그림이 곧 판정
+  id: '261125l',   // 2026-11-25 스물일곱 번째 패치(GAME_VER '261125-1910'): 묶음 8 작은 개선 모음
   title: '패치 노트',
   sub: '29장 월식이 화면을 삼키고, 거꾸로 나가던 보스 스킬을 바로잡았다',
   versions: [
     {
-      ver: '261125-1840', date: '2026-11-25', name: '보스 스킬: 보이는 그림이 곧 판정', cur: 1,
+      ver: '261125-1910', date: '2026-11-25', name: '창고 · 설정 · 직업 손보기 · 남던 판정', cur: 1,
+      items: [
+        { t: '보스', h: '공격 그림이 사라지면 판정도 같이 끝난다', p: '보스 스킬 그림이 사라진 뒤에도 잠깐씩 맞던 것을 고쳤다(24장 시체꽃 만개·11장 오일 채찍·25장 룬 석주 등). 그림 없이 터지던 바닥 구역(30장 성좌 붕괴 등)에는 그 자리에 그림이 나온다.' },
+        { t: 'UI', h: '창고: 여러 개 골라 옮기기 · 골드는 금액을 적어서', p: '아이템을 눌러 여러 개 고른 뒤 맡기기·꺼내기로 한 번에 옮긴다. 골드 버튼을 누르면 금액을 적는 창이 뜨고, 모두 넣기·모두 꺼내기도 있다.' },
+        { t: 'UI', h: '설정 창에 캐릭터 선택 · 게임 종료', p: 'O(설정) 창 맨 위에서 저장하고 캐릭터 선택 화면으로 가거나 게임을 끝낸다. 메뉴 이름도 키 설정에서 설정으로 바꿨다.' },
+        { t: '전투', h: '도적 그림자 걸음이 두 번 연달아 나가지 않는다', p: '한 칸을 쓰면 0.5초가 지나야 하고, X 를 떼었다 다시 눌러야 두 번째 칸이 나간다.' },
+        { t: '전투', h: '마법사: V 가 화면 전체를 덮고, Z 숫자가 줄어들기만 한다', p: '종말의 특이점 그림이 도적 V 처럼 화면 전체를 덮는다. 공허 탄환의 남은 시간은 돌아오는 시간까지 합쳐 큰 수에서 작은 수로만 센다.' },
+        { t: '보상', h: '레전드 분해 결정 15개 · 상인 남은 시간', p: '레전드 장비를 분해하면 품질석·잠재석을 각 15개 준다(전 5개). 떠돌이 상인은 남은 시간 N분으로 보여 준다.' },
+      ],
+    },
+    {
+      ver: '261125-1840', date: '2026-11-25', name: '보스 스킬: 보이는 그림이 곧 판정',
       items: [
         { t: '보스', h: '보이는 스킬 그림이 그대로 날아와 맞는다', p: '그림과 실제로 맞는 탄이 따로 놀던 보스 스킬 17가지를 고쳤다. 작은 탄은 없어지고, 보스가 쏜 그림(단검 부채·깃털·해골·초승달·해일 등)이 그대로 날아와 그 그림에 닿으면 맞는다. 피하려면 구르기·가드·점프를 쓴다.', q: '11장 부품 사출 탄막 · 13장 원혼 해골 · 14장 스카라브 군단·황금 깃털 부채 · 15장 도깨비불 대포 · 16장 해일 · 17장 비검 사격 · 20장 홍련의 화염검기 · 21장 별빛 단검 부채·일식 연사 · 22장 부러진 날개 폭풍 · 23장 거울 파편 · 24장 역병 탄환·까마귀 떼 · 29장 핏빛 초승달. 12장 대폭발과 26장 모래 폭풍은 그 자리에서 터지는 동안 맞는다.' },
       ],
@@ -23385,7 +23436,7 @@ startAct = function (id) {
 };
 /* 충전형: X 최대 2회. 한 칸이 차는 시간 = 원래 X 재사용 대기(4.5초 x 특성·쿨감 그대로). 남은 횟수가 있으면 0.2초 뒤 바로 다시 쓸 수 있고,
    0회일 때만 버튼이 어두워지며 다음 칸까지 남은 시간이 보인다. 게임의 p.cd.x 를 매 틱 이 값으로 맞춘다 (X 입력 판정은 그대로 cd.x <= 0). */
-const LY_CH = { max: 2, gap: 0.2 };
+const LY_CH = { max: 2, gap: 0.5 };   // 2026-11-25 (user): 0.2 → 0.5초 + 두 번째 칸은 X 를 떼었다 다시 눌러야 (꾹 누르면 다닥 두 번 나갔다) · 마스터 콘솔
 /* 2026-11-24 (user) 버그 수정: 클리어 후 맵을 넘어갈 때 X 스택이 2로 되살아나던 문제.
    원인은 두 가지였다.
    (1) lyCh() 가 세이브 객체(G.save)가 바뀌면 상태를 **새로 만들어 q=2** 로 돌리던 것 — 세이브가 다시 읽히는 순간(화면 재로딩·다른 곳에서 startGame)
@@ -23403,10 +23454,10 @@ function lyCh() {
   }
   return G.lyCh;
 }
-function lyChApply(p) { const S = lyCh(); p.cdMax.x = S.q > 0 ? Math.max(LY_CH.gap, 0.01) : S.full; p.cd.x = S.q > 0 ? S.gap : S.t; }
+function lyChApply(p) { const S = lyCh(); if (S.hold && !IN.down.x) S.hold = false; p.cdMax.x = S.q > 0 ? Math.max(LY_CH.gap, 0.01) : S.full; p.cd.x = S.q > 0 ? (S.hold ? Math.max(S.gap, 0.05) : S.gap) : S.t; }
 function lyChUse(p) {
   const S = lyCh(); if (p.cd.x > 0.5) S.full = p.cd.x;   // what the game just set for this cast (traits, cooldown reduction)
-  S.q = Math.max(0, S.q - 1); if (S.t <= 0) S.t = S.full; S.gap = LY_CH.gap; lyChApply(p); lyChSave();
+  S.q = Math.max(0, S.q - 1); if (S.t <= 0) S.t = S.full; S.gap = LY_CH.gap; S.hold = true; lyChApply(p); lyChSave();
 }
 function lyChSave() { if (!G.save || !G.lyCh || G.save.char !== 'lykos') return; const o = G.save.lyCh || (G.save.lyCh = {}); o.q = G.lyCh.q; o.t = Math.round(G.lyCh.t * 100) / 100; o.full = Math.round(G.lyCh.full * 100) / 100; }
 /* 맵을 넘어올 때 한 번: 값이 범위를 벗어나 있으면 다듬고, 게임의 쿨타임과 HUD 글자를 실제 스택에 맞춘다 */
@@ -24396,7 +24447,7 @@ function merHtml() {
   }).join('');
   return `<div class="ph tr-ph"><img class="mer-port" src="assets/npc/wandering_merchant_portrait.png" alt="" onerror="this.style.display='none'">
       <h3>떠돌이 상인</h3>
-      <span class="sub">${m ? m.ch + '장 ' + m.name : ''} · ${Math.ceil(merLeftMin())}분 남았다</span>
+      <span class="sub">${m ? m.ch + '장 ' + m.name : ''} · 남은 시간 ${Math.ceil(merLeftMin())}분</span>
       <button class="xbtn" data-close="1">닫기</button></div>
     <div class="mer-list">${rows || '<p class="tr-empty">오늘은 짐이 비었다</p>'}</div>
     <div class="tfoot"><span class="tr-note">수량은 모두가 함께 쓰는 재고다 · 누가 사 가면 줄어든다${merSync() ? '' : ' (지금은 이 기기에서만)'}</span></div>`;
@@ -24440,9 +24491,9 @@ function merTick(dt) {
     MER.ann = h;
     const m = MAPS[MER.map];
     if (m) {
-      toast('떠돌이 상인 · ' + m.ch + '장 ' + m.name + ' · ' + Math.ceil(merLeftMin()) + '분 남았다', 'gold');
+      toast('떠돌이 상인 · ' + m.ch + '장 ' + m.name + ' · 남은 시간 ' + Math.ceil(merLeftMin()) + '분', 'gold');
       sfx('wander');
-      chatPush('near', 'merchant', { n: '떠돌이 상인', m: m.ch + '장 ' + m.name + '에 나타났다 · ' + Math.ceil(merLeftMin()) + '분간', t: Date.now() }, false);
+      chatPush('near', 'merchant', { n: '떠돌이 상인', m: m.ch + '장 ' + m.name + '에 나타났다 · 남은 시간 ' + Math.ceil(merLeftMin()) + '분', t: Date.now()   /* 2026-11-25 (user): 'N분간' → '남은 시간 N분' */ }, false);
     }
   }
   const here = merHere();
@@ -24790,10 +24841,16 @@ const _startGameX = startGame;
 startGame = function (...a) { const r = _startGameX(...a); try { if (G.save && G.save.char === 'mage') mageImg('x_bolt'); for (const k in CHEST_FILES) chestImg(k); } catch (e) { } return r; };
 /* HUD: 탄이 살아 돌아오는 동안 Z 칸에 오버레이. 2026-11-24 (user): '회전'/'복귀' 글자 대신 다른 기술처럼 남은 예상 시간(초)을 숫자로 센다.
    나갈 때 = 남은 거리 / 나가는 속도, 돌아올 때 = 캐릭터까지 거리 / 돌아오는 속도(1.4배). 0.1초 단위로 줄어드는 것을 그대로 보여 준다. */
-function mageBoltLeft(q) {
+function mageBoltLeft(q) {   // 2026-11-25 (user): 나가는 시간 + 돌아오는 예상 시간을 합쳐 큰 수 → 작은 수로만 (예전엔 0.1 까지 줄다가 돌아올 때 0.3 으로 다시 커졌다)
   if (!q) return 0;
-  if (q.bph === 'out') return Math.max(0, (OUT_DIST - (q.dist || 0)) / (q.bSp || 470));
-  return Math.hypot(G.player.x - q.x, (G.player.y - G.player.h / 2) - q.y) / (q.bSp || 658);
+  const P = G.player, py = P.y - P.h / 2;
+  let t;
+  if (q.bph === 'out') {
+    const rest = Math.max(0, OUT_DIST - (q.dist || 0)), dir = Math.sign(q.vx) || (P.face || 1), tx = q.x + dir * rest;
+    t = rest / (q.bSp || 470) + Math.hypot(P.x - tx, py - q.y) / ((q.bSp || 470) * 1.4);
+  } else t = Math.hypot(P.x - q.x, py - q.y) / (q.bSp || 658);
+  q.mzMin = q.mzMin == null ? t : Math.min(q.mzMin, t); q.mzMax = Math.max(q.mzMax || 0, q.mzMin);
+  return q.mzMin;
 }
 const _updateHud8 = updateHud;
 updateHud = function (force) {
@@ -24805,9 +24862,9 @@ updateHud = function (force) {
       const cd = el.querySelector('.cd'), ct = el.querySelector('.ct');
       const tb = document.querySelector('#touch .tb[data-k="z"]');
       if (q) {
-        const left = q.bph === 'out' ? clamp(1 - q.dist / OUT_DIST, 0, 1) : clamp(Math.hypot(G.player.x - q.x, (G.player.y - G.player.h / 2) - q.y) / 420, 0.06, 1);
+        const sec = mageBoltLeft(q), left = clamp(sec / (q.mzMax || sec || 1), 0.04, 1);   // 칸 덮개도 같은 시간으로 줄어든다
         if (cd) cd.style.height = Math.round(left * 100) + '%';
-        const sec = mageBoltLeft(q), h = (left * 100).toFixed(0) + '%', txt = sec > 0.05 ? sec.toFixed(1) : '';
+        const h = (left * 100).toFixed(0) + '%', txt = sec > 0.05 ? sec.toFixed(1) : '';
         if (HUDC.mzt !== txt) { HUDC.mzt = txt; if (ct) ct.textContent = txt; }
         if (tb) { const v = tb.querySelector('.cdv'), t2 = tb.querySelector('.cdt'); if (v && HUDC.mzbv !== h) { HUDC.mzbv = h; v.style.height = h; } if (t2 && HUDC.mzbt !== txt) { HUDC.mzbt = txt; t2.textContent = txt; } }
         el.classList.add('cool');
@@ -26780,5 +26837,102 @@ function fb7Tick(dt) {
 }
 tuneAdd({ k: 'fb7Shrink', g: 'boss', sec: '모든 보스', n: '그림 판정 여백', help: '그림이 곧 판정인 스킬(단검 부채·깃털·초승달 등)에서 그림 가장자리를 판정에서 빼는 비율', get: () => FB7_SHRINK, set: v => { FB7_SHRINK = v; }, min: 0, max: 40, step: 1, pct: true });
 tuneAdd({ k: 'fb7Speed', g: 'boss', sec: '모든 보스', n: '날아가는 스킬 그림 속도', help: '그림이 곧 판정인 날아가는 스킬의 속도 배율', get: () => FB7_SPEED, set: v => { FB7_SPEED = v; }, min: 0.3, max: 3, step: 0.05, u: '×' });
+
+/* ============ 2026-11-25 사용자 피드백 묶음 8 — 작은 개선 모음 ============ */
+/* 마법사 V: 도적 V(1441b)처럼 그림이 화면 전체를 덮는다 (셀 폭 = 화면 폭 + 80, 가로세로 같은 비율, 화면 가운데·주인공 바닥선). 피해 범위(waves)는 그대로 — 뒤쪽 파동이 이미 맵 전체 */
+const _fb8ult9Draw = ult9Draw;
+ult9Draw = function (c, over) {
+  const u = G.ult; if (!u || u.phase !== 'act' || u.ch !== 'mage') return _fb8ult9Draw(c, over);
+  const C = ULT12.mage, im = ULT12_IMG; if (!C || !im || !im.complete || !im.naturalWidth) return;
+  if (over && u.fi !== C.over) return;
+  const p = G.player, cw = Math.floor(im.naturalWidth / 12), chh = im.naturalHeight, dw = W + 80, s = dw / cw, dh = Math.round(chh * s);
+  const gy = p.onGround ? p.y : groundBelow(p.x, p.y), dy = Math.round(gy - (chh - ULT12_GROUND) * s);
+  c.save(); c.imageSmoothingEnabled = false; c.globalCompositeOperation = 'lighter'; if (over) c.globalAlpha = 0.55;
+  c.translate(Math.round(G.cam.x + W / 2), 0); if (u.face < 0) c.scale(-1, 1);
+  c.drawImage(im, u.fi * cw, 0, cw, chh, -Math.round(dw / 2), dy, dw, dh);
+  c.restore();
+};
+tuneAdd({ k: 'disLegend', g: 'econ', sec: '강화', n: '레전드 분해 결정', help: '레전드 장비 1개를 분해할 때 품질석·잠재석 각각', get: () => DIS_STONES[3], set: v => { DIS_STONES[3] = Math.round(v); }, min: 1, max: 50, step: 1, u: '개' });
+tuneAdd({ k: 'lyGap', g: 'combat', sec: '가드·피격', n: '도적 X 두 번째 칸 간격', help: '그림자 걸음을 한 번 쓴 뒤 다음 칸을 쓰기까지 (키를 떼었다 다시 눌러야 나간다)', get: () => LY_CH.gap, set: v => { LY_CH.gap = v; }, min: 0.1, max: 2, step: 0.05, u: '초' });
+
+/* 설정 창 맨 위: 캐릭터 선택 · 게임 종료 (2026-11-25 user). 둘 다 먼저 저장하고 멀티에서 나간다. 브라우저는 스크립트가 연 창이 아니면 닫지 못하므로
+   종료는 '저장했다 · 창을 닫아도 된다' 화면을 띄운다 (앱으로 낼 때는 window.PXO_APP_EXIT 가 있으면 그걸 부른다). */
+const _fb8keysHtml = keysHtml;
+keysHtml = function () {
+  const h = _fb8keysHtml(), i = h.indexOf('</div>') + 6;   // 머리(ph) 바로 뒤
+  const sys = `<h4>게임</h4><div class="krow sysrow"><span>캐릭터 선택 · 다른 인물로 바꾼다<br><small style="color:#8a8a88">지금까지의 진행은 저장된다</small></span><span class="sysb"><button class="kbtn" data-sys="select">캐릭터 선택</button><button class="kbtn sysq" data-sys="quit">게임 종료</button></span></div>`;
+  return h.slice(0, i) + sys + h.slice(i);
+};
+function sysLeave(to) {
+  try { writeSave(); } catch (e) { }
+  try { if (typeof netLeave === 'function') netLeave(true); } catch (e) { }
+  closePanel(); G.ui.dialog = null;
+  if (to === 'quit') {
+    if (typeof window.PXO_APP_EXIT === 'function') return window.PXO_APP_EXIT();
+    showTitle();
+    let el = document.getElementById('byeBox');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'byeBox'; ($('#game') || document.body).appendChild(el);
+      el.addEventListener('click', e => { if (e.target.closest('[data-bye]')) el.classList.toggle('on', false); });
+    }
+    el.innerHTML = '<div class="bb"><b>저장했다</b><span>이제 이 창(탭)을 닫아도 된다.</span><button type="button" data-bye="1">다시 하기</button></div>';
+    el.classList.toggle('on', true);
+    try { window.close(); } catch (e) { }
+  } else showTitle();
+}
+(function sysUi() {
+  const st = document.createElement('style');
+  st.textContent = '.sysrow .sysb{display:flex;gap:6px}.sysrow .sysq{border-color:#c0503a!important;color:#ffd8c8!important}'
+    + '#byeBox{position:absolute;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(6,6,10,.92)}#byeBox.on{display:flex}'
+    + '#byeBox .bb{display:flex;flex-direction:column;align-items:center;gap:12px;color:#f2e6cf;font-size:max(13px,calc(var(--u)*18))}#byeBox .bb b{font-size:max(18px,calc(var(--u)*28));color:#ffe6a8}'
+    + '#byeBox button{padding:8px 22px;background:#3a2a40;border:1px solid #e0b860;color:#fff;cursor:pointer;font:inherit}';
+  document.head.appendChild(st);
+  const box = $('#pBox'); if (!box) return;
+  box.addEventListener('click', e => {
+    const b = e.target.closest('[data-sys]'); if (!b) return; e.stopPropagation();
+    if (b.dataset.sys === 'select') { if (window.confirm('저장하고 캐릭터 선택 화면으로 갈까?')) sysLeave('select'); }
+    else if (window.confirm('저장하고 게임을 끝낼까?')) sysLeave('quit');
+  }, true);
+})();
+
+/* 2026-11-25 (user): 보스 공격 범위(그림)가 사라졌는데 판정이 잠깐씩 남던 것.
+   hid9 장판(그림 = 4프레임 스트립)은 판정이 살아 있는 동안 같은 자리의 스트립이 보이는지 본다. 한 번 보였던 스트립이 끝나면 판정도 0.06초 안에 끝낸다.
+   (처음부터 스트립이 없는 판정 — 보스 몸통 휘두르기·떨어지는 기둥처럼 그림이 다른 것 — 은 건드리지 않는다.)
+   검수(11~30장 126개 스킬): 그림 없이 남던 시간 예) 24장 시체꽃 만개 4.5초, 11장 오일 채찍 1.9초, 17장 만검우 1.8초, 30장 성좌 붕괴 0.95초. */
+let HAZ9_GRACE = 0.06;   // let: 마스터 콘솔
+function haz9StripAt(h) {
+  const x0 = h.beam ? Math.min(h.x0, h.x1) : h.x, x1 = h.beam ? Math.max(h.x0, h.x1) : h.x + (h.w || 0);
+  return (G.vfx9 || []).some(v => v.t <= v.life + (v.fade || 0) * 0.5 && Math.abs(v.x - (x0 + x1) / 2) < (v.w / 2 + (x1 - x0) / 2));
+}
+const _fb8tickHaz = tickHaz;
+tickHaz = function (dt) {
+  for (const h of G.haz) {
+    if (!h.hid9 || h.ring || h.dead) continue;
+    const live = h.t >= h.warn && h.t < h.warn + h.act; if (!live) continue;
+    if (haz9StripAt(h)) { h.saw9 = true; h.seen9 = h.t; }
+    else if (h.saw9 && h.t - h.seen9 > HAZ9_GRACE) h.dead = true;
+  }
+  return _fb8tickHaz(dt);
+};
+tuneAdd({ k: 'haz9Grace', g: 'boss', sec: '모든 보스', n: '그림이 끝난 뒤 판정 유예', help: '보스 스킬 그림이 사라진 뒤 판정이 남아 있는 시간 (0 = 그림과 함께 끝)', get: () => HAZ9_GRACE, set: v => { HAZ9_GRACE = v; }, min: 0, max: 1, step: 0.02, u: '초' });
+
+/* 2026-11-25: 그림 없이 터지던 바닥 구역 — 판정이 시작되고 0.08초가 지나도 같은 자리에 그림이 없는 바닥 장판(hid9)에는 그 스킬의 바닥 그림을 그 자리에 터뜨린다.
+   (예: 30장 성좌 붕괴 — 구역 8곳이 터지는데 그림은 보스 발밑 한 장뿐이었다.) 방향 없는 바닥 그림(vo.flip === false) 스킬만,
+   보스 몸통 판정·하늘에서 떨어지는 기둥(y=0)·맵 전체(폭 600 넘게)는 그대로 (각각 보스 그림·떨어지는 탄·화면 효과가 그림이다). */
+function haz9FillStrip(h) {
+  const b = h.src; if (!b || !b.isBoss || !b.s9 || h.y <= 4 || (h.w || 0) > 600 || h.beam) return;
+  if (Math.abs(h.y + h.h - GROUND) > 8) return;
+  if (Math.abs(h.x + h.w / 2 - b.x) < b.w * 0.6) return;
+  const s = b.s9.s, vo = s && s.vo; if (!s || s.vfx == null || !vo || vo.flip !== false) return;
+  vfx9(b.id, s.vfx, h.x + h.w / 2, GROUND + 6, { w: Math.max(120, Math.round(h.w * 1.3)), anchor: 'bottom', flip: false, step: 0.07, noFit: true });
+}
+const _fb8tickHaz2 = tickHaz;
+tickHaz = function (dt) {
+  for (const h of G.haz) {
+    if (!h.hid9 || h.ring || h.dead || h.saw9 || h.fill9) continue;
+    if (h.t >= h.warn + 0.08 && h.t < h.warn + h.act) { h.fill9 = true; if (!haz9StripAt(h)) haz9FillStrip(h); }
+  }
+  return _fb8tickHaz2(dt);
+};
 </script>
 </body></html>
