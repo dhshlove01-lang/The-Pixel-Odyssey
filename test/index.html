@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1640';
+const GAME_VER = '261125-1720';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -5190,7 +5190,9 @@ function gatherAt(g) {
   const Q = QUESTS[g.id]; if (questOf(g.id).s === 1) toast(Q.item + ' (' + q.p + '/' + Q.need + ')', 'gold');
 }
 
-/* ---- defend: someone needs a while; the dead come; keep them off ---- */
+/* ---- defend: someone needs a while; the dead come; keep them off ----
+   2026-11-25 (user): 몹이 양쪽에서 동시에 DEFEND_MUL 배(5배)로 몰려온다. 한꺼번에 살아 있는 수는 DEFEND_CAP 까지. NPC 피해는 그대로(어렵게). */
+let DEFEND_MUL = 5, DEFEND_CAP = 45, DEFEND_DPS = 7;   // let: 마스터 콘솔
 function updateDefend(dt) {
   const D = G.defend;
   if (!D) {
@@ -5205,13 +5207,17 @@ function updateDefend(dt) {
   D.t -= dt; D.spawnT -= dt;
   if (D.spawnT <= 0 && D.t > 4) {
     D.spawnT = Math.max(1.6, 3.2 - D.n * 0.08); D.n++;
-    const kinds = G.slots.map(s => s.sp.type).filter(t => !MON[t].elite && MON[t].kind !== 'flyer' || Math.random() < 0.3), t = kinds[Math.floor(Math.random() * kinds.length)] || G.slots[0].sp.type;
-    const side = D.n % 2 ? 1 : -1, x = clamp(D.x + side * rnd(380, 470), 60, G.map.w - 60), m = makeMon(t, x, MON[t].kind === 'flyer' ? 300 : GROUND, null);
-    m.minion = true; m.st = 'chase'; m.lost = 0; m.dir = -side; D.mons.push(m); spark(x, GROUND - 30, 10, '200,160,255', 160);
+    const kinds = G.slots.map(s => s.sp.type).filter(t => !MON[t].elite && MON[t].kind !== 'flyer' || Math.random() < 0.3);
+    const alive = D.mons.filter(m => m.st !== 'die').length, n = Math.min(Math.max(1, Math.round(DEFEND_MUL)), Math.max(0, DEFEND_CAP - alive));
+    for (let i = 0; i < n; i++) {   // 양쪽 번갈아: 왼쪽·오른쪽에 거의 같은 수
+      const t = kinds[Math.floor(Math.random() * kinds.length)] || G.slots[0].sp.type;
+      const side = (D.n + i) % 2 ? 1 : -1, x = clamp(D.x + side * rnd(380, 520), 60, G.map.w - 60), m = makeMon(t, x, MON[t].kind === 'flyer' ? 300 : GROUND, null);
+      m.minion = true; m.st = 'chase'; m.lost = 0; m.dir = -side; D.mons.push(m); spark(x, GROUND - 30, 10, '200,160,255', 160);
+    }
   }
   for (const m of D.mons) if (m.st !== 'die' && m.st === 'patrol') { m.dir = sgn(D.x - m.x); }
   const near = D.mons.filter(m => m.st !== 'die' && Math.abs(m.x - D.x) < 70).length;
-  if (near) { D.hp -= near * 7 * dt; if (Math.random() < 0.1) spark(D.x, GROUND - 50, 3, '255,120,100', 100); }
+  if (near) { D.hp -= near * DEFEND_DPS * dt; if (Math.random() < 0.1) spark(D.x, GROUND - 50, 3, '255,120,100', 100); }
   if (D.hp <= 0) {
     toast('지키지 못했다 · 다시 다가가면 처음부터', 'bad'); sfx('hurt');
     for (const m of D.mons) if (m.st !== 'die') { m.st = 'die'; m.dead = 0; }
@@ -5978,7 +5984,6 @@ function supportAt(x, y) {
 /* ---- Map loading ---- */
 function getPortals() {
   const m = G.map, list = m.portals.slice();
-  if (m.boss && G.save.flags['boss_' + m.boss] && (!G.boss || G.boss.st === 'die' || G.boss.hp <= 0)) list.push({ id: 'p_camp', x: 640, to: CHAPTERS[m.ch].camp, toX: 1560, label: '야영지로 귀환', req: () => true });   // 2026-11-24 (user): 보스가 쓰러진 상태면 연출·상태와 상관없이 열려 있다
   return list;
 }
 function loadMap(id, atX, quiet) {
@@ -6998,6 +7003,8 @@ function bossAA(b, farHint) {
     else if (b.st === 'aa') { b.st = 'idle'; b.cd = Math.max(b.cd || 0, 0.2); }
   });
 }
+/* 2026-11-25 (user): 쁘띠는 보스를 잡을 때마다 PET_DROP 확률(아직 없는 보스만). PET_SURE 보스(1장)만 첫 처치 확정. 영혼 아이템은 없앴다. */
+let PET_DROP = 0.05; const PET_SURE = new Set(['b1']);
 function bossDie() {
   const b = G.boss;
   b.st = 'die'; b.t = 0; b.hp = 0; b.waves = []; b.tele = null; b.vx = 0; b.invuln = true; b.yOff = 0;
@@ -7030,12 +7037,9 @@ function bossDie() {
     addDrop('item', 0, b.x, b.y - b.h * 0.5); G.drops[G.drops.length - 1].it = makeItem(slot, dcls, gr, b.d.ch);
     if (INHERIT_CH.includes(b.d.ch)) { const n = b.repeat ? 2 : 6; G.save.mats.inherit += n; after(2.6, () => toast('계승석 ' + n + '개를 얻었다 · 대장장이에게서 +15 칸을 계승할 수 있다', 'gold')); }
     G.save.pets = G.save.pets || {};
-    if (!G.save.pets[b.id]) {   // [S3-5] 첫 처치 = 그 보스 쁘띠 확정 등록
+    if (!G.save.pets[b.id] && (PET_SURE.has(b.id) || Math.random() < PET_DROP)) {   // 1장 보스는 확정, 나머지는 잡을 때마다 PET_DROP
       G.save.pets[b.id] = 1; if (!G.save.pet) G.save.pet = b.id;
       after(2.8, () => toast('쁘띠 도감 · ' + (b.d.name || '보스') + '의 쁘띠를 얻었다 (I 창 → 쁘띠 도감)', 'gold'));
-    } else if (Math.random() < 0.10) {   // 재처치: 중복 영혼(10%)
-      G.save.nextUid++; const it = { uid: G.save.nextUid, type: 'soul', boss: b.id, name: b.d.name.split(' ').pop() + '의 영혼', grade: 3 };
-      addDrop('item', 0, b.x, b.y - b.h * 0.7); G.drops[G.drops.length - 1].it = it;
     }
   }
   if (RINGS[b.d.ch]) {   // [S2-6] 10·20·30장 반지: 확률 드랍, 이미 있으면 잠재석·계승석으로 보정
@@ -7054,7 +7058,7 @@ function bossDie() {
     after(1.2, () => { G.save.gold += g; gainXp(Math.round(r.xp * 0.2)); toast('재도전 보상 · 골드 ' + nf(g), 'gold'); updateHud(true); writeSave(); });
   }
   for (let i = 0; i < 50; i++) addPart({ x: b.x + rnd(-30, 30), y: b.y - rnd(10, b.h), vx: rnd(-90, 90), vy: rnd(-260, -40), g: 60, life: rnd(1, 2.2), r: rnd(2, 4), col: '255,210,140', glow: 1 });
-  after(2.2, () => { toast('한가운데에 귀환 포탈이 열렸다', 'gold'); sfx('quest'); });
+  after(2.2, () => { toast('오른쪽 위 보스맵 퇴장 · 재도전 버튼으로 나가거나 다시 싸운다', 'gold'); sfx('quest'); });
   updateQuestUi(); writeSave();
 }
 
@@ -10700,9 +10704,7 @@ function gimTick(dt) {
     else if (g.t === 'window' && g.broken) { g.broken -= dt; if (g.broken <= 0) { g.broken = 0; g.hp = 3; } }
     else if (g.t === 'portal') {
       g.cd = Math.max(0, (g.cd || 0) - dt);
-      if (g.cd <= 0 && !p.rope && p.dead <= 0 && Math.abs(p.x - g.x) < 30 && Math.abs(p.y - g.y) < 8) {
-        const o = G.gims.filter(q => q.t === 'portal')[g.to]; if (o) { p.x = o.x; p.y = o.y; p.vx = 0; p.vy = 0; o.cd = 1.2; g.cd = 1.2; sfx('portal'); spark(o.x, o.y - 40, 16, '200,120,255', 220); }
-      }
+      // 2026-11-25 (user): 밟기만 해서는 안 가고 ↑ 를 눌러야 간다 (묶음 5: arenaPadGo)
     }
   }
   for (const s of G.sun) s.t -= dt; G.sun = G.sun.filter(s => s.t > 0);
@@ -16261,12 +16263,23 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125g',   // 2026-11-25 스물두 번째 패치(GAME_VER '261125-1630'): 사용자 피드백 9가지
+  id: '261125h',   // 2026-11-25 스물세 번째 패치(GAME_VER '261125-1720'): 사용자 피드백 묶음 5
   title: '패치 노트',
-  sub: '가이드가 그림으로 바뀌고, 창을 내려도 게임이 멈추지 않는다',
+  sub: '보스방은 퇴장·재도전 버튼으로, 쁘띠는 이제 운이 필요하다',
   versions: [
     {
-      ver: '261125-1630', date: '2026-11-25', name: '가이드 그림 · 창 밖에서도 진행 · 맵 정리', cur: 1,
+      ver: '261125-1720', date: '2026-11-25', name: '보스맵 퇴장·재도전 · 쁘띠 확률 · 지키기 대군', cur: 1,
+      items: [
+        { t: '보스', h: '보스를 쓰러뜨려도 포탈이 생기지 않는다 · 재도전 버튼', p: '오른쪽 위 \'보스맵 퇴장\'으로 들어오기 직전 자리로 나가고, 그 옆 \'재도전\'으로 보스와 내 체력이 가득 찬 채 바로 다시 싸운다. 싸우는 중에 누르면 한 번 묻는다.', q: '다시 싸워 이기면 예전 재처치 보상(골드·경험치 일부, 장비, 계승석)을 받는다.' },
+        { t: '맵', h: '깬 보스의 마지막 맵 포탈 정리 · 야영지 포탈 자리', p: '이미 쓰러뜨린 보스는 그 장 마지막 맵 끝의 보스방 포탈이 사라진다. M 전체 지도의 순간이동이나 보스방의 재도전으로 다시 싸운다. 야영지는 보스 문이 빠진 자리 없이 포탈을 고르게 다시 놓았다.' },
+        { t: '보스', h: '보스 전조가 반투명해졌다', p: '바닥 경고·조준선·전조 그림이 예전의 절반 진하기로 그려져 캐릭터와 보스가 더 잘 보인다.' },
+        { t: '보스', h: '보스방 순간이동 발판은 ↑ 로', p: '9장 보스방의 순간이동 발판은 이제 밟기만 해서는 움직이지 않고, 위에서 ↑ 를 눌러야 건너간다.' },
+        { t: '퀘스트', h: '지키기 의뢰에 몬스터가 다섯 배로 몰려온다', p: '양쪽에서 동시에 몰려온다. 지키는 사람이 버티는 힘은 그대로라서 훨씬 어려워졌다.' },
+        { t: '보상', h: '쁘띠는 이제 5% · 영혼 아이템은 없어졌다', p: '1장 보스의 쁘띠만 처음 쓰러뜨릴 때 확정이고, 나머지 보스는 잡을 때마다 5% 확률로 쁘띠를 얻는다. 영혼 아이템은 더 이상 떨어지지 않는다.', q: '가방에 있던 영혼은 그 보스 쁘띠가 없으면 쁘띠로 등록되고, 이미 있으면 잠재석 2개로 바뀐다. 이미 얻은 쁘띠는 그대로다.' },
+      ],
+    },
+    {
+      ver: '261125-1630', date: '2026-11-25', name: '가이드 그림 · 창 밖에서도 진행 · 맵 정리',
       items: [
         { t: 'UI', h: '가이드가 실제 게임 그림과 함께 뜬다', p: '모든 가이드(이동·공격·전조·가드·줄·이동 기술·궁극기·지도·연고·보스전)에 실제 화면 그림을 넣었다. ↑ 로 말 걸고 줍기(물망초 같은 퀘스트 물건), 특성 찍기, 쁘띠, 깬 보스로 순간이동 가이드가 새로 생겼다. ? 버튼 가이드북에서 다시 볼 수 있다.' },
         { t: '시스템', h: '창을 내려도 게임이 그대로 진행된다', p: '다른 창으로 가거나 내려 두어도 버프·재사용 대기·몬스터·파티 접속이 멈추지 않는다. 게임 안에서 Alt 조합 키가 브라우저 메뉴로 넘어가지 않게 막았다.' },
@@ -25596,6 +25609,8 @@ function mcQuick(inGame) {
       <div class="mcr mcg">${btn('shrine', '⛩ 축복의 제단', '', no)}${btn('mer', '🛒 떠돌이 상인 (15분)', '', no)}${btn('anon', '👤 이름 없는 자', '', no)}</div>
       <div class="mcr"><select data-mobch>${Array.from({ length: CH_LAST }, (_, i) => `<option value="${i + 1}" ${mch === i + 1 ? 'selected' : ''}>${i + 1}장 몹</option>`).join('')}</select><select data-mob>${mobOpts}</select></div>
       <div class="mcr mcg">${btn('mob:1', '몹 1마리', '', no)}${btn('mob:5', '5마리', '', no)}${btn('mob:10', '10마리', '', no)}${btn('mobclear', '몹 전부 없애기', '', no)}</div></section>
+    <section class="mcsec"><h6>보스·퀘스트 시험 <small>2026-11-25 묶음 5</small></h6>
+      <div class="mcr mcg">${btn('defend', '🛡 지키기 시작 (이 자리 · 몹 ' + DEFEND_MUL + '배)', '', no)}${btn('petclear', '🐾 쁘띠 도감 비우기 (확률 시험)', '', no)}${btn('retry', '🔁 보스 재도전', '', no)}</div></section>
     <section class="mcsec"><h6>허수아비 <small>DPS·총 피해·시간 측정</small></h6>
       <div class="mcr"><span>방어력</span><select id="opsDumDef"><option value="0">0 (순수 피해)</option>${Array.from({ length: CH_LAST }, (_, i) => `<option value="${i + 1}">${i + 1}장 보스와 같게</option>`).join('')}</select></div>
       <div class="mcr mcg">${btn('ops:dummy', '🎯 허수아비 세우기', '', no)}${btn('ops:dummyx', '치우기', '', no)}${btn('ops:nospawn', G.devNoSpawn ? '몹 다시 나오게' : '몹 안 나오게 (훈련장)', G.devNoSpawn ? 'on' : '', no)}</div></section>
@@ -25835,6 +25850,9 @@ function masterAct(a) {
     if (+arg >= 0) { const T = BOX_TIERS[+arg]; b.tier = T; b.tid = +arg; b.need = rndi(T.hits[0], T.hits[1]); }
     return devMsg(b.tier.name + ' 소환 · ' + b.need + '타');
   }
+  if (cmd === 'defend') { if (m.safe || m.boss) return devMsg('사냥터에서 쓰자'); return devMsg(fb5DefendHere()); }
+  if (cmd === 'petclear') { const n = Object.keys(s.pets || {}).length; s.pets = {}; s.pet = null; G.pet = null; writeSave(); return devMsg('쁘띠 ' + n + '개를 지웠다 · 1장 보스는 확정, 나머지는 ' + Math.round(PET_DROP * 1000) / 10 + '%'); }
+  if (cmd === 'retry') { if (!m.boss) return devMsg('보스방에서 쓰자'); closePanel(); bossRetryGo(); return devMsg('보스 재도전'); }
   if (cmd === 'shrine') { if (m.safe || m.boss) return devMsg('사냥터에서 쓰자'); return devMsg(spawnShrine(m) ? '축복의 제단 소환' : '제단 놓을 자리가 없다'); }
   if (cmd === 'mer') { if (m.safe || m.boss) return devMsg('사냥터에서 쓰자'); G.devMerT = 15 * 60; G.devMerMap = G.mapId; merSetHour(merHour()); return devMsg('떠돌이 상인이 이 맵에 15분간 선다'); }
   if (cmd === 'anon') { if (G.boss) return devMsg('보스와 싸우는 중이다'); if (m.safe || m.boss || m.gate || !m.ch) return devMsg('사냥터에서 쓰자'); spawnAnon(); return devMsg('이름 없는 자 소환'); }
@@ -26465,5 +26483,138 @@ setInterval(() => {
   if (G.map && G.map.safe && Object.keys(s.flags).some(k => /^boss_b\d+$/.test(k)) && !tutSeen('travel')) { tutPlay(['travel']); return; }
   if (s.level >= 2 && !tutSeen('trait')) { tutPlay(['trait']); return; }   // 1장 처음 묶음을 건너뛴 캐릭터
 }, 1500);
+
+/* ============ 2026-11-25 사용자 피드백 묶음 5 — 보스맵 퇴장·재도전 · 깬 보스 포탈 · 야영지 포탈 자리 · 전조 투명도 · 지키기 5배 · 쁘띠 5% ============
+   1) 보스를 깨도 귀환 포탈이 생기지 않는다(getPortals 의 p_camp 삭제). 나가기는 '보스맵 퇴장', 바로 다시 싸우기는 그 옆 '재도전'.
+      보스방에는 포탈이 하나도 없다(21~30장 보스방에 남아 있던 걸어 나가는 p_back 도 퇴장 버튼으로).
+   2) 깬 보스: 그 장 마지막 맵(어귀·회랑·문턱의 끝)의 보스방 포탈과 '↑ 성탑 9층' 같은 글자가 사라진다 → M 지도 순간이동·재도전으로만.
+      아직 안 깬 보스는 예전처럼 그 포탈로 처음 들어간다.
+   3) 야영지 오른쪽 포탈을 보스 문이 빠진 자리 없이 고르게 다시 놓는다(1~20장 1300/1460/1620, 21~29장 1320/1580, 30장 1500).
+      그 포탈로 들어오는 맵의 도착 좌표도 같이 옮긴다.
+   4) 보스 전조(바닥 경고·조준선·전조 그림, drawHaz/drawAims/drawTelegraphs)를 TG_ALPHA(50%) 진하기로. 가산(빛) 효과는 그대로.
+   5) 보스방 안의 순간이동 발판(9장)은 밟기만 해서는 안 가고 ↑ 를 눌러야 간다.
+   6) 지키기 퀘스트 몹 5배·양쪽 동시(updateDefend 안), 쁘띠 5%·영혼 제거(bossDie 안). 이미 가진 영혼은 쁘띠 등록(없으면)·잠재석 2(있으면)로 바꾼다.
+   마스터 콘솔: 확률·드롭 '쁘띠' · 보스 '보스 전조 진하기' · 전투 '지키기 퀘스트' 3개, 빠른 도구 '보스·퀘스트 시험' 버튼 3개. */
+for (const id in MAPS) { const m = MAPS[id]; if (!m.boss) continue;
+  const back = (m.portals || []).find(pt => pt.id === 'p_back');
+  if (back && !m.exitTo) { let to; try { to = back.to; } catch (e) { } if (to) m.exitTo = { to, toX: back.toX }; }
+  m.portals = []; }
+const _fb5getPortals = getPortals;
+getPortals = function () {
+  const list = _fb5getPortals(), S = G.save; if (!S) return list;
+  return list.filter(pt => { let T; try { T = MAPS[pt.to]; } catch (e) { return true; } return !(T && T.boss && S.flags['boss_' + T.boss]); });
+};
+(function campPortalLayout() {
+  const XS = { 1: [1500], 2: [1320, 1580], 3: [1300, 1460, 1620] };
+  for (const id in MAPS) { const m = MAPS[id]; if (!m.safe || !m.portals) continue;
+    const right = m.portals.filter(pt => pt.x > m.w / 2).sort((a, b) => a.x - b.x), xs = XS[right.length]; if (!xs) continue;
+    right.forEach((pt, i) => {
+      const old = pt.x, nx = xs[i]; if (old === nx) return; pt.x = nx;
+      let to; try { to = pt.to; } catch (e) { return; } const T = MAPS[to]; if (!T) return;
+      for (const q of T.portals || []) { let qt; try { qt = q.to; } catch (e) { continue; } if (qt === id && typeof q.toX === 'number') q.toX += nx - old; }
+    });
+  }
+})();
+
+/* ---- 재도전 버튼: 보스맵 퇴장 오른쪽. 싸우는 중이면 한 번 묻고, 보스가 쓰러졌으면 바로 ---- */
+(function bossRetryUi() {
+  const st = document.createElement('style');
+  st.textContent = '#bossBtns{position:absolute;right:calc(var(--u)*14);top:calc(var(--u)*96);z-index:5;display:flex;gap:calc(var(--u)*6)}'
+    + '#bossBtns #bExit{position:static}'
+    + '#bRetry{display:none;padding:calc(var(--u)*5) calc(var(--u)*10);background:rgba(14,26,16,.85);border:1px solid #5ab070;color:#d8ffe0;font-size:max(10px,calc(var(--u)*12));font-weight:700;cursor:pointer}'
+    + '#bRetry.on{display:block}#bRetry:hover{background:rgba(24,60,30,.95)}';
+  document.head.appendChild(st);
+  const ex = $('#bExit'); if (!ex) return;
+  const box = document.createElement('div'); box.id = 'bossBtns'; ex.parentNode.insertBefore(box, ex); box.appendChild(ex);
+  const rt = document.createElement('button'); rt.id = 'bRetry'; rt.type = 'button'; rt.textContent = '재도전'; box.appendChild(rt);
+  rt.addEventListener('click', e => { e.stopPropagation(); bossRetryAsk(); });
+})();
+const FB5 = { ask: null };
+const fb5AskText = (q, small, yes, no) => {
+  const ea = $('#exitAsk .ea'); if (!ea) return;
+  ea.firstChild.nodeValue = q; ea.querySelector('small').textContent = small; $('#exitYes').textContent = yes; $('#exitNo').textContent = no;
+};
+const fb5Fighting = () => { const b = G.boss; return !!(b && b.st !== 'die' && b.hp > 0); };
+function bossRetryAsk() {
+  if (!G.map || !G.map.boss || G.scene !== 'play' || G.ui.travel) return;
+  const p = G.player; if (G.death || (p && p.dead > 0)) return;
+  if (!fb5Fighting()) return bossRetryGo();
+  FB5.ask = 'retry'; fb5AskText('처음부터 다시 싸울까?', '보스와 내 체력이 가득 찬 채로 다시 시작한다', '재도전', '계속 싸우기');
+  $('#exitAsk').classList.add('on');
+}
+function bossRetryGo() {
+  const id = G.mapId; if (!MAPS[id] || !MAPS[id].boss) return;
+  const p = G.player; if (p) p.hp = p.mhp;
+  travel(id, 120);
+}
+const _fb5bossExitAsk = bossExitAsk;
+bossExitAsk = function () { FB5.ask = null; fb5AskText('보스맵에서 나갈까?', fb5Fighting() ? '싸우던 보스는 다음에 처음부터 다시 시작한다' : '들어오기 직전 자리로 돌아간다', '나가기', '머무르기'); return _fb5bossExitAsk(); };
+const _fb5bossExitGo = bossExitGo;
+bossExitGo = function (yes) {
+  if (FB5.ask !== 'retry') return _fb5bossExitGo(yes);
+  FB5.ask = null; $('#exitAsk').classList.remove('on'); $('#game').focus({ preventScroll: true });
+  if (yes) bossRetryGo();
+};
+setInterval(() => {   // 재도전 버튼: 퇴장 버튼이 보일 때, 단 보스가 쓰러지는 연출(약 6초)·등장 연출 동안은 숨긴다 (그동안 step 의 bossExitTick 이 안 돌 수 있어 따로)
+  const ex = $('#bExit'), rt = $('#bRetry'); if (!ex || !rt) return;
+  const on = ex.classList.contains('on') && G.scene === 'play' && !!(G.map && G.map.boss) && !G.death && !(G.cine && G.cine.kind === 'intro');
+  if (rt.classList.contains('on') !== on) rt.classList.toggle('on', on);
+  // 2026-11-25 (user): 미니맵·맵 이름을 가리지 않게 오른쪽 위 묶음(.hud-tr) 바로 아래에 붙인다
+  const box = $('#bossBtns'), tr = document.querySelector('#game .hud-tr'), gm = $('#game');
+  if (box && tr && gm && ex.classList.contains('on')) { const top = Math.round(tr.getBoundingClientRect().bottom - gm.getBoundingClientRect().top + 6) + 'px'; if (box.style.top !== top) box.style.top = top; }
+}, 150);
+
+/* ---- 보스 전조 진하기: 그리는 동안만 globalAlpha 에 TG_ALPHA 를 곱한다 (save/restore·가산 합성은 그대로 동작) ---- */
+let TG_ALPHA = 0.5;   // let: 마스터 콘솔
+const FB5_GA = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'globalAlpha');
+function tgFaint(fn) {
+  return function (c, ...a) {
+    const k = TG_ALPHA; if (!(k < 0.999) || !c || !FB5_GA || Object.prototype.hasOwnProperty.call(c, 'globalAlpha')) return fn.call(this, c, ...a);
+    const prev = FB5_GA.get.call(c); FB5_GA.set.call(c, prev * Math.max(0.01, k));
+    Object.defineProperty(c, 'globalAlpha', { configurable: true, get() { return FB5_GA.get.call(c) / Math.max(0.01, k); }, set(v) { FB5_GA.set.call(c, Math.min(1, Math.max(0, v)) * Math.max(0.01, k)); } });
+    try { return fn.call(this, c, ...a); } finally { delete c.globalAlpha; FB5_GA.set.call(c, prev); }
+  };
+}
+drawHaz = tgFaint(drawHaz); drawAims = tgFaint(drawAims); drawTelegraphs = tgFaint(drawTelegraphs);
+
+/* ---- 보스방 순간이동 발판(9장): ↑ 로만 ---- */
+function arenaPadNear() {
+  const p = G.player; if (!p || !G.gims || p.rope || p.dead > 0) return null;
+  for (const g of G.gims) if (g.t === 'portal' && !(g.cd > 0) && Math.abs(p.x - g.x) < 30 && Math.abs(p.y - g.y) < 8) return g;
+  return null;
+}
+function arenaPadGo(g) {
+  const p = G.player, o = G.gims.filter(q => q.t === 'portal')[g.to]; if (!o) return;
+  p.x = o.x; p.y = o.y; p.vx = 0; p.vy = 0; o.cd = 1.2; g.cd = 1.2; sfx('portal'); spark(o.x, o.y - 40, 16, '200,120,255', 220);
+}
+const _fb5updateInteract = updateInteract;
+updateInteract = function () {
+  _fb5updateInteract();
+  const g = arenaPadNear(); if (!g) return;
+  if (!G.interact) G.interact = { type: 'pad', obj: g, x: g.x, y: g.y - 96, text: '순간이동' };
+  if (G.interact.obj === g && IN.press.up && !(G.player.cast > 0)) arenaPadGo(g);
+};
+
+/* ---- 영혼 아이템 정리(가방): 쁘띠가 없으면 등록, 있으면 잠재석 2 ---- */
+setInterval(() => {
+  const s = G.save; if (!s || G.scene !== 'play' || !Array.isArray(s.items)) return;
+  let np = 0, ns = 0;
+  for (let i = s.items.length - 1; i >= 0; i--) { const it = s.items[i]; if (!it || it.type !== 'soul') continue;
+    s.items.splice(i, 1); s.pets = s.pets || {};
+    if (BOSSES[it.boss] && !s.pets[it.boss]) { s.pets[it.boss] = 1; if (!s.pet) s.pet = it.boss; np++; } else { s.mats.pot = (s.mats.pot || 0) + 2; ns++; } }
+  if (np || ns) { writeSave(); toast('영혼 아이템이 없어졌다 · ' + [np ? '쁘띠 ' + np + '마리 등록' : '', ns ? '잠재석 +' + ns * 2 : ''].filter(Boolean).join(' · '), 'gold'); }
+}, 2000);
+
+/* ---- 관리자 창: 지키기 시험 (첫 지키기 퀘스트 정보로 이 자리에서 시작. 진행 중인 퀘스트가 아니면 진행도는 오르지 않는다) ---- */
+function fb5DefendHere() {
+  const id = QUEST_ORDER.find(q => QUESTS[q].type === 'defend'); if (!id) return '지키기 퀘스트가 없다';
+  const Q = QUESTS[id]; G.defend = { id, t: Q.time, hp: 100, x: Math.round(G.player.x), spawnT: 0.6, mons: [], n: 0 };
+  return '지키기 시작 · ' + Q.time + '초 · 몹 ' + DEFEND_MUL + '배 · 이 자리를 지킨다';
+}
+tuneAdd({ k: 'petDrop', g: 'drop', sec: '쁘띠', n: '쁘띠 드롭 확률', help: '아직 없는 보스의 쁘띠 · 보스를 잡을 때마다 (1장 보스는 첫 처치 확정)', get: () => PET_DROP, set: v => { PET_DROP = v; }, min: 0, max: 100, step: 0.5, pct: true });
+tuneAdd({ k: 'tgAlpha', g: 'boss', sec: '모든 보스', n: '보스 전조 진하기', help: '바닥 경고·조준선·전조 그림의 불투명도 (100% = 예전 그대로)', get: () => TG_ALPHA, set: v => { TG_ALPHA = v; }, min: 10, max: 100, step: 5, pct: true });
+tuneAdd({ k: 'defMul', g: 'combat', sec: '지키기 퀘스트', n: '몰려오는 몹 배율', help: '한 번 몰려올 때 양쪽 합쳐 이만큼 (예전 1마리씩)', get: () => DEFEND_MUL, set: v => { DEFEND_MUL = v; }, min: 1, max: 10, step: 1, u: '×' });
+tuneAdd({ k: 'defCap', g: 'combat', sec: '지키기 퀘스트', n: '동시에 살아 있는 몹 최대', help: '이 수가 넘으면 더 나오지 않는다 (렉 방지)', get: () => DEFEND_CAP, set: v => { DEFEND_CAP = v; }, min: 5, max: 120, step: 1, u: '마리' });
+tuneAdd({ k: 'defDps', g: 'combat', sec: '지키기 퀘스트', n: '붙은 몹 1마리당 NPC 피해', help: 'NPC 체력 100 기준 · 초당', get: () => DEFEND_DPS, set: v => { DEFEND_DPS = v; }, min: 0, max: 30, step: 0.5, u: '/초' });
 </script>
 </body></html>
