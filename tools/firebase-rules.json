@@ -305,6 +305,69 @@
     "local_tuning_log": {
       ".read": "auth != null && root.child('local_acct/admin0215/uid').val() === auth.uid",
       ".write": "auth != null && root.child('local_acct/admin0215/uid').val() === auth.uid"
+    },
+    "notice": {
+      ".read": true,
+      ".write": "auth != null && root.child('acct/admin0215/uid').val() === auth.uid"
+    },
+    "event": {
+      ".read": true,
+      ".write": "auth != null && root.child('acct/admin0215/uid').val() === auth.uid",
+      ".validate": "!newData.exists() || (newData.child('start').isNumber() && newData.child('end').isNumber())"
+    },
+    "mail": {
+      "$id": {
+        ".read": "auth != null && (root.child('acct/' + $id + '/uid').val() === auth.uid || root.child('acct/admin0215/uid').val() === auth.uid)",
+        ".write": "auth != null && root.child('acct/admin0215/uid').val() === auth.uid",
+        "$mid": {
+          "done": {
+            ".write": "auth != null && root.child('acct/' + $id + '/uid').val() === auth.uid",
+            ".validate": "newData.isNumber()"
+          }
+        }
+      }
+    },
+    "dev_notice": {
+      ".read": true,
+      ".write": "auth != null && root.child('acct/admin0215/uid').val() === auth.uid"
+    },
+    "dev_event": {
+      ".read": true,
+      ".write": "auth != null && root.child('acct/admin0215/uid').val() === auth.uid",
+      ".validate": "!newData.exists() || (newData.child('start').isNumber() && newData.child('end').isNumber())"
+    },
+    "dev_mail": {
+      "$id": {
+        ".read": "auth != null && (root.child('acct/' + $id + '/uid').val() === auth.uid || root.child('acct/admin0215/uid').val() === auth.uid)",
+        ".write": "auth != null && root.child('acct/admin0215/uid').val() === auth.uid",
+        "$mid": {
+          "done": {
+            ".write": "auth != null && root.child('acct/' + $id + '/uid').val() === auth.uid",
+            ".validate": "newData.isNumber()"
+          }
+        }
+      }
+    },
+    "local_notice": {
+      ".read": true,
+      ".write": "auth != null && root.child('local_acct/admin0215/uid').val() === auth.uid"
+    },
+    "local_event": {
+      ".read": true,
+      ".write": "auth != null && root.child('local_acct/admin0215/uid').val() === auth.uid",
+      ".validate": "!newData.exists() || (newData.child('start').isNumber() && newData.child('end').isNumber())"
+    },
+    "local_mail": {
+      "$id": {
+        ".read": "auth != null && (root.child('local_acct/' + $id + '/uid').val() === auth.uid || root.child('local_acct/admin0215/uid').val() === auth.uid)",
+        ".write": "auth != null && root.child('local_acct/admin0215/uid').val() === auth.uid",
+        "$mid": {
+          "done": {
+            ".write": "auth != null && root.child('local_acct/' + $id + '/uid').val() === auth.uid",
+            ".validate": "newData.isNumber()"
+          }
+        }
+      }
     }
   }
 }

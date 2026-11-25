@@ -13,15 +13,24 @@
 ## 옮길 것
 
 ### ▶ 지금 진행 중 (다른 계정·다른 Claude 가 이어받을 곳) — 2026-11-25
-- 사용자 요청: test 서버 관리자 창을 **"마스터 콘솔"** 로 키운다. 1단계 끝(아래 261125-1300). **2단계 남음** — 사용자가 고른 것:
-  1. **허수아비 맵**: 데미지·DPS·시간 측정 (때리면 누적 피해·초당 피해·경과 시간 표시, 초기화 버튼)
-  2. **다른 유저 아이템 지급·회수** (버그 악용 회수, 보상 지급) + **그 계정에만 뜨는 개인 공지**(정식 서버에서 로그인할 때 팝업)
-     - 세이브는 `players/{uid}` 를 각자 토큰으로 쓰므로 관리자가 남의 세이브를 직접 고치지 말고 `mail/{uid}` 같은 우편함에 넣고 그 유저 게임이 읽어서 적용 · 공지하게. 규칙(`tools/firebase-admin.md`)에 우편함 경로 추가 필요.
-  3. **전체 공지 띄우기** (배포 없이), 4. **기간 이벤트 배율** (시작·끝 시간, 경험치·골드·드롭 ×N), 5. **접속자·파티 현황** (`online/` 읽기)
-- 사용자 지시(계속 지킬 것): ①앞으로 만드는 **모든 기능을 마스터 콘솔에도** 넣는다(`CLAUDE.md` 마스터 콘솔 절) ②UI 는 **가장 쓰기 쉽게** ③수정은 **test 먼저**, "정식 배포" 라고 할 때만 `tools/deploy.py promote` ④작업마다 커밋·푸시(main 직접 푸시 허락됨).
-- 관리자 = 아이디 **`admin0215`** (코드 `MC_ADMIN_IDS`, 규칙 `acct/admin0215/uid`). 비밀번호는 저장소에 절대 적지 않는다.
-- 사용자가 아직 할 일: `tools/firebase-rules.json` 을 Firebase 규칙에 통째로 붙여넣기 → 게시 → 게임에서 `admin0215` 회원가입 (`tools/firebase-admin.md`). 그 전에는 서버 저장·정식 적용이 거부된다(창에 이유가 뜬다).
-- 261125-1300 은 **정식 배포 완료**(마스터 콘솔의 `tuning` 읽기도 정식에 들어감, 관리자 창은 test 에만).
+- 마스터 콘솔 1·2단계 끝. 2단계(261125-1330)는 **test 에만** — 사용자가 "정식 배포" 하면 `tools/deploy.py promote`.
+- **다음 할 일**: 전투 수치(스킬별 피해·재사용 대기·지속 시간 등)를 마스터 콘솔에 — 사용자가 "더 넣을 것은 물어보고" 라고 했다. 물어본 답에 따라 `tuneAdd` 로 등록.
+  - 참고: 재사용 대기는 `updatePlayer` 안 18곳에서 `p.cd.x = p.cdMax.x = …` 식으로 박혀 있다 → `updatePlayer` 를 감싸 "이번 프레임에 cd 가 새로 차오른 칸"에 배율을 곱하는 방식이 가장 안전. 스킬 표 `SKILLS`(설명·cd), 특성 배율 `tDmg`/`tCd`.
+- 사용자 지시(계속 지킬 것): ①모든 새 기능을 마스터 콘솔에도(`CLAUDE.md`) ②UI 는 가장 쓰기 쉽게 ③수정은 test 먼저, "정식 배포" 때만 promote ④작업마다 커밋·푸시(main 직접 푸시 허락됨) ⑤비밀번호는 저장소에 적지 않는다.
+- 관리자 = `admin0215`. Firebase 규칙은 `tools/firebase-rules.json` 이 전체본 — **2단계 경로(notice·event·mail)를 더했으니 사용자가 다시 붙여넣어야 한다.**
+
+### 261125-1330  마스터 콘솔 2단계 — 🛠 운영 탭(전체 공지 · 기간 이벤트 · 유저 우편 지급/회수 + 개인 공지 · 접속자/파티) + 허수아비 DPS   (대상: `test/index.html` · `tools/firebase-rules.json`)
+- **새 조각 (원본 PC: `58_master.js` 뒤 `59_ops.js`)** — `test/index.html` 맨 끝 `/* ============ 마스터 콘솔 2단계` 블록.
+  - 받는 쪽(정식·test 둘 다): `OPS` · `opsPoll()`(시작 1.5초 뒤 + 기본 60초마다, 간격은 tuneAdd `opsPoll`) → `notice`·`event` 읽기(누구나), 로그인했으면 `mail/{myId()}` 읽기 → 안 받은 우편은 **먼저 `…/done` 에 시각을 PUT 해서 성공해야** `opsApplyMail` 로 지금 캐릭터에 적용(두 번 받기 방지, `s.mailDone` 에도 id 기록) → `opsPop` 팝업(제목·안내문·＋/－ 목록).
+  - 화면 맨 위 `#opsBar`: 공지 띠(✕로 닫기) + 이벤트 띠(배율·남은 시간).
+  - 이벤트 배율: `evK('xp'|'gold'|'drop')` — `gainXp` ×, `dropLoot` 동안 `GOLD_DROP_X` ×, `rollGrade(r / k)` 로 장비 드롭 확률 ×k. 시작~끝 시각은 `srvNow()` 기준.
+  - 우편 내용: `give`/`take` 에 골드·품질석·잠재석·계승석·무료 변경권·연고·주문서·특성 포인트, `give.gear=[{grade,n,ilvl}]`(makeItem, 레전드는 q3), `take.gear={grade:n}`(가방에서, 장착·잠금 제외). 회수는 가진 만큼만.
+  - 허수아비: `dummySpawn(def)`(G.gimT 에 `dummy:true` 표적, 방어력 0 또는 N장 보스와 같게), `hitEntity` 래핑으로 총 피해·타수·치명·최고 한 방·첫 타~마지막 타 시간 → `#dpsBox` 에 DPS. 그림은 `drawBoxes` 래핑(월드 좌표). 맵 옮기면 치움. `G.devNoSpawn` 이면 `spawnMon` 이 몹을 안 낸다(훈련장).
+  - 보내는 쪽(`IS_DEV_BUILD`): `window.mcOps`/`window.opsAct` — 마스터 콘솔 `MC_TABS` 에 🛠 운영 탭, `masterAct` 가 `ops:` 로 넘긴다. 보낼 서버 정식/test 토글(`dbUrlRaw` / `dbUrl`), 모든 전송은 확인 창. 우편은 받는 아이디를 `acct/` 로 먼저 확인, 보낸 우편 20개·받음/대기·취소.
+  - 빠른 도구 탭에 허수아비 칸(방어력 고르기 · 세우기 · 치우기 · 몹 안 나오게).
+- 규칙(`tools/firebase-rules.json`, 48경로): `notice`/`event`(읽기 누구나, 쓰기 admin0215), `mail/$id`(읽기 본인·관리자, 쓰기 관리자, `$mid/done` 만 본인) × 정식·dev_·local_.
+- 검증(로컬 헤드리스): 로드 `pageerror 0`(정식·test) · 이벤트 경험치 ×2 → gainXp(10)=20, 드롭 ×4 → 레전드 20만 번 중 72.5→약 300 · 공지·이벤트 띠 표시 · 우편 적용(골드 +5000, 품질석 +3, 특성 +2, 레전드 2개, 잠재석 -10→가진 5만) 팝업 · 허수아비 21타 4,895 피해 722 DPS 치명 10% · 몹 안 나오게. **실서버(공지·이벤트·우편 전송, 접속자 목록)는 이 환경에서 Firebase 에 못 붙어 미검증.**
+- `GAME_VER '261125-1330'`, `test/version.json` 동기. 정식은 1300 그대로.
 
 ### 261125-1300 정식 배포 + 관리자 admin0215 + 안 쓰는 파일 64개 삭제   (대상: `index.html` · `version.json` · `test/index.html` · `assets/` · `test/assets/` · 새 `tools/firebase-rules.json`)
 - **정식 배포**: `tools/deploy.py promote` — 정식 = test 1300 (특성 창 남은 포인트 + 마스터 콘솔 코드). 정식은 `IS_DEV_BUILD` 가 false 라 관리자 창 없음, `tuning` 만 읽는다.
