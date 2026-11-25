@@ -692,7 +692,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1430';
+const GAME_VER = '261125-1500';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -25424,7 +25424,7 @@ const TUNE = { defs: [], byK: {}, base: {}, cur: {}, saved: null, main: null, lo
          min, max, step (화면 단위), u: '%'·'×'·'분'·'초'·'' , pct: true 면 값 0~1 을 % 로 보인다, kscale: 화면 = 값 × kscale } */
 function tuneAdd(d) { if (TUNE.byK[d.k]) return; TUNE.defs.push(d); TUNE.byK[d.k] = d; TUNE.base[d.k] = d.get(); TUNE.cur[d.k] = TUNE.base[d.k]; }
 const tuneScale = d => d.pct ? 100 : (d.kscale || 1);
-const tuneShow = (d, v) => { const x = v * tuneScale(d); return (Math.abs(x) >= 100 ? Math.round(x * 10) / 10 : Math.round(x * 1000) / 1000) + (d.pct ? '%' : d.u || ''); };
+const tuneShow = (d, v) => { if (d.fmt) return d.fmt(v); const x = v * tuneScale(d); return (Math.abs(x) >= 100 ? Math.round(x * 10) / 10 : Math.round(x * 1000) / 1000) + (d.pct ? '%' : d.u || ''); };
 const tuneSame = (a, b) => Math.abs(a - b) < 1e-9;
 function tuneDiff(vals) { const o = {}; for (const d of TUNE.defs) { const v = vals[d.k]; if (v != null && !tuneSame(v, TUNE.base[d.k])) o[d.k] = v; } return o; }
 function tuneApply(over) {   // over = 기본값과 다른 것만 {k: v}
@@ -25510,6 +25510,7 @@ if (IS_DEV_BUILD) {
 DEV.tab = DEV.tab || 'quick'; DEV.boss = DEV.boss || 'b1'; DEV.q = ''; DEV.onlyChanged = false; DEV.mobCh = 0;
 const MC_TABS = [['quick', '⚡', '빠른 도구'], ['me', '🧑', '내 캐릭터'], ['boss', '👹', '보스'], ['drop', '🎲', '확률·드롭'], ['econ', '💰', '경제·강화'], ['ops', '🛠', '운영'], ['ship', '🚀', '정식 적용']];
 MC_TABS.splice(3, 0, ['combat', '⚔', '전투']);
+MC_TABS.splice(6, 0, ['sound', '🔊', '음향']);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const nChanged = () => Object.keys(tuneDiff(TUNE.cur)).length;
 function tuneRow(d) {
@@ -25632,9 +25633,27 @@ function mcGearHtml(s) {
     <div class="mcr"><span>한 번에</span><select id="mcEqAllQ">${QUALITY.map((Q, i) => `<option value="${i}" ${i === 3 ? 'selected' : ''}>${Q.n}</option>`).join('')}</select><select id="mcEqAllK"><option value="">잠재는 지금 옵션 그대로</option>${allK}</select>${btn('gearall', '모든 장비에 적용')}</div>
     <div class="mcr"><small>잠재를 고르면 그 옵션이 나올 수 있는 칸은 모든 줄을 그 옵션 최대치로, 안 나오는 칸은 지금 옵션의 최대치로 바꾼다.</small></div>${rows}</section>`;
 }
+function mcSound() {   /* 4단계 🔊 음향 탭 */
+  DEV.bch = DEV.bch || (G.map && G.map.ch) || 1;
+  const srcOpts = (n, cur) => `<option value="0" ${!cur ? 'selected' : ''}>원래 소리</option>` + MC_SFX.filter(x => x !== n).map(x => { const i = MC_SFX.indexOf(x) + 1; return `<option value="${i}" ${Math.round(cur) === i ? 'selected' : ''}>${esc(MC_SFX_INFO[x][0] + ' · ' + MC_SFX_INFO[x][1])}</option>`; }).join('');
+  const secs = []; for (const n of MC_SFX) { const c = MC_SFX_INFO[n][0]; let S = secs.find(x => x.c === c); if (!S) secs.push(S = { c, a: [] }); S.a.push(n); }
+  const row = n => { const kv = 'sfx:' + n + ':vol', ks = 'sfx:' + n + ':src', v = TUNE.cur[kv] ?? 1, src = TUNE.cur[ks] || 0, ch = !tuneSame(v, 1) || src;
+    return `<div class="mcrow${ch ? ' ch' : ''}" data-row="${kv}" data-txt="${esc((MC_SFX_INFO[n].join(' ') + ' ' + n).toLowerCase())}">
+      <div class="mcl"><b>${esc(MC_SFX_INFO[n][1])}</b><small>${n}${v <= 0 ? ' · 꺼짐' : ''}</small></div>
+      <div class="mcc"><input type="range" min="0" max="3" step="0.05" value="${v}" data-tk="${kv}"><input type="number" min="0" max="3" step="0.05" value="${v}" data-tk="${kv}"><i>×</i><button data-ma="sndplay:${n}" title="들어보기">▶</button><button class="mcx" data-ma="sndreset:${n}" title="원래대로">↺</button></div>
+      <div class="mcc"><select data-sndsrc="${n}">${srcOpts(n, src)}</select></div></div>`; };
+  const chOpts = Array.from({ length: CH_LAST }, (_, i) => { const c = i + 1, chg = ['field', 'boss'].some(x => TUNE.cur['bgm:' + c + ':' + x]); return `<option value="${c}" ${DEV.bch === c ? 'selected' : ''}>${chg ? '● ' : ''}${c}장 ${esc(CHAPTERS[c].title)}</option>`; }).join('');
+  const bgmOpts = cur => Array.from({ length: CH_LAST + MC_BGM_MP3.length + 1 }, (_, v) => `<option value="${v}" ${Math.round(cur || 0) === v ? 'selected' : ''}>${esc(mcBgmName(v))}</option>`).join('');
+  const bgmRow = sit => { const k = 'bgm:' + DEV.bch + ':' + sit, cur = TUNE.cur[k] || 0;
+    return `<div class="mcrow${cur ? ' ch' : ''}" data-row="${k}"><div class="mcl"><b>${sit === 'boss' ? '보스전' : '사냥터·야영지'}</b></div><div class="mcc"><select data-bgm="${k}">${bgmOpts(cur)}</select><button data-ma="bgmplay:${DEV.bch}:${sit}">▶ 들어보기</button></div></div>`; };
+  return tuneTools() + `<section class="mcsec"><h6>배경음 <small>장마다 · ● = 바꾼 장 · mp3 를 더 넣으려면 Claude 에게 파일을 주면 목록에 생긴다</small></h6>
+      <div class="mcr"><select data-bch>${chOpts}</select></div>${bgmRow('field')}${bgmRow('boss')}
+      <div class="mcr mcg">${btn('bgmback', '■ 지금 맵 음악으로 돌아가기')}</div></section>`
+    + secs.map(S => `<section class="mcsec"><h6>효과음 · ${esc(S.c)} <small>크기 0 = 끄기 · 아래 칸 = 다른 소리로 바꾸기</small></h6>${S.a.map(row).join('')}</section>`).join('');
+}
 devHtml = function () {
   const s = G.save, inGame = G.scene === 'play' && !!s, n = nChanged(), tab = DEV.tab;
-  const body = tab === 'combat' ? mcCombat() : tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip() : tab === 'ops' ? (window.mcOps ? window.mcOps(inGame) : '')
+  const body = tab === 'sound' ? mcSound() : tab === 'combat' ? mcCombat() : tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip() : tab === 'ops' ? (window.mcOps ? window.mcOps(inGame) : '')
     : tuneTools() + tuneSecs(TUNE.defs.filter(d => d.g === tab));
   return `<div class="mch"><b>마스터 콘솔</b><span>test 서버 · F9 닫기</span><button class="mcclose" data-ma="close">✕</button></div>
     <nav class="mctabs">${MC_TABS.map(([id, ic, t]) => `<button data-ma="tab:${id}" class="${tab === id ? 'on' : ''}"><i>${ic}</i>${t}</button>`).join('')}</nav>
@@ -25703,6 +25722,10 @@ function mcConfirm(text) { return window.confirm(text); }
 function masterAct(a) {
   const [cmd, arg] = a.split(':'), s = G.save, inGame = G.scene === 'play' && !!s, p = G.player, m = G.map;
   if (a.startsWith('ops:')) { if (window.opsAct) window.opsAct(a); return; }   // 2단계 운영 탭
+  if (cmd === 'sndplay') { try { if (!AU.ctx && typeof audioInit === 'function') audioInit(); if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume(); } catch (e) { } const was = AU.muted; AU.muted = false; sfx(arg, 1); AU.muted = was; return; }
+  if (cmd === 'sndreset') { tuneSetOne('sfx:' + arg + ':vol', 1); tuneSetOne('sfx:' + arg + ':src', 0); return devRender(); }
+  if (cmd === 'bgmplay') { const [c, sit] = [+arg, a.split(':')[2]]; try { if (!AU.ctx && typeof audioInit === 'function') audioInit(); } catch (e) { } const keep = MCS.want; setMusic(sit === 'boss' ? 'fight' : 'field', c); MCS.want = keep; return devMsg(c + '장 ' + (sit === 'boss' ? '보스전' : '사냥터') + ' 음악을 틀었다 · ■ 로 돌아간다'); }
+  if (cmd === 'bgmback') { mcMusicRefresh(); return devMsg('지금 맵 음악으로 돌아왔다'); }
   if (cmd === 'close') return devPanelToggle();
   if (cmd === 'tab') { DEV.tab = arg; DEV.msg = ''; DEV.q = ''; DEV.onlyChanged = false; devRender(); if (arg === 'ship') mcLoadShip(); if (arg === 'ops' && window.opsAct) window.opsAct('ops:open'); return; }
   if (cmd === 'reset') { const k = a.slice(6); return tuneSetOne(k, TUNE.base[k]); }
@@ -25759,6 +25782,9 @@ addEventListener('load', () => {
     if (t.hasAttribute('data-mboss')) { DEV.boss = t.value; devRender(); }
     if (t.hasAttribute('data-mobch')) { DEV.mobCh = +t.value; devRender(); }
     if (t.hasAttribute('data-mcch')) { DEV.cch = t.value; devRender(); }
+    if (t.dataset.sndsrc) { tuneSetOne('sfx:' + t.dataset.sndsrc + ':src', +t.value); devRender(); }
+    if (t.dataset.bgm) { tuneSetOne(t.dataset.bgm, +t.value); devRender(); }
+    if (t.hasAttribute('data-bch')) { DEV.bch = +t.value; devRender(); }
     if (t.dataset.eqq || t.dataset.eqk || t.dataset.eqv) {
       const S = G.save; if (!S) return; const [k, i] = (t.dataset.eqq || t.dataset.eqk || t.dataset.eqv).split(':'), it = S.equip[k]; if (!it) return;
       if (t.dataset.eqq) it.q = +t.value;
@@ -25769,12 +25795,12 @@ addEventListener('load', () => {
   });
 });
 document.head.insertAdjacentHTML('beforeend', `<style>
-html #devPanel{width:min(500px,calc(100% - 16px));padding:0;display:none;flex-direction:column;overflow:hidden;font:13px 'Noto Sans KR',sans-serif;background:rgba(12,14,20,.97);border:1px solid #7a6640;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+html #devPanel{width:min(540px,calc(100% - 16px));padding:0;display:none;flex-direction:column;overflow:hidden;font:13px 'Noto Sans KR',sans-serif;background:rgba(12,14,20,.97);border:1px solid #7a6640;box-shadow:0 8px 30px rgba(0,0,0,.6)}
 html #devPanel.on{display:flex}
 html #devPanel .mch{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #3a3426;background:#17140e}
 html #devPanel .mch b{color:#ffd27a;font-size:15px}html #devPanel .mch span{color:#9a8f78;font-size:11px;flex:1}
 html #devPanel .mcclose{background:none;border:0;color:#cbbd9e;font-size:16px;padding:0 4px}
-html #devPanel .mctabs{display:grid;grid-template-columns:repeat(8,1fr);border-bottom:1px solid #3a3426}
+html #devPanel .mctabs{display:grid;grid-template-columns:repeat(9,1fr);border-bottom:1px solid #3a3426}
 html #devPanel .mctabs button{background:none;border:0;border-bottom:2px solid transparent;color:#a99f88;padding:7px 2px 6px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
 html #devPanel .mctabs button i{font-style:normal;font-size:16px}html #devPanel .mctabs button.on{color:#ffd27a;border-bottom-color:#ffd27a;background:rgba(255,210,122,.06)}
 html #devPanel .mcbody{flex:1;overflow-y:auto;padding:6px 12px 10px}
@@ -26224,5 +26250,62 @@ const _mbgainXp = gainXp;
 gainXp = function (n) { const s = G.save, l0 = s ? s.level : 0, r = _mbgainXp(n); if (s && s.level > l0 && TRT.tpLv !== 1) s.tp = Math.max(0, s.tp + (TRT.tpLv - 1) * (s.level - l0)); return r; };
 const _mbtuneApply = tuneApply;
 tuneApply = function (over) { _mbtuneApply(over); try { if (G.save && G.player && typeof refreshStats === 'function') refreshStats(); } catch (e) { } };
+
+/* ============ 마스터 콘솔 4단계 (2026-11-25, user): 🔊 음향 — 효과음 69가지마다 크기·다른 소리로 바꾸기, 장마다 사냥터·보스전 배경음 고르기 ============
+   효과음: sfx(n) 를 가장 바깥에서 감싼다. 'sfx:<이름>:vol'(0 = 끔) · 'sfx:<이름>:src'(0 = 원래 소리, k = MC_SFX[k-1] 의 소리를 대신 낸다).
+           크기는 그 한 번의 소리만 지나가는 GainNode 를 AU.sfxBus 자리에 잠깐 끼워 넣는다(tone·noise·playSample 이 부르는 순간 AU.sfxBus 를 읽는다).
+   배경음: 'bgm:<장>:field|boss' — 0 = 원래, 1~30 = N장 음악, 31~35 = mp3 파일(MC_BGM_MP3). setMusic(key, ch) 과 bgmPick 을 감싼다.
+   새 효과음 이름이 생기면 MC_SFX_INFO 에 한 줄 더한다(관리자 창에 저절로 뜬다). */
+const MC_SFX_INFO = {
+  swing: ['전투', '칼 휘두르기'], stab: ['전투', '찌르기'], slash: ['전투', '베기'], throw: ['전투', '던지기'], whirl: ['전투', '회전 베기'], lunge: ['전투', '돌진 찌르기'],
+  hit: ['전투', '맞힘'], crit: ['전투', '치명타'], hurt: ['전투', '내가 맞음'], die: ['전투', '내가 쓰러짐'], guard: ['전투', '가드'], pguard: ['전투', '퍼펙트 가드'], parry: ['전투', '튕겨내기'],
+  shot: ['전투', '화살·탄 쏘기'], shot2: ['전투', '강한 탄 쏘기'], arrow: ['전투', '화살'], xbolt: ['전투', '석궁 볼트'], orb: ['전투', '마법 구슬'], fire: ['전투', '불'],
+  jump: ['움직임', '점프'], dash: ['움직임', '대시'], blink: ['움직임', '순간이동'], warp: ['움직임', '워프'], swoop: ['움직임', '급강하'], splash: ['움직임', '물 첨벙'], focus_ping: ['움직임', '집중(궁수)'],
+  skill: ['스킬', '스킬 쓰기'], ult: ['스킬', '궁극기'], charge: ['스킬', '모으기'], barrier: ['스킬', '방어막'], chant: ['스킬', '주문 외기'], roar_s: ['스킬', '전장의 함성'], void: ['스킬', '공허'], beam: ['스킬', '빔'],
+  slam: ['보스', '내려찍기'], boom: ['보스', '폭발'], erupt: ['보스', '분출'], rock: ['보스', '바위'], roar: ['보스', '포효'], growl: ['보스', '으르렁'], whoosh: ['보스', '휙'], bwind: ['보스', '바람(보스)'], wind: ['보스', '바람'],
+  bell: ['보스', '종소리'], bellhit: ['보스', '종 때림'], collapse: ['보스', '무너짐'], mswing: ['보스', '몹 휘두르기'], mdie: ['보스', '몹 쓰러짐'], boss_kill: ['보스', '보스 처치'],
+  coin: ['아이템', '골드 줍기'], stone: ['아이템', '재료 줍기'], frag: ['아이템', '좋은 장비 줍기'], heal: ['아이템', '연고 회복'], scroll: ['아이템', '귀환 주문서'], ret: ['아이템', '귀환 도착'],
+  enh_ok: ['아이템', '강화 성공'], enh_no: ['아이템', '강화 실패'], boxhit: ['아이템', '상자 때림'], boxbreak: ['아이템', '상자 반파'], boxopen: ['아이템', '상자 열림'], shrine: ['아이템', '축복의 제단'],
+  level: ['알림', '레벨 업'], quest: ['알림', '의뢰·클리어'], trophy: ['알림', '업적'], portal: ['알림', '포탈'], wander: ['알림', '떠돌이 상인 등장'], tick: ['알림', '똑딱(시간)'],
+  click: ['화면', '버튼 누름'], locked: ['화면', '잠김'], wm_turn: ['화면', '지도 넘김'],
+};
+const MC_SFX = Object.keys(MC_SFX_INFO);
+const MC_BGM_MP3 = ['tower', 'celestial', 'boss', 'eclipse', 'astraon'];
+const MC_BGM_MP3_NAME = { tower: '탑 사냥터 (mp3)', celestial: '천상 사냥터 (mp3)', boss: '3막 보스 (mp3)', eclipse: '개기월식 보스 (mp3)', astraon: '아스트라온 최종전 (mp3)' };
+const mcSfxName = n => (MC_SFX_INFO[n] ? MC_SFX_INFO[n][1] : n);
+const mcBgmName = v => { v = Math.round(v || 0); if (!v) return '원래 음악'; if (v <= CH_LAST) return v + '장 음악 · ' + ((CHAPTERS[v] && CHAPTERS[v].title) || ''); const k = MC_BGM_MP3[v - CH_LAST - 1]; return k ? MC_BGM_MP3_NAME[k] : '원래 음악'; };
+for (const n of MC_SFX) {
+  const [cat, nm] = MC_SFX_INFO[n];
+  tuneAdd({ k: 'sfx:' + n + ':vol', g: 'sound', snd: n, sec: '효과음 · ' + cat, n: nm + ' 크기', get: () => 1, set: () => { }, min: 0, max: 3, step: 0.05, u: '×' });
+  tuneAdd({ k: 'sfx:' + n + ':src', g: 'soundSrc', snd: n, sec: '효과음 · ' + cat, n: nm + ' 소리', get: () => 0, set: () => { }, min: 0, max: MC_SFX.length, step: 1, u: '', fmt: v => v ? mcSfxName(MC_SFX[Math.round(v) - 1]) + ' 소리로' : '원래 소리' });
+}
+for (let c = 1; c <= CH_LAST; c++) for (const sit of ['field', 'boss']) {
+  tuneAdd({ k: 'bgm:' + c + ':' + sit, g: 'bgm', ch: c, sit, sec: '배경음 · ' + c + '장', n: (sit === 'boss' ? '보스전' : '사냥터·야영지'), get: () => 0, set: () => { }, min: 0, max: CH_LAST + MC_BGM_MP3.length, step: 1, u: '', fmt: mcBgmName });
+}
+/* ---- 효과음 ---- */
+const _mcsfx = sfx;
+sfx = function (n, a) {
+  const src = Math.round(TUNE.cur['sfx:' + n + ':src'] || 0), nn = src > 0 && MC_SFX[src - 1] ? MC_SFX[src - 1] : n, v = TUNE.cur['sfx:' + n + ':vol'] ?? 1;
+  if (v <= 0) return;
+  if (v === 1 || !AU.ctx || !AU.sfxBus) return _mcsfx(nn, a);
+  const bus = AU.sfxBus, g = AU.ctx.createGain(); g.gain.value = v; g.connect(bus); AU.sfxBus = g;
+  try { return _mcsfx(nn, a); } finally { AU.sfxBus = bus; setTimeout(() => { try { g.disconnect(); } catch (e) { } }, 6000); }
+};
+/* ---- 배경음 ---- */
+const MCS = { want: { key: 'title', ch: 1 }, force: null };
+const mcSit = key => (key === 'fight' || key === 'boss' || key === 'boss1' || key === 'tower') ? 'boss' : 'field';
+const _mcsetMusic = setMusic;
+setMusic = function (key, ch) {
+  MCS.want = { key, ch }; MCS.force = null;
+  const v = key === 'title' ? 0 : Math.round(TUNE.cur['bgm:' + (ch || 1) + ':' + mcSit(key)] || 0);
+  if (v > 0 && v <= CH_LAST) return _mcsetMusic(key, v);
+  if (v > CH_LAST && MC_BGM_MP3[v - CH_LAST - 1]) { MCS.force = MC_BGM_MP3[v - CH_LAST - 1]; const r = _mcsetMusic(key, ch); if (typeof bgmApply === 'function' && AU.ctx) bgmApply(AU.want); return r; }
+  return _mcsetMusic(key, ch);
+};
+const _mcbgmPick = bgmPick;
+bgmPick = function (key, ch) { return MCS.force || _mcbgmPick(key, ch); };
+function mcMusicRefresh() { if (MCS.want) setMusic(MCS.want.key, MCS.want.ch); }
+const _mcSndTuneApply = tuneApply;
+tuneApply = function (over) { const before = JSON.stringify(Object.keys(TUNE.cur).filter(k => k.startsWith('bgm:')).map(k => TUNE.cur[k])); _mcSndTuneApply(over); const after = JSON.stringify(Object.keys(TUNE.cur).filter(k => k.startsWith('bgm:')).map(k => TUNE.cur[k])); if (before !== after) try { mcMusicRefresh(); } catch (e) { } };
 </script>
 </body></html>
