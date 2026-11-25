@@ -690,7 +690,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1400';
+const GAME_VER = '261125-1410';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -12261,7 +12261,7 @@ deathTick = function (C, dt) {
 };
 const dimK = () => { const C = G.death; return C && C.grid ? Math.min(0.62, C.t * 0.9) * (C.t > 4.6 ? Math.max(0, 1 - (C.t - 4.6)) : 1) : 0; };
 /* the clear window: assets/ui/boss_clear_screen.png when it exists next to the page, a drawn 16-bit window otherwise */
-const CLEAR_IMG = (() => { const im = new Image(); im.onerror = () => { im.bad = true; }; try { im.src = 'assets/ui/boss_clear_screen.png'; } catch (e) { im.bad = true; } return im; })();
+const CLEAR_IMG = { bad: true };   // 2026-11-25 (user): 그림 파일은 만들지 않고 아래의 코드로 그린 도트 창을 정식 디자인으로 쓴다 (없는 파일 요청·404 제거)
 function drawClearPop(c) {
   const P = G.clearPop; if (!P) return;
   P.t += 1 / 60; if (P.t > 4.2) { G.clearPop = null; return; }
@@ -25634,7 +25634,7 @@ function tuneSetOne(k, v) {
   if (row) { const dv = Math.round(v * tuneScale(d) * 1e6) / 1e6; row.querySelectorAll('input[data-tk]').forEach(i => { if (document.activeElement !== i) i.value = dv; }); row.classList.toggle('ch', !tuneSame(v, TUNE.base[k])); }
   const f = document.querySelector('#devPanel .mcfoot b'); if (f) f.textContent = nChanged();
 }
-const MC_ADMIN_IDS = ['admin0215'];   // 2026-11-25 (user): 관리자 아이디. 서버 규칙도 acct/admin0215 의 uid 로 관리자를 판단한다 (tools/firebase-rules.json)
+const MC_ADMIN_IDS = ['admin0215', 'admin2016', 'admin2017'];   // 2026-11-25 (user): 관리자 아이디. 서버 규칙도 acct/admin0215 의 uid 로 관리자를 판단한다 (tools/firebase-rules.json)
 async function mcCheckAdmin() {
   if (!AUTH.token || !AUTH.fuid) { TUNE.admin = false; TUNE.adminMsg = '관리자 아이디(' + MC_ADMIN_IDS.join(', ') + ')로 로그인하면 정식에 적용할 수 있다'; return; }
   if (!MC_ADMIN_IDS.includes(AUTH.id)) { TUNE.admin = false; TUNE.adminMsg = '지금 아이디(' + AUTH.id + ')는 관리자가 아니다 · ' + MC_ADMIN_IDS.join(', ') + ' 로 로그인'; return; }
