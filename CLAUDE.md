@@ -27,6 +27,7 @@
 ## 가이드 (2026-11-25 사용자 지시: 글만 있는 가이드 금지)
 - 가이드는 `TUT` 에 등록하고 **반드시 실제 게임 그림**을 붙인다: `tools/guide_shots.js` 의 `SHOTS` 에 장면을 더해 `node tools/guide_shots.js <id>` → `python3 tools/guide_webp.py` → `assets/ui/guide/<id>.webp`.
 - 글은 짧게, 키는 `keys` 로. 처음 그 상황이 올 때 한 번 뜨고(`tutPlay`), ? 가이드북에 남는다.
+- 띄우는 조건은 `GUIDE_WHEN` 에 한 줄(`[id, save => 조건]`). 새 가이드 글은 마스터 콘솔 📖 가이드 탭에 자동으로 뜬다(`TUT_ORDER` 에 넣으면 `gd:<id>:t/b` 로 편집·정식 적용 가능).
 
 ## 그 밖에
 - **이 저장소의 `test/index.html` 이 원본이다.** 원본 PC 의 조각 파일·`build.py` 는 2026-11-25 은퇴했다 — 쓰지도, 돌리지도 않는다(돌리면 옛 코드로 덮인다).

@@ -24,6 +24,23 @@ const SHOTS = {
   wm: { setup: () => { loadMap('camp'); toggleWorldMap(true); }, wait: 800, crop: 'full' },
   pot: { setup: () => { loadMap('ruins'); }, act: () => { const p = G.player; p.x = 700; p.hp = Math.round(p.mhp * 0.4); p.cd.pot = 0; window.__press = 'Digit1'; }, wait: 350, crop: { x: 400, y: 225, w: 560, h: 315 } },
   boss: { setup: () => { G.devGod = true; const id = Object.keys(MAPS).find(k => MAPS[k].boss === 'b2'); loadMap(id); }, waitFor: () => G.boss && G.boss.st !== 'wait' && ((G.haz && G.haz.length) || G.boss.tele), wait: 250, crop: 'full' },
+  /* 2026-11-25 묶음 10: 처음 하는 사람을 위한 가이드 16개 */
+  gate: { setup: () => { G.save.flags.boss_b1 = 1; loadMap('c2_g1'); }, act: () => { G.player.x = G.map.w - 110; G.player.face = 1; }, wait: 600, crop: 'player' },
+  bossexit: { settle: 3000, setup: () => { G.devGod = true; loadMap('tower', 300); }, act: () => { const b = G.boss; if (b) { b.hp = 0; bossDie(); } }, waitFor: () => !G.death && document.querySelector('#bRetry.on'), wait: 400, crop: { x: 400, y: 0, w: 560, h: 315 } },
+  berserk: { settle: 3500, setup: () => { G.devGod = true; G.save.flags.boss_b21 = 1; loadMap(Object.keys(MAPS).find(k => MAPS[k].boss === 'b21'), 300); }, act: () => { const b = G.boss; b.hp = Math.round(b.mhp * 0.51); hitEntity(b, Math.round(b.mhp * 0.05), false, {}); }, wait: 700, crop: 'full' },
+  power: { settle: 3500, setup: () => { G.devGod = true; G.save.flags.boss_b15 = 1; loadMap(Object.keys(MAPS).find(k => MAPS[k].boss === 'b15'), 300); }, waitFor: () => G.boss && G.boss.st !== 'wait' && document.querySelector('#bossbar.on'), wait: 300, crop: { x: 200, y: 0, w: 560, h: 315 } },
+  eclipse: { settle: 3500, setup: () => { G.devGod = true; G.save.flags.boss_b29 = 1; loadMap(Object.keys(MAPS).find(k => MAPS[k].boss === 'b29'), 300); }, act: () => { G.moon = { t: MOON_FULL - 0.2, warn: 0 }; G.moonDarkS = 0.9; }, waitFor: () => G.moon && G.moon.warn > 0, wait: 150, crop: 'full' },
+  blackhole: { settle: 3500, setup: () => { G.devGod = true; G.save.flags.boss_b25 = 1; loadMap(Object.keys(MAPS).find(k => MAPS[k].boss === 'b25'), 300); }, act: () => { const b = G.boss; b.cd = 99; b.s9 = null; start9(b, 6); }, waitFor: () => G.zeroG && G.zeroG.bh && G.zeroG.bh.cap, wait: 300, crop: 'full' },
+  defend: { setup: () => { loadMap('c3_a'); G.player.x = 900; }, act: () => { fb5DefendHere(); }, wait: 5500, crop: 'full' },
+  gear: { settle: 2000, setup: () => { loadMap('camp'); for (let g = 0; g < 4; g++) G.save.items.push(makeItem(SLOTS[g % SLOTS.length], G.save.char, g, 10)); openPanel('gear'); }, wait: 600, crop: 'full' },
+  smith: { settle: 2000, setup: () => { loadMap('camp'); G.save.mats.qual = 20; G.save.mats.pot = 20; G.save.mats.inherit = 5; openPanel('smith'); }, wait: 600, crop: 'full' },
+  dismantle: { settle: 2000, setup: () => { loadMap('camp'); for (let g = 0; g < 8; g++) G.save.items.push(makeItem('weapon', G.save.char, g % 4, 10)); G.ui.smithTab = 'dis'; openPanel('smith'); G.ui.smithTab = 'dis'; uiRefresh(); }, wait: 600, crop: 'full' },
+  traitrank: { settle: 2000, setup: () => { loadMap('camp'); const L = TRAITS[G.save.char] || []; if (L[1]) G.save.traits[L[1].id] = 5; G.save.tp = 20; refreshStats(); openPanel('traits'); }, wait: 600, crop: 'full' },
+  daily: { settle: 2000, setup: () => { loadMap('camp'); toggleQuestWin('daily'); }, wait: 1800, crop: 'full' },
+  box: { setup: () => { loadMap('ruins'); G.player.x = 700; }, act: () => { const b = spawnBox(G.map); if (b) { b.x = G.player.x + 140; } if (typeof spawnShrine === 'function') { spawnShrine(G.map); const q = G.shrines[G.shrines.length - 1]; if (q) q.x = G.player.x - 160; } }, wait: 900, crop: 'player' },
+  merchant: { setup: () => { G.devMerT = 900; G.devMerMap = 'ruins'; merSetHour(merHour()); loadMap('ruins'); }, act: () => { const n = typeof merNpc === 'function' ? merNpc() : null; if (n) { G.player.x = n.x - 70; G.player.face = 1; } }, wait: 600, crop: 'player' },
+  storage: { settle: 2000, setup: () => { loadMap('camp'); for (let g = 0; g < 4; g++) G.save.items.push(makeItem('weapon', G.save.char, g, 10)); openPanel('storage'); }, wait: 600, crop: 'full' },
+  party: { settle: 2000, setup: () => { loadMap('camp'); togglePanel('party'); }, wait: 1800, crop: 'full' },
 };
 
 (async () => {
@@ -42,6 +59,7 @@ const SHOTS = {
     const hold = await p.evaluate(() => [window.__hold, window.__hold2, window.__press]);
     if (hold[0]) await p.keyboard.down(hold[0]); if (hold[1]) await p.keyboard.down(hold[1]); if (hold[2]) await p.keyboard.press(hold[2]);
     await p.waitForTimeout(S.wait || 300);
+    await p.evaluate(() => document.querySelectorAll('.toast,#toast > *,#toasts > *').forEach(e => e.remove()));   // 알림('새 일일 의뢰' 등)이 그림을 가리지 않게
     const g = await p.evaluate(() => { const r = document.querySelector('#game canvas, canvas').getBoundingClientRect(); const P = G.player; return { x: r.left, y: r.top, w: r.width, h: r.height, px: P.x - G.cam.x, py: P.y }; });
     const k = g.w / 960; let c;
     if (S.crop === 'full') c = { x: 0, y: 0, w: 960, h: 540 };

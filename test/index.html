@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1930';
+const GAME_VER = '261125-2010';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16303,12 +16303,18 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125m',   // 2026-11-25 스물여덟 번째 패치(GAME_VER '261125-1930'): 묶음 9 25장 무중력·블랙홀
+  id: '261125n',   // 2026-11-25 스물아홉 번째 패치(GAME_VER '261125-2010'): 묶음 10 가이드 16개
   title: '패치 노트',
   sub: '29장 월식이 화면을 삼키고, 거꾸로 나가던 보스 스킬을 바로잡았다',
   versions: [
     {
-      ver: '261125-1930', date: '2026-11-25', name: '25장: 무중력과 블랙홀', cur: 1,
+      ver: '261125-2010', date: '2026-11-25', name: '처음 하는 사람을 위한 가이드 16개', cur: 1,
+      items: [
+        { t: 'UI', h: '가이드가 30개로 늘었다', p: '그 상황이 처음 올 때 실제 게임 그림과 함께 한 번 뜨고, ? 가이드북에 남는다. 보스 앞 방 · 보스맵 퇴장·재도전 · 광폭화 · 권장 전투력 · 29장 개기일식 · 무중력과 블랙홀 · 지키기 의뢰 · 장비 등급·품질·잠재 · 대장장이 · 팔기와 분해 · 특성 5·10·15단계 · 일일 의뢰 · 랜덤 상자·축복의 제단 · 떠돌이 상인 · 창고 · 파티·거래.', q: '장비·분해·특성·일일 의뢰·파티처럼 언제 봐도 되는 가이드는 앞 가이드와 30초 띄워서 나온다. 쁘띠 가이드는 5% 규칙에 맞게 고쳤다.' },
+      ],
+    },
+    {
+      ver: '261125-1930', date: '2026-11-25', name: '25장: 무중력과 블랙홀',
       items: [
         { t: '보스', h: '중력의 거인의 새 패턴 · 특이점 · 무중력', p: '거인이 중력을 지우면 10초 동안 거인과 내가 함께 떠오른다. 점프가 높아지고 천천히 떨어진다. 곧 경기장 가운데 위에 블랙홀이 생겨 나를 끌어당긴다.', q: '블랙홀에 붙잡히면 움직일 수 없고 공격만 된다. 공격 10번으로 부수면 풀려나고, 5초 안에 못 부수면 최대 체력의 60% 피해를 받고 튕겨 나온다(가드로 못 막는다).' },
       ],
@@ -25555,11 +25561,11 @@ const TUNE = { defs: [], byK: {}, base: {}, cur: {}, saved: null, main: null, lo
          min, max, step (화면 단위), u: '%'·'×'·'분'·'초'·'' , pct: true 면 값 0~1 을 % 로 보인다, kscale: 화면 = 값 × kscale } */
 function tuneAdd(d) { if (TUNE.byK[d.k]) return; TUNE.defs.push(d); TUNE.byK[d.k] = d; TUNE.base[d.k] = d.get(); TUNE.cur[d.k] = TUNE.base[d.k]; }
 const tuneScale = d => d.pct ? 100 : (d.kscale || 1);
-const tuneShow = (d, v) => { if (d.fmt) return d.fmt(v); const x = v * tuneScale(d); return (Math.abs(x) >= 100 ? Math.round(x * 10) / 10 : Math.round(x * 1000) / 1000) + (d.pct ? '%' : d.u || ''); };
-const tuneSame = (a, b) => Math.abs(a - b) < 1e-9;
+const tuneShow = (d, v) => { if (d.str) { const t = String(v == null ? '' : v); return '「' + (t.length > 28 ? t.slice(0, 28) + '…' : t) + '」'; } if (d.fmt) return d.fmt(v); const x = v * tuneScale(d); return (Math.abs(x) >= 100 ? Math.round(x * 10) / 10 : Math.round(x * 1000) / 1000) + (d.pct ? '%' : d.u || ''); };
+const tuneSame = (a, b) => (typeof a === 'string' || typeof b === 'string') ? String(a) === String(b) : Math.abs(a - b) < 1e-9;   // 2026-11-25: 가이드 글(문자열)도
 function tuneDiff(vals) { const o = {}; for (const d of TUNE.defs) { const v = vals[d.k]; if (v != null && !tuneSame(v, TUNE.base[d.k])) o[d.k] = v; } return o; }
 function tuneApply(over) {   // over = 기본값과 다른 것만 {k: v}
-  for (const d of TUNE.defs) { const v = over && over[d.k] != null && isFinite(over[d.k]) ? +over[d.k] : TUNE.base[d.k]; TUNE.cur[d.k] = v; try { d.set(v); } catch (e) { console.warn('[tune]', d.k, e); } }
+  for (const d of TUNE.defs) { const raw = over && over[d.k]; const v = raw != null && (d.str ? typeof raw === 'string' : isFinite(raw)) ? (d.str ? raw : +raw) : TUNE.base[d.k]; TUNE.cur[d.k] = v; try { d.set(v); } catch (e) { console.warn('[tune]', d.k, e); } }
   if (G.boss && G.boss.id !== 'anon' && typeof applyBossBalance === 'function') applyBossBalance(G.boss);
 }
 const tuneBoss = id => ({ hp: TUNE.cur['b:' + id + ':hp'] ?? 1, atk: TUNE.cur['b:' + id + ':atk'] ?? 1, spd: TUNE.cur['b:' + id + ':spd'] ?? 1 });
@@ -25659,6 +25665,7 @@ const MC_TABS = [['quick', '⚡', '빠른 도구'], ['me', '🧑', '내 캐릭�
 MC_TABS.splice(3, 0, ['combat', '⚔', '전투']);
 MC_TABS.splice(6, 0, ['sound', '🔊', '음향']);
 MC_TABS.push(['log', '📜', '내역']);
+MC_TABS.splice(MC_TABS.length - 2, 0, ['guide', '📖', '가이드']);   // 2026-11-25 (user): 가이드 30개 글 고치기
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const nChanged = () => Object.keys(tuneDiff(TUNE.cur)).length;
 function tuneRow(d) {
@@ -25824,7 +25831,7 @@ async function mcLoadLog() {
 }
 devHtml = function () {
   const s = G.save, inGame = G.scene === 'play' && !!s, n = nChanged(), tab = DEV.tab;
-  const body = tab === 'log' ? mcLogHtml() : tab === 'sound' ? mcSound() : tab === 'combat' ? mcCombat() : tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip() : tab === 'ops' ? (window.mcOps ? window.mcOps(inGame) : '')
+  const body = tab === 'log' ? mcLogHtml() : tab === 'sound' ? mcSound() : tab === 'combat' ? mcCombat() : tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip() : tab === 'ops' ? (window.mcOps ? window.mcOps(inGame) : '') : tab === 'guide' ? (window.mcGuideHtml ? window.mcGuideHtml() : '')
     : tuneTools() + tuneSecs(TUNE.defs.filter(d => d.g === tab));
   return `<div class="mch"><b>마스터 콘솔</b><span>test 서버 · F9 닫기</span><button class="mcclose" data-ma="close">✕</button></div>
     <nav class="mctabs">${MC_TABS.map(([id, ic, t]) => `<button data-ma="tab:${id}" class="${tab === id ? 'on' : ''}"><i>${ic}</i>${t}</button>`).join('')}</nav>
@@ -25871,13 +25878,14 @@ function tuneSaveSoon() {
   }, 700);
 }
 function tuneSetOne(k, v) {
-  const d = TUNE.byK[k]; if (!d) return; v = Math.max(d.min / tuneScale(d), Math.min(d.max / tuneScale(d), v));
+  const d = TUNE.byK[k]; if (!d) return; if (d.str) v = String(v == null ? '' : v); else v = Math.max(d.min / tuneScale(d), Math.min(d.max / tuneScale(d), v));
   const o = tuneDiff(TUNE.cur); if (tuneSame(v, TUNE.base[k])) delete o[k]; else o[k] = v;
   mcTouch(k); tuneApply(o); tuneSaveSoon();
   const row = document.querySelector(`#devPanel .mcrow[data-row="${CSS.escape(k)}"]`);
-  if (row) { const dv = Math.round(v * tuneScale(d) * 1e6) / 1e6; row.querySelectorAll('input[data-tk]').forEach(i => { if (document.activeElement !== i) i.value = dv; }); row.classList.toggle('ch', !tuneSame(v, TUNE.base[k])); }
+  if (row && !d.str) { const dv = Math.round(v * tuneScale(d) * 1e6) / 1e6; row.querySelectorAll('input[data-tk]').forEach(i => { if (document.activeElement !== i) i.value = dv; }); row.classList.toggle('ch', !tuneSame(v, TUNE.base[k])); }
   const f = document.querySelector('#devPanel .mcfoot b'); if (f) f.textContent = nChanged();
 }
+window.mcTuneSet = tuneSetOne;   // 가이드 탭(묶음 10)이 글을 저장할 때
 const MC_ADMIN_IDS = ['admin0215', 'admin2016', 'admin2017'];   // 2026-11-25 (user): 관리자 아이디. 서버 규칙도 acct/admin0215 의 uid 로 관리자를 판단한다 (tools/firebase-rules.json)
 async function mcCheckAdmin() {
   if (!AUTH.token || !AUTH.fuid) { TUNE.admin = false; TUNE.adminMsg = '관리자 아이디(' + MC_ADMIN_IDS.join(', ') + ')로 로그인하면 정식에 적용할 수 있다'; return; }
@@ -27076,5 +27084,101 @@ for (const [k, n, help, mn, mx, st, u, pct] of [
   ['dmg', '블랙홀 실패 피해', '최대 체력의 몇 % (가드 무시)', 5, 100, 5, '', true],
   ['cd', '무중력 다시 쓰기까지', '한 번 쓰면 이 시간 동안 다시 고르지 않는다', 5, 120, 1, '초'],
 ]) tuneAdd({ k: 'zg_' + k, g: 'bossOne', boss: 'b25', sec: '25장 중력의 거인 · 무중력·블랙홀', n, help, get: () => ZG[k], set: v => { ZG[k] = v; }, min: mn, max: mx, step: st, u, pct });
+
+/* ============ 2026-11-25 사용자 피드백 묶음 10 — 처음 하는 사람을 위한 가이드 16개 + 관리자 창에서 가이드 글 고치기 ============
+   새 가이드는 그 상황이 처음 올 때 한 번 뜨고(tutPlay — 떠 있는 동안 게임이 멈춘다) ? 가이드북에 남는다. 그림은 tools/guide_shots.js 로 찍은
+   assets/ui/guide/<id>.webp. 글(제목·본문)은 마스터 콘솔 📖 가이드 탭에서 고친다 — 수치와 같은 저장소(dev_tuning → 정식 적용 시 tuning)에
+   'gd:<id>:t' / 'gd:<id>:b' 문자열로 들어가고, 기록·되돌리기도 같이 된다. */
+Object.assign(TUT, {
+  gate:      { n: 15, t: '보스 앞 방',            keys: [],                 body: '보스방 앞의 어귀·회랑·문턱은 안의 적을 모두 쓰러뜨려야 다음 문이 열린다. 한 번 연 문은 계속 열려 있고, 사냥터에서 걸어 들어오면 다시 몬스터가 나온다.' },
+  bossexit:  { n: 16, t: '보스맵 퇴장 · 재도전',     keys: [],                 body: '보스를 쓰러뜨려도 포탈은 생기지 않는다. 오른쪽 위 「보스맵 퇴장」은 들어오기 직전 자리로, 「재도전」은 체력이 가득 찬 채 바로 다시 싸운다.' },
+  berserk:   { n: 17, t: '광폭화',               keys: [],                 body: '보스 체력이 절반이 되면 1초 동안 무적이 되고 광폭화한다. 더 빨라지고 새 기술을 쓴다. 멈춘 게 아니니 당황하지 말자.' },
+  power:     { n: 18, t: '권장 전투력',           keys: ['m_gear'],         body: '보스 이름 아래 권장 전투력보다 내 전투력이 낮으면(빨간 숫자) 어렵다. 장비 강화·특성·레벨로 전투력을 올린다.' },
+  eclipse:   { n: 19, t: '29장 개기일식',         keys: ['guard'],          body: '달이 검게 다 덮이면 피할 수 없는 일격이 온다. 화면 가운데 숫자가 끝나기 전에 가드로만 막는다. 달이 덮일수록 화면도 어두워진다.' },
+  blackhole: { n: 20, t: '무중력과 블랙홀',        keys: ['z', 'x', 'c'],    body: '중력이 사라지면 높이 뛰고 천천히 떨어진다. 블랙홀에 붙잡히면 움직일 수 없다. 공격(Z·X·C)을 연타해 10번 안에 부숴라. 5초를 넘기면 큰 피해.' },
+  defend:    { n: 21, t: '지키기 의뢰',           keys: [],                 body: '머리 위 체력바의 사람을 지킨다. 몬스터가 양쪽에서 한꺼번에 몰려오니 붙기 전에 쓰러뜨려라. 체력이 다 닳으면 다시 다가가 처음부터.' },
+  gear:      { n: 22, t: '장비 등급 · 품질 · 잠재', keys: ['m_gear'],         body: '일반 < 레어 < 유니크 < 레전드. 같은 아이템 레벨이면 등급이 높을수록 세다. 품질은 기본 능력치 배율, 잠재는 덧붙는 능력. I 창에서 비교하고 낀다.' },
+  smith:     { n: 23, t: '대장장이',              keys: ['up'],             body: '강화(+15까지)로 장비를 키운다. 실패해도 장인의 기운이 쌓여 언젠가 성공한다. 계승석으로 강화 단계를 새 장비에 옮기고, 품질석·잠재석으로 옵션을 다시 굴린다.' },
+  dismantle: { n: 24, t: '팔기와 분해',           keys: [],                 body: '안 쓰는 장비는 행상에게 팔아 골드로, 대장장이에게 분해해 품질석·잠재석으로 바꾼다. 결정은 품질·잠재를 다시 굴리는 데 쓴다. 레전드는 결정을 많이 준다.' },
+  traitrank: { n: 25, t: '특성 5·10·15단계',      keys: ['m_traits'],       body: '특성은 5단계(증폭)·10단계(각성)·15단계(초월)에서 기술이 크게 바뀐다. 한 기술에 몰아 찍으면 그 기술의 모양까지 달라진다.' },
+  daily:     { n: 26, t: '일일 의뢰',             keys: ['m_quest'],        body: '퀘스트 창(Q)의 일일 의뢰 탭에 매일 3개가 새로 생긴다. 사냥·보스 같은 간단한 일을 끝내면 보따리를 받는다.' },
+  box:       { n: 27, t: '랜덤 상자 · 축복의 제단', keys: ['z', 'up'],        body: '사냥터에 가끔 상자가 나타난다. 여러 번 때리면 열리고 등급에 따라 좋은 것이 나온다. 축복의 제단은 ↑ 로 쓰면 잠시 강해진다.' },
+  merchant:  { n: 28, t: '떠돌이 상인',           keys: ['up'],             body: '매시 정각부터 15분 동안 어느 사냥터 하나에 나타난다. 화면 아래 알림에 장소와 남은 시간이 뜬다. 귀한 물건을 판다.' },
+  storage:   { n: 29, t: '창고',                 keys: ['up'],             body: '야영지 상자 앞에서 ↑. 한 아이디의 세 인물이 같이 쓴다. 아이템은 눌러서 여러 개 골라 옮기고, 골드는 금액을 적어 맡긴다.' },
+  party:     { n: 30, t: '파티 · 거래',           keys: ['m_party'],        body: 'P 창에서 닉네임을 정하고 파티를 맺는다. 같은 맵에서 함께 싸우고, 다른 플레이어와 아이템·골드를 거래할 수 있다.' },
+});
+TUT.pet.body = '보스를 쓰러뜨리면 가끔(5%) 그 보스의 쁘띠를 얻는다(1장 보스는 처음에 확정). 쁘띠는 따라다니며 떨어진 물건을 주워 오고 10초마다 한 번 때린다. I 창 → 쁘띠 도감에서 바꾼다.';
+TUT_ORDER.push('gate', 'bossexit', 'berserk', 'power', 'eclipse', 'blackhole', 'defend', 'gear', 'smith', 'dismantle', 'traitrank', 'daily', 'box', 'merchant', 'storage', 'party');
+
+/* 처음 그 상황이 올 때 한 번 (0.5초마다 살핀다. 대화·컷신·다른 가이드 중이면 기다린다) */
+const GUIDE_WHEN = [
+  ['eclipse',   s => G.boss && G.boss.id === 'b29' && G.boss.st !== 'wait' && !G.cine],
+  ['blackhole', s => G.zeroG && G.zeroG.bh],
+  ['berserk',   s => G.boss && G.boss.berserk9 && G.boss.st !== 'die'],
+  ['bossexit',  s => G.map && G.map.boss && !G.death && (!G.boss || G.boss.st === 'die') && s.flags['boss_' + G.map.boss]],
+  ['power',     s => G.boss && G.boss.st !== 'die' && G.boss.d && G.boss.d.ch >= 2 && typeof recCp === 'function' && G.stats && G.stats.cp < recCp(G.boss.d.ch)],
+  ['gate',      s => G.map && G.map.gate && !gateCleared(G.mapId)],
+  ['defend',    s => !!G.defend],
+  ['box',       s => (G.boxes && G.boxes.some(b => Math.abs(b.x - G.player.x) < 520)) || (G.shrines && G.shrines.some(q => !q.used && Math.abs(q.x - G.player.x) < 520))],
+  ['merchant',  s => typeof merHere === 'function' && merHere()],
+  ['smith',     s => G.ui.panel === 'smith'],
+  ['storage',   s => G.ui.panel === 'storage' || (G.map && G.map.safe && Math.abs(G.player.x - CHEST_X) < 60)],
+  ['gear',      s => (s.items || []).some(it => it && it.type !== 'soul' && it.grade >= 1)],
+  ['dismantle', s => (s.items || []).filter(it => it && it.type !== 'soul').length >= 12],
+  ['traitrank', s => Object.values(s.traits || {}).some(v => v >= 4)],
+  ['daily',     s => s.level >= 5 && G.map && G.map.safe],
+  ['party',     s => s.level >= 10 && G.map && G.map.safe],
+];
+const GUIDE_CALM = new Set(['gear', 'dismantle', 'traitrank', 'daily', 'party', 'power']), GUIDE_LAST = { t: 0 };
+setInterval(() => {
+  const s = G.save; if (!s || G.scene !== 'play' || !G.player) return;
+  if (G.ui.dialog || G.ui.cine || G.ui.tut || G.ui.intro || G.ui.ending || G.ui.cut || G.ui.travel || G.cine) return;
+  for (const [id, when] of GUIDE_WHEN) {
+    if (tutSeen(id)) continue;
+    if (GUIDE_CALM.has(id) && Date.now() - GUIDE_LAST.t < 30000) continue;   // 언제 봐도 되는 것은 앞 가이드와 30초 띄워서 (기존 캐릭터에 줄줄이 뜨지 않게)
+    let ok = false; try { ok = !!when(s); } catch (e) { }
+    if (ok) { GUIDE_LAST.t = Date.now(); tutPlay([id]); return; }
+  }
+}, 500);
+
+/* 관리자 창: 가이드 글을 수치와 같은 저장소에 문자열로 */
+for (const id of TUT_ORDER) {
+  const T = TUT[id]; if (!T) continue;
+  tuneAdd({ k: 'gd:' + id + ':t', g: 'guide', str: true, sec: '가이드', n: T.n + '. 제목', get: () => T.t, set: v => { T.t = v; } });
+  tuneAdd({ k: 'gd:' + id + ':b', g: 'guide', str: true, sec: '가이드', n: T.n + '. 본문', get: () => T.body, set: v => { T.body = v; } });
+}
+if (IS_DEV_BUILD) {
+  const gesc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  window.mcGuideHtml = function () {
+    const rows = TUT_ORDER.filter(id => TUT[id]).map(id => {
+      const T = TUT[id], kt = 'gd:' + id + ':t', kb = 'gd:' + id + ':b';
+      const ch = !tuneSame(TUNE.cur[kt], TUNE.base[kt]) || !tuneSame(TUNE.cur[kb], TUNE.base[kb]);
+      return `<div class="gdrow${ch ? ' ch' : ''}" data-gid="${id}"><img src="${ASSET9}ui/guide/${id}.webp?v=${GAME_VER}" alt="" onerror="this.style.visibility='hidden'">
+        <div class="gdf"><div class="gdh"><b>${T.n}</b><input data-gk="${kt}" value="${gesc(TUNE.cur[kt])}" maxlength="30"><button data-gda="play:${id}" title="게임에서 이 카드 띄워 보기">▶ 보기</button><button data-gda="reset:${id}" title="처음 글로 되돌린다">처음 글</button></div>
+        <textarea data-gk="${kb}" rows="3" maxlength="300">${gesc(TUNE.cur[kb])}</textarea>
+        ${ch ? `<small>기본: ${gesc(TUNE.base[kt])} — ${gesc(TUNE.base[kb])}</small>` : ''}</div></div>`;
+    }).join('');
+    return `<section class="mcsec"><h6>가이드 ${TUT_ORDER.length}개 <small>제목·본문을 고치면 0.7초 뒤 test 에 저장된다 · 다른 관리자도 같은 글을 본다 · 🚀 정식 적용으로 정식 게임에 나간다</small></h6>${rows}</section>`;
+  };
+  const st = document.createElement('style');
+  st.textContent = 'html #devPanel .gdrow{display:flex;gap:8px;padding:6px;border-bottom:1px solid rgba(255,255,255,.08)}html #devPanel .gdrow.ch{background:rgba(240,192,96,.08)}'
+    + 'html #devPanel .gdrow img{width:120px;height:68px;object-fit:cover;flex:none;border:1px solid #444;image-rendering:pixelated}'
+    + 'html #devPanel .gdf{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}html #devPanel .gdh{display:flex;gap:6px;align-items:center}'
+    + 'html #devPanel .gdh b{min-width:22px;color:#e0b860}html #devPanel .gdh input{flex:1;min-width:0;background:#0c1018;border:1px solid #555;color:#fff;padding:3px 6px;font:inherit}'
+    + 'html #devPanel .gdf textarea{width:100%;box-sizing:border-box;background:#0c1018;border:1px solid #555;color:#eee;padding:4px 6px;font:inherit;resize:vertical}'
+    + 'html #devPanel .gdf small{color:#a99}html #devPanel .gdh button{padding:2px 8px}';
+  document.head.appendChild(st);
+  const gdSave = t => { const k = t.dataset.gk; if (!k || !TUNE.byK[k] || typeof window.mcTuneSet !== 'function') return; const v = t.value.replace(/\s+$/, ''); if (tuneSame(v, TUNE.cur[k])) return; window.mcTuneSet(k, v); const row = t.closest('.gdrow'); if (row) row.classList.add('ch'); };
+  document.addEventListener('change', e => { const t = e.target; if (t && t.dataset && t.dataset.gk && t.closest('#devPanel')) gdSave(t); }, true);
+  let gdT = null;
+  document.addEventListener('input', e => { const t = e.target; if (!(t && t.dataset && t.dataset.gk && t.closest('#devPanel'))) return; clearTimeout(gdT); gdT = setTimeout(() => gdSave(t), 900); }, true);
+  document.addEventListener('keydown', e => { const t = e.target; if (t && t.dataset && t.dataset.gk && t.closest('#devPanel')) e.stopPropagation(); }, true);   // 글을 칠 때 게임 키로 넘기지 않는다
+  document.addEventListener('click', e => {   // ▶ 보기 · ↺ (관리자 창의 masterAct 는 관리자 블록 안이라 따로 받는다)
+    const b = e.target.closest && e.target.closest('#devPanel [data-gda]'); if (!b) return; e.stopPropagation();
+    const [cmd, id] = b.dataset.gda.split(':'); if (!TUT[id]) return;
+    if (cmd === 'reset') { if (!window.confirm(TUT[id].n + '번 가이드 글을 처음으로 되돌릴까?')) return; window.mcTuneSet('gd:' + id + ':t', TUNE.base['gd:' + id + ':t']); window.mcTuneSet('gd:' + id + ':b', TUNE.base['gd:' + id + ':b']); devRender(); return; }
+    if (cmd === 'play') { if (G.scene !== 'play') return; devPanelToggle(); tutPlay([id]); }
+  }, true);
+}
 </script>
 </body></html>
