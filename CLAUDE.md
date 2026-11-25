@@ -15,6 +15,13 @@
 3. `python3 tools/deploy.py check` → 커밋 → 푸시. 사용자가 test 에서 확인한다.
 4. 사용자가 **"정식 배포"** 라고 할 때만 `python3 tools/deploy.py promote` (두 줄 빼고 정식으로 복사) → 커밋 → 푸시.
 
+## 마스터 콘솔 (관리자 창, test 서버 F9) — 새 기능은 반드시 여기에도 (2026-11-25 사용자 지시)
+- 코드: `test/index.html` 맨 끝 "마스터 콘솔" 블록. 수치는 `tuneAdd({ k, g, sec, n, help, get, set, min, max, step, u | pct })` 한 줄로 등록한다.
+  등록하면 관리자 창 탭(g: `econ` 경제·강화 · `drop` 확률·드롭 · `boss` 보스)에 자동으로 뜨고, test 저장(`dev_tuning`)·정식 적용(`tuning`)·기록(`tuning_log`)·되돌리기가 같이 된다.
+- **새 기능을 만들 때마다** 그 기능의 확률·배율·시간·가격 같은 숫자는 `tuneAdd` 로 등록하고(숫자를 `const` 로 박지 말고 `let` 이나 객체 값으로), 테스트에 필요한 소환·지급 버튼은 `mcQuick` / `mcMe` 에 넣는다.
+- UI 는 "가장 쓰기 쉽게": 한국어 이름 + 한 줄 설명(help) + 슬라이더·숫자칸 + 기본값 표시. 정식 서버에 영향 주는 버튼은 확인 창을 띄운다.
+- 관리자 등록·서버 규칙: `tools/firebase-admin.md`.
+
 ## 그 밖에
 - 결과물 html 을 직접 고치므로, 고친 내역은 `HANDOFF.md` "옮길 것" 맨 위에 적는다(원본 PC 의 조각 파일로 옮기기 위함).
 - 작업이 끝날 때마다 커밋하고 GitHub 에 푸시한다. 다른 Claude 가 이어서 작업한다.
