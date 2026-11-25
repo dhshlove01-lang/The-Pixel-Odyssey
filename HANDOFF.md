@@ -19,8 +19,16 @@
      - 세이브는 `players/{uid}` 를 각자 토큰으로 쓰므로 관리자가 남의 세이브를 직접 고치지 말고 `mail/{uid}` 같은 우편함에 넣고 그 유저 게임이 읽어서 적용 · 공지하게. 규칙(`tools/firebase-admin.md`)에 우편함 경로 추가 필요.
   3. **전체 공지 띄우기** (배포 없이), 4. **기간 이벤트 배율** (시작·끝 시간, 경험치·골드·드롭 ×N), 5. **접속자·파티 현황** (`online/` 읽기)
 - 사용자 지시(계속 지킬 것): ①앞으로 만드는 **모든 기능을 마스터 콘솔에도** 넣는다(`CLAUDE.md` 마스터 콘솔 절) ②UI 는 **가장 쓰기 쉽게** ③수정은 **test 먼저**, "정식 배포" 라고 할 때만 `tools/deploy.py promote` ④작업마다 커밋·푸시(main 직접 푸시 허락됨).
-- 사용자가 아직 할 일: `tools/firebase-admin.md` 대로 Firebase 에 관리자 등록 + 규칙 추가. 그 전에는 "정식에 적용" 이 서버에서 거부된다(창에 이유가 뜬다).
-- 마스터 콘솔 코드(정식 쪽 `tuning` 읽기 포함)는 아직 **test 에만** 있다. 정식 게임이 `tuning` 을 읽으려면 사용자가 "정식 배포" 를 한 번 해야 한다.
+- 관리자 = 아이디 **`admin0215`** (코드 `MC_ADMIN_IDS`, 규칙 `acct/admin0215/uid`). 비밀번호는 저장소에 절대 적지 않는다.
+- 사용자가 아직 할 일: `tools/firebase-rules.json` 을 Firebase 규칙에 통째로 붙여넣기 → 게시 → 게임에서 `admin0215` 회원가입 (`tools/firebase-admin.md`). 그 전에는 서버 저장·정식 적용이 거부된다(창에 이유가 뜬다).
+- 261125-1300 은 **정식 배포 완료**(마스터 콘솔의 `tuning` 읽기도 정식에 들어감, 관리자 창은 test 에만).
+
+### 261125-1300 정식 배포 + 관리자 admin0215 + 안 쓰는 파일 64개 삭제   (대상: `index.html` · `version.json` · `test/index.html` · `assets/` · `test/assets/` · 새 `tools/firebase-rules.json`)
+- **정식 배포**: `tools/deploy.py promote` — 정식 = test 1300 (특성 창 남은 포인트 + 마스터 콘솔 코드). 정식은 `IS_DEV_BUILD` 가 false 라 관리자 창 없음, `tuning` 만 읽는다.
+- **관리자 판정 바꿈** (마스터 콘솔 블록 `mcCheckAdmin`): `admins/{uid}` 대신 `MC_ADMIN_IDS = ['admin0215']` + 서버 `acct/admin0215` 의 uid 가 로그인 uid 와 같은지. 규칙도 같은 식(`tools/firebase-rules.json`: 사용자가 준 기존 34경로 그대로 + `tuning`·`dev_tuning`·`local_tuning`·`tuning_log`·`local_tuning_log`).
+- **삭제** (`tools/unused_assets.md` 의 32개 × 정식·test = 64개, 약 52MB): 옛 보스 시트 `assets/boss/b{1-6,8-10}_이름.png`·`b7_giant.png`·`21_Astral_Stalker.png`~`30_Astraon_Star_Devourer.png`, 옛 전조 `assets/vfx/telegraph_*.png` 5개, `vfx_archer_backstep/rapid_barrage.png`, `npc/wandering_merchant_sheet.png`, 메모 json 4개.
+  - 코드에서 예비 경로도 뺐다(원본 PC 조각에도 옮길 것): `ACT3_BOSS` 21~30 의 `file: 'NN_….png'` 칸 삭제 + `BOSS_SHEET_FILE[id] = 'boss/' + A.file48`, `S9.b7` 의 `sheet: 'boss/b7_giant.png'` 삭제.
+- 검증(정식·test 각각, 헤드리스 크로뮴): 1·7·10·17·21·25·30장 보스방 시트 로드 ok, 보스 체력 두 페이지 같음, 특성 창 넘침 0, 정식 dev=false·관리자 창 없음·정식 세이브 키, test dev=true·관리자 창 열림, `pageerror 0`. 404 는 예전부터 없던 `ui/boss_clear_screen.png` 하나뿐.
 
 ### 261125-1300  마스터 콘솔 1단계 — 수치 조절(TUNE) · 새 관리자 창 UI · test 저장 · 정식 적용 · 기록/되돌리기 · 테스트 도구   (대상: `test/index.html` · 새 `tools/firebase-admin.md` · `CLAUDE.md`)
 지시: 사용자 2026-11-25 "test 서버 전용 권한으로 보스 데미지·스킬 속도, 랜덤 오브젝트 소환, 모든 랜덤 확률까지 설정 → 저장 → 정식에 적용 버튼", "가장 쓰기 쉬운 UI", "앞으로 추가되는 기능도 계속 마스터 권한에".

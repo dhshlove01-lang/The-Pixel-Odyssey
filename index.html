@@ -690,7 +690,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1200';
+const GAME_VER = '261125-1300';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -710,7 +710,7 @@ const XP_OLD = (() => {   // the curve monsters and quests are paid by (chapter 
    re-levelled once from the XP they had earned (xpRebase, 55_growth.js). */
 const XP_BAND_K = 1.5;
 const XP_NEED = XP_OLD.map((v, L) => L <= 10 ? v : Math.round(v * Math.pow(XP_BAND_K, Math.floor((L - 1) / 10)) / 5) * 5);
-const CRIT_MULT = 1.7;
+let CRIT_MULT = 1.7;   // let: 마스터 콘솔(TUNE)이 바꾼다
 function seeded(seed) {
   return function () {
     seed |= 0; seed = seed + 0x6D2B79F5 | 0;
@@ -768,12 +768,12 @@ const ENH_RATE = [100, 95, 90, 85, 80, 70, 65, 55, 50, 45, 35, 32, 28, 24, 20]; 
 /* Enhancement costs gold only. Shards (잔해 조각) were taken out: the old shard cost is folded into the gold price,
    and every shard that used to drop now drops as gold worth what a shard was worth in that chapter (stoneGold). x2.4 keeps
    farming time where it was (shards were the slower currency: 0.72 of a balanced rate, so 2.4 / (1 + 0.72) = old 1 / 0.72). */
-const ENH_GOLD_X = 2.4;
+let ENH_GOLD_X = 2.4;
 const enhStone = (e, T) => Math.round((2 + e) * (1 + 2 * T));   // old shard cost: only used to price shards in gold
 const enhGold = (e, T) => Math.round((20 + 22 * e) * (1 + 2 * T) * ENH_GOLD_X);
 const inheritGold = T => enhGold(15, T) * 3;
 const slotLeq = (e, ilvl, T) => 1 + 0.6 * e + 1.2 * ilvl + 10 * T;
-const GAUGE_RATE = 0.465;                                        // failure adds rate*0.465 to the 장인의 기운 gauge; 100 = guaranteed
+let GAUGE_RATE = 0.465;                                        // failure adds rate*0.465 to the 장인의 기운 gauge; 100 = guaranteed
 const POTION_HEAL = 0.35, POTION_CD = 8, POTION_MAX = 20, SCROLL_MAX = 10, SCROLL_CAST = 1.6;
 const GUARD_WIN = 0.25, GUARD_CD = 3, GUARD_STUN = 1;   // G: press just before a hit lands
 const TOWN_REGEN = 0.02, CHEST_X = 900;                  // camp heal per second (share of max HP), storage chest position
@@ -822,10 +822,10 @@ const CHM = (() => {
   return out;
 })();
 const GOLD_INCOME_X = 1.72;   // gold income after shards turned into gold; prices of everything else follow
-const GOLD_DROP_X = 0.5;   // [S6-3] 2026-11-23 (user): 몹이 떨어뜨리는 골드 50% (상점 가격·의뢰 보상은 그대로)
+let GOLD_DROP_X = 0.5;   // [S6-3] 2026-11-23 (user): 몹이 떨어뜨리는 골드 50% (상점 가격·의뢰 보상은 그대로)
 const stoneGold = n => { const c = chapterCost(1); return c.g / ENH_GOLD_X / c.s * GOLD9(n); };   // what one old shard is worth in gold, chapter n (9-patch 5: the chapter-1 value grown smoothly)
-const potionPrice = n => 50;   // the same in every chapter; it heals a share of max HP
-const scrollPrice = n => Math.round(40 * CHM[n].gold * GOLD_INCOME_X / 5) * 5;
+let potionPrice = n => 50;   // the same in every chapter; it heals a share of max HP
+let scrollPrice = n => Math.round(40 * CHM[n].gold * GOLD_INCOME_X / 5) * 5;
 
 /* ---- Characters ---- */
 const CHARS = {
@@ -7546,7 +7546,7 @@ function bossProjHit(q) {
 }
 
 /* ---- the hidden boss: Anonymos steps out in the hunting grounds now and then; ninety seconds to put him down ---- */
-const ANON_CHANCE = 1 / 220, ANON_GAP = 15 * 60, ANON_TIME = 100;
+let ANON_CHANCE = 1 / 220, ANON_GAP = 15 * 60, ANON_TIME = 100;   // let: 마스터 콘솔
 /* P1 2026-11-24 (user): 이름 없는 자 골드 = 1장 1,000 ~ 30장 300,000 (완만한 지수 곡선). 후반을 올리려면 이 한 줄만 고친다. */
 const ANON_GOLD = n => Math.round((1000 * Math.pow(300, (n - 1) / 29)) / 10) * 10;
 function anonDef(n) {
@@ -16097,7 +16097,7 @@ resetBossArenaState = function () { _resetG(); G.rock9 = []; };
 
 /* ======== 7. 폭주 거인 ======== */
 reg9('b7', {
-  name: '폭주 거인', bz: '분노의 포효', atkK: 1.3, spdK: 1.3, sheet: 'boss/b7_giant.png', keepGims: ['ledge', 'deco'],
+  name: '폭주 거인', bz: '분노의 포효', atkK: 1.3, spdK: 1.3, keepGims: ['ledge', 'deco'],
   roar: [[3, 0], [3, 0], [2, 2], [0, 0]],
   files: ['boss_07/b21_s1_titan_smash.png', 'boss_07/b21_s2_bull_charge.png', 'boss_07/b21_s3_chain_whip.png', 'boss_07/b21_s4_seismic_leap.png', 'boss_07/b21_s5_volcanic_berserk.png', 'boss_07/b21_s6_boulder_toss.png'],
   skills: [
@@ -16248,10 +16248,16 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125e',   // 2026-11-25 스무 번째 패치(GAME_VER '261125-1200'): 8차(최종) 배치 — 3막 스킬 이펙트 60장 도트화 + 벡터 탄·안내 라벨 도트화
+  id: '261125f',   // 2026-11-25 스물한 번째 패치(GAME_VER '261125-1230'): 특성 창 남은 포인트를 위로
   title: '패치 노트',
-  sub: '3막 보스 스킬 이펙트 60종까지 도트로 바뀌고, 날아다니던 도형 탄이 도트 탄이 된다',
+  sub: '특성 창에서 남은 포인트가 스크롤 없이 바로 보인다',
   versions: [
+    {
+      ver: '261125-1230', date: '2026-11-25', name: '특성 창 정리', cur: 1,
+      items: [
+        { t: 'UI', h: '남은 특성 포인트가 창 맨 위에 보인다', p: '창 맨 아래에 있어 스크롤해야 보이던 「남은 포인트」와 「특성 초기화」 버튼을 합계 줄 오른쪽으로 올렸다. 카드 여백도 조금 줄여 PC와 휴대폰 가로 화면 모두에서 여섯 특성이 스크롤 없이 한 화면에 들어온다.' },
+      ],
+    },
     {
       ver: '261125-1200', date: '2026-11-25', name: '8차(최종) 배치 · 3막 스킬 이펙트 · 도트 탄', cur: 1,
       items: [
@@ -20784,16 +20790,16 @@ const ACT3_ART = { 21: 17, 22: 18, 23: 19, 24: 9, 25: 13, 26: 11, 27: 16, 28: 12
 /* 2026-11-23 (3막 통합 지시서 4-3): light and fog per floor (THEME_LIGHT keys only; the picture itself is the floor's own art) */
 const ACT3_THEME = { 21: 'titans', 22: 'asphodel', 23: 'styx', 24: 'gorgon', 25: 'titans', 26: 'labyrinth', 27: 'styx', 28: 'titans', 29: 'throne', 30: 'throne' };
 const ACT3_BOSS = {
-  21: { file: '21_Astral_Stalker.png', file48: 'b21_48f.png', h: 192, w: 100, col: '120,190,255', mo: { ms: 110, trail: '120,190,255' } },
-  22: { file: '22_Rusted_Archangel.png', file48: 'b22_48f.png', h: 228, w: 124, col: '255,96,60', mo: { ms: 130, float: 2 } },
-  23: { file: '23_Mirror_Empress.png', file48: 'b23_48f.png', h: 204, w: 100, col: '200,230,255', mo: { ms: 120, parts: 'spirit' } },
-  24: { file: '24_Plague_Raven_Lord.png', file48: 'b24_48f.png', h: 212, w: 112, col: '150,220,90', mo: { ms: 125 } },
-  25: { file: '25_Gravity_Colossus.png', file48: 'b25_48f.png', h: 262, w: 150, col: '170,120,255', mo: { ms: 150, float: 3 } },
-  26: { file: '26_Chrono_Archivist.png', file48: 'b26_48f.png', h: 214, w: 100, col: '255,210,120', mo: { ms: 120 } },
-  27: { file: '27_Void_Leviathan.png', file48: 'b27_48f.png', h: 262, w: 170, col: '150,90,255', mo: { ms: 140 } },
-  28: { file: '28_Silver_Deus.png', file48: 'b28_48f.png', h: 262, w: 150, col: '220,240,255', mo: { ms: 150, step: [1, 3], quake: 1.2, dust: 1 } },
-  29: { file: '29_Blood_Eclipse_Knight.png', file48: 'b29_48f.png', h: 224, w: 112, col: '255,40,60', mo: { ms: 120, trail: '200,30,50' } },
-  30: { file: '30_Astraon_Star_Devourer.png', file48: 'b30_48f.png', h: 270, w: 160, col: '255,220,140', mo: { ms: 130, float: 3 } },
+  21: { file48: 'b21_48f.png', h: 192, w: 100, col: '120,190,255', mo: { ms: 110, trail: '120,190,255' } },
+  22: { file48: 'b22_48f.png', h: 228, w: 124, col: '255,96,60', mo: { ms: 130, float: 2 } },
+  23: { file48: 'b23_48f.png', h: 204, w: 100, col: '200,230,255', mo: { ms: 120, parts: 'spirit' } },
+  24: { file48: 'b24_48f.png', h: 212, w: 112, col: '150,220,90', mo: { ms: 125 } },
+  25: { file48: 'b25_48f.png', h: 262, w: 150, col: '170,120,255', mo: { ms: 150, float: 3 } },
+  26: { file48: 'b26_48f.png', h: 214, w: 100, col: '255,210,120', mo: { ms: 120 } },
+  27: { file48: 'b27_48f.png', h: 262, w: 170, col: '150,90,255', mo: { ms: 140 } },
+  28: { file48: 'b28_48f.png', h: 262, w: 150, col: '220,240,255', mo: { ms: 150, step: [1, 3], quake: 1.2, dust: 1 } },
+  29: { file48: 'b29_48f.png', h: 224, w: 112, col: '255,40,60', mo: { ms: 120, trail: '200,30,50' } },
+  30: { file48: 'b30_48f.png', h: 270, w: 160, col: '255,220,140', mo: { ms: 130, float: 3 } },
 };
 const isAct3 = n => n > CH_COUNT && n <= CH_LAST;
 
@@ -20812,7 +20818,7 @@ for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
     wake: last + josa(last, '이', '가') + ' 눈을 뜬다', rage: last + '의 기운이 거칠어진다', stagger: last + josa(last, '이', '가') + ' 비틀거린다' };
   BOSS_ART[id] = [-1, A.h];
   BOSS_SHEETS[id] = Object.assign({ grid: id }, A.mo);
-  BOSS_SHEET_FILE[id] = 'boss/' + (A.file48 || A.file); BOSS_SHEET_BASE[id] = 240;   // 2026-11-23: 48f sheets, feet on y 240
+  BOSS_SHEET_FILE[id] = 'boss/' + A.file48; BOSS_SHEET_BASE[id] = 240;   // 2026-11-23: 48f sheets, feet on y 240
 }
 
 /* ---- the floors: a camp landing, the floor's hall (field, 2026-11-23: where the act-3 mobs live) and the boss room ---- */
@@ -22032,7 +22038,7 @@ if (IS_DEV_BUILD) addEventListener('load', () => {
     if (G.boss && G.boss.id !== 'anon') applyBossBalance(G.boss);
   });
   el.addEventListener('keydown', e => e.stopPropagation());
-  setInterval(() => { if (DEV.open && !el.contains(document.activeElement)) devRender(); }, 1000);   // keep the numbers fresh
+  setInterval(() => { if (DEV.open && !el.contains(document.activeElement) && (!DEV.tab || DEV.tab === 'quick' || DEV.tab === 'me')) devRender(); }, 1000);   // keep the numbers fresh (마스터 콘솔: 수치 탭은 다시 그리지 않는다)
   document.head.insertAdjacentHTML('beforeend', `<style>
 #devPanel{position:absolute;right:8px;top:8px;bottom:8px;width:300px;z-index:60;display:none;overflow-y:auto;background:rgba(10,12,18,.95);border:1px solid #6a5a3a;color:#e8e2d0;font:12px 'Noto Sans KR',sans-serif;padding:8px 10px}
 #devPanel.on{display:block}#devPanel .dvh{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #444;padding-bottom:4px}#devPanel .dvh b{color:#ffd27a;font-size:14px}#devPanel .dvh span{color:#999;font-size:11px}
@@ -24031,7 +24037,7 @@ function step() {
 let lastTs = 0, acc = 0;
 function frame(ts) {
   requestAnimationFrame(frame);
-  const dt = Math.min(0.1, (ts - lastTs) / 1000 || 0); lastTs = ts; acc += dt;
+  const dt = Math.min(0.1, (ts - lastTs) / 1000 || 0); lastTs = ts; acc += dt * (G.devSpeed || 1);   // devSpeed: 마스터 콘솔 게임 배속 (G.timeScale 은 게임의 슬로 모션이 쓴다)
   let n = 0;
   while (acc >= STEP && n++ < 6) { step(); acc -= STEP; }
   if (acc > STEP * 6) acc = 0;
@@ -24140,8 +24146,8 @@ const merMaps = () => Object.keys(MAPS).filter(id => {
 const merHash = n => { let x = (n | 0) ^ 0x9e3779b9; x = Math.imul(x ^ (x >>> 16), 2246822507); x = Math.imul(x ^ (x >>> 13), 3266489909); return (x ^ (x >>> 16)) >>> 0; };
 const merHour = () => Math.floor(srvNow() / MER.HOUR);
 const merMin = () => (srvNow() % MER.HOUR) / 60000;            // 0 ~ 60
-const merOn = () => merMin() < MER.MIN;                        // :00 ~ :15
-const merLeftMin = () => Math.max(0, MER.MIN - merMin());
+const merOn = () => G.devMerT > 0 || merMin() < MER.MIN;   // devMerT: 마스터 콘솔 소환                        // :00 ~ :15
+const merLeftMin = () => G.devMerT > 0 ? G.devMerT / 60 : Math.max(0, MER.MIN - merMin());
 const merHere = () => !!(merOn() && G.map && MER.map && G.mapId === MER.map);
 
 function merMake(hour) {
@@ -24157,7 +24163,7 @@ function merMake(hour) {
 }
 function merSetHour(h) {
   const g = merMake(h) || { map: null, ch: 1, items: [] };
-  MER.hour = h; MER.map = g.map; MER.ch = g.ch; MER.items = g.items;
+  MER.hour = h; MER.map = G.devMerT > 0 && G.devMerMap ? G.devMerMap : g.map; MER.ch = g.ch; MER.items = g.items;
   MER.left = g.items.map(it => it.qty);
   MER.npc = null; MER.ann = 0; MER.told = 0; MER.polled = 0; MER.wasHere = false; MER.busy = false; MER.drawn = '';
 }
@@ -24577,11 +24583,10 @@ traitsHtml = function () {
       <div class="tbar"><i style="width:${rk / 15 * 100}%"></i></div>
       <div class="rks">${next ? `<div class="rk next"><div class="pip"></div><div>다음 ${rk + 1}단계 · ${next.t}<span class="cost">포인트 ${next.cost}</span></div></div>` : '<div class="rk got"><div class="pip"></div><div>모두 올렸다</div></div>'}${miles}</div></div>`;
   }).join('');
-  const total = list.reduce((a, t) => a + t.ranks.reduce((b, r) => b + r.cost, 0), 0);
-  const sumLine = `<div class="tsum">합계(스킬별) · 피해 +${sum.dmg}%${sum.cd ? ' · 재사용 -' + sum.cd + '%' : ''}${sum.crit ? ' · 치명타 +' + sum.crit + '%p' : ''}${sum.aspd ? ' · 공격 속도 +' + sum.aspd + '%' : ''} <small>· 최대 레벨 특성 포인트 ${TR_BAL.tpMax} / 여섯 특성 전부 ${TR_BAL.allSix}</small></div>`;
+  /* 2026-11-25 (user): 남은 포인트가 창 맨 아래(.tfoot)에 있어 스크롤해야 보이던 것 — 합계 줄 오른쪽으로 올리고 아래 줄은 없앤다 */
+  const sumLine = `<div class="tsum tsum6"><span class="tsl">합계(스킬별) · 피해 +${sum.dmg}%${sum.cd ? ' · 재사용 -' + sum.cd + '%' : ''}${sum.crit ? ' · 치명타 +' + sum.crit + '%p' : ''}${sum.aspd ? ' · 공격 속도 +' + sum.aspd + '%' : ''} <small>· 최대 레벨 특성 포인트 ${TR_BAL.tpMax} / 여섯 특성 전부 ${TR_BAL.allSix}</small></span><span class="tsr">남은 포인트 <b>${s.tp}</b><button class="mini" data-reset="1">특성 초기화 (무료)</button></span></div>`;
   return `<div class="ph"><h3>특성 · ${ch.name}</h3><span class="sub">레벨업마다 포인트 1 · 여러 특성을 함께 올릴 수 있다 · 1~5단계 1점, 6~10단계 2점, 11~15단계 3점 · 5·10·15단계에서 스킬 연출이 바뀐다</span><button class="xbtn" data-close="1">닫기 (${keyOf('m_traits')})</button></div>
-  ${sumLine}<div class="tcols t6c">${cards}</div>
-  <div class="tfoot"><span>남은 포인트 <b>${s.tp}</b> · 여섯 특성을 모두 끝까지 올리려면 ${total}포인트</span><button class="mini" data-reset="1">특성 초기화 (무료)</button></div>`;
+  ${sumLine}<div class="tcols t6c">${cards}</div>`;
 };
 document.head.insertAdjacentHTML('beforeend', `<style>
 .tsum1{font-size:max(8px,calc(var(--u)*10));line-height:1.3;color:#ffd88a;margin:0 0 calc(var(--u)*2);padding:calc(var(--u)*1) calc(var(--u)*4);background:rgba(255,200,110,.07);border-left:2px solid #8a6a2a;font-variant-numeric:tabular-nums}
@@ -24590,6 +24595,16 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .tcard.t6 .sk2{margin:calc(var(--u)*2) 0 calc(var(--u)*4)}
 .tcard.t6 .rks .rk{line-height:1.18}
 .tcard.t6 .tsum1{line-height:1.18}
+.tsum.tsum6{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--u)*10)}
+.tsum6 .tsl{min-width:0}
+.tsum6 .tsr{display:flex;align-items:center;gap:calc(var(--u)*8);white-space:nowrap;font-size:max(10px,calc(var(--u)*13))}
+.tsum6 .tsr b{color:var(--accent2);font-size:max(12px,calc(var(--u)*16))}
+.tsum6 .tsr .mini{margin:0}
+#pBox:has(.t6c) .tsum6{margin:calc(var(--u)*4) 0 calc(var(--u)*6)}
+.tcols.t6c{gap:calc(var(--u)*8)}
+.tcard.t6{padding:calc(var(--u)*6) calc(var(--u)*10)}
+.tcard.t6 .rks .rk{padding:calc(var(--u)*1) 0}
+@media (max-height:440px){.tcard.t6{padding:3px 7px}.tcard.t6 .rks .rk{padding:0}.tcols.t6c{gap:4px}#pBox:has(.t6c) .tsum6{margin:2px 0 3px;padding:2px 8px}}
 </style>`);
 /* 5/10/15단계에서 스킬 연출이 한 단계씩 진화한다: 5 증폭(금빛 스파크 + 얇은 금빛 고리),
    10 각성(보랏빛 고리 + 진홍 스파크 + 잔상), 15 초월(금백 플래시 + 이중 고리 + 궤적 잔상).
@@ -24916,7 +24931,7 @@ const BOX_TIERS = [
 /* 사용자 확정(2026-11-24): 타수 나무 1~50 / 은 51~120 / 황금 121~220 / 신화 221~300.
    상자와 제단은 **이 기기에서만** 도는 로컬 오브젝트다 — 떠돌이 상인처럼 서버에 올리지 않고, live/party 기록에도 싣지 않는다.
    그래서 파티원마다 25%(제단 35%) 확률과 맵별 15분(10분) 쿨이 각자의 클라이언트에서 따로 돈다(G.save.boxCd / G.save.shrineCd). */
-const BOX_CHANCE = 0.25, BOX_CD = 900, SHRINE_CHANCE = 0.35, SHRINE_CD = 600;
+let BOX_CHANCE = 0.25, BOX_CD = 900, SHRINE_CHANCE = 0.35, SHRINE_CD = 600;   // let: 마스터 콘솔
 G.boxes = []; G.shrines = []; G.bless = null;
 const boxTierPick = () => { let r = Math.random() * 100; for (const T of BOX_TIERS) { r -= T.w; if (r < 0) return T; } return BOX_TIERS[0]; };
 const boxClearX = (m, x) => {
@@ -25395,5 +25410,339 @@ loadBinds();
 if (/[?&]motions(&|$)/.test(location.search)) addEventListener('load', () => setTimeout(startGallery, 200));   // index.html?motions: the motion gallery
 else { showTitle(); requestAnimationFrame(frame); }
 
+
+/* ============ 마스터 콘솔 (2026-11-25, user): 수치 조절(TUNE) + 테스트 도구 + test 저장 · 정식 적용 · 기록 ============
+   ★ 새 기능을 만들면 반드시 여기 tuneAdd(...) 로 그 기능의 수치를 등록한다(사용자 지시: "앞으로 추가되는 기능도 마스터 권한에").
+     등록만 하면 관리자 창(F9, test 서버)에 자동으로 뜨고, test 저장 · 정식 적용 · 기록 · 되돌리기가 같이 된다.
+   서버 경로: test = dev_tuning (dbPath 가 dev_ 를 붙인다) · 정식 = tuning · 적용 기록 = tuning_log · 관리자 = admins/{firebase uid} = true
+   정식 게임도 이 블록을 갖고 있다: 시작할 때와 5분마다 tuning 을 읽어 적용한다(관리자 창 자체는 IS_DEV_BUILD 에서만). */
+const TUNE = { defs: [], byK: {}, base: {}, cur: {}, saved: null, main: null, log: null, xpMul: 1, shopMul: 1, merMul: 1, bossSpd: 1,
+  saveT: null, status: '', admin: null, adminMsg: '', loaded: false, busy: false };
+/* d = { k: 고유 키, g: 탭(econ·drop·boss·bossOne), sec: 묶음 제목, n: 이름, help: 설명, get: () => 지금(기본) 값, set: v => 게임에 적용,
+         min, max, step (화면 단위), u: '%'·'×'·'분'·'초'·'' , pct: true 면 값 0~1 을 % 로 보인다, kscale: 화면 = 값 × kscale } */
+function tuneAdd(d) { if (TUNE.byK[d.k]) return; TUNE.defs.push(d); TUNE.byK[d.k] = d; TUNE.base[d.k] = d.get(); TUNE.cur[d.k] = TUNE.base[d.k]; }
+const tuneScale = d => d.pct ? 100 : (d.kscale || 1);
+const tuneShow = (d, v) => { const x = v * tuneScale(d); return (Math.abs(x) >= 100 ? Math.round(x * 10) / 10 : Math.round(x * 1000) / 1000) + (d.pct ? '%' : d.u || ''); };
+const tuneSame = (a, b) => Math.abs(a - b) < 1e-9;
+function tuneDiff(vals) { const o = {}; for (const d of TUNE.defs) { const v = vals[d.k]; if (v != null && !tuneSame(v, TUNE.base[d.k])) o[d.k] = v; } return o; }
+function tuneApply(over) {   // over = 기본값과 다른 것만 {k: v}
+  for (const d of TUNE.defs) { const v = over && over[d.k] != null && isFinite(over[d.k]) ? +over[d.k] : TUNE.base[d.k]; TUNE.cur[d.k] = v; try { d.set(v); } catch (e) { console.warn('[tune]', d.k, e); } }
+  if (G.boss && G.boss.id !== 'anon' && typeof applyBossBalance === 'function') applyBossBalance(G.boss);
+}
+const tuneBoss = id => ({ hp: TUNE.cur['b:' + id + ':hp'] ?? 1, atk: TUNE.cur['b:' + id + ':atk'] ?? 1, spd: TUNE.cur['b:' + id + ':spd'] ?? 1 });
+
+/* ---- 등록: 경제 · 강화 ---- */
+tuneAdd({ k: 'xpMul', g: 'econ', sec: '성장', n: '경험치 배율', help: '몹·보스·의뢰 경험치 전부', get: () => 1, set: v => { TUNE.xpMul = v; }, min: 0.1, max: 10, step: 0.1, u: '×' });
+tuneAdd({ k: 'goldDrop', g: 'econ', sec: '성장', n: '몹 골드 배율', help: '몹이 떨어뜨리는 골드 (의뢰 보상·상점 가격은 그대로)', get: () => GOLD_DROP_X, set: v => { GOLD_DROP_X = v; }, min: 0, max: 5, step: 0.05, u: '×' });
+tuneAdd({ k: 'shopMul', g: 'econ', sec: '상점', n: '상점 가격 배율', help: '치유 연고·귀환 주문서 상점 가격', get: () => 1, set: v => { TUNE.shopMul = v; }, min: 0.1, max: 5, step: 0.05, u: '×' });
+tuneAdd({ k: 'merMul', g: 'econ', sec: '상점', n: '떠돌이 상인 가격 배율', help: '다음에 상인이 올 때(매시 정각)부터 적용', get: () => 1, set: v => { TUNE.merMul = v; }, min: 0.1, max: 5, step: 0.05, u: '×' });
+tuneAdd({ k: 'enhGold', g: 'econ', sec: '강화', n: '강화 골드 비용 배율', help: '강화 1회에 드는 골드', get: () => ENH_GOLD_X, set: v => { ENH_GOLD_X = v; }, min: 0.1, max: 10, step: 0.1, u: '×' });
+tuneAdd({ k: 'gauge', g: 'econ', sec: '강화', n: '장인의 기운 차는 속도', help: '실패할 때 게이지가 (성공률 × 이 값)만큼 찬다 · 100이면 확정 성공', get: () => GAUGE_RATE, set: v => { GAUGE_RATE = v; }, min: 0.05, max: 3, step: 0.005, u: '' });
+ENH_RATE.forEach((r, i) => tuneAdd({ k: 'enh' + i, g: 'econ', sec: '강화 성공률', n: '+' + i + ' → +' + (i + 1), get: () => ENH_RATE[i], set: v => { ENH_RATE[i] = v; }, min: 1, max: 100, step: 1, u: '%' }));
+tuneAdd({ k: 'crit', g: 'econ', sec: '전투', n: '치명타 피해 배율', get: () => CRIT_MULT, set: v => { CRIT_MULT = v; }, min: 1, max: 5, step: 0.05, u: '×' });
+
+/* ---- 등록: 확률 · 드롭 ---- */
+GRADES.slice().reverse().forEach(gr => tuneAdd({ k: 'grade' + gr.id, g: 'drop', sec: '장비 드롭 (몹 1마리당)', n: gr.name, get: () => GRADES[gr.id].p, set: v => { GRADES[gr.id].p = v; }, min: 0, max: 30, step: 0.01, pct: true }));
+tuneAdd({ k: 'ring', g: 'drop', sec: '장비 드롭 (몹 1마리당)', n: '반지 (10·20·30장 보스)', help: '보스 처치 1회당', get: () => RING_DROP[10], set: v => { for (const c in RING_DROP) RING_DROP[c] = v; }, min: 0, max: 100, step: 0.5, pct: true });
+tuneAdd({ k: 'eliteLoot', g: 'drop', sec: '장비 드롭 (몹 1마리당)', n: '엘리트 몹 보상 배율', get: () => ELITE_MUL.loot, set: v => { ELITE_MUL.loot = v; }, min: 0, max: 10, step: 0.1, u: '×' });
+tuneAdd({ k: 'box', g: 'drop', sec: '랜덤 상자', n: '상자 등장 확률', help: '사냥터에 들어갈 때마다', get: () => BOX_CHANCE, set: v => { BOX_CHANCE = v; }, min: 0, max: 100, step: 1, pct: true });
+tuneAdd({ k: 'boxCd', g: 'drop', sec: '랜덤 상자', n: '같은 맵 상자 대기', get: () => BOX_CD, set: v => { BOX_CD = v; }, min: 0, max: 120, step: 1, u: '분', kscale: 1 / 60 });
+BOX_TIERS.forEach((T, i) => tuneAdd({ k: 'boxW' + i, g: 'drop', sec: '랜덤 상자', n: T.name + ' 비중', help: '네 상자 비중의 합 중 이 상자 몫이 확률이 된다', get: () => BOX_TIERS[i].w, set: v => { BOX_TIERS[i].w = v; }, min: 0, max: 100, step: 1, u: '' }));
+tuneAdd({ k: 'shrine', g: 'drop', sec: '축복의 제단', n: '제단 등장 확률', get: () => SHRINE_CHANCE, set: v => { SHRINE_CHANCE = v; }, min: 0, max: 100, step: 1, pct: true });
+tuneAdd({ k: 'shrineCd', g: 'drop', sec: '축복의 제단', n: '같은 맵 제단 대기', get: () => SHRINE_CD, set: v => { SHRINE_CD = v; }, min: 0, max: 120, step: 1, u: '분', kscale: 1 / 60 });
+tuneAdd({ k: 'anon', g: 'drop', sec: '이름 없는 자', n: '등장 확률 (몹 1마리당)', get: () => ANON_CHANCE, set: v => { ANON_CHANCE = v; }, min: 0, max: 10, step: 0.01, pct: true });
+tuneAdd({ k: 'anonGap', g: 'drop', sec: '이름 없는 자', n: '다시 나오기까지', get: () => ANON_GAP, set: v => { ANON_GAP = v; }, min: 0, max: 120, step: 1, u: '분', kscale: 1 / 60 });
+tuneAdd({ k: 'anonTime', g: 'drop', sec: '이름 없는 자', n: '제한 시간', get: () => ANON_TIME, set: v => { ANON_TIME = v; }, min: 20, max: 600, step: 5, u: '초' });
+
+/* ---- 등록: 보스 ---- */
+tuneAdd({ k: 'bossAll', g: 'boss', sec: '모든 보스', n: '보스 체력·피해 배율', help: '모든 보스에 곱한다', get: () => BOSS_BALANCE_CONFIG.all, set: v => { BOSS_BALANCE_CONFIG.all = v; }, min: 0.2, max: 5, step: 0.05, u: '×' });
+tuneAdd({ k: 'bossLegion', g: 'boss', sec: '모든 보스', n: '10·20·30장 보스 추가 배율', get: () => BOSS_BALANCE_CONFIG.legion, set: v => { BOSS_BALANCE_CONFIG.legion = v; }, min: 0.2, max: 5, step: 0.05, u: '×' });
+tuneAdd({ k: 'bossSpd', g: 'boss', sec: '모든 보스', n: '보스 행동 속도', help: '패턴 사이 간격·이동·시전이 이만큼 빨라진다', get: () => 1, set: v => { TUNE.bossSpd = v; }, min: 0.25, max: 3, step: 0.05, u: '×' });
+for (const id in BOSSES) {
+  if (!/^b\d+$/.test(id)) continue;
+  const B = BOSSES[id], sec = B.ch + '장 · ' + B.name;
+  tuneAdd({ k: 'b:' + id + ':hp', g: 'bossOne', boss: id, sec, n: '체력', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+  tuneAdd({ k: 'b:' + id + ':atk', g: 'bossOne', boss: id, sec, n: '피해', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+  tuneAdd({ k: 'b:' + id + ':spd', g: 'bossOne', boss: id, sec, n: '행동 속도', help: '패턴 간격·이동·시전', get: () => 1, set: () => { }, min: 0.25, max: 3, step: 0.05, u: '×' });
+}
+
+/* ---- 게임에 거는 곳 ---- */
+const _mcgainXp = gainXp;
+gainXp = function (n) { return _mcgainXp(TUNE.xpMul !== 1 ? Math.max(1, Math.round(n * TUNE.xpMul)) : n); };
+const _mcpotionPrice = potionPrice, _mcscrollPrice = scrollPrice;
+potionPrice = n => Math.max(1, Math.round(_mcpotionPrice(n) * TUNE.shopMul));
+scrollPrice = n => Math.max(1, Math.round(_mcscrollPrice(n) * TUNE.shopMul));
+for (const g of MER_GOODS) { const f = g.p; g.p = n => merPrice(f(n) * TUNE.merMul); }
+applyBossBalance = function (b) {   // 8-1 의 것 + 보스별 체력·피해 배율
+  if (!b || !b.d) return; const k = bossBalanceK(b.d.ch || 1), share = b.mhp ? b.hp / b.mhp : 1, t = tuneBoss(b.id);
+  if (b.balK == null) { b.baseMhp = b.mhp; b.baseAtk = b.atkMul || 1; }
+  b.balK = k; b.mhp = Math.max(1, Math.round(b.baseMhp * k * t.hp)); b.hp = Math.max(1, Math.round(b.mhp * share)); b.atkMul = b.baseAtk * k * t.atk;
+  if (typeof updateBossBar === 'function' && G.boss === b) updateBossBar();
+};
+const _mcupdateBoss = updateBoss;
+updateBoss = function (dt) { const b = G.boss, s = b ? TUNE.bossSpd * (b.id !== 'anon' ? tuneBoss(b.id).spd : 1) : 1; return _mcupdateBoss(s !== 1 ? dt * s : dt); };
+
+/* ---- 서버 ---- */
+function dbUrlRaw(path, query) {   // dev_ 를 붙이지 않는 경로(정식 tuning · tuning_log · admins). 이 PC(localhost)에서는 여전히 local_
+  const q = [query, AUTH.token ? 'auth=' + encodeURIComponent(AUTH.token) : ''].filter(Boolean).join('&');
+  return (window.DEV_DB || CLOUD.dbUrl || '').replace(/\/+$/, '') + '/' + (ENV_LOCAL && !window.DEV_DB ? 'local_' + path : path) + '.json' + (q ? '?' + q : '');
+}
+const tuneFetch = (url, o) => { const ac = new AbortController(), t = setTimeout(() => ac.abort(), 8000); return fetch(url, Object.assign({ signal: ac.signal }, o)).catch(e => { throw new Error(e.name === 'AbortError' ? '서버 응답 없음 (8초)' : '서버에 연결하지 못했다'); }).finally(() => clearTimeout(t)); };
+async function tuneGet(url) { const r = await tuneFetch(url, { cache: 'no-store' }); if (!r.ok) throw new Error('읽기 거부 (' + r.status + ')'); return r.json(); }
+async function tuneSend(url, method, v) {
+  const r = await tuneFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(v) });
+  if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? '서버가 쓰기를 거부했다 (관리자 규칙 필요)' : '저장 실패 (' + r.status + ')');
+  return r.json().catch(() => null);
+}
+async function tuneLoad() {   // 게임 시작 · 5분마다: test 는 dev_tuning, 정식은 tuning
+  if (!CLOUD.dbUrl || window.DEV_LOCAL) { TUNE.loaded = true; return; }
+  try { const j = await tuneGet(dbUrl('tuning')); TUNE.saved = (j && j.v) || {}; if (!TUNE.dirtyLocal) tuneApply(TUNE.saved); TUNE.loaded = true; }
+  catch (e) { TUNE.loaded = true; TUNE.loadErr = e.message; }
+}
+tuneLoad();
+setInterval(() => { if (!IS_DEV_BUILD && G.scene === 'play') tuneLoad(); }, 300000);
+const _mcstartGame = startGame;
+startGame = function (...a) { const r = _mcstartGame(...a); if (!TUNE.dirtyLocal) tuneLoad(); return r; };   // 로그인 뒤 들어올 때 다시 읽는다 (규칙이 로그인을 요구할 때)
+
+/* ============ 관리자 창 UI (test 서버 · F9) ============ */
+if (IS_DEV_BUILD) {
+DEV.tab = DEV.tab || 'quick'; DEV.boss = DEV.boss || 'b1'; DEV.q = ''; DEV.onlyChanged = false; DEV.mobCh = 0;
+const MC_TABS = [['quick', '⚡', '빠른 도구'], ['me', '🧑', '내 캐릭터'], ['boss', '👹', '보스'], ['drop', '🎲', '확률·드롭'], ['econ', '💰', '경제·강화'], ['ship', '🚀', '정식 적용']];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const nChanged = () => Object.keys(tuneDiff(TUNE.cur)).length;
+function tuneRow(d) {
+  const v = TUNE.cur[d.k], sc = tuneScale(d), ch = !tuneSame(v, TUNE.base[d.k]);
+  const step = d.step, dv = Math.round(v * sc * 1e6) / 1e6;
+  return `<div class="mcrow${ch ? ' ch' : ''}" data-row="${d.k}" data-txt="${esc((d.sec + ' ' + d.n + ' ' + (d.help || '')).toLowerCase())}">
+    <div class="mcl"><b>${esc(d.n)}</b>${d.help ? `<small>${esc(d.help)}</small>` : ''}</div>
+    <div class="mcc"><input type="range" min="${d.min}" max="${d.max}" step="${step}" value="${dv}" data-tk="${d.k}">
+      <input type="number" min="${d.min}" max="${d.max}" step="${step}" value="${dv}" data-tk="${d.k}"><i>${d.pct ? '%' : esc(d.u || '')}</i>
+      <button class="mcx" data-ma="reset:${d.k}" title="기본값으로">↺</button></div>
+    <div class="mcd">기본 ${tuneShow(d, TUNE.base[d.k])}</div></div>`;
+}
+function tuneSecs(list) {
+  const secs = []; for (const d of list) { let s = secs.find(x => x.n === d.sec); if (!s) secs.push(s = { n: d.sec, a: [] }); s.a.push(d); }
+  return secs.map(s => `<section class="mcsec"><h6>${esc(s.n)}</h6>${s.a.map(tuneRow).join('')}</section>`).join('');
+}
+const tuneTools = () => `<div class="mctools"><input type="search" placeholder="찾기 (예: 레전드, 상자, 강화)" data-msearch value="${esc(DEV.q)}"><label><input type="checkbox" data-monly ${DEV.onlyChanged ? 'checked' : ''}>바꾼 것만</label></div>`;
+const btn = (a, t, cls, dis) => `<button data-ma="${a}" class="${cls || ''}" ${dis ? 'disabled' : ''}>${t}</button>`;
+const dbtn = (a, t, dis) => `<button data-dva="${a}" ${dis ? 'disabled' : ''}>${t}</button>`;
+function mcQuick(inGame) {
+  const chOpts = Array.from({ length: CH_LAST }, (_, i) => `<option value="${i + 1}" ${DEV.ch === i + 1 ? 'selected' : ''}>${i + 1}장 ${esc(CHAPTERS[i + 1].title)}</option>`).join('');
+  const mapOpts = devMaps(DEV.ch).map(([id, n]) => `<option value="${id}">${esc(n)}</option>`).join('');
+  const bossOpts = Object.keys(BOSSES).filter(id => /^b\d+$/.test(id)).map(id => `<option value="${id}" ${DEV.boss === id ? 'selected' : ''}>${BOSSES[id].ch}장 ${esc(BOSSES[id].name)}</option>`).join('');
+  const mch = DEV.mobCh || (G.map && G.map.ch) || 1;
+  const mobOpts = Object.keys(MON).filter(t => MON[t].ch === mch && !MON[t].boss).map(t => `<option value="${t}">${esc(MON[t].name)}</option>`).join('');
+  const spd = G.devSpeed || 1, chk = (id, label) => `<label class="mctog"><input type="checkbox" data-dv="${id}" ${G[id] ? 'checked' : ''}><span>${label}</span></label>`;
+  const no = !inGame;
+  return `<section class="mcsec"><h6>이동</h6>
+      <div class="mcr"><select id="dvCh">${chOpts}</select></div>
+      <div class="mcr"><select id="dvMap">${mapOpts}</select>${dbtn('warp', '이동', no)}</div>
+      <div class="mcr"><select data-mboss>${bossOpts}</select>${btn('bossgo', '보스방으로', '', no)}</div></section>
+    <section class="mcsec"><h6>소환 <small>지금 있는 맵에</small></h6>
+      <div class="mcr mcg">${btn('box:-1', '🎁 상자 (무작위)', '', no)}${BOX_TIERS.map((T, i) => btn('box:' + i, T.name, '', no)).join('')}</div>
+      <div class="mcr mcg">${btn('shrine', '⛩ 축복의 제단', '', no)}${btn('mer', '🛒 떠돌이 상인 (15분)', '', no)}${btn('anon', '👤 이름 없는 자', '', no)}</div>
+      <div class="mcr"><select data-mobch>${Array.from({ length: CH_LAST }, (_, i) => `<option value="${i + 1}" ${mch === i + 1 ? 'selected' : ''}>${i + 1}장 몹</option>`).join('')}</select><select data-mob>${mobOpts}</select></div>
+      <div class="mcr mcg">${btn('mob:1', '몹 1마리', '', no)}${btn('mob:5', '5마리', '', no)}${btn('mob:10', '10마리', '', no)}${btn('mobclear', '몹 전부 없애기', '', no)}</div></section>
+    <section class="mcsec"><h6>게임 속도 <small>지금 ${spd}배</small></h6><div class="mcr mcg">${[0.25, 0.5, 1, 2, 3].map(x => btn('spd:' + x, x + '배', spd === x ? 'on' : '')).join('')}</div></section>
+    <section class="mcsec"><h6>전투</h6><div class="mcr mcg">${chk('devGod', '무적')}${chk('devOneKill', '한 방에 처치')}${chk('devNoCd', '재사용 대기 없음')}${chk('devHit', '히트박스 보기')}${chk('debug', '디버그 보기')}</div>
+      <div class="mcr mcg">${dbtn('heal', 'HP 회복', no)}${dbtn('cd', '재사용 대기 초기화')}</div>
+      <div class="mcr"><small>${G.boss ? '지금 보스: ' + esc(G.boss.d.name) + ' · HP ' + nf(G.boss.hp) + ' / ' + nf(G.boss.mhp) : '지금 보스 없음'}</small></div></section>`;
+}
+function mcMe(inGame) {
+  const s = G.save, no = !inGame;
+  const snaps = [1, 2, 3].map(i => { let j = null; try { j = JSON.parse(localStorage.getItem('pxo-dev-snap:' + i) || 'null'); } catch (e) { }
+    return `<div class="mcr"><b class="mcslot">${i}번</b><span class="mcsnap">${j ? esc(j.label) : '비어 있음'}</span>${btn('snapsave:' + i, '지금 저장', '', no)}${btn('snapload:' + i, '불러오기', '', !j)}</div>`; }).join('');
+  return `${inGame ? `<div class="mcinfo">${esc(CHARS[s.char].name)} · Lv.${s.level} · 특성 포인트 ${s.tp} · 골드 ${nf(s.gold)} · 품질석 ${s.mats.qual || 0} · 잠재석 ${s.mats.pot || 0} · 계승석 ${s.mats.inherit || 0}</div>` : '<div class="mcwarn">게임에 들어가면 쓸 수 있다</div>'}
+    <section class="mcsec"><h6>레벨 · 재화</h6>
+      <div class="mcr"><span>레벨</span><input type="number" id="dvLv" min="1" max="${MAX_LEVEL}" value="${s ? s.level : 1}">${dbtn('lv', '설정', no)}</div>
+      <div class="mcr mcg">${dbtn('tp', '특성 포인트 +10', no)}${dbtn('gold', '골드 +100만', no)}${dbtn('alch', '품질석·잠재석 +10', no)}${dbtn('inh', '계승석 +5', no)}${btn('potfill', '연고·주문서 채우기', '', no)}</div></section>
+    <section class="mcsec"><h6>장비</h6><div class="mcr mcg">${dbtn('legend', '레전드 6부위 (가방)', no)}${dbtn('wear', '레전드 바로 장착', no)}${dbtn('gear', '테스트 장비 10개', no)}${dbtn('enh', '모든 칸 +' + ENH_MAX, no)}</div></section>
+    <section class="mcsec"><h6>세이브 스냅샷 <small>지금 캐릭터 상태를 저장해 두고 언제든 되돌린다 (이 기기)</small></h6>${snaps}</section>
+    <section class="mcsec"><h6>진행도 <small>위 '이동'에서 고른 장 기준 (${DEV.ch}장)</small></h6>
+      <div class="mcr mcg">${dbtn('story', DEV.ch + '장 앞까지 이야기 끝내기', no)}${btn('bossreset', DEV.ch + '장 보스 처치 기록 지우기', '', no)}${btn('daily', '일일 의뢰 새로 받기', '', no)}${btn('tutreset', '튜토리얼 안내 다시 보기', '', no)}</div></section>`;
+}
+function mcBoss() {
+  const ids = Object.keys(BOSSES).filter(id => /^b\d+$/.test(id));
+  const opts = ids.map(id => { const ch = ['hp', 'atk', 'spd'].some(x => !tuneSame(TUNE.cur['b:' + id + ':' + x], 1));
+    return `<option value="${id}" ${DEV.boss === id ? 'selected' : ''}>${ch ? '● ' : ''}${BOSSES[id].ch}장 ${esc(BOSSES[id].name)}</option>`; }).join('');
+  const one = TUNE.defs.filter(d => d.g === 'bossOne' && d.boss === DEV.boss);
+  return tuneTools() + tuneSecs(TUNE.defs.filter(d => d.g === 'boss')) +
+    `<section class="mcsec"><h6>보스 하나씩 <small>● 표시 = 바꾼 보스</small></h6><div class="mcr"><select data-mboss>${opts}</select></div>${one.map(tuneRow).join('')}
+     <div class="mcr"><small>실제 체력 = 원래 체력 × 모든 보스 배율 × (10·20·30장 추가) × 이 보스 배율. 싸우는 중에 바꾸면 바로 반영된다.</small></div></section>`;
+}
+function mcShip() {
+  const test = tuneDiff(TUNE.cur), main = TUNE.main ? TUNE.main.v || {} : null;
+  const keys = [...new Set(Object.keys(test).concat(main ? Object.keys(main) : []))].filter(k => TUNE.byK[k] && !(main && tuneSame(main[k] ?? TUNE.base[k], test[k] ?? TUNE.base[k])));
+  const rows = !main ? '<div class="mcr"><small>정식 값을 불러오는 중…</small></div>' : keys.length ? keys.map(k => { const d = TUNE.byK[k];
+    return `<div class="mcdiff"><span>${esc(d.sec)} · <b>${esc(d.n)}</b></span><span class="old">${tuneShow(d, main[k] ?? TUNE.base[k])}</span><span>→</span><span class="new">${tuneShow(d, test[k] ?? TUNE.base[k])}</span></div>`; }).join('')
+    : '<div class="mcr"><small>test 와 정식이 같다. 바꿀 것이 없다.</small></div>';
+  const adm = TUNE.admin;
+  const log = TUNE.log ? (TUNE.log.length ? TUNE.log.map(e => `<div class="mclog"><span>${new Date(e.at).toLocaleString('ko-KR')}</span><span>${esc(e.by || '?')}</span><span>${e.n || 0}개 ${e.undo ? '(되돌림)' : ''}</span>${btn('undo:' + e.id, '이 적용 전으로', '', !adm || TUNE.busy)}</div>`).join('') : '<div class="mcr"><small>아직 기록이 없다</small></div>') : '<div class="mcr"><small>불러오는 중…</small></div>';
+  return `<div class="mcadm ${adm ? 'ok' : 'no'}">${adm ? '관리자 확인됨 · ' + esc(AUTH.id) : esc(TUNE.adminMsg || '관리자 확인 중…')}</div>
+    <section class="mcsec"><h6>test → 정식 <small>바뀌는 항목 ${keys.length}개</small></h6>${rows}
+      <div class="mcr mcg">${btn('ship', '🚀 정식에 적용', 'big', !adm || !main || !keys.length || TUNE.busy)}${btn('pullmain', '정식 값을 test 로 가져오기', '', !main || TUNE.busy)}${btn('shiprefresh', '새로 불러오기')}</div>
+      <div class="mcr"><small>적용하면 정식 게임에 접속한 사람에게 5분 안에, 새로 들어오는 사람에게는 바로 반영된다. 코드(그림·기능) 배포는 Claude 에게 "정식 배포"라고 말한다.</small></div></section>
+    <section class="mcsec"><h6>적용 기록 <small>최근 20번 · 누르면 그 적용 바로 전 값으로 정식을 되돌린다</small></h6>${log}</section>`;
+}
+devHtml = function () {
+  const s = G.save, inGame = G.scene === 'play' && !!s, n = nChanged(), tab = DEV.tab;
+  const body = tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip()
+    : tuneTools() + tuneSecs(TUNE.defs.filter(d => d.g === tab));
+  return `<div class="mch"><b>마스터 콘솔</b><span>test 서버 · F9 닫기</span><button class="mcclose" data-ma="close">✕</button></div>
+    <nav class="mctabs">${MC_TABS.map(([id, ic, t]) => `<button data-ma="tab:${id}" class="${tab === id ? 'on' : ''}"><i>${ic}</i>${t}</button>`).join('')}</nav>
+    <div class="mcbody">${body}</div>
+    <div class="mcfoot"><span class="mcst">${esc(TUNE.status || (n ? 'test 에 저장됨' : ''))}</span><span>바꾼 수치 <b>${n}</b>개</span>${btn('resetall', '전부 기본값', '', !n)}</div>
+    <div class="dvmsg">${esc(DEV.msg || '')}</div>`;
+};
+devRender = function () {
+  const el = $('#devPanel'); if (!el || !DEV.open) return;
+  const b = el.querySelector('.mcbody'), top = b ? b.scrollTop : 0;
+  el.innerHTML = devHtml(); mcFilter();
+  const nb = el.querySelector('.mcbody'); if (nb) nb.scrollTop = top;
+};
+function mcFilter() {
+  const el = $('#devPanel'); if (!el) return; const q = DEV.q.trim().toLowerCase();
+  el.querySelectorAll('.mcrow').forEach(r => { r.style.display = (!q || r.dataset.txt.includes(q)) && (!DEV.onlyChanged || r.classList.contains('ch')) ? '' : 'none'; });
+  el.querySelectorAll('.mcsec').forEach(s => { const rows = s.querySelectorAll('.mcrow'); if (rows.length) s.style.display = [...rows].some(r => r.style.display !== 'none') ? '' : 'none'; });
+}
+function mcStatus(t) { TUNE.status = t; const e = document.querySelector('#devPanel .mcst'); if (e) e.textContent = t; }
+function tuneSaveSoon() {
+  TUNE.dirtyLocal = true; mcStatus('저장 대기…'); clearTimeout(TUNE.saveT);
+  TUNE.saveT = setTimeout(async () => {
+    if (!CLOUD.dbUrl || window.DEV_LOCAL) { mcStatus('로컬 전용 · 이 기기에서만 적용 중'); return; }
+    try { mcStatus('test 에 저장 중…'); await tuneSend(dbUrl('tuning'), 'PUT', { v: tuneDiff(TUNE.cur), at: Date.now(), by: AUTH.id || null }); TUNE.saved = tuneDiff(TUNE.cur); mcStatus('test 에 저장됨 ✓'); }
+    catch (e) { mcStatus('⚠ ' + e.message); }
+  }, 700);
+}
+function tuneSetOne(k, v) {
+  const d = TUNE.byK[k]; if (!d) return; v = Math.max(d.min / tuneScale(d), Math.min(d.max / tuneScale(d), v));
+  const o = tuneDiff(TUNE.cur); if (tuneSame(v, TUNE.base[k])) delete o[k]; else o[k] = v;
+  tuneApply(o); tuneSaveSoon();
+  const row = document.querySelector(`#devPanel .mcrow[data-row="${CSS.escape(k)}"]`);
+  if (row) { const dv = Math.round(v * tuneScale(d) * 1e6) / 1e6; row.querySelectorAll('input[data-tk]').forEach(i => { if (document.activeElement !== i) i.value = dv; }); row.classList.toggle('ch', !tuneSame(v, TUNE.base[k])); }
+  const f = document.querySelector('#devPanel .mcfoot b'); if (f) f.textContent = nChanged();
+}
+const MC_ADMIN_IDS = ['admin0215'];   // 2026-11-25 (user): 관리자 아이디. 서버 규칙도 acct/admin0215 의 uid 로 관리자를 판단한다 (tools/firebase-rules.json)
+async function mcCheckAdmin() {
+  if (!AUTH.token || !AUTH.fuid) { TUNE.admin = false; TUNE.adminMsg = '관리자 아이디(' + MC_ADMIN_IDS.join(', ') + ')로 로그인하면 정식에 적용할 수 있다'; return; }
+  if (!MC_ADMIN_IDS.includes(AUTH.id)) { TUNE.admin = false; TUNE.adminMsg = '지금 아이디(' + AUTH.id + ')는 관리자가 아니다 · ' + MC_ADMIN_IDS.join(', ') + ' 로 로그인'; return; }
+  try { const a = await tuneGet(dbUrlRaw('acct/' + AUTH.id)); TUNE.admin = !!(a && a.uid === AUTH.fuid);
+    TUNE.adminMsg = TUNE.admin ? '' : '서버의 계정 정보가 이 로그인과 맞지 않는다'; }
+  catch (e) { TUNE.admin = false; TUNE.adminMsg = '관리자 확인 실패 · ' + e.message; }
+}
+async function mcLoadShip() {
+  if (!AUTH.token) { TUNE.admin = false; TUNE.adminMsg = '로그인하면 관리자인지 확인한다'; }
+  devRender(); await mcCheckAdmin(); devRender();
+  try { TUNE.main = (await tuneGet(dbUrlRaw('tuning'))) || { v: {} }; } catch (e) { TUNE.main = { v: {} }; DEV.msg = '정식 값 읽기 실패 · ' + e.message; }
+  try { const j = await tuneGet(dbUrlRaw('tuning_log', 'orderBy=%22$key%22&limitToLast=20')); TUNE.log = Object.keys(j || {}).map(id => Object.assign({ id }, j[id])).sort((a, b) => b.at - a.at); }
+  catch (e) { TUNE.log = []; }
+  devRender();
+}
+async function mcShipTo(after, note) {   // 정식 tuning 을 after 로 바꾸고 기록을 남긴다
+  if (!TUNE.admin) return devMsg('관리자만 정식에 적용할 수 있다');
+  TUNE.busy = true; devRender();
+  try {
+    const before = ((await tuneGet(dbUrlRaw('tuning'))) || {}).v || {};
+    await tuneSend(dbUrlRaw('tuning'), 'PUT', { v: after, at: Date.now(), by: AUTH.id });
+    const n = new Set(Object.keys(before).concat(Object.keys(after))).size;
+    await tuneSend(dbUrlRaw('tuning_log'), 'POST', { at: Date.now(), by: AUTH.id, before, after, n, undo: note === 'undo' ? 1 : 0 });
+    DEV.msg = note === 'undo' ? '정식을 그 적용 전 값으로 되돌렸다' : '정식에 적용했다 ✓';
+  } catch (e) { DEV.msg = '⚠ ' + e.message; }
+  TUNE.busy = false; await mcLoadShip();
+}
+function mcConfirm(text) { return window.confirm(text); }
+function masterAct(a) {
+  const [cmd, arg] = a.split(':'), s = G.save, inGame = G.scene === 'play' && !!s, p = G.player, m = G.map;
+  if (cmd === 'close') return devPanelToggle();
+  if (cmd === 'tab') { DEV.tab = arg; DEV.msg = ''; DEV.q = ''; DEV.onlyChanged = false; devRender(); if (arg === 'ship') mcLoadShip(); return; }
+  if (cmd === 'reset') { const k = a.slice(6); return tuneSetOne(k, TUNE.base[k]); }
+  if (cmd === 'resetall') { if (!mcConfirm('test 의 바꾼 수치 ' + nChanged() + '개를 전부 기본값으로 돌릴까?')) return; tuneApply({}); tuneSaveSoon(); return devRender(); }
+  if (cmd === 'spd') { G.devSpeed = +arg; return devMsg('게임 속도 ' + arg + '배'); }
+  if (cmd === 'ship') { const after = tuneDiff(TUNE.cur); if (!mcConfirm('정식 게임에 test 수치를 적용할까?\n모든 유저에게 반영된다. 기록이 남아 언제든 되돌릴 수 있다.')) return; return mcShipTo(after, 'ship'); }
+  if (cmd === 'undo') { const e = (TUNE.log || []).find(x => x.id === a.slice(5)); if (!e || !mcConfirm('정식을 ' + new Date(e.at).toLocaleString('ko-KR') + ' 적용 바로 전 값으로 되돌릴까?')) return; return mcShipTo(e.before || {}, 'undo'); }
+  if (cmd === 'pullmain') { if (!mcConfirm('test 수치를 지금 정식 값으로 덮을까?')) return; tuneApply((TUNE.main && TUNE.main.v) || {}); tuneSaveSoon(); return devMsg('정식 값을 test 로 가져왔다'); }
+  if (cmd === 'shiprefresh') { TUNE.main = null; TUNE.log = null; devRender(); return mcLoadShip(); }
+  if (!inGame) return devMsg('게임에 들어가서 쓰자');
+  if (cmd === 'bossgo') { const id = Object.keys(MAPS).find(k => MAPS[k].boss === DEV.boss); if (!id) return devMsg('이 보스의 방을 찾지 못했다'); closePanel(); G.ui.dialog = null; loadMap(id); return devMsg(BOSSES[DEV.boss].name + ' 보스방으로 이동'); }
+  if (cmd === 'box') {
+    if (m.safe || m.boss) return devMsg('사냥터에서 쓰자 (야영지·보스방 제외)');
+    const b = spawnBox(m); if (!b) return devMsg('상자 놓을 자리가 없다');
+    if (+arg >= 0) { const T = BOX_TIERS[+arg]; b.tier = T; b.tid = +arg; b.need = rndi(T.hits[0], T.hits[1]); }
+    return devMsg(b.tier.name + ' 소환 · ' + b.need + '타');
+  }
+  if (cmd === 'shrine') { if (m.safe || m.boss) return devMsg('사냥터에서 쓰자'); return devMsg(spawnShrine(m) ? '축복의 제단 소환' : '제단 놓을 자리가 없다'); }
+  if (cmd === 'mer') { if (m.safe || m.boss) return devMsg('사냥터에서 쓰자'); G.devMerT = 15 * 60; G.devMerMap = G.mapId; merSetHour(merHour()); return devMsg('떠돌이 상인이 이 맵에 15분간 선다'); }
+  if (cmd === 'anon') { if (G.boss) return devMsg('보스와 싸우는 중이다'); if (m.safe || m.boss || m.gate || !m.ch) return devMsg('사냥터에서 쓰자'); spawnAnon(); return devMsg('이름 없는 자 소환'); }
+  if (cmd === 'mob') {
+    const t = ($('#devPanel [data-mob]') || {}).value; if (!t || !MON[t]) return devMsg('몹을 고르자');
+    for (let i = 0; i < +arg; i++) { const x = Math.max(60, Math.min(m.w - 60, p.x + p.face * (180 + i * 40))); makeMon(t, x, MON[t].kind === 'flyer' ? GROUND - 160 : GROUND, null); }
+    return devMsg(MON[t].name + ' ' + arg + '마리 소환');
+  }
+  if (cmd === 'mobclear') { let n = 0; for (const e of G.mons) if (e.st !== 'die') { e.st = 'die'; e.dead = 0; e.minion = true; n++; } return devMsg('몹 ' + n + '마리를 없앴다 (보상 없음)'); }
+  if (cmd === 'potfill') { s.potions = POTION_MAX; s.scrolls = SCROLL_MAX; writeSave(); updateHud(true); return devMsg('연고·주문서를 채웠다'); }
+  if (cmd === 'snapsave') { try { localStorage.setItem('pxo-dev-snap:' + arg, JSON.stringify({ label: CHARS[s.char].name + ' Lv.' + s.level + ' · ' + (m.name || G.mapId) + ' · ' + new Date().toLocaleString('ko-KR'), data: JSON.stringify(s) })); } catch (e) { return devMsg('저장 실패 · ' + e.message); } return devMsg(arg + '번에 저장했다'); }
+  if (cmd === 'snapload') { let j = null; try { j = JSON.parse(localStorage.getItem('pxo-dev-snap:' + arg) || 'null'); } catch (e) { } if (!j) return; if (!mcConfirm(arg + '번 스냅샷으로 되돌릴까?\n' + j.label + '\n(지금 상태는 사라진다)')) return; const sv = JSON.parse(j.data); if (sv.char !== s.char) return devMsg('다른 캐릭터의 스냅샷이다 · 그 캐릭터로 들어가서 불러오자'); startGame(sv, false); writeSave(); return devMsg(arg + '번 스냅샷을 불러왔다'); }
+  if (cmd === 'bossreset') { const A = MAPS[CHAPTERS[DEV.ch].arena]; if (A && A.boss) delete s.flags['boss_' + A.boss]; writeSave(); return devMsg(DEV.ch + '장 보스 처치 기록을 지웠다 (처음 싸우는 것처럼)'); }
+  if (cmd === 'daily') { s.daily = null; writeSave(); return devMsg('일일 의뢰를 지웠다 · 다음에 열면 새로 받는다'); }
+  if (cmd === 'tutreset') { for (const k of Object.keys(s.flags)) if (k.startsWith('tut_')) delete s.flags[k]; try { const A = acctSeen(); if (A) for (const k of Object.keys(A)) if (k.startsWith('tut_')) delete A[k]; } catch (e) { } writeSave(); return devMsg('튜토리얼 안내를 다시 볼 수 있다'); }
+}
+const _mcmerTick = merTick;
+merTick = function (dt) { if (G.devMerT > 0) { G.devMerT -= dt; if (G.devMerT <= 0) { G.devMerT = 0; G.devMerMap = null; merSetHour(merHour()); } } return _mcmerTick(dt); };
+addEventListener('load', () => {
+  const el = $('#devPanel'); if (!el) return;
+  el.addEventListener('click', e => { const b = e.target.closest('button[data-ma]'); if (b && !b.disabled) masterAct(b.dataset.ma); });
+  el.addEventListener('input', e => {
+    const t = e.target;
+    if (t.dataset.tk) { const d = TUNE.byK[t.dataset.tk]; if (t.value === '' || !isFinite(+t.value)) return; const v = +t.value / tuneScale(d); const row = t.closest('.mcrow'); if (row) row.querySelectorAll('input[data-tk]').forEach(i => { if (i !== t) i.value = t.value; }); tuneSetOne(d.k, v); return; }
+    if (t.hasAttribute('data-msearch')) { DEV.q = t.value; mcFilter(); }
+  });
+  el.addEventListener('change', e => {
+    const t = e.target;
+    if (t.hasAttribute('data-monly')) { DEV.onlyChanged = t.checked; mcFilter(); }
+    if (t.hasAttribute('data-mboss')) { DEV.boss = t.value; devRender(); }
+    if (t.hasAttribute('data-mobch')) { DEV.mobCh = +t.value; devRender(); }
+  });
+});
+document.head.insertAdjacentHTML('beforeend', `<style>
+html #devPanel{width:min(460px,calc(100% - 16px));padding:0;display:none;flex-direction:column;overflow:hidden;font:13px 'Noto Sans KR',sans-serif;background:rgba(12,14,20,.97);border:1px solid #7a6640;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+html #devPanel.on{display:flex}
+html #devPanel .mch{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #3a3426;background:#17140e}
+html #devPanel .mch b{color:#ffd27a;font-size:15px}html #devPanel .mch span{color:#9a8f78;font-size:11px;flex:1}
+html #devPanel .mcclose{background:none;border:0;color:#cbbd9e;font-size:16px;padding:0 4px}
+html #devPanel .mctabs{display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid #3a3426}
+html #devPanel .mctabs button{background:none;border:0;border-bottom:2px solid transparent;color:#a99f88;padding:7px 2px 6px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
+html #devPanel .mctabs button i{font-style:normal;font-size:16px}html #devPanel .mctabs button.on{color:#ffd27a;border-bottom-color:#ffd27a;background:rgba(255,210,122,.06)}
+html #devPanel .mcbody{flex:1;overflow-y:auto;padding:6px 12px 10px}
+html #devPanel .mcfoot{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid #3a3426;background:#14120d;font-size:12px}
+html #devPanel .mcfoot .mcst{flex:1;color:#9be08a}html #devPanel .mcfoot b{color:#ffd27a}
+html #devPanel .dvmsg{padding:0 12px 8px;margin:0;color:#9be08a;min-height:0;font-size:12px}html #devPanel .dvmsg:empty{display:none}
+html #devPanel .mcsec{border-bottom:1px solid #26231b;padding:8px 0}html #devPanel h6{margin:0 0 6px;font-size:13px;color:#e8b048}html #devPanel h6 small{color:#8a8070;font-weight:400;margin-left:6px}
+html #devPanel .mcr{display:flex;gap:6px;align-items:center;margin:5px 0;flex-wrap:wrap}html #devPanel .mcr>span{min-width:44px;color:#bbb}html #devPanel .mcg button{flex:1 1 auto}
+html #devPanel select,html #devPanel input[type=number],html #devPanel input[type=search]{background:#1b1d25;color:#eee;border:1px solid #4a4658;padding:5px 6px;font:inherit;border-radius:3px}
+html #devPanel select{flex:1;min-width:0}html #devPanel input[type=search]{flex:1}
+html #devPanel button{background:#2c2a36;color:#eee;border:1px solid #5a5468;padding:6px 10px;cursor:pointer;font:inherit;border-radius:3px}
+html #devPanel button:hover:not(:disabled){background:#3c3848}html #devPanel button.on{background:#5a4a20;border-color:#ffd27a;color:#ffe6a8}
+html #devPanel button.big{background:#6a3a12;border-color:#e89a48;color:#fff;font-weight:700;padding:9px 14px}
+html #devPanel .mctog{display:flex;align-items:center;gap:5px;background:#1b1d25;border:1px solid #3a3848;padding:5px 9px;border-radius:3px;cursor:pointer}
+html #devPanel .mctools{display:flex;gap:8px;align-items:center;position:sticky;top:-6px;background:rgba(12,14,20,.98);padding:6px 0;z-index:1}
+html #devPanel .mctools label{display:flex;gap:4px;align-items:center;white-space:nowrap;color:#cbbd9e;cursor:pointer}
+html #devPanel .mcrow{display:grid;grid-template-columns:1fr;gap:3px;padding:7px 8px;margin:3px 0;border-left:3px solid transparent;background:rgba(255,255,255,.02)}
+html #devPanel .mcrow.ch{border-left-color:#ffd27a;background:rgba(255,210,122,.07)}
+html #devPanel .mcl b{font-weight:500;color:#eee}html #devPanel .mcl small{display:block;color:#8a8070;font-size:11px}
+html #devPanel .mcc{display:flex;align-items:center;gap:6px}html #devPanel .mcc input[type=range]{flex:1;accent-color:#e8b048}
+html #devPanel .mcc input[type=number]{width:74px}html #devPanel .mcc i{font-style:normal;color:#9a8f78;min-width:16px}
+html #devPanel .mcx{padding:3px 8px}html #devPanel .mcrow:not(.ch) .mcx{visibility:hidden}
+html #devPanel .mcd{font-size:11px;color:#7a7262}
+html #devPanel .mcinfo{background:#1b1d25;padding:7px 9px;margin:8px 0 2px;color:#cfc4ac;font-size:12px}
+html #devPanel .mcwarn{color:#ff9a8a;margin:8px 0}
+html #devPanel .mcslot{min-width:28px;color:#e8b048}html #devPanel .mcsnap{flex:1;color:#9a9384;font-size:11px;min-width:120px}
+html #devPanel .mcadm{margin:8px 0;padding:8px 10px;font-size:12px;border:1px solid}html #devPanel .mcadm.ok{color:#9be08a;border-color:#3a6a30;background:rgba(60,120,50,.12)}html #devPanel .mcadm.no{color:#ffb4a0;border-color:#7a3a30;background:rgba(120,50,40,.12);word-break:break-all}
+html #devPanel .mcdiff{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;padding:5px 6px;border-bottom:1px dashed #2a271f;font-size:12px}
+html #devPanel .mcdiff .old{color:#9a8f78;text-decoration:line-through}html #devPanel .mcdiff .new{color:#ffd27a;font-weight:700}
+html #devPanel .mclog{display:grid;grid-template-columns:auto auto 1fr auto;gap:8px;align-items:center;padding:4px 0;font-size:12px;color:#cfc4ac}
+html #devPanel small{color:#9a9384}
+</style>`);
+}
 </script>
 </body></html>

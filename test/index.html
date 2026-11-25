@@ -16099,7 +16099,7 @@ resetBossArenaState = function () { _resetG(); G.rock9 = []; };
 
 /* ======== 7. 폭주 거인 ======== */
 reg9('b7', {
-  name: '폭주 거인', bz: '분노의 포효', atkK: 1.3, spdK: 1.3, sheet: 'boss/b7_giant.png', keepGims: ['ledge', 'deco'],
+  name: '폭주 거인', bz: '분노의 포효', atkK: 1.3, spdK: 1.3, keepGims: ['ledge', 'deco'],
   roar: [[3, 0], [3, 0], [2, 2], [0, 0]],
   files: ['boss_07/b21_s1_titan_smash.png', 'boss_07/b21_s2_bull_charge.png', 'boss_07/b21_s3_chain_whip.png', 'boss_07/b21_s4_seismic_leap.png', 'boss_07/b21_s5_volcanic_berserk.png', 'boss_07/b21_s6_boulder_toss.png'],
   skills: [
@@ -20792,16 +20792,16 @@ const ACT3_ART = { 21: 17, 22: 18, 23: 19, 24: 9, 25: 13, 26: 11, 27: 16, 28: 12
 /* 2026-11-23 (3막 통합 지시서 4-3): light and fog per floor (THEME_LIGHT keys only; the picture itself is the floor's own art) */
 const ACT3_THEME = { 21: 'titans', 22: 'asphodel', 23: 'styx', 24: 'gorgon', 25: 'titans', 26: 'labyrinth', 27: 'styx', 28: 'titans', 29: 'throne', 30: 'throne' };
 const ACT3_BOSS = {
-  21: { file: '21_Astral_Stalker.png', file48: 'b21_48f.png', h: 192, w: 100, col: '120,190,255', mo: { ms: 110, trail: '120,190,255' } },
-  22: { file: '22_Rusted_Archangel.png', file48: 'b22_48f.png', h: 228, w: 124, col: '255,96,60', mo: { ms: 130, float: 2 } },
-  23: { file: '23_Mirror_Empress.png', file48: 'b23_48f.png', h: 204, w: 100, col: '200,230,255', mo: { ms: 120, parts: 'spirit' } },
-  24: { file: '24_Plague_Raven_Lord.png', file48: 'b24_48f.png', h: 212, w: 112, col: '150,220,90', mo: { ms: 125 } },
-  25: { file: '25_Gravity_Colossus.png', file48: 'b25_48f.png', h: 262, w: 150, col: '170,120,255', mo: { ms: 150, float: 3 } },
-  26: { file: '26_Chrono_Archivist.png', file48: 'b26_48f.png', h: 214, w: 100, col: '255,210,120', mo: { ms: 120 } },
-  27: { file: '27_Void_Leviathan.png', file48: 'b27_48f.png', h: 262, w: 170, col: '150,90,255', mo: { ms: 140 } },
-  28: { file: '28_Silver_Deus.png', file48: 'b28_48f.png', h: 262, w: 150, col: '220,240,255', mo: { ms: 150, step: [1, 3], quake: 1.2, dust: 1 } },
-  29: { file: '29_Blood_Eclipse_Knight.png', file48: 'b29_48f.png', h: 224, w: 112, col: '255,40,60', mo: { ms: 120, trail: '200,30,50' } },
-  30: { file: '30_Astraon_Star_Devourer.png', file48: 'b30_48f.png', h: 270, w: 160, col: '255,220,140', mo: { ms: 130, float: 3 } },
+  21: { file48: 'b21_48f.png', h: 192, w: 100, col: '120,190,255', mo: { ms: 110, trail: '120,190,255' } },
+  22: { file48: 'b22_48f.png', h: 228, w: 124, col: '255,96,60', mo: { ms: 130, float: 2 } },
+  23: { file48: 'b23_48f.png', h: 204, w: 100, col: '200,230,255', mo: { ms: 120, parts: 'spirit' } },
+  24: { file48: 'b24_48f.png', h: 212, w: 112, col: '150,220,90', mo: { ms: 125 } },
+  25: { file48: 'b25_48f.png', h: 262, w: 150, col: '170,120,255', mo: { ms: 150, float: 3 } },
+  26: { file48: 'b26_48f.png', h: 214, w: 100, col: '255,210,120', mo: { ms: 120 } },
+  27: { file48: 'b27_48f.png', h: 262, w: 170, col: '150,90,255', mo: { ms: 140 } },
+  28: { file48: 'b28_48f.png', h: 262, w: 150, col: '220,240,255', mo: { ms: 150, step: [1, 3], quake: 1.2, dust: 1 } },
+  29: { file48: 'b29_48f.png', h: 224, w: 112, col: '255,40,60', mo: { ms: 120, trail: '200,30,50' } },
+  30: { file48: 'b30_48f.png', h: 270, w: 160, col: '255,220,140', mo: { ms: 130, float: 3 } },
 };
 const isAct3 = n => n > CH_COUNT && n <= CH_LAST;
 
@@ -20820,7 +20820,7 @@ for (let n = CH_COUNT + 1; n <= CH_LAST; n++) {
     wake: last + josa(last, '이', '가') + ' 눈을 뜬다', rage: last + '의 기운이 거칠어진다', stagger: last + josa(last, '이', '가') + ' 비틀거린다' };
   BOSS_ART[id] = [-1, A.h];
   BOSS_SHEETS[id] = Object.assign({ grid: id }, A.mo);
-  BOSS_SHEET_FILE[id] = 'boss/' + (A.file48 || A.file); BOSS_SHEET_BASE[id] = 240;   // 2026-11-23: 48f sheets, feet on y 240
+  BOSS_SHEET_FILE[id] = 'boss/' + A.file48; BOSS_SHEET_BASE[id] = 240;   // 2026-11-23: 48f sheets, feet on y 240
 }
 
 /* ---- the floors: a camp landing, the floor's hall (field, 2026-11-23: where the act-3 mobs live) and the boss room ---- */
@@ -25625,11 +25625,13 @@ function tuneSetOne(k, v) {
   if (row) { const dv = Math.round(v * tuneScale(d) * 1e6) / 1e6; row.querySelectorAll('input[data-tk]').forEach(i => { if (document.activeElement !== i) i.value = dv; }); row.classList.toggle('ch', !tuneSame(v, TUNE.base[k])); }
   const f = document.querySelector('#devPanel .mcfoot b'); if (f) f.textContent = nChanged();
 }
+const MC_ADMIN_IDS = ['admin0215'];   // 2026-11-25 (user): 관리자 아이디. 서버 규칙도 acct/admin0215 의 uid 로 관리자를 판단한다 (tools/firebase-rules.json)
 async function mcCheckAdmin() {
-  if (!AUTH.token || !AUTH.fuid) { TUNE.admin = false; TUNE.adminMsg = '로그인하면 관리자인지 확인한다'; return; }
-  try { const j = await tuneGet(dbUrlRaw('admins/' + AUTH.fuid)); TUNE.admin = j === true;
-    TUNE.adminMsg = TUNE.admin ? '' : '이 계정은 관리자가 아니다 · Firebase 콘솔 → Realtime Database 에 admins / ' + AUTH.fuid + ' = true 를 추가 (tools/firebase-admin.md)'; }
-  catch (e) { TUNE.admin = false; TUNE.adminMsg = '관리자 확인 실패 · ' + e.message + ' · tools/firebase-admin.md 참고'; }
+  if (!AUTH.token || !AUTH.fuid) { TUNE.admin = false; TUNE.adminMsg = '관리자 아이디(' + MC_ADMIN_IDS.join(', ') + ')로 로그인하면 정식에 적용할 수 있다'; return; }
+  if (!MC_ADMIN_IDS.includes(AUTH.id)) { TUNE.admin = false; TUNE.adminMsg = '지금 아이디(' + AUTH.id + ')는 관리자가 아니다 · ' + MC_ADMIN_IDS.join(', ') + ' 로 로그인'; return; }
+  try { const a = await tuneGet(dbUrlRaw('acct/' + AUTH.id)); TUNE.admin = !!(a && a.uid === AUTH.fuid);
+    TUNE.adminMsg = TUNE.admin ? '' : '서버의 계정 정보가 이 로그인과 맞지 않는다'; }
+  catch (e) { TUNE.admin = false; TUNE.adminMsg = '관리자 확인 실패 · ' + e.message; }
 }
 async function mcLoadShip() {
   if (!AUTH.token) { TUNE.admin = false; TUNE.adminMsg = '로그인하면 관리자인지 확인한다'; }

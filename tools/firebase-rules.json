@@ -1,0 +1,310 @@
+{
+  "rules": {
+    "acct": {
+      "$id": {
+        ".read": true,
+        ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid)",
+        ".validate": "newData.child('uid').val() === auth.uid && newData.child('nick').isString()"
+      }
+    },
+    "nicks": {
+      "$nick": {
+        ".read": true,
+        ".write": "auth != null && !data.exists()",
+        ".validate": "newData.child('uid').val() === auth.uid && newData.child('id').isString()"
+      }
+    },
+    "players": {
+      "$id": {
+        ".read": "auth != null && root.child('acct').child($id).child('uid').val() === auth.uid",
+        ".write": "auth != null && root.child('acct').child($id).child('uid').val() === auth.uid",
+        ".validate": "newData.hasChildren(['data', 'updated']) && newData.child('data').isString() && newData.child('data').val().length < 400000 && newData.child('updated').isNumber()"
+      }
+    },
+    "online": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && root.child('acct').child($id).child('uid').val() === auth.uid"
+      }
+    },
+    "live": {
+      "$map": {
+        ".read": "auth != null",
+        "$id": {
+          ".write": "auth != null && root.child('acct').child($id).child('uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['t', 'x', 'y', 'c']) && newData.child('t').isNumber() && newData.child('x').isNumber() && newData.child('y').isNumber() && newData.child('c').isString()"
+        }
+      }
+    },
+    "raid": {
+      "$map": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "party": {
+      "$pid": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "inv": {
+      "$id": {
+        ".read": "auth != null && root.child('acct').child($id).child('uid').val() === auth.uid",
+        ".write": "auth != null"
+      }
+    },
+    "talk": {
+      "$map": {
+        ".read": "auth != null",
+        "$id": {
+          ".write": "auth != null && root.child('acct').child($id).child('uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['n', 'q']) && newData.child('n').isString() && newData.child('n').val().length <= 12"
+        }
+      }
+    },
+    "dev_players": {
+      "$id": {
+        ".read": "auth != null && root.child('acct').child($id).child('uid').val() === auth.uid",
+        ".write": "auth != null && root.child('acct').child($id).child('uid').val() === auth.uid",
+        ".validate": "newData.hasChildren(['data', 'updated']) && newData.child('data').isString() && newData.child('data').val().length < 400000 && newData.child('updated').isNumber()"
+      }
+    },
+    "dev_online": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && root.child('acct').child($id).child('uid').val() === auth.uid"
+      }
+    },
+    "dev_live": {
+      "$map": {
+        ".read": "auth != null",
+        "$id": {
+          ".write": "auth != null && root.child('acct').child($id).child('uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['t', 'x', 'y', 'c']) && newData.child('t').isNumber() && newData.child('x').isNumber() && newData.child('y').isNumber() && newData.child('c').isString()"
+        }
+      }
+    },
+    "dev_raid": {
+      "$map": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "dev_party": {
+      "$pid": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "dev_inv": {
+      "$id": {
+        ".read": "auth != null && root.child('acct').child($id).child('uid').val() === auth.uid",
+        ".write": "auth != null"
+      }
+    },
+    "dev_talk": {
+      "$map": {
+        ".read": "auth != null",
+        "$id": {
+          ".write": "auth != null && root.child('acct').child($id).child('uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['n', 'q']) && newData.child('n').isString() && newData.child('n').val().length <= 12"
+        }
+      }
+    },
+    "local_acct": {
+      "$id": {
+        ".read": true,
+        ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid)",
+        ".validate": "newData.child('uid').val() === auth.uid && newData.child('nick').isString()"
+      }
+    },
+    "local_nicks": {
+      "$nick": {
+        ".read": true,
+        ".write": "auth != null && !data.exists()",
+        ".validate": "newData.child('uid').val() === auth.uid && newData.child('id').isString()"
+      }
+    },
+    "local_players": {
+      "$id": {
+        ".read": "auth != null && root.child('local_acct').child($id).child('uid').val() === auth.uid",
+        ".write": "auth != null && root.child('local_acct').child($id).child('uid').val() === auth.uid",
+        ".validate": "newData.hasChildren(['data', 'updated']) && newData.child('data').isString() && newData.child('data').val().length < 400000 && newData.child('updated').isNumber()"
+      }
+    },
+    "local_online": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && root.child('local_acct').child($id).child('uid').val() === auth.uid"
+      }
+    },
+    "local_live": {
+      "$map": {
+        ".read": "auth != null",
+        "$id": {
+          ".write": "auth != null && root.child('local_acct').child($id).child('uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['t', 'x', 'y', 'c']) && newData.child('t').isNumber() && newData.child('x').isNumber() && newData.child('y').isNumber() && newData.child('c').isString()"
+        }
+      }
+    },
+    "local_raid": {
+      "$map": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "local_party": {
+      "$pid": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "local_inv": {
+      "$id": {
+        ".read": "auth != null && root.child('local_acct').child($id).child('uid').val() === auth.uid",
+        ".write": "auth != null"
+      }
+    },
+    "local_talk": {
+      "$map": {
+        ".read": "auth != null",
+        "$id": {
+          ".write": "auth != null && root.child('local_acct').child($id).child('uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['n', 'q']) && newData.child('n').isString() && newData.child('n').val().length <= 12"
+        }
+      }
+    },
+    "tradereq": {
+      "$to": {
+        ".read": "auth != null && root.child('acct/' + $to + '/uid').val() === auth.uid",
+        ".write": "auth != null && ((newData.exists() && root.child('acct/' + newData.child('from').val() + '/uid').val() === auth.uid) || (!newData.exists() && (root.child('acct/' + $to + '/uid').val() === auth.uid || root.child('acct/' + data.child('from').val() + '/uid').val() === auth.uid)))"
+      }
+    },
+    "trade": {
+      "$tid": {
+        ".read": "auth != null",
+        ".write": "auth != null && !newData.exists() && root.child('acct/' + data.child('a/u').val() + '/uid').val() === auth.uid",
+        "a": {
+          ".write": "auth != null && ((newData.exists() && root.child('acct/' + newData.child('u').val() + '/uid').val() === auth.uid && (!data.exists() || data.child('u').val() === newData.child('u').val())) || (!newData.exists() && root.child('acct/' + data.child('u').val() + '/uid').val() === auth.uid))"
+        },
+        "b": {
+          ".write": "auth != null && ((newData.exists() && root.child('acct/' + newData.child('u').val() + '/uid').val() === auth.uid && (!data.exists() || data.child('u').val() === newData.child('u').val())) || (!newData.exists() && root.child('acct/' + data.child('u').val() + '/uid').val() === auth.uid))"
+        },
+        "done": {
+          "$s": {
+            ".write": "auth != null && ($s === 'a' || $s === 'b') && root.child('acct/' + data.parent().parent().child($s).child('u').val() + '/uid').val() === auth.uid"
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "dev_tradereq": {
+      "$to": {
+        ".read": "auth != null && root.child('acct/' + $to + '/uid').val() === auth.uid",
+        ".write": "auth != null && ((newData.exists() && root.child('acct/' + newData.child('from').val() + '/uid').val() === auth.uid) || (!newData.exists() && (root.child('acct/' + $to + '/uid').val() === auth.uid || root.child('acct/' + data.child('from').val() + '/uid').val() === auth.uid)))"
+      }
+    },
+    "dev_trade": {
+      "$tid": {
+        ".read": "auth != null",
+        ".write": "auth != null && !newData.exists() && root.child('acct/' + data.child('a/u').val() + '/uid').val() === auth.uid",
+        "a": {
+          ".write": "auth != null && ((newData.exists() && root.child('acct/' + newData.child('u').val() + '/uid').val() === auth.uid && (!data.exists() || data.child('u').val() === newData.child('u').val())) || (!newData.exists() && root.child('acct/' + data.child('u').val() + '/uid').val() === auth.uid))"
+        },
+        "b": {
+          ".write": "auth != null && ((newData.exists() && root.child('acct/' + newData.child('u').val() + '/uid').val() === auth.uid && (!data.exists() || data.child('u').val() === newData.child('u').val())) || (!newData.exists() && root.child('acct/' + data.child('u').val() + '/uid').val() === auth.uid))"
+        },
+        "done": {
+          "$s": {
+            ".write": "auth != null && ($s === 'a' || $s === 'b') && root.child('acct/' + data.parent().parent().child($s).child('u').val() + '/uid').val() === auth.uid"
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "local_tradereq": {
+      "$to": {
+        ".read": "auth != null && root.child('local_acct/' + $to + '/uid').val() === auth.uid",
+        ".write": "auth != null && ((newData.exists() && root.child('local_acct/' + newData.child('from').val() + '/uid').val() === auth.uid) || (!newData.exists() && (root.child('local_acct/' + $to + '/uid').val() === auth.uid || root.child('local_acct/' + data.child('from').val() + '/uid').val() === auth.uid)))"
+      }
+    },
+    "local_trade": {
+      "$tid": {
+        ".read": "auth != null",
+        ".write": "auth != null && !newData.exists() && root.child('local_acct/' + data.child('a/u').val() + '/uid').val() === auth.uid",
+        "a": {
+          ".write": "auth != null && ((newData.exists() && root.child('local_acct/' + newData.child('u').val() + '/uid').val() === auth.uid && (!data.exists() || data.child('u').val() === newData.child('u').val())) || (!newData.exists() && root.child('local_acct/' + data.child('u').val() + '/uid').val() === auth.uid))"
+        },
+        "b": {
+          ".write": "auth != null && ((newData.exists() && root.child('local_acct/' + newData.child('u').val() + '/uid').val() === auth.uid && (!data.exists() || data.child('u').val() === newData.child('u').val())) || (!newData.exists() && root.child('local_acct/' + data.child('u').val() + '/uid').val() === auth.uid))"
+        },
+        "done": {
+          "$s": {
+            ".write": "auth != null && ($s === 'a' || $s === 'b') && root.child('local_acct/' + data.parent().parent().child($s).child('u').val() + '/uid').val() === auth.uid"
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "merchant": {
+      "$hour": {
+        ".read": "auth != null",
+        "st": {
+          "$i": {
+            ".write": "auth != null && newData.child('left').isNumber() && newData.child('left').val() >= -1 && newData.child('left').val() < 100"
+          }
+        }
+      }
+    },
+    "dev_merchant": {
+      "$hour": {
+        ".read": "auth != null",
+        "st": {
+          "$i": {
+            ".write": "auth != null && newData.child('left').isNumber() && newData.child('left').val() >= -1 && newData.child('left').val() < 100"
+          }
+        }
+      }
+    },
+    "local_merchant": {
+      "$hour": {
+        ".read": "auth != null",
+        "st": {
+          "$i": {
+            ".write": "auth != null && newData.child('left').isNumber() && newData.child('left').val() >= -1 && newData.child('left').val() < 100"
+          }
+        }
+      }
+    },
+    "tuning": {
+      ".read": true,
+      ".write": "auth != null && root.child('acct/admin0215/uid').val() === auth.uid",
+      ".validate": "newData.hasChildren(['v', 'at']) && newData.child('at').isNumber()"
+    },
+    "dev_tuning": {
+      ".read": true,
+      ".write": "auth != null && root.child('acct/admin0215/uid').val() === auth.uid",
+      ".validate": "newData.hasChildren(['v', 'at']) && newData.child('at').isNumber()"
+    },
+    "local_tuning": {
+      ".read": true,
+      ".write": "auth != null && root.child('local_acct/admin0215/uid').val() === auth.uid",
+      ".validate": "newData.hasChildren(['v', 'at']) && newData.child('at').isNumber()"
+    },
+    "tuning_log": {
+      ".read": "auth != null && root.child('acct/admin0215/uid').val() === auth.uid",
+      ".write": "auth != null && root.child('acct/admin0215/uid').val() === auth.uid"
+    },
+    "local_tuning_log": {
+      ".read": "auth != null && root.child('local_acct/admin0215/uid').val() === auth.uid",
+      ".write": "auth != null && root.child('local_acct/admin0215/uid').val() === auth.uid"
+    }
+  }
+}

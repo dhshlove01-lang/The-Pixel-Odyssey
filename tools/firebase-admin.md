@@ -1,49 +1,31 @@
-# 마스터 콘솔 관리자 등록 (Firebase, 한 번만)
+# 마스터 콘솔 관리자 설정 (Firebase, 한 번만)
 
-마스터 콘솔(test 서버 F9)의 **정식에 적용** 버튼은 관리자 계정만 쓸 수 있다.
-관리자인지는 서버의 `admins/<내 UID>` 값이 `true` 인지로 정한다. 아무나 정식 수치를 바꾸지 못하게 서버 규칙도 함께 넣는다.
+관리자 아이디는 **`admin0215`** 하나다(코드 `MC_ADMIN_IDS`, 규칙 `acct/admin0215/uid`).
+서버는 "지금 로그인한 사람이 `admin0215` 계정의 주인인가"로 관리자를 판단하므로, 따로 UID 를 찾아 넣을 필요가 없다.
+**비밀번호는 코드·GitHub 어디에도 적지 않는다.**
 
-## 1. 내 UID 확인
-test 서버에 **관리자로 쓸 아이디로 로그인** → F9 → **🚀 정식 적용** 탭.
-빨간 칸에 `admins / XXXXXXXX = true 를 추가` 라고 나온다. 이 `XXXXXXXX` 가 내 UID.
+## 1. 규칙 붙여넣기
+Firebase 콘솔 → 프로젝트 → **Realtime Database** → **규칙** 탭
+→ 안의 내용을 전부 지우고 **`tools/firebase-rules.json` 내용을 통째로** 붙여넣기 → **게시**.
 
-## 2. 관리자 등록
-Firebase 콘솔 → 프로젝트 `devil-renown` → **Realtime Database** → **데이터** 탭
-- 맨 위(루트)의 `+` → 이름 `admins` 
-- 그 아래 `+` → 이름 = 내 UID, 값 = `true` (불리언)
+(기존 규칙 34개는 한 글자도 바꾸지 않았고, 아래 5개만 더했다)
 
-## 3. 규칙 추가
-같은 화면의 **규칙** 탭에서, 이미 있는 `"rules": { ... }` 안에 아래 네 덩어리를 **추가**한다(다른 줄은 지우지 말 것).
+| 경로 | 읽기 | 쓰기 |
+|---|---|---|
+| `tuning` (정식 수치) | 누구나 | admin0215 만 |
+| `dev_tuning` (test 수치) | 누구나 | admin0215 만 |
+| `tuning_log` (정식 적용 기록) | admin0215 만 | admin0215 만 |
+| `local_tuning`, `local_tuning_log` | 이 PC 테스트용 (local_acct/admin0215) | |
 
-```json
-"admins": {
-  "$uid": { ".read": "auth != null && auth.uid === $uid" }
-},
-"tuning": {
-  ".read": true,
-  ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
-},
-"dev_tuning": {
-  ".read": true,
-  ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
-},
-"tuning_log": {
-  ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
-  ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
-}
-```
+## 2. 관리자 계정 만들기 (규칙 게시 후 **바로**)
+게임(정식이든 test 든 같은 계정)에서 **회원가입** → 아이디 `admin0215`, 비밀번호는 정한 것.
+- 아이디는 먼저 가입한 사람이 갖는다. 다른 사람이 먼저 가입하면 관리자 자리를 뺏기니 바로 만들 것.
 
-**게시**를 누른다.
+## 3. 확인
+test 서버(`/test/`) → `admin0215` 로 로그인 → F9 → **🚀 정식 적용** 탭에 초록색 **관리자 확인됨** 이 뜨면 끝.
 
-> 주의: 규칙 맨 위에 `".read": true` 나 `".write": true` 가 루트에 바로 있으면, 아래 규칙으로 막아도 소용이 없다(Firebase 규칙은 위에서 허락하면 아래에서 못 막는다). 그런 줄이 있으면 Claude 에게 규칙 전체를 보여 주고 같이 고친다.
+## 다른 계정이 관리자 창을 열면
+test 서버의 관리자 창은 누구나 열 수 있지만(test 전용 기능), 수치를 서버에 저장하거나 정식에 적용하는 것은 서버 규칙이 `admin0215` 만 허락한다.
 
-## 4. 확인
-test 서버를 새로 고침 → F9 → 🚀 정식 적용 탭에 초록색 **관리자 확인됨** 이 뜨면 끝.
-
-## 저장 위치 (참고)
-| 경로 | 내용 |
-|---|---|
-| `dev_tuning` | test 서버 수치 (관리자 창에서 바꾸면 자동 저장) |
-| `tuning` | 정식 서버 수치 (정식에 적용 버튼) |
-| `tuning_log` | 정식 적용 기록 (되돌리기용: 적용 전·후 값) |
-| `admins/<UID>` | 관리자 표시 |
+## 관리자 아이디를 바꾸려면
+`test/index.html` 의 `MC_ADMIN_IDS` 와 `tools/firebase-rules.json` 의 `admin0215` (5곳)를 같이 바꾸고, 규칙을 다시 게시한다.
