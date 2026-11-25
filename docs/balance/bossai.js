@@ -10,8 +10,8 @@
           피할 곳이 없으면 가드, 안전하면 보스를 향해 공격·스킬. 맞은 피해는 기록하고 체력은 다시 채워 끝까지 싸운다(죽지 않음). */
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
-const ARGS = process.argv.slice(2), TI = ARGS.indexOf('--tune'), OVER = TI >= 0 ? JSON.parse(fs.readFileSync(ARGS[TI + 1], 'utf8')) : null, OUTI = ARGS.indexOf('--out');
-const CHS = ARGS.filter((a, i) => !(TI >= 0 && i === TI + 1) && !(OUTI >= 0 && i === OUTI + 1)).map(Number).filter(Boolean);
+const ARGS = process.argv.slice(2), TI = ARGS.indexOf('--tune'), OVER = TI >= 0 ? JSON.parse(fs.readFileSync(ARGS[TI + 1], 'utf8')) : null, OUTI = ARGS.indexOf('--out'), SI = ARGS.indexOf('--spec'), SPEC = SI >= 0 ? JSON.parse(fs.readFileSync(ARGS[SI + 1], 'utf8')) : null;
+const CHS = ARGS.filter((a, i) => !(TI >= 0 && i === TI + 1) && !(OUTI >= 0 && i === OUTI + 1) && !(SI >= 0 && i === SI + 1)).map(Number).filter(Boolean);
 const LIST = CHS.length ? CHS : Array.from({ length: 30 }, (_, i) => i + 1);
 const CLASSES = ['theron', 'kallisto', 'lykos', 'mage'];
 const SPEED = 4;
@@ -28,11 +28,14 @@ const INJECT = () => {
     });
     const rnd0 = Math.random; Math.random = seeded(n * 7919 + 17 + ch.length);
     s.level = P.L; s.tp = 0;
+    /* 재화로 가능한 스펙(사용자 선택): 강화 = min(그 장까지 번 골드로 가능한 단계, 목표), 상급·최상급 부위 수, 부위마다 맞춘 잠재 줄 수(중간 굴림) */
+    const AF = window.__spec && window.__spec[n];
+    if (AF) { P.e = Math.min(P.e, AF.e); P.q3 = AF.q3 || 0; P.q2n = AF.q2; P.potK = 1; P.lines = AF.potLines; }
     SLOTS.forEach((k, i) => {
       s.slotE[k] = { e: P.e, T: P.T, gauge: 0 };
       const g = i < P.leg ? 3 : i < P.uniq ? 2 : n >= 2 ? 1 : 0;
-      const it = makeItem(k, s.char, g, n, s); it.q = i < P.q3 ? 3 : P.q2 ? 2 : 1;
-      it.pot = POT9.slice(0, POT_LINES[g]).map(([pk, v]) => ({ k: pk, v: Math.round(v * (1 + g * 0.25) * P.potK * 10) / 10 }));
+      const it = makeItem(k, s.char, g, n, s); it.q = i < P.q3 ? 3 : AF ? (i < P.q3 + P.q2n ? 2 : 1) : P.q2 ? 2 : 1;
+      it.pot = POT9.slice(0, AF ? Math.min(POT_LINES[g], P.lines[i] || 0) : POT_LINES[g]).map(([pk, v]) => ({ k: pk, v: Math.round(v * (1 + g * 0.25) * P.potK * 10) / 10 }));
       it.opts = it.opts || []; s.equip[k] = it;
     });
     Math.random = rnd0;
@@ -81,6 +84,7 @@ const INJECT = () => {
   }
   /* A·S·D·V 는 다른 동작 중이 아닐 때만 나간다(skillInput) — 준비된 스킬이 있으면 그 틱에는 Z·X·C 를 누르지 않고 스킬부터 */
   function attack(p, ult) {
+    if (G.save.char === 'kallisto' && G.save.flags.mobility && !(p.focusCd > 0)) IN.press.shift = true;
     AI.skip = AI.skip || {};
     if (AI.tried && (p.cd[AI.tried] || 0) <= 0 && !p.act && !G.ult) AI.skip[AI.tried] = G.t + 3;   // 눌렀는데 안 나간 스킬(대상 없음 등)은 3초 건너뛴다
     AI.tried = null;
@@ -129,7 +133,7 @@ const INJECT = () => {
   async function one(n, ch) {
     const p = await b.newPage({ viewport: { width: 1280, height: 720 } }); const errs = []; p.on('pageerror', e => errs.push(e.message));
     await p.goto('http://127.0.0.1:8765/test/index.html'); await p.waitForTimeout(1800);
-    await p.evaluate(INJECT); if (OVER) await p.evaluate(o => { window.__over = o; tuneApply(o); }, OVER);
+    await p.evaluate(INJECT); if (SPEC) await p.evaluate(sp => { window.__spec = sp; }, SPEC); if (OVER) await p.evaluate(o => { window.__over = o; tuneApply(o); }, OVER);
     const info = await p.evaluate(([n, ch]) => {
       const { s, P } = hardSpec(n, ch);
       for (const k in TUT) s.flags['tut_' + k] = 1; s.seenCh = {}; for (let i = 1; i <= 30; i++) s.seenCh[i] = 1;

@@ -19,7 +19,7 @@ const rows = JSON.parse(fs.readFileSync(IN, 'utf8'));
     return out;
   }, rows);
   const T = {};
-  for (const r of rows) { if (r.err) continue; (T[r.n] = T[r.n] || {})[r.ch] = { cp: r.cp, hp: r.hp, off: Math.round(offs[r.n + ':' + r.ch] * (PRE['st:' + r.ch + ':atk'] || 1)), sus: r.dpsSus, ult: r.dpsUlt, bdps: r.bossDps, dtps: r.dtps, bhp: r.bossHp, hm: PRE['b:b' + r.n + ':hp'] || 1, am: PRE['st:' + r.ch + ':atk'] || 1 }; }
+  for (const r of rows) { if (r.err) continue; (T[r.n] = T[r.n] || {})[r.ch] = { cp: r.cp, hp: r.hp, off: Math.round(offs[r.n + ':' + r.ch] * (PRE['st:' + r.ch + ':atk'] || 1)), sus: r.dpsSus, ult: r.dpsUlt, bdps: r.bossDps, dtps: r.dtps, bhp: r.bossHp, hm: PRE['b:b' + r.n + ':hp'] || 1, am: (PRE['sk:' + r.ch + ':z:dmg'] || 1) * (PRE['st:' + r.ch + ':atk'] || 1) }; }
   fs.writeFileSync(path.join(__dirname, 'bossai_table.json'), JSON.stringify(T));
   fs.writeFileSync(path.join(__dirname, 'bossai_oldrec.json'), JSON.stringify(offs._old));
   console.log('chapters', Object.keys(T).length);
