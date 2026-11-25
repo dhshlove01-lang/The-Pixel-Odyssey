@@ -690,7 +690,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1300';
+const GAME_VER = '261125-1400';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -774,8 +774,8 @@ const enhGold = (e, T) => Math.round((20 + 22 * e) * (1 + 2 * T) * ENH_GOLD_X);
 const inheritGold = T => enhGold(15, T) * 3;
 const slotLeq = (e, ilvl, T) => 1 + 0.6 * e + 1.2 * ilvl + 10 * T;
 let GAUGE_RATE = 0.465;                                        // failure adds rate*0.465 to the 장인의 기운 gauge; 100 = guaranteed
-const POTION_HEAL = 0.35, POTION_CD = 8, POTION_MAX = 20, SCROLL_MAX = 10, SCROLL_CAST = 1.6;
-const GUARD_WIN = 0.25, GUARD_CD = 3, GUARD_STUN = 1;   // G: press just before a hit lands
+let POTION_HEAL = 0.35, POTION_CD = 8, POTION_MAX = 20, SCROLL_MAX = 10, SCROLL_CAST = 1.6;   // let: 마스터 콘솔
+let GUARD_WIN = 0.25, GUARD_CD = 3, GUARD_STUN = 1;   // let: 마스터 콘솔   // G: press just before a hit lands
 const TOWN_REGEN = 0.02, CHEST_X = 900;                  // camp heal per second (share of max HP), storage chest position
 /* Cloud saves (Firebase Realtime Database, also meant for co-op later). Empty = this device only.
    Put the database URL here, e.g. 'https://devil-renown-default-rtdb.asia-southeast1.firebasedatabase.app'. */
@@ -5879,8 +5879,8 @@ const mapChapter = () => (G.map && G.map.ch) || 1;
 const traitRank = id => (G.save && G.save.traits[id]) || 0;
 const slotValue = (k, s) => { s = s || G.save; const se = s.slotE[k]; return slotStat(k, s.equip[k], se.e, se.T); };
 /* generic upper ranks (4-10): damage, cooldown or attack speed, crit, awakening */
-const tDmg = id => { const r = traitRank(id); return 1 + (r >= 4 ? 0.15 : 0) + (r >= 5 ? 0.15 : 0) + (r >= 7 ? 0.2 : 0) + (r >= 9 ? 0.25 : 0) + 0.06 * Math.max(0, Math.min(r, 14) - 10) + (r >= 15 ? 0.25 : 0); };   // ranks 11-15 (8-2)
-const tCd = id => traitRank(id) >= 6 ? 0.8 : 1;
+let tDmg = id => {   /* let: 마스터 콘솔 특성 수치 */ const r = traitRank(id); return 1 + (r >= 4 ? 0.15 : 0) + (r >= 5 ? 0.15 : 0) + (r >= 7 ? 0.2 : 0) + (r >= 9 ? 0.25 : 0) + 0.06 * Math.max(0, Math.min(r, 14) - 10) + (r >= 15 ? 0.25 : 0); };   // ranks 11-15 (8-2)
+let tCd = id => traitRank(id) >= 6 ? 0.8 : 1;
 const tAwake = id => traitRank(id) >= 10;
 function calcStats(save) {
   const s = save || G.save, L = s.level, tr = id => s.traits[id] || 0;
@@ -25444,7 +25444,6 @@ tuneAdd({ k: 'crit', g: 'econ', sec: '전투', n: '치명타 피해 배율', get
 /* ---- 등록: 확률 · 드롭 ---- */
 GRADES.slice().reverse().forEach(gr => tuneAdd({ k: 'grade' + gr.id, g: 'drop', sec: '장비 드롭 (몹 1마리당)', n: gr.name, get: () => GRADES[gr.id].p, set: v => { GRADES[gr.id].p = v; }, min: 0, max: 30, step: 0.01, pct: true }));
 tuneAdd({ k: 'ring', g: 'drop', sec: '장비 드롭 (몹 1마리당)', n: '반지 (10·20·30장 보스)', help: '보스 처치 1회당', get: () => RING_DROP[10], set: v => { for (const c in RING_DROP) RING_DROP[c] = v; }, min: 0, max: 100, step: 0.5, pct: true });
-tuneAdd({ k: 'eliteLoot', g: 'drop', sec: '장비 드롭 (몹 1마리당)', n: '엘리트 몹 보상 배율', get: () => ELITE_MUL.loot, set: v => { ELITE_MUL.loot = v; }, min: 0, max: 10, step: 0.1, u: '×' });
 tuneAdd({ k: 'box', g: 'drop', sec: '랜덤 상자', n: '상자 등장 확률', help: '사냥터에 들어갈 때마다', get: () => BOX_CHANCE, set: v => { BOX_CHANCE = v; }, min: 0, max: 100, step: 1, pct: true });
 tuneAdd({ k: 'boxCd', g: 'drop', sec: '랜덤 상자', n: '같은 맵 상자 대기', get: () => BOX_CD, set: v => { BOX_CD = v; }, min: 0, max: 120, step: 1, u: '분', kscale: 1 / 60 });
 BOX_TIERS.forEach((T, i) => tuneAdd({ k: 'boxW' + i, g: 'drop', sec: '랜덤 상자', n: T.name + ' 비중', help: '네 상자 비중의 합 중 이 상자 몫이 확률이 된다', get: () => BOX_TIERS[i].w, set: v => { BOX_TIERS[i].w = v; }, min: 0, max: 100, step: 1, u: '' }));
@@ -25507,7 +25506,8 @@ startGame = function (...a) { const r = _mcstartGame(...a); if (!TUNE.dirtyLocal
 /* ============ 관리자 창 UI (test 서버 · F9) ============ */
 if (IS_DEV_BUILD) {
 DEV.tab = DEV.tab || 'quick'; DEV.boss = DEV.boss || 'b1'; DEV.q = ''; DEV.onlyChanged = false; DEV.mobCh = 0;
-const MC_TABS = [['quick', '⚡', '빠른 도구'], ['me', '🧑', '내 캐릭터'], ['boss', '👹', '보스'], ['drop', '🎲', '확률·드롭'], ['econ', '💰', '경제·강화'], ['ship', '🚀', '정식 적용']];
+const MC_TABS = [['quick', '⚡', '빠른 도구'], ['me', '🧑', '내 캐릭터'], ['boss', '👹', '보스'], ['drop', '🎲', '확률·드롭'], ['econ', '💰', '경제·강화'], ['ops', '🛠', '운영'], ['ship', '🚀', '정식 적용']];
+MC_TABS.splice(3, 0, ['combat', '⚔', '전투']);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const nChanged = () => Object.keys(tuneDiff(TUNE.cur)).length;
 function tuneRow(d) {
@@ -25544,6 +25544,9 @@ function mcQuick(inGame) {
       <div class="mcr mcg">${btn('shrine', '⛩ 축복의 제단', '', no)}${btn('mer', '🛒 떠돌이 상인 (15분)', '', no)}${btn('anon', '👤 이름 없는 자', '', no)}</div>
       <div class="mcr"><select data-mobch>${Array.from({ length: CH_LAST }, (_, i) => `<option value="${i + 1}" ${mch === i + 1 ? 'selected' : ''}>${i + 1}장 몹</option>`).join('')}</select><select data-mob>${mobOpts}</select></div>
       <div class="mcr mcg">${btn('mob:1', '몹 1마리', '', no)}${btn('mob:5', '5마리', '', no)}${btn('mob:10', '10마리', '', no)}${btn('mobclear', '몹 전부 없애기', '', no)}</div></section>
+    <section class="mcsec"><h6>허수아비 <small>DPS·총 피해·시간 측정</small></h6>
+      <div class="mcr"><span>방어력</span><select id="opsDumDef"><option value="0">0 (순수 피해)</option>${Array.from({ length: CH_LAST }, (_, i) => `<option value="${i + 1}">${i + 1}장 보스와 같게</option>`).join('')}</select></div>
+      <div class="mcr mcg">${btn('ops:dummy', '🎯 허수아비 세우기', '', no)}${btn('ops:dummyx', '치우기', '', no)}${btn('ops:nospawn', G.devNoSpawn ? '몹 다시 나오게' : '몹 안 나오게 (훈련장)', G.devNoSpawn ? 'on' : '', no)}</div></section>
     <section class="mcsec"><h6>게임 속도 <small>지금 ${spd}배</small></h6><div class="mcr mcg">${[0.25, 0.5, 1, 2, 3].map(x => btn('spd:' + x, x + '배', spd === x ? 'on' : '')).join('')}</div></section>
     <section class="mcsec"><h6>전투</h6><div class="mcr mcg">${chk('devGod', '무적')}${chk('devOneKill', '한 방에 처치')}${chk('devNoCd', '재사용 대기 없음')}${chk('devHit', '히트박스 보기')}${chk('debug', '디버그 보기')}</div>
       <div class="mcr mcg">${dbtn('heal', 'HP 회복', no)}${dbtn('cd', '재사용 대기 초기화')}</div>
@@ -25585,9 +25588,17 @@ function mcShip() {
       <div class="mcr"><small>적용하면 정식 게임에 접속한 사람에게 5분 안에, 새로 들어오는 사람에게는 바로 반영된다. 코드(그림·기능) 배포는 Claude 에게 "정식 배포"라고 말한다.</small></div></section>
     <section class="mcsec"><h6>적용 기록 <small>최근 20번 · 누르면 그 적용 바로 전 값으로 정식을 되돌린다</small></h6>${log}</section>`;
 }
+function mcCombat() {   /* 3단계 ⚔ 전투 탭: 캐릭터를 고르면 그 캐릭터의 능력치·궁극기·스킬 8개, 아래에 공통(가드·물약·몹·특성) */
+  DEV.cch = DEV.cch || (G.save && G.save.char) || Object.keys(CHARS)[0];
+  const chOpts = Object.keys(CHARS).map(c => { const ch = TUNE.defs.some(d => d.ch === c && !tuneSame(TUNE.cur[d.k], TUNE.base[d.k])); return `<option value="${c}" ${DEV.cch === c ? 'selected' : ''}>${ch ? '● ' : ''}${esc(CHARS[c].name)} · ${esc(CHARS[c].title || '')}</option>`; }).join('');
+  const mine = g => TUNE.defs.filter(d => d.g === g && d.ch === DEV.cch);
+  return tuneTools() + `<section class="mcsec"><h6>캐릭터 <small>● = 바꾼 캐릭터</small></h6><div class="mcr"><select data-mcch>${chOpts}</select></div>
+    <div class="mcr"><small>스킬 피해는 그 스킬로 들어간 모든 타격에 곱한다(날아가는 화살·장판은 마지막으로 쓴 스킬로 센다). 재사용 대기·지속 시간은 다음에 쓸 때부터.</small></div></section>`
+    + tuneSecs(mine('combatSt')) + tuneSecs(mine('combatSk')) + tuneSecs(TUNE.defs.filter(d => d.g === 'combat'));
+}
 devHtml = function () {
   const s = G.save, inGame = G.scene === 'play' && !!s, n = nChanged(), tab = DEV.tab;
-  const body = tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip()
+  const body = tab === 'combat' ? mcCombat() : tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip() : tab === 'ops' ? (window.mcOps ? window.mcOps(inGame) : '')
     : tuneTools() + tuneSecs(TUNE.defs.filter(d => d.g === tab));
   return `<div class="mch"><b>마스터 콘솔</b><span>test 서버 · F9 닫기</span><button class="mcclose" data-ma="close">✕</button></div>
     <nav class="mctabs">${MC_TABS.map(([id, ic, t]) => `<button data-ma="tab:${id}" class="${tab === id ? 'on' : ''}"><i>${ic}</i>${t}</button>`).join('')}</nav>
@@ -25631,6 +25642,7 @@ async function mcCheckAdmin() {
     TUNE.adminMsg = TUNE.admin ? '' : '서버의 계정 정보가 이 로그인과 맞지 않는다'; }
   catch (e) { TUNE.admin = false; TUNE.adminMsg = '관리자 확인 실패 · ' + e.message; }
 }
+window.mcCheckAdminG = mcCheckAdmin;
 async function mcLoadShip() {
   if (!AUTH.token) { TUNE.admin = false; TUNE.adminMsg = '로그인하면 관리자인지 확인한다'; }
   devRender(); await mcCheckAdmin(); devRender();
@@ -25654,8 +25666,9 @@ async function mcShipTo(after, note) {   // 정식 tuning 을 after 로 바꾸�
 function mcConfirm(text) { return window.confirm(text); }
 function masterAct(a) {
   const [cmd, arg] = a.split(':'), s = G.save, inGame = G.scene === 'play' && !!s, p = G.player, m = G.map;
+  if (a.startsWith('ops:')) { if (window.opsAct) window.opsAct(a); return; }   // 2단계 운영 탭
   if (cmd === 'close') return devPanelToggle();
-  if (cmd === 'tab') { DEV.tab = arg; DEV.msg = ''; DEV.q = ''; DEV.onlyChanged = false; devRender(); if (arg === 'ship') mcLoadShip(); return; }
+  if (cmd === 'tab') { DEV.tab = arg; DEV.msg = ''; DEV.q = ''; DEV.onlyChanged = false; devRender(); if (arg === 'ship') mcLoadShip(); if (arg === 'ops' && window.opsAct) window.opsAct('ops:open'); return; }
   if (cmd === 'reset') { const k = a.slice(6); return tuneSetOne(k, TUNE.base[k]); }
   if (cmd === 'resetall') { if (!mcConfirm('test 의 바꾼 수치 ' + nChanged() + '개를 전부 기본값으로 돌릴까?')) return; tuneApply({}); tuneSaveSoon(); return devRender(); }
   if (cmd === 'spd') { G.devSpeed = +arg; return devMsg('게임 속도 ' + arg + '배'); }
@@ -25702,15 +25715,16 @@ addEventListener('load', () => {
     if (t.hasAttribute('data-monly')) { DEV.onlyChanged = t.checked; mcFilter(); }
     if (t.hasAttribute('data-mboss')) { DEV.boss = t.value; devRender(); }
     if (t.hasAttribute('data-mobch')) { DEV.mobCh = +t.value; devRender(); }
+    if (t.hasAttribute('data-mcch')) { DEV.cch = t.value; devRender(); }
   });
 });
 document.head.insertAdjacentHTML('beforeend', `<style>
-html #devPanel{width:min(460px,calc(100% - 16px));padding:0;display:none;flex-direction:column;overflow:hidden;font:13px 'Noto Sans KR',sans-serif;background:rgba(12,14,20,.97);border:1px solid #7a6640;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+html #devPanel{width:min(500px,calc(100% - 16px));padding:0;display:none;flex-direction:column;overflow:hidden;font:13px 'Noto Sans KR',sans-serif;background:rgba(12,14,20,.97);border:1px solid #7a6640;box-shadow:0 8px 30px rgba(0,0,0,.6)}
 html #devPanel.on{display:flex}
 html #devPanel .mch{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #3a3426;background:#17140e}
 html #devPanel .mch b{color:#ffd27a;font-size:15px}html #devPanel .mch span{color:#9a8f78;font-size:11px;flex:1}
 html #devPanel .mcclose{background:none;border:0;color:#cbbd9e;font-size:16px;padding:0 4px}
-html #devPanel .mctabs{display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid #3a3426}
+html #devPanel .mctabs{display:grid;grid-template-columns:repeat(8,1fr);border-bottom:1px solid #3a3426}
 html #devPanel .mctabs button{background:none;border:0;border-bottom:2px solid transparent;color:#a99f88;padding:7px 2px 6px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
 html #devPanel .mctabs button i{font-style:normal;font-size:16px}html #devPanel .mctabs button.on{color:#ffd27a;border-bottom-color:#ffd27a;background:rgba(255,210,122,.06)}
 html #devPanel .mcbody{flex:1;overflow-y:auto;padding:6px 12px 10px}
@@ -25744,5 +25758,420 @@ html #devPanel .mclog{display:grid;grid-template-columns:auto auto 1fr auto;gap:
 html #devPanel small{color:#9a9384}
 </style>`);
 }
+
+/* ============ 마스터 콘솔 2단계 (2026-11-25, user): 운영 — 전체 공지 · 기간 이벤트 · 우편(지급·회수 + 그 계정에만 뜨는 공지) · 접속자 · 허수아비 ============
+   이 아래 "받는 쪽"은 정식·test 둘 다 돈다(서버 경로는 dbUrl: 정식 notice/event/mail, test dev_notice/dev_event/dev_mail).
+   보내는 쪽(관리자 창 🛠 운영 탭)은 test 서버에만 있고, 대상 서버(정식/test)를 골라 보낸다. 규칙: tools/firebase-rules.json */
+const OPS = { notice: null, event: null, pollT: 0, busy: false, mailSeen: {} };
+const evOn = () => !!(OPS.event && OPS.event.start && srvNow() >= OPS.event.start && srvNow() < OPS.event.end);
+const evK = k => evOn() ? (Math.max(0, +OPS.event[k]) || 1) : 1;
+tuneAdd({ k: 'opsPoll', g: 'econ', sec: '운영', n: '공지·이벤트·우편 확인 간격', help: '접속한 게임이 서버를 몇 초마다 다시 읽는지', get: () => 60, set: v => { OPS.every = v; }, min: 15, max: 600, step: 5, u: '초' });
+/* 이벤트 배율: 경험치(gainXp) · 몹 골드(dropLoot 안의 GOLD_DROP_X) · 장비 드롭(rollGrade 의 확률을 ×k) */
+const _opsgainXp = gainXp;
+gainXp = function (n) { const k = evK('xp'); return _opsgainXp(k !== 1 ? Math.max(1, Math.round(n * k)) : n); };
+const _opsdropLoot = dropLoot;
+dropLoot = function (m) { const g = GOLD_DROP_X, k = evK('gold'); if (k !== 1) GOLD_DROP_X = g * k; try { return _opsdropLoot(m); } finally { GOLD_DROP_X = g; } };
+const _opsrollGrade = rollGrade;
+rollGrade = function (r) { const k = evK('drop'); return _opsrollGrade(k !== 1 ? r / k : r); };
+
+/* ---- 화면: 맨 위 띠(공지 · 이벤트) + 우편 팝업 ---- */
+function opsBanner() {
+  let el = document.getElementById('opsBar');
+  const n = OPS.notice, now = srvNow(), showN = n && n.msg && (!n.until || now < n.until) && OPS.hideN !== n.at, showE = evOn();
+  if (!showN && !showE) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement('div'); el.id = 'opsBar'; ($('#game') || document.body).appendChild(el); el.addEventListener('click', e => { if (e.target.closest('[data-opsx]')) { OPS.hideN = OPS.notice && OPS.notice.at; opsBanner(); } }); }
+  const E = OPS.event, left = showE ? Math.max(0, E.end - now) : 0, hh = Math.floor(left / 3600000), mm = Math.ceil((left % 3600000) / 60000);
+  const ev = showE ? `<div class="opsev">🎉 ${opsEsc(E.name || '이벤트')} · ${['xp', 'gold', 'drop'].filter(k => (+E[k] || 1) !== 1).map(k => ({ xp: '경험치', gold: '골드', drop: '장비 드롭' })[k] + ' ×' + (+E[k])).join(' · ')} · ${hh ? hh + '시간 ' : ''}${mm}분 남음</div>` : '';
+  const no = showN ? `<div class="opsno">📢 ${opsEsc(n.msg)}<button data-opsx title="닫기">✕</button></div>` : '';
+  const html = no + ev; if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+}
+const opsEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const OPS_MAT = { gold: '골드', qual: '품질석', pot: '잠재석', inherit: '계승석', free: '무료 잠재 변경권', potions: '치유 연고', scrolls: '귀환 주문서', tp: '특성 포인트' };
+function opsPop(title, msg, lines) {
+  let el = document.getElementById('opsPop'); if (el) el.remove();
+  el = document.createElement('div'); el.id = 'opsPop';
+  el.innerHTML = `<div class="opsbox"><h3>${opsEsc(title || '운영자 알림')}</h3>${msg ? `<p>${opsEsc(msg).replace(/\n/g, '<br>')}</p>` : ''}${lines.length ? `<ul>${lines.map(l => `<li class="${l[0]}">${opsEsc(l[1])}</li>`).join('')}</ul>` : ''}<button data-opsok>확인</button></div>`;
+  ($('#game') || document.body).appendChild(el);
+  el.addEventListener('click', e => { if (e.target.closest('[data-opsok]')) el.remove(); });
+}
+/* ---- 우편 적용: 먼저 서버에 done 을 찍고(성공해야) 이 캐릭터에 넣는다 → 두 번 받는 일이 없다 ---- */
+function opsApplyMail(m) {
+  const s = G.save, lines = [], G2 = m.give || {}, T = m.take || {};
+  for (const k in OPS_MAT) {
+    const add = Math.max(0, Math.round(+G2[k] || 0)), sub = Math.max(0, Math.round(+T[k] || 0)); if (!add && !sub) continue;
+    const get = () => k === 'gold' ? s.gold : k === 'potions' ? s.potions : k === 'scrolls' ? s.scrolls : k === 'tp' ? s.tp : (s.mats[k] || 0);
+    const put = v => { v = Math.max(0, v); if (k === 'gold') s.gold = v; else if (k === 'potions') s.potions = v; else if (k === 'scrolls') s.scrolls = v; else if (k === 'tp') s.tp = v; else s.mats[k] = v; };
+    if (add) { put(get() + add); lines.push(['add', OPS_MAT[k] + ' +' + nf(add)]); }
+    if (sub) { const had = get(); put(had - sub); lines.push(['sub', OPS_MAT[k] + ' -' + nf(Math.min(had, sub)) + (had < sub ? ' (가진 만큼만)' : '')]); }
+  }
+  for (const g of (G2.gear || [])) {
+    let n = 0; for (let i = 0; i < Math.min(20, +g.n || 0); i++) { const it = makeItem(g.slot || SLOTS[Math.floor(Math.random() * SLOTS.length)], s.char, +g.grade || 0, +g.ilvl || mapChapter()); if (+g.grade === 3) it.q = 3; if (addItem(it)) n++; }
+    if (n) lines.push(['add', GRADES[+g.grade || 0].name + ' 장비 ' + n + '개' + (n < (+g.n || 0) ? ' (가방이 차서 일부만)' : '')]);
+  }
+  for (const gr in (T.gear || {})) {
+    let want = +T.gear[gr] || 0, n = 0; const eq = new Set(Object.values(s.equip || {}).filter(Boolean).map(x => x.uid || x));
+    s.items = s.items.filter(it => { if (want > 0 && it.grade === +gr && !eq.has(it.uid) && !it.lock) { want--; n++; return false; } return true; });
+    if (n) lines.push(['sub', GRADES[+gr].name + ' 장비 ' + n + '개 회수 (가방)']);
+  }
+  s.mailDone = (s.mailDone || []).concat(m.id).slice(-200);
+  if (typeof refreshStats === 'function') refreshStats(); writeSave(); updateHud(true);
+  opsPop(m.title || '운영자 알림', m.msg || '', lines);
+}
+async function opsPoll() {
+  if (OPS.busy || !CLOUD.dbUrl || window.DEV_LOCAL) return; OPS.busy = true;
+  try {
+    const get = async p => { try { const r = await fetch(dbUrl(p), { cache: 'no-store' }); return r.ok ? r.json() : null; } catch (e) { return null; } };
+    const [n, e] = await Promise.all([get('notice'), get('event')]);
+    OPS.notice = n; OPS.event = e; opsBanner();
+    if (AUTH.token && G.uid && G.scene === 'play' && G.save) {
+      const box = await get('mail/' + myId()); const done = new Set(G.save.mailDone || []);
+      for (const id of Object.keys(box || {}).sort()) {
+        const m = Object.assign({ id }, box[id]); if (m.done || done.has(id)) continue;
+        const r = await fetch(dbUrl('mail/' + myId() + '/' + id + '/done'), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Date.now()) }).catch(() => null);
+        if (!r || !r.ok) break;   // 표시를 못 찍으면 넣지 않는다(다음에 다시)
+        opsApplyMail(m);
+      }
+    }
+  } finally { OPS.busy = false; }
+}
+const _opsstartGame = startGame;
+startGame = function (...a) { const r = _opsstartGame(...a); setTimeout(opsPoll, 1500); return r; };
+setInterval(() => { opsBanner(); OPS.pollT += 5; if (OPS.pollT >= (OPS.every || 60)) { OPS.pollT = 0; opsPoll(); } }, 5000);
+opsPoll();
+document.head.insertAdjacentHTML('beforeend', `<style>
+#opsBar{position:absolute;left:50%;top:6px;transform:translateX(-50%);z-index:55;display:flex;flex-direction:column;gap:4px;align-items:center;pointer-events:none;max-width:46%}
+#opsBar>div{pointer-events:auto;background:rgba(14,12,8,.88);border:1px solid #b88a3a;color:#ffe6b0;padding:5px 12px;font:600 13px 'Noto Sans KR',sans-serif;display:flex;gap:10px;align-items:center;text-align:center}
+#opsBar .opsev{border-color:#6ab04a;color:#d6ffc0}#opsBar button{background:none;border:0;color:#c8b088;cursor:pointer;font-size:13px}
+#opsPop{position:absolute;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}
+#opsPop .opsbox{min-width:280px;max-width:min(440px,90%);background:linear-gradient(170deg,#1a1710,#0d0c09);border:1px solid #c89a4a;padding:18px 20px;color:#eee0c4;font:14px 'Noto Sans KR',sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.7)}
+#opsPop h3{margin:0 0 10px;color:#ffd27a;font-size:17px}#opsPop p{margin:0 0 10px;line-height:1.5}#opsPop ul{margin:0 0 14px;padding:0;list-style:none}
+#opsPop li{padding:3px 0}#opsPop li.add{color:#9be08a}#opsPop li.add:before{content:'＋ '}#opsPop li.sub{color:#ff9a8a}#opsPop li.sub:before{content:'－ '}
+#opsPop button{width:100%;padding:8px;background:#6a4a1a;border:1px solid #e0a850;color:#fff;font:700 14px 'Noto Sans KR',sans-serif;cursor:pointer}
+</style>`);
+
+/* ============ 허수아비 (DPS 측정) — test 서버 관리자 창에서만 세운다 ============ */
+const DUMMY = { e: null, tot: 0, n: 0, crit: 0, max: 0, t0: 0, t1: 0, def: 0 };
+function dummyReset() { Object.assign(DUMMY, { tot: 0, n: 0, crit: 0, max: 0, t0: 0, t1: 0 }); dummyDraw(); }
+function dummySpawn(def) {
+  dummyRemove(); const p = G.player, x = Math.max(80, Math.min(G.map.w - 80, p.x + p.face * 220));
+  DUMMY.def = def || 0;
+  DUMMY.e = { dummy: true, x, y: GROUND, w: 44, h: 120, hp: 1e15, mhp: 1e15, d: { def: DUMMY.def }, st: 'idle', onHit: () => { } };
+  G.gimT.push(DUMMY.e); dummyReset();
+}
+function dummyRemove() { if (DUMMY.e) DUMMY.e.dead = true; DUMMY.e = null; const el = document.getElementById('dpsBox'); if (el) el.remove(); }
+const _opshitEntity = hitEntity;
+hitEntity = function (e, dmg, crit, o) {
+  if (e && e.dummy) {
+    o = o || {}; const t = G.t; if (!DUMMY.t0) DUMMY.t0 = t; DUMMY.t1 = t; DUMMY.tot += dmg; DUMMY.n++; if (crit) DUMMY.crit++; DUMMY.max = Math.max(DUMMY.max, dmg); e.hit = 0.12;
+    numPop(e.x + rnd(-8, 8), e.y - e.h - 6, fmtN(dmg), o.dot === 'poison' ? '#9be36a' : o.dot ? '#ff9a4a' : crit ? '#ffd36a' : '#ffffff', crit ? 23 : 15);
+    dummyDraw();
+  }
+  return _opshitEntity(e, dmg, crit, o);
+};
+function dummyDraw() {
+  if (!DUMMY.e) return; let el = document.getElementById('dpsBox');
+  if (!el) { el = document.createElement('div'); el.id = 'dpsBox'; ($('#game') || document.body).appendChild(el); el.addEventListener('click', e => { if (e.target.closest('[data-dps=reset]')) dummyReset(); if (e.target.closest('[data-dps=x]')) dummyRemove(); }); }
+  const sec = DUMMY.t0 ? Math.max(0.001, DUMMY.t1 - DUMMY.t0) : 0, dps = sec > 0.05 ? DUMMY.tot / sec : DUMMY.tot;
+  el.innerHTML = `<b>허수아비 · DPS 측정</b><span>방어력 ${nf(DUMMY.def)}</span>
+    <div class="dpsbig">${nf(Math.round(dps))}<small> / 초</small></div>
+    <div>총 피해 <b>${nf(DUMMY.tot)}</b></div><div>시간 <b>${sec.toFixed(1)}초</b> (첫 타 ~ 마지막 타)</div>
+    <div>타수 <b>${DUMMY.n}</b> · 치명타 <b>${DUMMY.n ? Math.round(DUMMY.crit / DUMMY.n * 100) : 0}%</b></div><div>최고 한 방 <b>${nf(DUMMY.max)}</b></div>
+    <div class="dpsbtn"><button data-dps="reset">측정 초기화</button><button data-dps="x">치우기</button></div>`;
+}
+const _opsdrawBoxes = drawBoxes;
+drawBoxes = function (c, cam) {
+  const r = _opsdrawBoxes(c, cam), e = DUMMY.e; if (!e) return r;
+  if (!G.gimT.includes(e)) G.gimT.push(e);   // 맵을 옮기면 gimT 가 비워진다 → 같은 맵에 있을 때만 다시 넣는다
+  const x = Math.round(e.x), y = GROUND,   /* 상자처럼 월드 좌표(캔버스가 이미 카메라만큼 옮겨져 있다) */ sh = e.hit > 0 ? Math.round(Math.sin(G.t * 80) * 2) : 0; e.hit = Math.max(0, (e.hit || 0) - 1 / 60);
+  c.save(); c.fillStyle = '#2a1a0e'; c.fillRect(x - 3 + sh, y - 120, 6, 120);   // 기둥
+  c.fillStyle = '#6a4a26'; c.fillRect(x - 22 + sh, y - 96, 44, 8);   // 팔
+  c.fillStyle = e.hit > 0 ? '#ffe0b0' : '#c8a060'; c.fillRect(x - 14 + sh, y - 104, 28, 46);   // 몸통(짚)
+  c.fillStyle = '#8a6a3a'; c.fillRect(x - 14 + sh, y - 82, 28, 3); c.fillRect(x - 14 + sh, y - 68, 28, 3);
+  c.fillStyle = e.hit > 0 ? '#fff0d0' : '#d8b878'; c.fillRect(x - 10 + sh, y - 124, 20, 20);   // 머리
+  c.fillStyle = '#3a2a18'; c.fillRect(x - 6 + sh, y - 117, 3, 3); c.fillRect(x + 3 + sh, y - 117, 3, 3);
+  c.fillStyle = '#1a120a'; c.fillRect(x - 16, y - 2, 32, 4); c.restore();
+  return r;
+};
+const _opsloadMap = loadMap;
+loadMap = function (...a) { const r = _opsloadMap(...a); if (DUMMY.e) dummyRemove(); return r; };
+const _opsspawnMon = spawnMon;
+spawnMon = function (sl) { if (G.devNoSpawn) { sl.timer = 3; return null; } return _opsspawnMon(sl); };
+document.head.insertAdjacentHTML('beforeend', `<style>
+#dpsBox{position:absolute;left:12px;top:150px;z-index:56;background:rgba(10,12,18,.9);border:1px solid #c89a4a;color:#e8e0cc;font:12px 'Noto Sans KR',sans-serif;padding:8px 11px;min-width:180px;line-height:1.6}
+#dpsBox>b{color:#ffd27a;font-size:13px}#dpsBox>span{float:right;color:#8a8070;font-size:11px;margin-top:2px}
+#dpsBox .dpsbig{font:700 26px 'Noto Sans KR',sans-serif;color:#fff;margin:2px 0}#dpsBox .dpsbig small{font-size:12px;color:#aaa;font-weight:400}
+#dpsBox b{color:#ffe6a8}#dpsBox .dpsbtn{display:flex;gap:6px;margin-top:6px}#dpsBox button{flex:1;background:#2c2a36;color:#eee;border:1px solid #5a5468;padding:4px;cursor:pointer;font:inherit}
+</style>`);
+
+/* ============ 🛠 운영 탭 (test 서버 관리자 창) ============ */
+if (IS_DEV_BUILD) {
+const OPSD = { target: 'main', who: '', whoOk: null, sent: null, online: null, party: null, msg: '' };
+const oUrl = (p, q) => OPSD.target === 'main' ? dbUrlRaw(p, q) : dbUrl(p, q);
+const oSrv = () => OPSD.target === 'main' ? '정식 서버' : 'test 서버';
+const ob = (a, t, cls, dis) => `<button data-ma="ops:${a}" class="${cls || ''}" ${dis ? 'disabled' : ''}>${t}</button>`;
+const oi = (id, ph, v, type, extra) => `<input id="${id}" type="${type || 'number'}" placeholder="${opsEsc(ph)}" value="${opsEsc(v == null ? '' : v)}" ${extra || ''}>`;
+const dtl = ms => { const d = new Date(ms - new Date().getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); };
+const ago = ms => { const s = Math.max(0, (Date.now() - ms) / 1000); return s < 60 ? Math.round(s) + '초 전' : s < 3600 ? Math.round(s / 60) + '분 전' : Math.round(s / 3600) + '시간 전'; };
+window.mcOps = function (inGame) {
+  const n = OPS.notice, E = OPS.event, adm = TUNE.admin;
+  const matRow = (pre) => Object.keys(OPS_MAT).map(k => `<label class="opsf"><span>${OPS_MAT[k]}</span>${oi(pre + k, '0', '', 'number', 'min="0"')}</label>`).join('');
+  const grOpts = GRADES.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+  const sent = OPSD.sent ? (OPSD.sent.length ? OPSD.sent.map(m => `<div class="opsmail"><span>${new Date(m.at).toLocaleString('ko-KR')}</span><span>${opsEsc(m.title || '')}</span><span class="${m.done ? 'ok' : 'wait'}">${m.done ? '받음 ' + new Date(m.done).toLocaleTimeString('ko-KR') : '대기'}</span>${m.done ? '' : ob('mailcancel:' + m.id, '취소')}</div>`).join('') : '<small>보낸 우편 없음</small>') : '';
+  const on = OPSD.online ? `<div class="mcr"><small>${oSrv()} 접속 ${OPSD.online.length}명</small></div>` + OPSD.online.map(o => `<div class="opsmail"><span>${opsEsc(o.n || '?')}</span><span>${opsEsc(o.id)}</span><span>${opsEsc(o.v || '')}</span><span>${o.t ? ago(o.t) : ''}</span></div>`).join('') : '';
+  const pt = OPSD.party ? (OPSD.party.length ? OPSD.party.map(p => `<div class="opsparty"><b>파티 ${opsEsc(p.id)}</b>${p.m.map(x => `<div class="opsmail"><span>${opsEsc(x.n || x.id)}</span><span>${opsEsc((CHARS[x.c] || {}).name || x.c || '')} Lv.${x.l || '?'}</span><span>${opsEsc(x.mp || '')}</span><span>HP ${nf(x.h || 0)}/${nf(x.mh || 0)}</span></div>`).join('')}</div>`).join('') : '<small>파티 없음</small>') : '';
+  return `<div class="mcadm ${adm ? 'ok' : 'no'}">${adm ? '관리자 확인됨 · ' + opsEsc(AUTH.id) : opsEsc(TUNE.adminMsg || '관리자 확인 중…')}</div>
+    <section class="mcsec"><h6>보낼 서버</h6><div class="mcr mcg">${ob('target:main', '정식 서버', OPSD.target === 'main' ? 'on' : '')}${ob('target:test', 'test 서버', OPSD.target === 'test' ? 'on' : '')}</div>
+      <div class="mcr"><small>공지·이벤트·우편이 ${OPSD.target === 'main' ? '<b style="color:#ff9a8a">실제 유저가 하는 정식 서버</b>' : 'test 서버'}로 간다</small></div></section>
+    <section class="mcsec"><h6>📢 전체 공지 <small>게임 화면 맨 위 띠 · 접속 중인 사람에게 1분 안에</small></h6>
+      <textarea id="opsNoticeMsg" rows="2" placeholder="예: 오늘 밤 11시에 점검이 있습니다"></textarea>
+      <div class="mcr"><select id="opsNoticeDur"><option value="10">10분</option><option value="60" selected>1시간</option><option value="360">6시간</option><option value="1440">하루</option><option value="10080">7일</option><option value="0">내릴 때까지</option></select>${ob('notice', '공지 올리기', 'big', !adm)}${ob('noticeoff', '공지 내리기', '', !adm)}</div>
+      <div class="mcr"><small>${OPSD.target === 'main' ? '' : ''}지금 공지(${OPSD.target === 'main' ? '정식' : 'test'}): ${OPSD.curNotice ? opsEsc(OPSD.curNotice.msg) + (OPSD.curNotice.until ? ' · ' + new Date(OPSD.curNotice.until).toLocaleString('ko-KR') + '까지' : '') : '없음'}</small></div></section>
+    <section class="mcsec"><h6>🎉 기간 이벤트 <small>시간이 되면 자동으로 켜지고 꺼진다</small></h6>
+      <div class="mcr"><span>이름</span>${oi('opsEvName', '예: 주말 경험치 2배', '', 'text')}</div>
+      <div class="mcr"><span>경험치</span>${oi('opsEvXp', '1', 1, 'number', 'min="0" step="0.1"')}<span>골드</span>${oi('opsEvGold', '1', 1, 'number', 'min="0" step="0.1"')}<span>드롭</span>${oi('opsEvDrop', '1', 1, 'number', 'min="0" step="0.1"')}</div>
+      <div class="mcr"><span>시작</span>${oi('opsEvStart', '', dtl(Date.now()), 'datetime-local')}</div>
+      <div class="mcr"><span>끝</span>${oi('opsEvEnd', '', dtl(Date.now() + 2 * 3600000), 'datetime-local')}</div>
+      <div class="mcr mcg">${ob('event', '이벤트 걸기', 'big', !adm)}${ob('eventoff', '이벤트 끝내기', '', !adm)}</div>
+      <div class="mcr"><small>지금 이벤트(${OPSD.target === 'main' ? '정식' : 'test'}): ${OPSD.curEvent && OPSD.curEvent.end ? opsEsc(OPSD.curEvent.name || '') + ' · 경험치 ×' + OPSD.curEvent.xp + ' 골드 ×' + OPSD.curEvent.gold + ' 드롭 ×' + OPSD.curEvent.drop + ' · ' + new Date(OPSD.curEvent.start).toLocaleString('ko-KR') + ' ~ ' + new Date(OPSD.curEvent.end).toLocaleString('ko-KR') : '없음'}</small></div></section>
+    <section class="mcsec"><h6>✉️ 유저 우편 <small>지급·회수 + 그 계정에만 뜨는 공지 · 그 사람이 접속하면 바로 적용</small></h6>
+      <div class="mcr"><span>아이디</span>${oi('opsWho', '받는 사람 로그인 아이디', OPSD.who, 'text')}${ob('who', '확인')}</div>
+      <div class="mcr"><small>${OPSD.whoOk === null ? '아이디를 넣고 확인을 누르자' : OPSD.whoOk ? '✓ 있는 계정 · 닉네임 ' + opsEsc(OPSD.whoOk) : '✗ 없는 아이디'}</small></div>
+      <div class="mcr"><span>제목</span>${oi('opsTitle', '예: 버그 보상 지급', '', 'text')}</div>
+      <textarea id="opsMsg" rows="2" placeholder="그 사람에게만 뜨는 안내 문구"></textarea>
+      <details open><summary>지급 (＋)</summary><div class="opsgrid">${matRow('opsG_')}</div>
+        <div class="mcr"><span>장비</span><select id="opsGGr">${grOpts}</select>${oi('opsGGn', '개수', '', 'number', 'min="0" max="20"')}${oi('opsGGl', '아이템 레벨(장)', '', 'number', 'min="1" max="' + CH_LAST + '"')}</div></details>
+      <details><summary>회수 (－) <small>가진 것보다 많으면 가진 만큼만</small></summary><div class="opsgrid">${matRow('opsT_')}</div>
+        <div class="mcr"><span>장비</span><select id="opsTGr">${grOpts}</select>${oi('opsTGn', '가방에서 회수할 개수', '', 'number', 'min="0"')}</div></details>
+      <div class="mcr mcg">${ob('mail', '✉️ 우편 보내기', 'big', !adm || !OPSD.whoOk)}${ob('mails', '보낸 우편 보기', '', !OPSD.whoOk)}</div>${sent}</section>
+    <section class="mcsec"><h6>👥 접속자 · 파티 <small>${oSrv()}</small></h6><div class="mcr mcg">${ob('online', '새로 불러오기')}</div>${on}${pt}</section>
+    <div class="dvmsg">${opsEsc(OPSD.msg)}</div>`;
+};
+const v = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+async function oSend(path, method, body) { return tuneSend(oUrl(path), method, body); }
+async function oRefresh() {
+  try { OPSD.curNotice = await tuneGet(oUrl('notice')); } catch (e) { OPSD.curNotice = null; }
+  try { OPSD.curEvent = await tuneGet(oUrl('event')); } catch (e) { OPSD.curEvent = null; }
+}
+window.opsAct = async function (a) {
+  if (!a.startsWith('ops:')) return false;
+  const [cmd, arg] = a.slice(4).split(':'), say = m => { OPSD.msg = m; devRender(); };
+  const yes = t => window.confirm('[' + oSrv() + '] ' + t);
+  try {
+    if (cmd === 'open') { if (TUNE.admin == null) await mcCheckAdminW(); await oRefresh(); devRender(); return true; }
+    if (cmd === 'target') { OPSD.target = arg; OPSD.sent = null; OPSD.online = null; OPSD.party = null; OPSD.whoOk = null; await oRefresh(); say(''); return true; }
+    if (cmd === 'notice') { const msg = v('opsNoticeMsg').trim(), d = +v('opsNoticeDur'); if (!msg) return say('공지 내용을 쓰자'), true; if (!yes('전체 공지를 올릴까?\n' + msg)) return true;
+      await oSend('notice', 'PUT', { msg, at: Date.now(), until: d ? Date.now() + d * 60000 : 0, by: AUTH.id }); await oRefresh(); opsPoll(); return say('공지를 올렸다 ✓'), true; }
+    if (cmd === 'noticeoff') { if (!yes('공지를 내릴까?')) return true; await tuneSend(oUrl('notice'), 'DELETE'); await oRefresh(); opsPoll(); return say('공지를 내렸다'), true; }
+    if (cmd === 'event') { const E = { name: v('opsEvName').trim() || '이벤트', xp: +v('opsEvXp') || 1, gold: +v('opsEvGold') || 1, drop: +v('opsEvDrop') || 1, start: new Date(v('opsEvStart')).getTime(), end: new Date(v('opsEvEnd')).getTime(), at: Date.now(), by: AUTH.id };
+      if (!(E.end > E.start)) return say('끝 시간이 시작보다 뒤여야 한다'), true;
+      if (!yes(`이벤트를 걸까?\n${E.name} · 경험치 ×${E.xp} · 골드 ×${E.gold} · 드롭 ×${E.drop}\n${new Date(E.start).toLocaleString('ko-KR')} ~ ${new Date(E.end).toLocaleString('ko-KR')}`)) return true;
+      await oSend('event', 'PUT', E); await oRefresh(); opsPoll(); return say('이벤트를 걸었다 ✓'), true; }
+    if (cmd === 'eventoff') { if (!yes('이벤트를 끝낼까?')) return true; await tuneSend(oUrl('event'), 'DELETE'); await oRefresh(); opsPoll(); return say('이벤트를 끝냈다'), true; }
+    if (cmd === 'who') { OPSD.who = v('opsWho').trim(); if (!OPSD.who) return true; const ac = await tuneGet(dbUrlRaw('acct/' + netKey(OPSD.who))); OPSD.whoOk = ac && ac.uid ? (ac.nick || '?') : false; OPSD.sent = null; devRender(); return true; }
+    if (cmd === 'mail') {
+      const give = {}, take = {}; for (const k in OPS_MAT) { const g = Math.max(0, +v('opsG_' + k) || 0), t = Math.max(0, +v('opsT_' + k) || 0); if (g) give[k] = g; if (t) take[k] = t; }
+      const gn = Math.min(20, +v('opsGGn') || 0), tn = +v('opsTGn') || 0;
+      if (gn) give.gear = [{ grade: +v('opsGGr'), n: gn, ilvl: +v('opsGGl') || 0 }];
+      if (tn) take.gear = { [+v('opsTGr')]: tn };
+      const title = v('opsTitle').trim(), msg = v('opsMsg').trim();
+      if (!title && !msg && !Object.keys(give).length && !Object.keys(take).length) return say('보낼 내용이 없다'), true;
+      const desc = [...Object.keys(give).filter(k => k !== 'gear').map(k => OPS_MAT[k] + ' +' + give[k]), ...(give.gear ? [GRADES[give.gear[0].grade].name + ' 장비 +' + give.gear[0].n] : []), ...Object.keys(take).filter(k => k !== 'gear').map(k => OPS_MAT[k] + ' -' + take[k]), ...(take.gear ? [GRADES[+Object.keys(take.gear)[0]].name + ' 장비 -' + tn] : [])].join(', ');
+      if (!yes(`${OPSD.who}(${OPSD.whoOk}) 에게 우편을 보낼까?\n${title}\n${desc || '(공지만)'}`)) return true;
+      await tuneSend(oUrl('mail/' + netKey(OPSD.who)), 'POST', { at: Date.now(), by: AUTH.id, title, msg, give, take });
+      OPSD.sent = null; await window.opsAct('ops:mails'); return say('우편을 보냈다 ✓ · 그 사람이 접속하면 바로 적용된다'), true;
+    }
+    if (cmd === 'mails') { const j = await tuneGet(oUrl('mail/' + netKey(OPSD.who))); OPSD.sent = Object.keys(j || {}).map(id => Object.assign({ id }, j[id])).sort((a, b) => b.at - a.at).slice(0, 20); devRender(); return true; }
+    if (cmd === 'mailcancel') { if (!yes('아직 안 받은 이 우편을 취소할까?')) return true; await tuneSend(oUrl('mail/' + netKey(OPSD.who) + '/' + arg), 'DELETE'); await window.opsAct('ops:mails'); return say('우편을 취소했다'), true; }
+    if (cmd === 'online') {
+      const ol = await tuneGet(oUrl('online')); OPSD.online = Object.keys(ol || {}).map(id => Object.assign({ id: decodeURIComponent(id) }, ol[id])).sort((a, b) => (b.t || 0) - (a.t || 0));
+      const pt = await tuneGet(oUrl('party')).catch(() => null); OPSD.party = Object.keys(pt || {}).map(id => ({ id, m: Object.keys((pt[id] || {}).m || {}).map(k => Object.assign({ id: k }, pt[id].m[k])) })).filter(p => p.m.length);
+      devRender(); return true;
+    }
+    if (cmd === 'dummy') { if (G.scene !== 'play' || !G.map) return say('게임에 들어가서 쓰자'), true; const ch = +v('opsDumDef') || 0, def = ch ? (BOSSES['b' + ch] || {}).def || 0 : 0; dummySpawn(def); return say('허수아비를 세웠다 · 때리면 왼쪽 위에 DPS 가 나온다'), true; }
+    if (cmd === 'dummyx') { dummyRemove(); return say('허수아비를 치웠다'), true; }
+    if (cmd === 'nospawn') { G.devNoSpawn = !G.devNoSpawn; if (G.devNoSpawn) for (const e of G.mons) if (e.st !== 'die') { e.st = 'die'; e.dead = 0; e.minion = true; } return say(G.devNoSpawn ? '몹이 안 나온다 (이 맵 몹도 치웠다)' : '몹이 다시 나온다'), true; }
+  } catch (e) { say('⚠ ' + e.message); }
+  return true;
+};
+const mcCheckAdminW = async () => { if (typeof window.mcCheckAdminG === 'function') await window.mcCheckAdminG(); };
+document.head.insertAdjacentHTML('beforeend', `<style>
+html #devPanel textarea{width:100%;box-sizing:border-box;background:#1b1d25;color:#eee;border:1px solid #4a4658;padding:6px;font:inherit;border-radius:3px;resize:vertical}
+html #devPanel input[type=text],html #devPanel input[type=datetime-local]{flex:1;min-width:0;background:#1b1d25;color:#eee;border:1px solid #4a4658;padding:5px 6px;font:inherit;border-radius:3px;color-scheme:dark}
+html #devPanel .opsgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:6px 0}
+html #devPanel .opsf{display:flex;align-items:center;gap:6px}html #devPanel .opsf span{flex:1;color:#bbb;font-size:12px}html #devPanel .opsf input{width:80px}
+html #devPanel details{margin:6px 0;border:1px solid #2a271f;padding:4px 8px}html #devPanel summary{cursor:pointer;color:#e8b048;padding:3px 0}
+html #devPanel .opsmail{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center;font-size:12px;padding:4px 0;border-bottom:1px dashed #2a271f;color:#cfc4ac}
+html #devPanel .opsmail .ok{color:#9be08a}html #devPanel .opsmail .wait{color:#ffd27a}
+html #devPanel .opsparty{margin:6px 0;padding:4px 6px;background:rgba(255,255,255,.03)}html #devPanel .opsparty>b{color:#e8b048;font-size:12px}
+</style>`);
+}
+
+/* ============ 마스터 콘솔 3단계 (2026-11-25, user): ⚔ 전투 수치 ============
+   캐릭터 4명 × 스킬 8개(Z·X·C·Shift·A·S·D·V) 각각 피해·재사용 대기·지속 시간, 캐릭터별 기본 능력치, 가드·피격 무적, 물약·주문서,
+   몹 난이도(잡몹·엘리트), 특성 단계 효과·포인트 비용, 궁극기 연출 시간. 정식·test 둘 다 이 값을 tuning 에서 읽는다.
+   거는 곳: startAct/castSkill(지금 스킬 기억 + 버프 시간) · updatePlayer(새로 찬 재사용 대기에 배율) · dealDamage(스킬 피해) · calcStats(능력치)
+            hurtPlayer(몹 피해·피격 무적) · makeMon/updateMon(몹 체력·속도) · tDmg/tCd/freshMul/freshCd/traitTotals(특성) · ULT9/ULT12(궁극기) */
+const MCB = { cur: null, curT: -9, prevCd: null };
+const MC_SK_KEYS = ['z', 'x', 'c', 'move', 'a', 's', 'd', 'v'];
+const MC_SK_LABEL = { z: 'Z', x: 'X', c: 'C', move: 'Shift', a: 'A', s: 'S', d: 'D', v: 'V' };
+function mcSkName(ch, k) {
+  if (k === 'move') return '이동기';
+  const S = SKILLS[ch] && SKILLS[ch][k]; if (S && S.name) return S.name;
+  const t = (TRAITS[ch] || []).find(t => t.key === k); if (t && t.skill) return String(t.skill).replace(/^[A-Z]\s+/, '');
+  return k === 'z' ? '기본 공격' : k.toUpperCase();
+}
+const mcSkT = (ch, k, f) => TUNE.cur['sk:' + ch + ':' + k + ':' + f] ?? 1;
+const mcStT = (ch, f) => TUNE.cur['st:' + ch + ':' + f] ?? (f === 'crit' ? 0 : 1);
+for (const ch of Object.keys(CHARS)) {
+  const nm = CHARS[ch].name;
+  for (const k of MC_SK_KEYS) {
+    const sec = nm + ' · ' + MC_SK_LABEL[k] + ' ' + mcSkName(ch, k);
+    tuneAdd({ k: 'sk:' + ch + ':' + k + ':dmg', g: 'combatSk', ch, sec, n: '피해', help: k === 'move' ? '이동기에 피해가 있을 때만' : '', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+    if (k !== 'z') tuneAdd({ k: 'sk:' + ch + ':' + k + ':cd', g: 'combatSk', ch, sec, n: '재사용 대기', help: '0.5 = 절반으로 짧게', get: () => 1, set: () => { }, min: 0.05, max: 5, step: 0.05, u: '×' });
+    if (k !== 'z') tuneAdd({ k: 'sk:' + ch + ':' + k + ':dur', g: 'combatSk', ch, sec, n: '지속 시간', help: '버프·은신·집중·덫처럼 시간이 있는 효과', get: () => 1, set: () => { }, min: 0.1, max: 5, step: 0.05, u: '×' });
+  }
+  const ss = nm + ' · 기본 능력치';
+  tuneAdd({ k: 'st:' + ch + ':atk', g: 'combatSt', ch, sec: ss, n: '공격력', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+  tuneAdd({ k: 'st:' + ch + ':hp', g: 'combatSt', ch, sec: ss, n: '최대 체력', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+  tuneAdd({ k: 'st:' + ch + ':def', g: 'combatSt', ch, sec: ss, n: '방어력', get: () => 1, set: () => { }, min: 0, max: 10, step: 0.05, u: '×' });
+  tuneAdd({ k: 'st:' + ch + ':crit', g: 'combatSt', ch, sec: ss, n: '치명타 확률 더하기', help: '%p 로 더한다 (5 = +5%p)', get: () => 0, set: () => { }, min: -50, max: 100, step: 1, u: '%p' });
+  tuneAdd({ k: 'st:' + ch + ':aspd', g: 'combatSt', ch, sec: ss, n: '공격 속도', get: () => 1, set: () => { }, min: 0.3, max: 3, step: 0.05, u: '×' });
+  tuneAdd({ k: 'st:' + ch + ':spd', g: 'combatSt', ch, sec: ss, n: '이동 속도', get: () => 1, set: () => { }, min: 0.3, max: 3, step: 0.05, u: '×' });
+  tuneAdd({ k: 'st:' + ch + ':jump', g: 'combatSt', ch, sec: ss, n: '점프 높이', get: () => 1, set: () => { }, min: 0.3, max: 3, step: 0.05, u: '×' });
+}
+/* ---- 가드 · 피격 · 물약 · 주문서 ---- */
+tuneAdd({ k: 'guardWin', g: 'combat', sec: '가드·피격', n: '퍼펙트 가드 판정 시간', help: 'G 를 누른 뒤 이 시간 안에 맞으면 막는다', get: () => GUARD_WIN, set: v => { GUARD_WIN = v; }, min: 0.05, max: 1.5, step: 0.01, u: '초' });
+tuneAdd({ k: 'guardCd', g: 'combat', sec: '가드·피격', n: '가드 재사용 대기', get: () => GUARD_CD, set: v => { GUARD_CD = v; if (G.player && G.player.cdMax) G.player.cdMax.g = v; }, min: 0, max: 15, step: 0.1, u: '초' });
+tuneAdd({ k: 'guardStun', g: 'combat', sec: '가드·피격', n: '가드 성공 시 적 경직', get: () => GUARD_STUN, set: v => { GUARD_STUN = v; }, min: 0, max: 5, step: 0.05, u: '초' });
+tuneAdd({ k: 'hurtInv', g: 'combat', sec: '가드·피격', n: '맞은 뒤 무적 시간', get: () => 0.9, set: () => { }, min: 0, max: 3, step: 0.05, u: '초' });
+tuneAdd({ k: 'potHeal', g: 'combat', sec: '물약·주문서', n: '치유 연고 회복량', help: '최대 체력의 몇 %', get: () => POTION_HEAL, set: v => { POTION_HEAL = v; }, min: 0.05, max: 1, step: 0.01, pct: true });
+tuneAdd({ k: 'potCd', g: 'combat', sec: '물약·주문서', n: '치유 연고 재사용 대기', get: () => POTION_CD, set: v => { POTION_CD = v; if (G.player && G.player.cdMax) G.player.cdMax.pot = v; }, min: 0, max: 60, step: 0.5, u: '초' });
+tuneAdd({ k: 'potMax', g: 'combat', sec: '물약·주문서', n: '치유 연고 최대 개수', get: () => POTION_MAX, set: v => { POTION_MAX = Math.round(v); }, min: 1, max: 99, step: 1, u: '개' });
+tuneAdd({ k: 'scrMax', g: 'combat', sec: '물약·주문서', n: '귀환 주문서 최대 개수', get: () => SCROLL_MAX, set: v => { SCROLL_MAX = Math.round(v); }, min: 1, max: 99, step: 1, u: '개' });
+tuneAdd({ k: 'scrCast', g: 'combat', sec: '물약·주문서', n: '귀환 주문서 시전 시간', get: () => SCROLL_CAST, set: v => { SCROLL_CAST = v; }, min: 0.1, max: 10, step: 0.1, u: '초' });
+/* ---- 몹 난이도 ---- */
+tuneAdd({ k: 'mobHp', g: 'combat', sec: '몹 난이도 (보스 제외)', n: '몹 체력', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+tuneAdd({ k: 'mobAtk', g: 'combat', sec: '몹 난이도 (보스 제외)', n: '몹 피해', help: '보스와 싸우는 동안에는 적용 안 함', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+tuneAdd({ k: 'mobSpd', g: 'combat', sec: '몹 난이도 (보스 제외)', n: '몹 행동 속도', help: '이동·공격 간격이 함께 빨라진다', get: () => 1, set: () => { }, min: 0.25, max: 3, step: 0.05, u: '×' });
+tuneAdd({ k: 'eliteHp', g: 'combat', sec: '몹 난이도 (보스 제외)', n: '엘리트 체력 추가 배율', help: '엘리트는 맵에 정해진 자리에 나온다(무작위 등장률 없음)', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+tuneAdd({ k: 'eliteAtk', g: 'combat', sec: '몹 난이도 (보스 제외)', n: '엘리트 피해 추가 배율', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+tuneAdd({ k: 'eliteGold', g: 'combat', sec: '몹 난이도 (보스 제외)', n: '엘리트 골드 추가 배율', get: () => 1, set: () => { }, min: 0, max: 10, step: 0.1, u: '×' });
+/* ---- 특성 ---- */
+const TRT = { r4: 0.15, r5: 0.15, r7: 0.20, r9: 0.25, per: 0.06, r15: 0.25, cd6: 0.8, fper: 0.05, f15: 0.25, fcd: 0.01, fcd10: 0.85, tpLv: 1 };
+const trSec = '특성 · 기존 특성(Z·X·C)', frSec = '특성 · 각성 특성(A·S·D·V)', tcSec = '특성 · 포인트';
+tuneAdd({ k: 'trR4', g: 'combat', sec: trSec, n: '4단계 피해 증가', get: () => 0.15, set: v => { TRT.r4 = v; }, min: 0, max: 2, step: 0.01, pct: true });
+tuneAdd({ k: 'trR5', g: 'combat', sec: trSec, n: '5단계 피해 증가', get: () => 0.15, set: v => { TRT.r5 = v; }, min: 0, max: 2, step: 0.01, pct: true });
+tuneAdd({ k: 'trR7', g: 'combat', sec: trSec, n: '7단계 피해 증가', get: () => 0.20, set: v => { TRT.r7 = v; }, min: 0, max: 2, step: 0.01, pct: true });
+tuneAdd({ k: 'trR9', g: 'combat', sec: trSec, n: '9단계 피해 증가', get: () => 0.25, set: v => { TRT.r9 = v; }, min: 0, max: 2, step: 0.01, pct: true });
+tuneAdd({ k: 'trPer', g: 'combat', sec: trSec, n: '11~14단계 단계마다 피해', get: () => 0.06, set: v => { TRT.per = v; }, min: 0, max: 1, step: 0.01, pct: true });
+tuneAdd({ k: 'trR15', g: 'combat', sec: trSec, n: '15단계 피해 증가', get: () => 0.25, set: v => { TRT.r15 = v; }, min: 0, max: 3, step: 0.01, pct: true });
+tuneAdd({ k: 'trCd6', g: 'combat', sec: trSec, n: '6단계부터 재사용 대기', help: '0.8 = 20% 짧게', get: () => 0.8, set: v => { TRT.cd6 = v; }, min: 0.1, max: 1, step: 0.01, u: '×' });
+tuneAdd({ k: 'frPer', g: 'combat', sec: frSec, n: '단계마다 피해', get: () => 0.05, set: v => { TRT.fper = v; }, min: 0, max: 1, step: 0.01, pct: true });
+tuneAdd({ k: 'fr15', g: 'combat', sec: frSec, n: '15단계 추가 피해', get: () => 0.25, set: v => { TRT.f15 = v; }, min: 0, max: 3, step: 0.01, pct: true });
+tuneAdd({ k: 'frCd', g: 'combat', sec: frSec, n: '단계마다 재사용 대기 감소', get: () => 0.01, set: v => { TRT.fcd = v; }, min: 0, max: 0.06, step: 0.001, pct: true });
+tuneAdd({ k: 'frCd10', g: 'combat', sec: frSec, n: '10단계부터 재사용 대기', help: '0.85 = 15% 짧게', get: () => 0.85, set: v => { TRT.fcd10 = v; }, min: 0.1, max: 1, step: 0.01, u: '×' });
+const MC_TR_COST0 = {}; for (const ch in TRAITS) for (const t of TRAITS[ch]) MC_TR_COST0[t.id] = t.ranks.map(r => r.cost);
+function trCostApply() {
+  const c = [TUNE.cur.trC1 ?? 1, TUNE.cur.trC2 ?? 2, TUNE.cur.trC3 ?? 3], same = c[0] === 1 && c[1] === 2 && c[2] === 3;
+  for (const ch in TRAITS) for (const t of TRAITS[ch]) t.ranks.forEach((r, i) => { r.cost = same ? MC_TR_COST0[t.id][i] : c[i < 5 ? 0 : i < 10 ? 1 : 2]; });
+  if (typeof TR_BAL === 'object') { const step = i => c[i < 5 ? 0 : i < 10 ? 1 : 2], upto = r => Array.from({ length: r }, (_, i) => step(i)).reduce((a, b) => a + b, 0); TR_BAL.perTrait = upto(15); TR_BAL.allSix = upto(15) * 6; for (const row of TR_BAL.rows || []) row.cost = upto(row.rank); }
+}
+tuneAdd({ k: 'trC1', g: 'combat', sec: tcSec, n: '1~5단계 1칸 비용', help: '바꾸면 이미 올린 특성을 초기화할 때 새 비용으로 돌려받는다', get: () => 1, set: () => trCostApply(), min: 0, max: 10, step: 1, u: '점' });
+tuneAdd({ k: 'trC2', g: 'combat', sec: tcSec, n: '6~10단계 1칸 비용', get: () => 2, set: () => trCostApply(), min: 0, max: 10, step: 1, u: '점' });
+tuneAdd({ k: 'trC3', g: 'combat', sec: tcSec, n: '11~15단계 1칸 비용', get: () => 3, set: () => trCostApply(), min: 0, max: 10, step: 1, u: '점' });
+tuneAdd({ k: 'tpLv', g: 'combat', sec: tcSec, n: '레벨업마다 받는 포인트', help: '앞으로 오르는 레벨부터', get: () => 1, set: v => { TRT.tpLv = Math.round(v); }, min: 0, max: 10, step: 1, u: '점' });
+tDmg = id => { const r = traitRank(id); return 1 + (r >= 4 ? TRT.r4 : 0) + (r >= 5 ? TRT.r5 : 0) + (r >= 7 ? TRT.r7 : 0) + (r >= 9 ? TRT.r9 : 0) + TRT.per * Math.max(0, Math.min(r, 14) - 10) + (r >= 15 ? TRT.r15 : 0); };
+tCd = id => traitRank(id) >= 6 ? TRT.cd6 : 1;
+freshMul = function (key) { const t = key && traitOf(G.save.char, key); if (!t || !t.fresh) return 1; const r = traitRank(t.id); return 1 + TRT.fper * Math.min(r, 15) + (r >= 15 ? TRT.f15 : 0); };
+freshCd = function (key) { const t = key && traitOf(G.save.char, key); if (!t || !t.fresh) return 1; const r = traitRank(t.id); return (1 - TRT.fcd * Math.min(r, 15)) * (r >= 10 ? TRT.fcd10 : 1); };
+const _mbtraitTotals = traitTotals;
+traitTotals = function (t, rk) {   // 특성 창의 "누적" 숫자도 같은 값으로
+  const o = _mbtraitTotals(t, rk), r = rk || 0; if (!r) return o;
+  if (t.fresh) { o.dmg = Math.round((TRT.fper * Math.min(r, 15) + (r >= 15 ? TRT.f15 : 0)) * 100); o.cd = Math.round((1 - (1 - TRT.fcd * Math.min(r, 15)) * (r >= 10 ? TRT.fcd10 : 1)) * 100); }
+  else if (!o.note) { o.dmg = Math.round(((r >= 4 ? TRT.r4 : 0) + (r >= 5 ? TRT.r5 : 0) + (r >= 7 ? TRT.r7 : 0) + (r >= 9 ? TRT.r9 : 0) + TRT.per * Math.max(0, Math.min(r, 14) - 10) + (r >= 15 ? TRT.r15 : 0)) * 100); if (o.cd === 20) o.cd = Math.round((1 - TRT.cd6) * 100); }
+  return o;
+};
+/* ---- 궁극기 연출 (ULT9 · ULT12 표) ---- */
+const MC_ULT_T = [typeof ULT9 === 'object' ? ULT9 : null, typeof ULT12 === 'object' ? ULT12 : null].filter(Boolean);
+const MC_ULT_BASE = MC_ULT_T.map(T => { const b = {}; for (const ch in T) b[ch] = { invul: T[ch].invul, ms: (T[ch].ms || []).slice(), at: (T[ch].hits || []).map(h => h.at) }; return b; });
+function ultApply() {
+  MC_ULT_T.forEach((T, i) => { for (const ch in T) { const B = MC_ULT_BASE[i][ch], inv = TUNE.cur['ult:' + ch + ':inv'] ?? 1, len = TUNE.cur['ult:' + ch + ':len'] ?? 1;
+    if (B.invul != null) T[ch].invul = B.invul * inv; if (T[ch].ms) T[ch].ms = B.ms.map(x => Math.round(x * len)); (T[ch].hits || []).forEach((h, j) => { if (B.at[j] != null) h.at = Math.round(B.at[j] * len); }); } });
+}
+for (const ch of Object.keys(CHARS)) {
+  const sec = CHARS[ch].name + ' · 궁극기 연출';
+  tuneAdd({ k: 'ult:' + ch + ':inv', g: 'combatSt', ch, sec, n: '궁극기 무적 시간', get: () => 1, set: () => ultApply(), min: 0, max: 5, step: 0.05, u: '×' });
+  tuneAdd({ k: 'ult:' + ch + ':len', g: 'combatSt', ch, sec, n: '궁극기 연출 길이', help: '프레임과 타격 시점이 같이 늘고 준다', get: () => 1, set: () => ultApply(), min: 0.3, max: 3, step: 0.05, u: '×' });
+}
+
+/* ---- 거는 곳 ---- */
+const MC_BUFF_F = ['atkBuff', 'critBuff', 'haste', 'focus', 'stealth', 'shieldT', 'ambushT'];
+const mbSnap = p => p ? MC_BUFF_F.map(f => +p[f] || 0) : null;
+function mbScale(p, b, k) {
+  if (!p || !b || !G.save) return; const m = mcSkT(G.save.char, k, 'dur'); if (m === 1) return;
+  MC_BUFF_F.forEach((f, i) => { const v = +p[f] || 0; if (v > b[i] + 0.01) p[f] = b[i] + (v - b[i]) * m; });
+}
+const _mbstartAct = startAct;
+startAct = function (id) {
+  const k = id === 'shift' ? 'move' : id, p = G.player; if (MC_SK_KEYS.includes(k)) { MCB.cur = k; MCB.curT = G.t; }
+  const b = mbSnap(p), r = _mbstartAct.apply(this, arguments); if (MC_SK_KEYS.includes(k)) mbScale(p, b, k); return r;
+};
+const _mbcastSkill = castSkill;
+castSkill = function (key) {
+  MCB.cur = key; MCB.curT = G.t; const p = G.player, b = mbSnap(p), nt = G.traps ? G.traps.length : 0;
+  const r = _mbcastSkill.apply(this, arguments); mbScale(p, b, key);
+  const m = G.save ? mcSkT(G.save.char, key, 'dur') : 1; if (m !== 1 && G.traps) for (let i = nt; i < G.traps.length; i++) if (G.traps[i].life) G.traps[i].life *= m;
+  return r;
+};
+const MC_CD_MAP = { x: 'x', c: 'c', s: 'move', ka: 'a', ks: 's', kd: 'd', kv: 'v' };
+function mbCdScan(p) {
+  if (!p || !p.cd || !G.save) return; const prev = MCB.prevCd || {}, ch = G.save.char;
+  for (const k in p.cd) { const v = p.cd[k], o = prev[k] ?? v; if (v > o + 0.05 && MC_CD_MAP[k]) { const m = mcSkT(ch, MC_CD_MAP[k], 'cd'); if (m !== 1) { p.cd[k] = v * m; if (p.cdMax && p.cdMax[k] != null) p.cdMax[k] = Math.max(0.01, p.cd[k]); } } }
+  MCB.prevCd = Object.assign({}, p.cd);
+}
+const _mbupdatePlayer = updatePlayer;
+updatePlayer = function (dt) {
+  const p = G.player; mbCdScan(p); const bf = mbSnap(p); const r = _mbupdatePlayer(dt); mbCdScan(p);
+  if (p && bf && MCB.cur === 'move' && G.t - MCB.curT < 0.1) mbScale(p, bf, 'move');   // 궁수 집중처럼 Shift 효과가 updatePlayer 안에서 켜질 때
+  return r;
+};
+const _mbdealDamage = dealDamage;
+dealDamage = function (e, mult, o) {
+  const p = G.player, ch = G.save && G.save.char; let k = null;
+  if (p && p.act) k = p.act.skill || ({ z: 'z', x: 'x', c: 'c' })[p.act.id] || null;
+  if (!k && MCB.cur && G.t - MCB.curT < 5) k = MCB.cur;   // 날아가는 화살·장판은 마지막으로 쓴 스킬로 센다
+  const m = k && ch ? mcSkT(ch, k, 'dmg') : 1;
+  return _mbdealDamage(e, m !== 1 ? mult * m : mult, o);
+};
+const _mbcalcStats = calcStats;
+calcStats = function (save) {
+  const S = _mbcalcStats(save), ch = (save || G.save || {}).char; if (!ch || !S) return S;
+  S.atk *= mcStT(ch, 'atk'); S.hp *= mcStT(ch, 'hp'); S.def *= mcStT(ch, 'def'); S.crit = (S.crit || 0) + mcStT(ch, 'crit');
+  S.aspd = (100 + (S.aspd || 0)) * mcStT(ch, 'aspd') - 100; S.spd = (100 + (S.spd || 0)) * mcStT(ch, 'spd') - 100; S.jumpP = (100 + (S.jumpP || 0)) * mcStT(ch, 'jump') - 100;
+  return S;
+};
+const _mbhurtPlayer = hurtPlayer;
+hurtPlayer = function (raw, srcX, o) {
+  o = o || {}; const p = G.player, src = o.src, mob = !G.boss && !(src && src.isBoss);
+  if (mob && raw < 1e8) { let k = TUNE.cur.mobAtk ?? 1; if (src && src.d && src.d.elite) k *= TUNE.cur.eliteAtk ?? 1; if (k !== 1) raw = Math.max(1, Math.round(raw * k)); }
+  const hp0 = p ? p.hp : 0, r = _mbhurtPlayer(raw, srcX, o);
+  if (p && p.hp < hp0 && !o.inv && p.inv > 0 && (TUNE.cur.hurtInv ?? 0.9) !== 0.9) p.inv = TUNE.cur.hurtInv;
+  return r;
+};
+const _mbmakeMon = makeMon;
+makeMon = function (type, x, y, slot) {
+  const m = _mbmakeMon.apply(this, arguments); if (!m) return m;
+  let k = TUNE.cur.mobHp ?? 1; if (m.d && m.d.elite) k *= TUNE.cur.eliteHp ?? 1;
+  if (k !== 1) { m.mhp = Math.max(1, Math.round(m.mhp * k)); m.hp = m.mhp; }
+  return m;
+};
+const _mbupdateMon = updateMon;
+updateMon = function (m, dt) { const k = TUNE.cur.mobSpd ?? 1; return _mbupdateMon(m, k !== 1 ? dt * k : dt); };
+const _mbdropLoot = dropLoot;
+dropLoot = function (m) { const g = GOLD_DROP_X, k = m && m.d && m.d.elite ? TUNE.cur.eliteGold ?? 1 : 1; if (k !== 1) GOLD_DROP_X = g * k; try { return _mbdropLoot(m); } finally { GOLD_DROP_X = g; } };
+const _mbgainXp = gainXp;
+gainXp = function (n) { const s = G.save, l0 = s ? s.level : 0, r = _mbgainXp(n); if (s && s.level > l0 && TRT.tpLv !== 1) s.tp = Math.max(0, s.tp + (TRT.tpLv - 1) * (s.level - l0)); return r; };
+const _mbtuneApply = tuneApply;
+tuneApply = function (over) { _mbtuneApply(over); try { if (G.save && G.player && typeof refreshStats === 'function') refreshStats(); } catch (e) { } };
 </script>
 </body></html>
