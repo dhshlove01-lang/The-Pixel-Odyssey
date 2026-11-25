@@ -692,7 +692,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1330';
+const GAME_VER = '261125-1400';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -776,8 +776,8 @@ const enhGold = (e, T) => Math.round((20 + 22 * e) * (1 + 2 * T) * ENH_GOLD_X);
 const inheritGold = T => enhGold(15, T) * 3;
 const slotLeq = (e, ilvl, T) => 1 + 0.6 * e + 1.2 * ilvl + 10 * T;
 let GAUGE_RATE = 0.465;                                        // failure adds rate*0.465 to the 장인의 기운 gauge; 100 = guaranteed
-const POTION_HEAL = 0.35, POTION_CD = 8, POTION_MAX = 20, SCROLL_MAX = 10, SCROLL_CAST = 1.6;
-const GUARD_WIN = 0.25, GUARD_CD = 3, GUARD_STUN = 1;   // G: press just before a hit lands
+let POTION_HEAL = 0.35, POTION_CD = 8, POTION_MAX = 20, SCROLL_MAX = 10, SCROLL_CAST = 1.6;   // let: 마스터 콘솔
+let GUARD_WIN = 0.25, GUARD_CD = 3, GUARD_STUN = 1;   // let: 마스터 콘솔   // G: press just before a hit lands
 const TOWN_REGEN = 0.02, CHEST_X = 900;                  // camp heal per second (share of max HP), storage chest position
 /* Cloud saves (Firebase Realtime Database, also meant for co-op later). Empty = this device only.
    Put the database URL here, e.g. 'https://devil-renown-default-rtdb.asia-southeast1.firebasedatabase.app'. */
@@ -5881,8 +5881,8 @@ const mapChapter = () => (G.map && G.map.ch) || 1;
 const traitRank = id => (G.save && G.save.traits[id]) || 0;
 const slotValue = (k, s) => { s = s || G.save; const se = s.slotE[k]; return slotStat(k, s.equip[k], se.e, se.T); };
 /* generic upper ranks (4-10): damage, cooldown or attack speed, crit, awakening */
-const tDmg = id => { const r = traitRank(id); return 1 + (r >= 4 ? 0.15 : 0) + (r >= 5 ? 0.15 : 0) + (r >= 7 ? 0.2 : 0) + (r >= 9 ? 0.25 : 0) + 0.06 * Math.max(0, Math.min(r, 14) - 10) + (r >= 15 ? 0.25 : 0); };   // ranks 11-15 (8-2)
-const tCd = id => traitRank(id) >= 6 ? 0.8 : 1;
+let tDmg = id => {   /* let: 마스터 콘솔 특성 수치 */ const r = traitRank(id); return 1 + (r >= 4 ? 0.15 : 0) + (r >= 5 ? 0.15 : 0) + (r >= 7 ? 0.2 : 0) + (r >= 9 ? 0.25 : 0) + 0.06 * Math.max(0, Math.min(r, 14) - 10) + (r >= 15 ? 0.25 : 0); };   // ranks 11-15 (8-2)
+let tCd = id => traitRank(id) >= 6 ? 0.8 : 1;
 const tAwake = id => traitRank(id) >= 10;
 function calcStats(save) {
   const s = save || G.save, L = s.level, tr = id => s.traits[id] || 0;
@@ -25446,7 +25446,6 @@ tuneAdd({ k: 'crit', g: 'econ', sec: '전투', n: '치명타 피해 배율', get
 /* ---- 등록: 확률 · 드롭 ---- */
 GRADES.slice().reverse().forEach(gr => tuneAdd({ k: 'grade' + gr.id, g: 'drop', sec: '장비 드롭 (몹 1마리당)', n: gr.name, get: () => GRADES[gr.id].p, set: v => { GRADES[gr.id].p = v; }, min: 0, max: 30, step: 0.01, pct: true }));
 tuneAdd({ k: 'ring', g: 'drop', sec: '장비 드롭 (몹 1마리당)', n: '반지 (10·20·30장 보스)', help: '보스 처치 1회당', get: () => RING_DROP[10], set: v => { for (const c in RING_DROP) RING_DROP[c] = v; }, min: 0, max: 100, step: 0.5, pct: true });
-tuneAdd({ k: 'eliteLoot', g: 'drop', sec: '장비 드롭 (몹 1마리당)', n: '엘리트 몹 보상 배율', get: () => ELITE_MUL.loot, set: v => { ELITE_MUL.loot = v; }, min: 0, max: 10, step: 0.1, u: '×' });
 tuneAdd({ k: 'box', g: 'drop', sec: '랜덤 상자', n: '상자 등장 확률', help: '사냥터에 들어갈 때마다', get: () => BOX_CHANCE, set: v => { BOX_CHANCE = v; }, min: 0, max: 100, step: 1, pct: true });
 tuneAdd({ k: 'boxCd', g: 'drop', sec: '랜덤 상자', n: '같은 맵 상자 대기', get: () => BOX_CD, set: v => { BOX_CD = v; }, min: 0, max: 120, step: 1, u: '분', kscale: 1 / 60 });
 BOX_TIERS.forEach((T, i) => tuneAdd({ k: 'boxW' + i, g: 'drop', sec: '랜덤 상자', n: T.name + ' 비중', help: '네 상자 비중의 합 중 이 상자 몫이 확률이 된다', get: () => BOX_TIERS[i].w, set: v => { BOX_TIERS[i].w = v; }, min: 0, max: 100, step: 1, u: '' }));
@@ -25510,6 +25509,7 @@ startGame = function (...a) { const r = _mcstartGame(...a); if (!TUNE.dirtyLocal
 if (IS_DEV_BUILD) {
 DEV.tab = DEV.tab || 'quick'; DEV.boss = DEV.boss || 'b1'; DEV.q = ''; DEV.onlyChanged = false; DEV.mobCh = 0;
 const MC_TABS = [['quick', '⚡', '빠른 도구'], ['me', '🧑', '내 캐릭터'], ['boss', '👹', '보스'], ['drop', '🎲', '확률·드롭'], ['econ', '💰', '경제·강화'], ['ops', '🛠', '운영'], ['ship', '🚀', '정식 적용']];
+MC_TABS.splice(3, 0, ['combat', '⚔', '전투']);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const nChanged = () => Object.keys(tuneDiff(TUNE.cur)).length;
 function tuneRow(d) {
@@ -25590,9 +25590,17 @@ function mcShip() {
       <div class="mcr"><small>적용하면 정식 게임에 접속한 사람에게 5분 안에, 새로 들어오는 사람에게는 바로 반영된다. 코드(그림·기능) 배포는 Claude 에게 "정식 배포"라고 말한다.</small></div></section>
     <section class="mcsec"><h6>적용 기록 <small>최근 20번 · 누르면 그 적용 바로 전 값으로 정식을 되돌린다</small></h6>${log}</section>`;
 }
+function mcCombat() {   /* 3단계 ⚔ 전투 탭: 캐릭터를 고르면 그 캐릭터의 능력치·궁극기·스킬 8개, 아래에 공통(가드·물약·몹·특성) */
+  DEV.cch = DEV.cch || (G.save && G.save.char) || Object.keys(CHARS)[0];
+  const chOpts = Object.keys(CHARS).map(c => { const ch = TUNE.defs.some(d => d.ch === c && !tuneSame(TUNE.cur[d.k], TUNE.base[d.k])); return `<option value="${c}" ${DEV.cch === c ? 'selected' : ''}>${ch ? '● ' : ''}${esc(CHARS[c].name)} · ${esc(CHARS[c].title || '')}</option>`; }).join('');
+  const mine = g => TUNE.defs.filter(d => d.g === g && d.ch === DEV.cch);
+  return tuneTools() + `<section class="mcsec"><h6>캐릭터 <small>● = 바꾼 캐릭터</small></h6><div class="mcr"><select data-mcch>${chOpts}</select></div>
+    <div class="mcr"><small>스킬 피해는 그 스킬로 들어간 모든 타격에 곱한다(날아가는 화살·장판은 마지막으로 쓴 스킬로 센다). 재사용 대기·지속 시간은 다음에 쓸 때부터.</small></div></section>`
+    + tuneSecs(mine('combatSt')) + tuneSecs(mine('combatSk')) + tuneSecs(TUNE.defs.filter(d => d.g === 'combat'));
+}
 devHtml = function () {
   const s = G.save, inGame = G.scene === 'play' && !!s, n = nChanged(), tab = DEV.tab;
-  const body = tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip() : tab === 'ops' ? (window.mcOps ? window.mcOps(inGame) : '')
+  const body = tab === 'combat' ? mcCombat() : tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip() : tab === 'ops' ? (window.mcOps ? window.mcOps(inGame) : '')
     : tuneTools() + tuneSecs(TUNE.defs.filter(d => d.g === tab));
   return `<div class="mch"><b>마스터 콘솔</b><span>test 서버 · F9 닫기</span><button class="mcclose" data-ma="close">✕</button></div>
     <nav class="mctabs">${MC_TABS.map(([id, ic, t]) => `<button data-ma="tab:${id}" class="${tab === id ? 'on' : ''}"><i>${ic}</i>${t}</button>`).join('')}</nav>
@@ -25709,15 +25717,16 @@ addEventListener('load', () => {
     if (t.hasAttribute('data-monly')) { DEV.onlyChanged = t.checked; mcFilter(); }
     if (t.hasAttribute('data-mboss')) { DEV.boss = t.value; devRender(); }
     if (t.hasAttribute('data-mobch')) { DEV.mobCh = +t.value; devRender(); }
+    if (t.hasAttribute('data-mcch')) { DEV.cch = t.value; devRender(); }
   });
 });
 document.head.insertAdjacentHTML('beforeend', `<style>
-html #devPanel{width:min(460px,calc(100% - 16px));padding:0;display:none;flex-direction:column;overflow:hidden;font:13px 'Noto Sans KR',sans-serif;background:rgba(12,14,20,.97);border:1px solid #7a6640;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+html #devPanel{width:min(500px,calc(100% - 16px));padding:0;display:none;flex-direction:column;overflow:hidden;font:13px 'Noto Sans KR',sans-serif;background:rgba(12,14,20,.97);border:1px solid #7a6640;box-shadow:0 8px 30px rgba(0,0,0,.6)}
 html #devPanel.on{display:flex}
 html #devPanel .mch{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #3a3426;background:#17140e}
 html #devPanel .mch b{color:#ffd27a;font-size:15px}html #devPanel .mch span{color:#9a8f78;font-size:11px;flex:1}
 html #devPanel .mcclose{background:none;border:0;color:#cbbd9e;font-size:16px;padding:0 4px}
-html #devPanel .mctabs{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #3a3426}
+html #devPanel .mctabs{display:grid;grid-template-columns:repeat(8,1fr);border-bottom:1px solid #3a3426}
 html #devPanel .mctabs button{background:none;border:0;border-bottom:2px solid transparent;color:#a99f88;padding:7px 2px 6px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
 html #devPanel .mctabs button i{font-style:normal;font-size:16px}html #devPanel .mctabs button.on{color:#ffd27a;border-bottom-color:#ffd27a;background:rgba(255,210,122,.06)}
 html #devPanel .mcbody{flex:1;overflow-y:auto;padding:6px 12px 10px}
@@ -25998,5 +26007,173 @@ html #devPanel .opsmail .ok{color:#9be08a}html #devPanel .opsmail .wait{color:#f
 html #devPanel .opsparty{margin:6px 0;padding:4px 6px;background:rgba(255,255,255,.03)}html #devPanel .opsparty>b{color:#e8b048;font-size:12px}
 </style>`);
 }
+
+/* ============ 마스터 콘솔 3단계 (2026-11-25, user): ⚔ 전투 수치 ============
+   캐릭터 4명 × 스킬 8개(Z·X·C·Shift·A·S·D·V) 각각 피해·재사용 대기·지속 시간, 캐릭터별 기본 능력치, 가드·피격 무적, 물약·주문서,
+   몹 난이도(잡몹·엘리트), 특성 단계 효과·포인트 비용, 궁극기 연출 시간. 정식·test 둘 다 이 값을 tuning 에서 읽는다.
+   거는 곳: startAct/castSkill(지금 스킬 기억 + 버프 시간) · updatePlayer(새로 찬 재사용 대기에 배율) · dealDamage(스킬 피해) · calcStats(능력치)
+            hurtPlayer(몹 피해·피격 무적) · makeMon/updateMon(몹 체력·속도) · tDmg/tCd/freshMul/freshCd/traitTotals(특성) · ULT9/ULT12(궁극기) */
+const MCB = { cur: null, curT: -9, prevCd: null };
+const MC_SK_KEYS = ['z', 'x', 'c', 'move', 'a', 's', 'd', 'v'];
+const MC_SK_LABEL = { z: 'Z', x: 'X', c: 'C', move: 'Shift', a: 'A', s: 'S', d: 'D', v: 'V' };
+function mcSkName(ch, k) {
+  if (k === 'move') return '이동기';
+  const S = SKILLS[ch] && SKILLS[ch][k]; if (S && S.name) return S.name;
+  const t = (TRAITS[ch] || []).find(t => t.key === k); if (t && t.skill) return String(t.skill).replace(/^[A-Z]\s+/, '');
+  return k === 'z' ? '기본 공격' : k.toUpperCase();
+}
+const mcSkT = (ch, k, f) => TUNE.cur['sk:' + ch + ':' + k + ':' + f] ?? 1;
+const mcStT = (ch, f) => TUNE.cur['st:' + ch + ':' + f] ?? (f === 'crit' ? 0 : 1);
+for (const ch of Object.keys(CHARS)) {
+  const nm = CHARS[ch].name;
+  for (const k of MC_SK_KEYS) {
+    const sec = nm + ' · ' + MC_SK_LABEL[k] + ' ' + mcSkName(ch, k);
+    tuneAdd({ k: 'sk:' + ch + ':' + k + ':dmg', g: 'combatSk', ch, sec, n: '피해', help: k === 'move' ? '이동기에 피해가 있을 때만' : '', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+    if (k !== 'z') tuneAdd({ k: 'sk:' + ch + ':' + k + ':cd', g: 'combatSk', ch, sec, n: '재사용 대기', help: '0.5 = 절반으로 짧게', get: () => 1, set: () => { }, min: 0.05, max: 5, step: 0.05, u: '×' });
+    if (k !== 'z') tuneAdd({ k: 'sk:' + ch + ':' + k + ':dur', g: 'combatSk', ch, sec, n: '지속 시간', help: '버프·은신·집중·덫처럼 시간이 있는 효과', get: () => 1, set: () => { }, min: 0.1, max: 5, step: 0.05, u: '×' });
+  }
+  const ss = nm + ' · 기본 능력치';
+  tuneAdd({ k: 'st:' + ch + ':atk', g: 'combatSt', ch, sec: ss, n: '공격력', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+  tuneAdd({ k: 'st:' + ch + ':hp', g: 'combatSt', ch, sec: ss, n: '최대 체력', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+  tuneAdd({ k: 'st:' + ch + ':def', g: 'combatSt', ch, sec: ss, n: '방어력', get: () => 1, set: () => { }, min: 0, max: 10, step: 0.05, u: '×' });
+  tuneAdd({ k: 'st:' + ch + ':crit', g: 'combatSt', ch, sec: ss, n: '치명타 확률 더하기', help: '%p 로 더한다 (5 = +5%p)', get: () => 0, set: () => { }, min: -50, max: 100, step: 1, u: '%p' });
+  tuneAdd({ k: 'st:' + ch + ':aspd', g: 'combatSt', ch, sec: ss, n: '공격 속도', get: () => 1, set: () => { }, min: 0.3, max: 3, step: 0.05, u: '×' });
+  tuneAdd({ k: 'st:' + ch + ':spd', g: 'combatSt', ch, sec: ss, n: '이동 속도', get: () => 1, set: () => { }, min: 0.3, max: 3, step: 0.05, u: '×' });
+  tuneAdd({ k: 'st:' + ch + ':jump', g: 'combatSt', ch, sec: ss, n: '점프 높이', get: () => 1, set: () => { }, min: 0.3, max: 3, step: 0.05, u: '×' });
+}
+/* ---- 가드 · 피격 · 물약 · 주문서 ---- */
+tuneAdd({ k: 'guardWin', g: 'combat', sec: '가드·피격', n: '퍼펙트 가드 판정 시간', help: 'G 를 누른 뒤 이 시간 안에 맞으면 막는다', get: () => GUARD_WIN, set: v => { GUARD_WIN = v; }, min: 0.05, max: 1.5, step: 0.01, u: '초' });
+tuneAdd({ k: 'guardCd', g: 'combat', sec: '가드·피격', n: '가드 재사용 대기', get: () => GUARD_CD, set: v => { GUARD_CD = v; if (G.player && G.player.cdMax) G.player.cdMax.g = v; }, min: 0, max: 15, step: 0.1, u: '초' });
+tuneAdd({ k: 'guardStun', g: 'combat', sec: '가드·피격', n: '가드 성공 시 적 경직', get: () => GUARD_STUN, set: v => { GUARD_STUN = v; }, min: 0, max: 5, step: 0.05, u: '초' });
+tuneAdd({ k: 'hurtInv', g: 'combat', sec: '가드·피격', n: '맞은 뒤 무적 시간', get: () => 0.9, set: () => { }, min: 0, max: 3, step: 0.05, u: '초' });
+tuneAdd({ k: 'potHeal', g: 'combat', sec: '물약·주문서', n: '치유 연고 회복량', help: '최대 체력의 몇 %', get: () => POTION_HEAL, set: v => { POTION_HEAL = v; }, min: 0.05, max: 1, step: 0.01, pct: true });
+tuneAdd({ k: 'potCd', g: 'combat', sec: '물약·주문서', n: '치유 연고 재사용 대기', get: () => POTION_CD, set: v => { POTION_CD = v; if (G.player && G.player.cdMax) G.player.cdMax.pot = v; }, min: 0, max: 60, step: 0.5, u: '초' });
+tuneAdd({ k: 'potMax', g: 'combat', sec: '물약·주문서', n: '치유 연고 최대 개수', get: () => POTION_MAX, set: v => { POTION_MAX = Math.round(v); }, min: 1, max: 99, step: 1, u: '개' });
+tuneAdd({ k: 'scrMax', g: 'combat', sec: '물약·주문서', n: '귀환 주문서 최대 개수', get: () => SCROLL_MAX, set: v => { SCROLL_MAX = Math.round(v); }, min: 1, max: 99, step: 1, u: '개' });
+tuneAdd({ k: 'scrCast', g: 'combat', sec: '물약·주문서', n: '귀환 주문서 시전 시간', get: () => SCROLL_CAST, set: v => { SCROLL_CAST = v; }, min: 0.1, max: 10, step: 0.1, u: '초' });
+/* ---- 몹 난이도 ---- */
+tuneAdd({ k: 'mobHp', g: 'combat', sec: '몹 난이도 (보스 제외)', n: '몹 체력', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+tuneAdd({ k: 'mobAtk', g: 'combat', sec: '몹 난이도 (보스 제외)', n: '몹 피해', help: '보스와 싸우는 동안에는 적용 안 함', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+tuneAdd({ k: 'mobSpd', g: 'combat', sec: '몹 난이도 (보스 제외)', n: '몹 행동 속도', help: '이동·공격 간격이 함께 빨라진다', get: () => 1, set: () => { }, min: 0.25, max: 3, step: 0.05, u: '×' });
+tuneAdd({ k: 'eliteHp', g: 'combat', sec: '몹 난이도 (보스 제외)', n: '엘리트 체력 추가 배율', help: '엘리트는 맵에 정해진 자리에 나온다(무작위 등장률 없음)', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+tuneAdd({ k: 'eliteAtk', g: 'combat', sec: '몹 난이도 (보스 제외)', n: '엘리트 피해 추가 배율', get: () => 1, set: () => { }, min: 0.1, max: 10, step: 0.05, u: '×' });
+tuneAdd({ k: 'eliteGold', g: 'combat', sec: '몹 난이도 (보스 제외)', n: '엘리트 골드 추가 배율', get: () => 1, set: () => { }, min: 0, max: 10, step: 0.1, u: '×' });
+/* ---- 특성 ---- */
+const TRT = { r4: 0.15, r5: 0.15, r7: 0.20, r9: 0.25, per: 0.06, r15: 0.25, cd6: 0.8, fper: 0.05, f15: 0.25, fcd: 0.01, fcd10: 0.85, tpLv: 1 };
+const trSec = '특성 · 기존 특성(Z·X·C)', frSec = '특성 · 각성 특성(A·S·D·V)', tcSec = '특성 · 포인트';
+tuneAdd({ k: 'trR4', g: 'combat', sec: trSec, n: '4단계 피해 증가', get: () => 0.15, set: v => { TRT.r4 = v; }, min: 0, max: 2, step: 0.01, pct: true });
+tuneAdd({ k: 'trR5', g: 'combat', sec: trSec, n: '5단계 피해 증가', get: () => 0.15, set: v => { TRT.r5 = v; }, min: 0, max: 2, step: 0.01, pct: true });
+tuneAdd({ k: 'trR7', g: 'combat', sec: trSec, n: '7단계 피해 증가', get: () => 0.20, set: v => { TRT.r7 = v; }, min: 0, max: 2, step: 0.01, pct: true });
+tuneAdd({ k: 'trR9', g: 'combat', sec: trSec, n: '9단계 피해 증가', get: () => 0.25, set: v => { TRT.r9 = v; }, min: 0, max: 2, step: 0.01, pct: true });
+tuneAdd({ k: 'trPer', g: 'combat', sec: trSec, n: '11~14단계 단계마다 피해', get: () => 0.06, set: v => { TRT.per = v; }, min: 0, max: 1, step: 0.01, pct: true });
+tuneAdd({ k: 'trR15', g: 'combat', sec: trSec, n: '15단계 피해 증가', get: () => 0.25, set: v => { TRT.r15 = v; }, min: 0, max: 3, step: 0.01, pct: true });
+tuneAdd({ k: 'trCd6', g: 'combat', sec: trSec, n: '6단계부터 재사용 대기', help: '0.8 = 20% 짧게', get: () => 0.8, set: v => { TRT.cd6 = v; }, min: 0.1, max: 1, step: 0.01, u: '×' });
+tuneAdd({ k: 'frPer', g: 'combat', sec: frSec, n: '단계마다 피해', get: () => 0.05, set: v => { TRT.fper = v; }, min: 0, max: 1, step: 0.01, pct: true });
+tuneAdd({ k: 'fr15', g: 'combat', sec: frSec, n: '15단계 추가 피해', get: () => 0.25, set: v => { TRT.f15 = v; }, min: 0, max: 3, step: 0.01, pct: true });
+tuneAdd({ k: 'frCd', g: 'combat', sec: frSec, n: '단계마다 재사용 대기 감소', get: () => 0.01, set: v => { TRT.fcd = v; }, min: 0, max: 0.06, step: 0.001, pct: true });
+tuneAdd({ k: 'frCd10', g: 'combat', sec: frSec, n: '10단계부터 재사용 대기', help: '0.85 = 15% 짧게', get: () => 0.85, set: v => { TRT.fcd10 = v; }, min: 0.1, max: 1, step: 0.01, u: '×' });
+const MC_TR_COST0 = {}; for (const ch in TRAITS) for (const t of TRAITS[ch]) MC_TR_COST0[t.id] = t.ranks.map(r => r.cost);
+function trCostApply() {
+  const c = [TUNE.cur.trC1 ?? 1, TUNE.cur.trC2 ?? 2, TUNE.cur.trC3 ?? 3], same = c[0] === 1 && c[1] === 2 && c[2] === 3;
+  for (const ch in TRAITS) for (const t of TRAITS[ch]) t.ranks.forEach((r, i) => { r.cost = same ? MC_TR_COST0[t.id][i] : c[i < 5 ? 0 : i < 10 ? 1 : 2]; });
+  if (typeof TR_BAL === 'object') { const step = i => c[i < 5 ? 0 : i < 10 ? 1 : 2], upto = r => Array.from({ length: r }, (_, i) => step(i)).reduce((a, b) => a + b, 0); TR_BAL.perTrait = upto(15); TR_BAL.allSix = upto(15) * 6; for (const row of TR_BAL.rows || []) row.cost = upto(row.rank); }
+}
+tuneAdd({ k: 'trC1', g: 'combat', sec: tcSec, n: '1~5단계 1칸 비용', help: '바꾸면 이미 올린 특성을 초기화할 때 새 비용으로 돌려받는다', get: () => 1, set: () => trCostApply(), min: 0, max: 10, step: 1, u: '점' });
+tuneAdd({ k: 'trC2', g: 'combat', sec: tcSec, n: '6~10단계 1칸 비용', get: () => 2, set: () => trCostApply(), min: 0, max: 10, step: 1, u: '점' });
+tuneAdd({ k: 'trC3', g: 'combat', sec: tcSec, n: '11~15단계 1칸 비용', get: () => 3, set: () => trCostApply(), min: 0, max: 10, step: 1, u: '점' });
+tuneAdd({ k: 'tpLv', g: 'combat', sec: tcSec, n: '레벨업마다 받는 포인트', help: '앞으로 오르는 레벨부터', get: () => 1, set: v => { TRT.tpLv = Math.round(v); }, min: 0, max: 10, step: 1, u: '점' });
+tDmg = id => { const r = traitRank(id); return 1 + (r >= 4 ? TRT.r4 : 0) + (r >= 5 ? TRT.r5 : 0) + (r >= 7 ? TRT.r7 : 0) + (r >= 9 ? TRT.r9 : 0) + TRT.per * Math.max(0, Math.min(r, 14) - 10) + (r >= 15 ? TRT.r15 : 0); };
+tCd = id => traitRank(id) >= 6 ? TRT.cd6 : 1;
+freshMul = function (key) { const t = key && traitOf(G.save.char, key); if (!t || !t.fresh) return 1; const r = traitRank(t.id); return 1 + TRT.fper * Math.min(r, 15) + (r >= 15 ? TRT.f15 : 0); };
+freshCd = function (key) { const t = key && traitOf(G.save.char, key); if (!t || !t.fresh) return 1; const r = traitRank(t.id); return (1 - TRT.fcd * Math.min(r, 15)) * (r >= 10 ? TRT.fcd10 : 1); };
+const _mbtraitTotals = traitTotals;
+traitTotals = function (t, rk) {   // 특성 창의 "누적" 숫자도 같은 값으로
+  const o = _mbtraitTotals(t, rk), r = rk || 0; if (!r) return o;
+  if (t.fresh) { o.dmg = Math.round((TRT.fper * Math.min(r, 15) + (r >= 15 ? TRT.f15 : 0)) * 100); o.cd = Math.round((1 - (1 - TRT.fcd * Math.min(r, 15)) * (r >= 10 ? TRT.fcd10 : 1)) * 100); }
+  else if (!o.note) { o.dmg = Math.round(((r >= 4 ? TRT.r4 : 0) + (r >= 5 ? TRT.r5 : 0) + (r >= 7 ? TRT.r7 : 0) + (r >= 9 ? TRT.r9 : 0) + TRT.per * Math.max(0, Math.min(r, 14) - 10) + (r >= 15 ? TRT.r15 : 0)) * 100); if (o.cd === 20) o.cd = Math.round((1 - TRT.cd6) * 100); }
+  return o;
+};
+/* ---- 궁극기 연출 (ULT9 · ULT12 표) ---- */
+const MC_ULT_T = [typeof ULT9 === 'object' ? ULT9 : null, typeof ULT12 === 'object' ? ULT12 : null].filter(Boolean);
+const MC_ULT_BASE = MC_ULT_T.map(T => { const b = {}; for (const ch in T) b[ch] = { invul: T[ch].invul, ms: (T[ch].ms || []).slice(), at: (T[ch].hits || []).map(h => h.at) }; return b; });
+function ultApply() {
+  MC_ULT_T.forEach((T, i) => { for (const ch in T) { const B = MC_ULT_BASE[i][ch], inv = TUNE.cur['ult:' + ch + ':inv'] ?? 1, len = TUNE.cur['ult:' + ch + ':len'] ?? 1;
+    if (B.invul != null) T[ch].invul = B.invul * inv; if (T[ch].ms) T[ch].ms = B.ms.map(x => Math.round(x * len)); (T[ch].hits || []).forEach((h, j) => { if (B.at[j] != null) h.at = Math.round(B.at[j] * len); }); } });
+}
+for (const ch of Object.keys(CHARS)) {
+  const sec = CHARS[ch].name + ' · 궁극기 연출';
+  tuneAdd({ k: 'ult:' + ch + ':inv', g: 'combatSt', ch, sec, n: '궁극기 무적 시간', get: () => 1, set: () => ultApply(), min: 0, max: 5, step: 0.05, u: '×' });
+  tuneAdd({ k: 'ult:' + ch + ':len', g: 'combatSt', ch, sec, n: '궁극기 연출 길이', help: '프레임과 타격 시점이 같이 늘고 준다', get: () => 1, set: () => ultApply(), min: 0.3, max: 3, step: 0.05, u: '×' });
+}
+
+/* ---- 거는 곳 ---- */
+const MC_BUFF_F = ['atkBuff', 'critBuff', 'haste', 'focus', 'stealth', 'shieldT', 'ambushT'];
+const mbSnap = p => p ? MC_BUFF_F.map(f => +p[f] || 0) : null;
+function mbScale(p, b, k) {
+  if (!p || !b || !G.save) return; const m = mcSkT(G.save.char, k, 'dur'); if (m === 1) return;
+  MC_BUFF_F.forEach((f, i) => { const v = +p[f] || 0; if (v > b[i] + 0.01) p[f] = b[i] + (v - b[i]) * m; });
+}
+const _mbstartAct = startAct;
+startAct = function (id) {
+  const k = id === 'shift' ? 'move' : id, p = G.player; if (MC_SK_KEYS.includes(k)) { MCB.cur = k; MCB.curT = G.t; }
+  const b = mbSnap(p), r = _mbstartAct.apply(this, arguments); if (MC_SK_KEYS.includes(k)) mbScale(p, b, k); return r;
+};
+const _mbcastSkill = castSkill;
+castSkill = function (key) {
+  MCB.cur = key; MCB.curT = G.t; const p = G.player, b = mbSnap(p), nt = G.traps ? G.traps.length : 0;
+  const r = _mbcastSkill.apply(this, arguments); mbScale(p, b, key);
+  const m = G.save ? mcSkT(G.save.char, key, 'dur') : 1; if (m !== 1 && G.traps) for (let i = nt; i < G.traps.length; i++) if (G.traps[i].life) G.traps[i].life *= m;
+  return r;
+};
+const MC_CD_MAP = { x: 'x', c: 'c', s: 'move', ka: 'a', ks: 's', kd: 'd', kv: 'v' };
+function mbCdScan(p) {
+  if (!p || !p.cd || !G.save) return; const prev = MCB.prevCd || {}, ch = G.save.char;
+  for (const k in p.cd) { const v = p.cd[k], o = prev[k] ?? v; if (v > o + 0.05 && MC_CD_MAP[k]) { const m = mcSkT(ch, MC_CD_MAP[k], 'cd'); if (m !== 1) { p.cd[k] = v * m; if (p.cdMax && p.cdMax[k] != null) p.cdMax[k] = Math.max(0.01, p.cd[k]); } } }
+  MCB.prevCd = Object.assign({}, p.cd);
+}
+const _mbupdatePlayer = updatePlayer;
+updatePlayer = function (dt) {
+  const p = G.player; mbCdScan(p); const bf = mbSnap(p); const r = _mbupdatePlayer(dt); mbCdScan(p);
+  if (p && bf && MCB.cur === 'move' && G.t - MCB.curT < 0.1) mbScale(p, bf, 'move');   // 궁수 집중처럼 Shift 효과가 updatePlayer 안에서 켜질 때
+  return r;
+};
+const _mbdealDamage = dealDamage;
+dealDamage = function (e, mult, o) {
+  const p = G.player, ch = G.save && G.save.char; let k = null;
+  if (p && p.act) k = p.act.skill || ({ z: 'z', x: 'x', c: 'c' })[p.act.id] || null;
+  if (!k && MCB.cur && G.t - MCB.curT < 5) k = MCB.cur;   // 날아가는 화살·장판은 마지막으로 쓴 스킬로 센다
+  const m = k && ch ? mcSkT(ch, k, 'dmg') : 1;
+  return _mbdealDamage(e, m !== 1 ? mult * m : mult, o);
+};
+const _mbcalcStats = calcStats;
+calcStats = function (save) {
+  const S = _mbcalcStats(save), ch = (save || G.save || {}).char; if (!ch || !S) return S;
+  S.atk *= mcStT(ch, 'atk'); S.hp *= mcStT(ch, 'hp'); S.def *= mcStT(ch, 'def'); S.crit = (S.crit || 0) + mcStT(ch, 'crit');
+  S.aspd = (100 + (S.aspd || 0)) * mcStT(ch, 'aspd') - 100; S.spd = (100 + (S.spd || 0)) * mcStT(ch, 'spd') - 100; S.jumpP = (100 + (S.jumpP || 0)) * mcStT(ch, 'jump') - 100;
+  return S;
+};
+const _mbhurtPlayer = hurtPlayer;
+hurtPlayer = function (raw, srcX, o) {
+  o = o || {}; const p = G.player, src = o.src, mob = !G.boss && !(src && src.isBoss);
+  if (mob && raw < 1e8) { let k = TUNE.cur.mobAtk ?? 1; if (src && src.d && src.d.elite) k *= TUNE.cur.eliteAtk ?? 1; if (k !== 1) raw = Math.max(1, Math.round(raw * k)); }
+  const hp0 = p ? p.hp : 0, r = _mbhurtPlayer(raw, srcX, o);
+  if (p && p.hp < hp0 && !o.inv && p.inv > 0 && (TUNE.cur.hurtInv ?? 0.9) !== 0.9) p.inv = TUNE.cur.hurtInv;
+  return r;
+};
+const _mbmakeMon = makeMon;
+makeMon = function (type, x, y, slot) {
+  const m = _mbmakeMon.apply(this, arguments); if (!m) return m;
+  let k = TUNE.cur.mobHp ?? 1; if (m.d && m.d.elite) k *= TUNE.cur.eliteHp ?? 1;
+  if (k !== 1) { m.mhp = Math.max(1, Math.round(m.mhp * k)); m.hp = m.mhp; }
+  return m;
+};
+const _mbupdateMon = updateMon;
+updateMon = function (m, dt) { const k = TUNE.cur.mobSpd ?? 1; return _mbupdateMon(m, k !== 1 ? dt * k : dt); };
+const _mbdropLoot = dropLoot;
+dropLoot = function (m) { const g = GOLD_DROP_X, k = m && m.d && m.d.elite ? TUNE.cur.eliteGold ?? 1 : 1; if (k !== 1) GOLD_DROP_X = g * k; try { return _mbdropLoot(m); } finally { GOLD_DROP_X = g; } };
+const _mbgainXp = gainXp;
+gainXp = function (n) { const s = G.save, l0 = s ? s.level : 0, r = _mbgainXp(n); if (s && s.level > l0 && TRT.tpLv !== 1) s.tp = Math.max(0, s.tp + (TRT.tpLv - 1) * (s.level - l0)); return r; };
+const _mbtuneApply = tuneApply;
+tuneApply = function (over) { _mbtuneApply(over); try { if (G.save && G.player && typeof refreshStats === 'function') refreshStats(); } catch (e) { } };
 </script>
 </body></html>

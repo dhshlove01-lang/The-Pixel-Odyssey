@@ -14,10 +14,27 @@
 
 ### ▶ 지금 진행 중 (다른 계정·다른 Claude 가 이어받을 곳) — 2026-11-25
 - 마스터 콘솔 1·2단계 끝. 2단계(261125-1330)는 **test 에만** — 사용자가 "정식 배포" 하면 `tools/deploy.py promote`.
-- **다음 할 일**: 전투 수치(스킬별 피해·재사용 대기·지속 시간 등)를 마스터 콘솔에 — 사용자가 "더 넣을 것은 물어보고" 라고 했다. 물어본 답에 따라 `tuneAdd` 로 등록.
-  - 참고: 재사용 대기는 `updatePlayer` 안 18곳에서 `p.cd.x = p.cdMax.x = …` 식으로 박혀 있다 → `updatePlayer` 를 감싸 "이번 프레임에 cd 가 새로 차오른 칸"에 배율을 곱하는 방식이 가장 안전. 스킬 표 `SKILLS`(설명·cd), 특성 배율 `tDmg`/`tCd`.
+- 마스터 콘솔 3단계(⚔ 전투, 261125-1400)까지 끝. 1300 이후(2·3단계)는 **test 에만** — 사용자가 "정식 배포" 하면 promote.
+- 새 전투 기능을 만들면 `mcSkT`/`mcStT` 처럼 `tuneAdd` 로 등록하고 ⚔ 전투 탭(g: `combatSk`·`combatSt`·`combat`)에 뜨게 한다.
 - 사용자 지시(계속 지킬 것): ①모든 새 기능을 마스터 콘솔에도(`CLAUDE.md`) ②UI 는 가장 쓰기 쉽게 ③수정은 test 먼저, "정식 배포" 때만 promote ④작업마다 커밋·푸시(main 직접 푸시 허락됨) ⑤비밀번호는 저장소에 적지 않는다.
 - 관리자 = `admin0215`. Firebase 규칙은 `tools/firebase-rules.json` 이 전체본 — **2단계 경로(notice·event·mail)를 더했으니 사용자가 다시 붙여넣어야 한다.**
+
+### 261125-1400  마스터 콘솔 3단계 — ⚔ 전투 탭: 스킬별 피해·재사용 대기·지속 시간 · 캐릭터 능력치 · 가드·피격 · 물약·주문서 · 몹 난이도 · 특성 효과·비용 · 궁극기 연출   (대상: `test/index.html`)
+지시: 사용자 2026-11-25 "스킬 데미지·쿨타임·지속 시간 등 전투 관련, 더 추가할 건 물어보고" → 답: 스킬마다 따로 + 기본 능력치 · 가드·회피 · 물약·주문서 · 몹 난이도 · 특성 단계 효과 · 특성 포인트 비용 · 궁극기 연출 시간.
+- **새 조각 (원본 PC: `59_ops.js` 뒤 `59b_combat.js`)** — `test/index.html` 맨 끝 `/* ============ 마스터 콘솔 3단계` 블록. 등록 286개(전투 154개 추가).
+  - 스킬(캐릭터 4 × Z·X·C·Shift·A·S·D·V): 키 `sk:<char>:<key>:dmg|cd|dur`. 지금 스킬은 `startAct`(z·x·c·shift)·`castSkill`(a·s·d·v) 래핑으로 `MCB.cur` 에 기억.
+    - 피해: `dealDamage` 래핑 — `p.act.skill` 또는 `p.act.id`(z·x·c), 없으면 5초 안에 마지막으로 쓴 스킬(화살·장판).
+    - 재사용 대기: `updatePlayer` 앞뒤로 `p.cd` 를 비교해 새로 찬 칸(x·c·s=Shift·ka·ks·kd·kv)에 배율, `cdMax` 는 그 값으로(HUD 비율용, 누적 곱셈 없음).
+    - 지속 시간: 스킬 쓰기 전·후 `atkBuff·critBuff·haste·focus·stealth·shieldT·ambushT` 가 늘어난 만큼 × 배율, A·S·D·V 로 새로 생긴 `G.traps[].life` ×.
+  - 능력치(캐릭터별 `st:<char>:atk|hp|def|crit|aspd|spd|jump`): `calcStats` 래핑. crit 은 %p 더하기, aspd·spd·jump 는 (100+값)×배율−100. 수치가 바뀌면 `tuneApply` 래핑이 `refreshStats()`.
+  - 가드·피격: `GUARD_WIN·GUARD_CD·GUARD_STUN` let 으로(+`G.player.cdMax.g`), 맞은 뒤 무적 `hurtInv`(hurtPlayer 래핑, 기본 0.9초일 때 건드리지 않음).
+  - 물약·주문서: `POTION_HEAL·POTION_CD·POTION_MAX·SCROLL_MAX·SCROLL_CAST` let 으로.
+  - 몹(보스 제외): 체력 `makeMon` 래핑, 피해 `hurtPlayer` 래핑(보스전 중엔 안 곱함, 1e8 이상 즉사 명령 제외), 행동 속도 `updateMon(m, dt×k)`, 엘리트 체력·피해·골드 추가 배율(엘리트는 맵에 정해진 자리 — 무작위 등장률 없음). **1단계의 `eliteLoot`(ELITE_MUL.loot) 은 게임 시작 때만 읽혀 효과가 없어 지웠다.**
+  - 특성: `tDmg`·`tCd` let 으로 바꾸고 `TRT` 값으로 재정의, `freshMul`·`freshCd`·`traitTotals`(특성 창 누적 숫자) 재정의. 비용 `trC1~3`(바꾸면 모든 특성 ranks[].cost 를 1~5/6~10/11~15 칸 단위로, 기본값이면 원래 비용 복원 + `TR_BAL` 다시 계산), 레벨업당 포인트 `tpLv`(gainXp 래핑, 앞으로 오르는 레벨부터).
+  - 궁극기: `ULT9`/`ULT12` 표의 `invul` ×, `ms`·`hits[].at` × (원래 값을 저장해 두고 곱한다).
+  - UI: `MC_TABS` 에 ⚔ 전투(8칸, 창 500px) — `mcCombat()`: 캐릭터 고르기(● 바꾼 캐릭터) → 능력치·궁극기 → 스킬 8개 → 공통(가드·물약·몹·특성).
+- 검증(로컬 헤드리스): X 피해 ×3 → 평균 2.98배, Z 는 1.00배 그대로 · A 재사용 ×0.5 → 8초가 4초 · S 지속 ×2 → 전장의 함성 8→16초 · 공격력 ×2/체력 ×1.5 → G.stats 그대로 반영 · 몹 체력 ×2 · 특성 4단계 +50% → 5단계 누적 30%→65% · 궁극기 연출 ×2 → ms 2배 · 전부 기본값으로 되돌리면 원래 값 · `pageerror 0`.
+- `GAME_VER '261125-1400'`, `test/version.json` 동기. 정식은 1300 그대로.
 
 ### 261125-1330  마스터 콘솔 2단계 — 🛠 운영 탭(전체 공지 · 기간 이벤트 · 유저 우편 지급/회수 + 개인 공지 · 접속자/파티) + 허수아비 DPS   (대상: `test/index.html` · `tools/firebase-rules.json`)
 - **새 조각 (원본 PC: `58_master.js` 뒤 `59_ops.js`)** — `test/index.html` 맨 끝 `/* ============ 마스터 콘솔 2단계` 블록.

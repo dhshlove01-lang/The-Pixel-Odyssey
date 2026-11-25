@@ -17,7 +17,7 @@
 
 ## 마스터 콘솔 (관리자 창, test 서버 F9) — 새 기능은 반드시 여기에도 (2026-11-25 사용자 지시)
 - 코드: `test/index.html` 맨 끝 "마스터 콘솔" 블록. 수치는 `tuneAdd({ k, g, sec, n, help, get, set, min, max, step, u | pct })` 한 줄로 등록한다.
-  등록하면 관리자 창 탭(g: `econ` 경제·강화 · `drop` 확률·드롭 · `boss` 보스)에 자동으로 뜨고, test 저장(`dev_tuning`)·정식 적용(`tuning`)·기록(`tuning_log`)·되돌리기가 같이 된다.
+  등록하면 관리자 창 탭(g: `econ` 경제·강화 · `drop` 확률·드롭 · `boss` 보스 · `combat`/`combatSk`/`combatSt` ⚔ 전투)에 자동으로 뜨고, test 저장(`dev_tuning`)·정식 적용(`tuning`)·기록(`tuning_log`)·되돌리기가 같이 된다.
 - **새 기능을 만들 때마다** 그 기능의 확률·배율·시간·가격 같은 숫자는 `tuneAdd` 로 등록하고(숫자를 `const` 로 박지 말고 `let` 이나 객체 값으로), 테스트에 필요한 소환·지급 버튼은 `mcQuick` / `mcMe` 에 넣는다.
 - UI 는 "가장 쓰기 쉽게": 한국어 이름 + 한 줄 설명(help) + 슬라이더·숫자칸 + 기본값 표시. 정식 서버에 영향 주는 버튼은 확인 창을 띄운다.
 - 관리자 아이디 `admin0215` (`MC_ADMIN_IDS`). 서버 규칙 전체: `tools/firebase-rules.json`, 설정 순서: `tools/firebase-admin.md`. 비밀번호는 저장소에 절대 적지 않는다.
