@@ -368,6 +368,14 @@
           }
         }
       }
+    },
+    "admin_log": {
+      ".read": "auth != null && (root.child('acct/admin0215/uid').val() === auth.uid || root.child('acct/admin2016/uid').val() === auth.uid || root.child('acct/admin2017/uid').val() === auth.uid)",
+      ".write": "auth != null && (root.child('acct/admin0215/uid').val() === auth.uid || root.child('acct/admin2016/uid').val() === auth.uid || root.child('acct/admin2017/uid').val() === auth.uid)"
+    },
+    "local_admin_log": {
+      ".read": "auth != null && (root.child('local_acct/admin0215/uid').val() === auth.uid || root.child('local_acct/admin2016/uid').val() === auth.uid || root.child('local_acct/admin2017/uid').val() === auth.uid)",
+      ".write": "auth != null && (root.child('local_acct/admin0215/uid').val() === auth.uid || root.child('local_acct/admin2016/uid').val() === auth.uid || root.child('local_acct/admin2017/uid').val() === auth.uid)"
     }
   }
 }

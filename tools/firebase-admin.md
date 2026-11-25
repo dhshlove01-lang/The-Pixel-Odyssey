@@ -15,6 +15,7 @@ Firebase 콘솔 → 프로젝트 → **Realtime Database** → **규칙** 탭
 | `tuning` (정식 수치) | 누구나 | 관리자 3명만 |
 | `dev_tuning` (test 수치) | 누구나 | 관리자 3명만 |
 | `tuning_log` (정식 적용 기록) | 관리자 3명만 | 관리자 3명만 |
+| `admin_log` (모든 관리자 변경 내역: test 수치·정식 적용·공지·이벤트·우편) | 관리자 3명만 | 관리자 3명만 |
 | `local_tuning`, `local_tuning_log` | 이 PC 테스트용 (local_acct/admin0215) | |
 
 ## 2. 관리자 계정 만들기 (규칙 게시 후 **바로**)

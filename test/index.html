@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1510';
+const GAME_VER = '261125-1530';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -25498,20 +25498,37 @@ async function tuneSend(url, method, v) {
 }
 async function tuneLoad() {   // 게임 시작 · 5분마다: test 는 dev_tuning, 정식은 tuning
   if (!CLOUD.dbUrl || window.DEV_LOCAL) { TUNE.loaded = true; return; }
-  try { const j = await tuneGet(dbUrl('tuning')); TUNE.saved = (j && j.v) || {}; if (!TUNE.dirtyLocal) tuneApply(TUNE.saved); TUNE.loaded = true; }
+  try { const j = await tuneGet(dbUrl('tuning')); TUNE.saved = (j && j.v) || {}; TUNE.savedAt = (j && j.at) || 0; TUNE.savedBy = (j && j.by) || null; if (!TUNE.dirtyLocal) tuneApply(TUNE.saved); TUNE.loaded = true; }
   catch (e) { TUNE.loaded = true; TUNE.loadErr = e.message; }
 }
 tuneLoad();
 setInterval(() => { if (!IS_DEV_BUILD && G.scene === 'play') tuneLoad(); }, 300000);
+/* 2026-11-25 (user): 관리자가 한 일은 전부 admin_log 에 남긴다 — 누가·언제·무엇을·전→후. 정식·test 공용 경로(dev_ 안 붙음), 관리자만 읽고 쓴다 */
+async function mcLog(e) {
+  if (!CLOUD.dbUrl || window.DEV_LOCAL || !AUTH.token) return;
+  try { await tuneSend(dbUrlRaw('admin_log'), 'POST', Object.assign({ at: Date.now(), by: AUTH.id || null }, e)); } catch (er) { console.warn('[admin_log]', er.message); }
+}
+const mcChanges = (before, after) => { const ks = new Set(Object.keys(before || {}).concat(Object.keys(after || {}))), out = [];
+  for (const k of ks) { if (!TUNE.byK[k]) continue; const a = before && before[k] != null ? before[k] : TUNE.base[k], b = after && after[k] != null ? after[k] : TUNE.base[k]; if (!tuneSame(a, b)) out.push({ k, from: a, to: b }); }
+  return out; };
 const _mcstartGame = startGame;
 startGame = function (...a) { const r = _mcstartGame(...a); if (!TUNE.dirtyLocal) tuneLoad(); return r; };   // 로그인 뒤 들어올 때 다시 읽는다 (규칙이 로그인을 요구할 때)
 
 /* ============ 관리자 창 UI (test 서버 · F9) ============ */
+if (IS_DEV_BUILD) setInterval(async () => {   // 2026-11-25 (user): 다른 계정이 바꾼 test 수치를 15초 안에 맞춘다 (내가 저장 대기 중이면 건너뜀)
+  if (!CLOUD.dbUrl || window.DEV_LOCAL || TUNE.saveT || (TUNE.touchSave && Object.keys(TUNE.touchSave).length)) return;
+  try { const j = await tuneGet(dbUrl('tuning')); if (!j || !(j.at > (TUNE.savedAt || 0))) return;
+    TUNE.saved = j.v || {}; TUNE.savedAt = j.at; TUNE.savedBy = j.by || null; tuneApply(TUNE.saved);
+    const el = document.getElementById('devPanel'); if (DEV.open && el && !el.contains(document.activeElement) && typeof devRender === 'function') devRender();
+    if (typeof mcStatus === 'function') mcStatus((j.by || '다른 관리자') + ' 가 바꾼 값으로 맞췄다 · ' + new Date(j.at).toLocaleTimeString('ko-KR'));
+  } catch (e) { }
+}, 15000);
 if (IS_DEV_BUILD) {
 DEV.tab = DEV.tab || 'quick'; DEV.boss = DEV.boss || 'b1'; DEV.q = ''; DEV.onlyChanged = false; DEV.mobCh = 0;
 const MC_TABS = [['quick', '⚡', '빠른 도구'], ['me', '🧑', '내 캐릭터'], ['boss', '👹', '보스'], ['drop', '🎲', '확률·드롭'], ['econ', '💰', '경제·강화'], ['ops', '🛠', '운영'], ['ship', '🚀', '정식 적용']];
 MC_TABS.splice(3, 0, ['combat', '⚔', '전투']);
 MC_TABS.splice(6, 0, ['sound', '🔊', '음향']);
+MC_TABS.push(['log', '📜', '내역']);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const nChanged = () => Object.keys(tuneDiff(TUNE.cur)).length;
 function tuneRow(d) {
@@ -25652,14 +25669,35 @@ function mcSound() {   /* 4단계 🔊 음향 탭 */
       <div class="mcr mcg">${btn('bgmback', '■ 지금 맵 음악으로 돌아가기')}</div></section>`
     + secs.map(S => `<section class="mcsec"><h6>효과음 · ${esc(S.c)} <small>크기 0 = 끄기 · 아래 칸 = 다른 소리로 바꾸기</small></h6>${S.a.map(row).join('')}</section>`).join('');
 }
+function mcLogHtml() {   /* 2026-11-25 (user): 📜 내역 — 누가·언제·무엇을·전→후 */
+  const L = TUNE.alog, f = DEV.logF || 'all';
+  const kinds = [['all', '전체'], ['test', 'test 수치'], ['ship', '정식 적용'], ['ops', '운영(공지·이벤트·우편)']];
+  const pick = e => f === 'all' || (f === 'test' && e.kind === 'test 수치') || (f === 'ship' && /^정식/.test(e.kind)) || (f === 'ops' && /공지|이벤트|우편/.test(e.kind));
+  const nm = k => { const d = TUNE.byK[k]; return d ? esc(d.sec + ' · ' + d.n) : esc(k); };
+  const val = (k, v) => { const d = TUNE.byK[k]; return d ? tuneShow(d, v) : esc(v); };
+  const rows = !L ? '<div class="mcr"><small>불러오는 중…</small></div>' : !L.length ? '<div class="mcr"><small>아직 내역이 없다</small></div>' : L.filter(pick).map(e => `<details class="mclog2"><summary><span class="mcwhen">${new Date(e.at).toLocaleString('ko-KR')}</span><b>${esc(e.by || '?')}</b><span class="mckind">${esc(e.kind || '')}</span><span class="mctgt ${e.target === '정식' ? 'main' : ''}">${esc(e.target || '')}</span><span class="mcsum">${esc(e.summary || '')}</span></summary>
+      ${(e.changes || []).length ? `<div class="mcchg">${e.changes.map(c => `<div><span>${nm(c.k)}</span><s>${val(c.k, c.from)}</s><span>→</span><b>${val(c.k, c.to)}</b></div>`).join('')}</div>` : ''}
+      ${e.kind === 'test 수치' && (e.changes || []).length ? `<div class="mcr">${btn('logundo:' + e.id, 'test 를 이 변경 전 값으로 되돌리기')}</div>` : ''}</details>`).join('');
+  const last = TUNE.savedAt ? `test 수치 마지막 저장: <b>${esc(TUNE.savedBy || '?')}</b> · ${new Date(TUNE.savedAt).toLocaleString('ko-KR')}` : '';
+  return `<div class="mcadm ${TUNE.admin ? 'ok' : 'no'}">${TUNE.admin ? '관리자 확인됨 · ' + esc(AUTH.id) : esc(TUNE.adminMsg || '관리자만 내역을 볼 수 있다')}</div>
+    <section class="mcsec"><h6>변경 내역 <small>최근 100건 · 관리자 모두에게 같은 내역 · 눌러서 자세히</small></h6>
+      <div class="mcr"><small>${last}</small></div>
+      <div class="mcr mcg">${kinds.map(([id, t]) => btn('logf:' + id, t, f === id ? 'on' : '')).join('')}${btn('logrefresh', '새로 불러오기')}</div>${rows}</section>`;
+}
+async function mcLoadLog() {
+  await mcCheckAdmin();
+  try { const j = await tuneGet(dbUrlRaw('admin_log', 'orderBy=%22$key%22&limitToLast=100')); TUNE.alog = Object.keys(j || {}).map(id => Object.assign({ id }, j[id])).sort((a, b) => b.at - a.at); }
+  catch (e) { TUNE.alog = []; DEV.msg = '내역을 읽지 못했다 · ' + e.message; }
+  if (DEV.tab === 'log') devRender();
+}
 devHtml = function () {
   const s = G.save, inGame = G.scene === 'play' && !!s, n = nChanged(), tab = DEV.tab;
-  const body = tab === 'sound' ? mcSound() : tab === 'combat' ? mcCombat() : tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip() : tab === 'ops' ? (window.mcOps ? window.mcOps(inGame) : '')
+  const body = tab === 'log' ? mcLogHtml() : tab === 'sound' ? mcSound() : tab === 'combat' ? mcCombat() : tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip() : tab === 'ops' ? (window.mcOps ? window.mcOps(inGame) : '')
     : tuneTools() + tuneSecs(TUNE.defs.filter(d => d.g === tab));
   return `<div class="mch"><b>마스터 콘솔</b><span>test 서버 · F9 닫기</span><button class="mcclose" data-ma="close">✕</button></div>
     <nav class="mctabs">${MC_TABS.map(([id, ic, t]) => `<button data-ma="tab:${id}" class="${tab === id ? 'on' : ''}"><i>${ic}</i>${t}</button>`).join('')}</nav>
     <div class="mcbody">${body}</div>
-    <div class="mcfoot"><span class="mcst">${esc(TUNE.status || (n ? 'test 에 저장됨' : ''))}</span><span>바꾼 수치 <b>${n}</b>개</span>${btn('resetall', '전부 기본값', '', !n)}</div>
+    <div class="mcfoot"><span class="mcst">${esc(TUNE.status || (TUNE.savedAt ? '마지막 저장 ' + (TUNE.savedBy || '?') + ' · ' + new Date(TUNE.savedAt).toLocaleTimeString('ko-KR') : ''))}</span><span>바꾼 수치 <b>${n}</b>개</span>${btn('resetall', '전부 기본값', '', !n)}</div>
     <div class="dvmsg">${esc(DEV.msg || '')}</div>`;
 };
 devRender = function () {
@@ -25674,18 +25712,36 @@ function mcFilter() {
   el.querySelectorAll('.mcsec').forEach(s => { const rows = s.querySelectorAll('.mcrow'); if (rows.length) s.style.display = [...rows].some(r => r.style.display !== 'none') ? '' : 'none'; });
 }
 function mcStatus(t) { TUNE.status = t; const e = document.querySelector('#devPanel .mcst'); if (e) e.textContent = t; }
+function mcTouch(k) {   // 바꾸기 직전 값을 기억 (저장용 · 내역용)
+  TUNE.touchSave = TUNE.touchSave || {}; TUNE.touchLog = TUNE.touchLog || {};
+  TUNE.touchSave[k] = 1; if (!(k in TUNE.touchLog)) TUNE.touchLog[k] = TUNE.cur[k];
+}
+function mcTouchAll(over) { for (const d of TUNE.defs) { const v = over[d.k] != null ? over[d.k] : TUNE.base[d.k]; if (!tuneSame(v, TUNE.cur[d.k])) mcTouch(d.k); } }
+function mcFlushLog() {
+  const T = TUNE.touchLog || {}; TUNE.touchLog = {};
+  const changes = Object.keys(T).filter(k => !tuneSame(T[k], TUNE.cur[k])).map(k => ({ k, from: T[k], to: TUNE.cur[k] }));
+  if (changes.length) mcLog({ kind: 'test 수치', target: 'test', summary: changes.length + '개 바꿈', changes });
+}
 function tuneSaveSoon() {
   TUNE.dirtyLocal = true; mcStatus('저장 대기…'); clearTimeout(TUNE.saveT);
   TUNE.saveT = setTimeout(async () => {
+    TUNE.saveT = null;
     if (!CLOUD.dbUrl || window.DEV_LOCAL) { mcStatus('로컬 전용 · 이 기기에서만 적용 중'); return; }
-    try { mcStatus('test 에 저장 중…'); await tuneSend(dbUrl('tuning'), 'PUT', { v: tuneDiff(TUNE.cur), at: Date.now(), by: AUTH.id || null }); TUNE.saved = tuneDiff(TUNE.cur); mcStatus('test 에 저장됨 ✓'); }
-    catch (e) { mcStatus('⚠ ' + e.message); }
+    try {
+      mcStatus('test 에 저장 중…');
+      const serv = (await tuneGet(dbUrl('tuning')).catch(() => null)) || {}, merged = Object.assign({}, serv.v || {}), mine = Object.keys(TUNE.touchSave || {});
+      for (const k of mine) { if (tuneSame(TUNE.cur[k], TUNE.base[k])) delete merged[k]; else merged[k] = TUNE.cur[k]; }   // 다른 관리자가 바꾼 항목은 그대로 두고 내 것만
+      const at = Date.now(); await tuneSend(dbUrl('tuning'), 'PUT', { v: merged, at, by: AUTH.id || null });
+      TUNE.touchSave = {}; TUNE.saved = merged; TUNE.savedAt = at; TUNE.savedBy = AUTH.id || null;
+      if (Object.keys(merged).some(k => !mine.includes(k) && !tuneSame(merged[k], TUNE.cur[k]))) { tuneApply(merged); if (DEV.open) devRender(); }
+      mcStatus('test 에 저장됨 ✓'); clearTimeout(TUNE.logT); TUNE.logT = setTimeout(mcFlushLog, 4000);
+    } catch (e) { mcStatus('⚠ ' + e.message); }
   }, 700);
 }
 function tuneSetOne(k, v) {
   const d = TUNE.byK[k]; if (!d) return; v = Math.max(d.min / tuneScale(d), Math.min(d.max / tuneScale(d), v));
   const o = tuneDiff(TUNE.cur); if (tuneSame(v, TUNE.base[k])) delete o[k]; else o[k] = v;
-  tuneApply(o); tuneSaveSoon();
+  mcTouch(k); tuneApply(o); tuneSaveSoon();
   const row = document.querySelector(`#devPanel .mcrow[data-row="${CSS.escape(k)}"]`);
   if (row) { const dv = Math.round(v * tuneScale(d) * 1e6) / 1e6; row.querySelectorAll('input[data-tk]').forEach(i => { if (document.activeElement !== i) i.value = dv; }); row.classList.toggle('ch', !tuneSame(v, TUNE.base[k])); }
   const f = document.querySelector('#devPanel .mcfoot b'); if (f) f.textContent = nChanged();
@@ -25715,6 +25771,7 @@ async function mcShipTo(after, note) {   // 정식 tuning 을 after 로 바꾸�
     await tuneSend(dbUrlRaw('tuning'), 'PUT', { v: after, at: Date.now(), by: AUTH.id });
     const n = new Set(Object.keys(before).concat(Object.keys(after))).size;
     await tuneSend(dbUrlRaw('tuning_log'), 'POST', { at: Date.now(), by: AUTH.id, before, after, n, undo: note === 'undo' ? 1 : 0 });
+    const ch = mcChanges(before, after); await mcLog({ kind: note === 'undo' ? '정식 되돌리기' : '정식 적용', target: '정식', summary: ch.length + '개 바뀜', changes: ch });
     DEV.msg = note === 'undo' ? '정식을 그 적용 전 값으로 되돌렸다' : '정식에 적용했다 ✓';
   } catch (e) { DEV.msg = '⚠ ' + e.message; }
   TUNE.busy = false; await mcLoadShip();
@@ -25727,14 +25784,17 @@ function masterAct(a) {
   if (cmd === 'sndreset') { tuneSetOne('sfx:' + arg + ':vol', 1); tuneSetOne('sfx:' + arg + ':src', 0); return devRender(); }
   if (cmd === 'bgmplay') { const [c, sit] = [+arg, a.split(':')[2]]; try { if (!AU.ctx && typeof audioInit === 'function') audioInit(); } catch (e) { } const keep = MCS.want; setMusic(sit === 'boss' ? 'fight' : 'field', c); MCS.want = keep; return devMsg(c + '장 ' + (sit === 'boss' ? '보스전' : '사냥터') + ' 음악을 틀었다 · ■ 로 돌아간다'); }
   if (cmd === 'bgmback') { mcMusicRefresh(); return devMsg('지금 맵 음악으로 돌아왔다'); }
+  if (cmd === 'logf') { DEV.logF = arg; return devRender(); }
+  if (cmd === 'logrefresh') { TUNE.alog = null; devRender(); return mcLoadLog(); }
+  if (cmd === 'logundo') { const e = (TUNE.alog || []).find(x => x.id === a.slice(8)); if (!e || !mcConfirm('test 수치 ' + e.changes.length + '개를 ' + new Date(e.at).toLocaleString('ko-KR') + ' 변경 전 값으로 되돌릴까?')) return; for (const c of e.changes) if (TUNE.byK[c.k]) tuneSetOne(c.k, c.from); devRender(); return devMsg('되돌렸다 · test 에 저장하고 내역에도 남긴다'); }
   if (cmd === 'close') return devPanelToggle();
-  if (cmd === 'tab') { DEV.tab = arg; DEV.msg = ''; DEV.q = ''; DEV.onlyChanged = false; devRender(); if (arg === 'ship') mcLoadShip(); if (arg === 'ops' && window.opsAct) window.opsAct('ops:open'); return; }
+  if (cmd === 'tab') { DEV.tab = arg; DEV.msg = ''; DEV.q = ''; DEV.onlyChanged = false; devRender(); if (arg === 'ship') mcLoadShip(); if (arg === 'ops' && window.opsAct) window.opsAct('ops:open'); if (arg === 'log') { TUNE.alog = null; devRender(); mcLoadLog(); } return; }
   if (cmd === 'reset') { const k = a.slice(6); return tuneSetOne(k, TUNE.base[k]); }
-  if (cmd === 'resetall') { if (!mcConfirm('test 의 바꾼 수치 ' + nChanged() + '개를 전부 기본값으로 돌릴까?')) return; tuneApply({}); tuneSaveSoon(); return devRender(); }
+  if (cmd === 'resetall') { if (!mcConfirm('test 의 바꾼 수치 ' + nChanged() + '개를 전부 기본값으로 돌릴까?')) return; mcTouchAll({}); tuneApply({}); tuneSaveSoon(); return devRender(); }
   if (cmd === 'spd') { G.devSpeed = +arg; return devMsg('게임 속도 ' + arg + '배'); }
   if (cmd === 'ship') { const after = tuneDiff(TUNE.cur); if (!mcConfirm('정식 게임에 test 수치를 적용할까?\n모든 유저에게 반영된다. 기록이 남아 언제든 되돌릴 수 있다.')) return; return mcShipTo(after, 'ship'); }
   if (cmd === 'undo') { const e = (TUNE.log || []).find(x => x.id === a.slice(5)); if (!e || !mcConfirm('정식을 ' + new Date(e.at).toLocaleString('ko-KR') + ' 적용 바로 전 값으로 되돌릴까?')) return; return mcShipTo(e.before || {}, 'undo'); }
-  if (cmd === 'pullmain') { if (!mcConfirm('test 수치를 지금 정식 값으로 덮을까?')) return; tuneApply((TUNE.main && TUNE.main.v) || {}); tuneSaveSoon(); return devMsg('정식 값을 test 로 가져왔다'); }
+  if (cmd === 'pullmain') { if (!mcConfirm('test 수치를 지금 정식 값으로 덮을까?')) return; mcTouchAll((TUNE.main && TUNE.main.v) || {}); tuneApply((TUNE.main && TUNE.main.v) || {}); tuneSaveSoon(); return devMsg('정식 값을 test 로 가져왔다'); }
   if (cmd === 'shiprefresh') { TUNE.main = null; TUNE.log = null; devRender(); return mcLoadShip(); }
   if (!inGame) return devMsg('게임에 들어가서 쓰자');
   if (cmd === 'bossgo') { const id = Object.keys(MAPS).find(k => MAPS[k].boss === DEV.boss); if (!id) return devMsg('이 보스의 방을 찾지 못했다'); closePanel(); G.ui.dialog = null; loadMap(id); return devMsg(BOSSES[DEV.boss].name + ' 보스방으로 이동'); }
@@ -25796,12 +25856,12 @@ addEventListener('load', () => {
   });
 });
 document.head.insertAdjacentHTML('beforeend', `<style>
-html #devPanel{width:min(540px,calc(100% - 16px));padding:0;display:none;flex-direction:column;overflow:hidden;font:13px 'Noto Sans KR',sans-serif;background:rgba(12,14,20,.97);border:1px solid #7a6640;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+html #devPanel{width:min(580px,calc(100% - 16px));padding:0;display:none;flex-direction:column;overflow:hidden;font:13px 'Noto Sans KR',sans-serif;background:rgba(12,14,20,.97);border:1px solid #7a6640;box-shadow:0 8px 30px rgba(0,0,0,.6)}
 html #devPanel.on{display:flex}
 html #devPanel .mch{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #3a3426;background:#17140e}
 html #devPanel .mch b{color:#ffd27a;font-size:15px}html #devPanel .mch span{color:#9a8f78;font-size:11px;flex:1}
 html #devPanel .mcclose{background:none;border:0;color:#cbbd9e;font-size:16px;padding:0 4px}
-html #devPanel .mctabs{display:grid;grid-template-columns:repeat(9,1fr);border-bottom:1px solid #3a3426}
+html #devPanel .mctabs{display:grid;grid-template-columns:repeat(10,1fr);border-bottom:1px solid #3a3426}
 html #devPanel .mctabs button{background:none;border:0;border-bottom:2px solid transparent;color:#a99f88;padding:7px 2px 6px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
 html #devPanel .mctabs button i{font-style:normal;font-size:16px}html #devPanel .mctabs button.on{color:#ffd27a;border-bottom-color:#ffd27a;background:rgba(255,210,122,.06)}
 html #devPanel .mcbody{flex:1;overflow-y:auto;padding:6px 12px 10px}
@@ -25833,6 +25893,7 @@ html #devPanel .mcdiff{display:grid;grid-template-columns:1fr auto auto auto;gap
 html #devPanel .mcdiff .old{color:#9a8f78;text-decoration:line-through}html #devPanel .mcdiff .new{color:#ffd27a;font-weight:700}
 html #devPanel .mclog{display:grid;grid-template-columns:auto auto 1fr auto;gap:8px;align-items:center;padding:4px 0;font-size:12px;color:#cfc4ac}
 html #devPanel small{color:#9a9384}
+html #devPanel .mclog2{border:1px solid #2a271f;margin:5px 0;background:rgba(255,255,255,.02)}html #devPanel .mclog2 summary{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;padding:6px 8px;cursor:pointer;font-size:12px}html #devPanel .mcwhen{color:#8a8070}html #devPanel .mckind{color:#e8b048}html #devPanel .mctgt{border:1px solid #4a4658;padding:0 5px;font-size:11px}html #devPanel .mctgt.main{border-color:#c0503a;color:#ffb4a0}html #devPanel .mcsum{flex-basis:100%;color:#cfc4ac}html #devPanel .mcchg{padding:4px 10px 8px;display:grid;gap:3px;font-size:12px}html #devPanel .mcchg div{display:flex;flex-wrap:wrap;gap:6px}html #devPanel .mcchg s{color:#8a8070}html #devPanel .mcchg b{color:#ffd27a}
 html #devPanel .mceq{border:1px solid #2a271f;padding:6px 8px;margin:6px 0;background:rgba(255,255,255,.02)}html #devPanel .mceqh{display:flex;gap:8px;align-items:baseline}html #devPanel .mceqh b{color:#e8b048;min-width:34px}html #devPanel .mceq input[type=number]{width:70px}html #devPanel .mceq i{font-style:normal;color:#8a8070;font-size:11px}
 </style>`);
 }
@@ -26038,13 +26099,13 @@ window.opsAct = async function (a) {
     if (cmd === 'open') { if (TUNE.admin == null) await mcCheckAdminW(); await oRefresh(); devRender(); return true; }
     if (cmd === 'target') { OPSD.target = arg; OPSD.sent = null; OPSD.online = null; OPSD.party = null; OPSD.whoOk = null; await oRefresh(); say(''); return true; }
     if (cmd === 'notice') { const msg = v('opsNoticeMsg').trim(), d = +v('opsNoticeDur'); if (!msg) return say('공지 내용을 쓰자'), true; if (!yes('전체 공지를 올릴까?\n' + msg)) return true;
-      await oSend('notice', 'PUT', { msg, at: Date.now(), until: d ? Date.now() + d * 60000 : 0, by: AUTH.id }); await oRefresh(); opsPoll(); return say('공지를 올렸다 ✓'), true; }
-    if (cmd === 'noticeoff') { if (!yes('공지를 내릴까?')) return true; await tuneSend(oUrl('notice'), 'DELETE'); await oRefresh(); opsPoll(); return say('공지를 내렸다'), true; }
+      await oSend('notice', 'PUT', { msg, at: Date.now(), until: d ? Date.now() + d * 60000 : 0, by: AUTH.id }); mcLog({ kind: '공지', target: (OPSD.target === 'main' ? '정식' : 'test'), summary: '공지 올림: ' + msg + (d ? ' (' + d + '분)' : '') }); await oRefresh(); opsPoll(); return say('공지를 올렸다 ✓'), true; }
+    if (cmd === 'noticeoff') { if (!yes('공지를 내릴까?')) return true; await tuneSend(oUrl('notice'), 'DELETE'); mcLog({ kind: '공지', target: (OPSD.target === 'main' ? '정식' : 'test'), summary: '공지 내림' }); await oRefresh(); opsPoll(); return say('공지를 내렸다'), true; }
     if (cmd === 'event') { const E = { name: v('opsEvName').trim() || '이벤트', xp: +v('opsEvXp') || 1, gold: +v('opsEvGold') || 1, drop: +v('opsEvDrop') || 1, start: new Date(v('opsEvStart')).getTime(), end: new Date(v('opsEvEnd')).getTime(), at: Date.now(), by: AUTH.id };
       if (!(E.end > E.start)) return say('끝 시간이 시작보다 뒤여야 한다'), true;
       if (!yes(`이벤트를 걸까?\n${E.name} · 경험치 ×${E.xp} · 골드 ×${E.gold} · 드롭 ×${E.drop}\n${new Date(E.start).toLocaleString('ko-KR')} ~ ${new Date(E.end).toLocaleString('ko-KR')}`)) return true;
-      await oSend('event', 'PUT', E); await oRefresh(); opsPoll(); return say('이벤트를 걸었다 ✓'), true; }
-    if (cmd === 'eventoff') { if (!yes('이벤트를 끝낼까?')) return true; await tuneSend(oUrl('event'), 'DELETE'); await oRefresh(); opsPoll(); return say('이벤트를 끝냈다'), true; }
+      await oSend('event', 'PUT', E); mcLog({ kind: '이벤트', target: (OPSD.target === 'main' ? '정식' : 'test'), summary: E.name + ' · 경험치 ×' + E.xp + ' 골드 ×' + E.gold + ' 드롭 ×' + E.drop + ' · ' + new Date(E.start).toLocaleString('ko-KR') + ' ~ ' + new Date(E.end).toLocaleString('ko-KR') }); await oRefresh(); opsPoll(); return say('이벤트를 걸었다 ✓'), true; }
+    if (cmd === 'eventoff') { if (!yes('이벤트를 끝낼까?')) return true; await tuneSend(oUrl('event'), 'DELETE'); mcLog({ kind: '이벤트', target: (OPSD.target === 'main' ? '정식' : 'test'), summary: '이벤트 끝냄' }); await oRefresh(); opsPoll(); return say('이벤트를 끝냈다'), true; }
     if (cmd === 'who') { OPSD.who = v('opsWho').trim(); if (!OPSD.who) return true; const ac = await tuneGet(dbUrlRaw('acct/' + netKey(OPSD.who))); OPSD.whoOk = ac && ac.uid ? (ac.nick || '?') : false; OPSD.sent = null; devRender(); return true; }
     if (cmd === 'mail') {
       const give = {}, take = {}; for (const k in OPS_MAT) { const g = Math.max(0, +v('opsG_' + k) || 0), t = Math.max(0, +v('opsT_' + k) || 0); if (g) give[k] = g; if (t) take[k] = t; }
@@ -26055,11 +26116,11 @@ window.opsAct = async function (a) {
       if (!title && !msg && !Object.keys(give).length && !Object.keys(take).length) return say('보낼 내용이 없다'), true;
       const desc = [...Object.keys(give).filter(k => k !== 'gear').map(k => OPS_MAT[k] + ' +' + give[k]), ...(give.gear ? [GRADES[give.gear[0].grade].name + ' 장비 +' + give.gear[0].n] : []), ...Object.keys(take).filter(k => k !== 'gear').map(k => OPS_MAT[k] + ' -' + take[k]), ...(take.gear ? [GRADES[+Object.keys(take.gear)[0]].name + ' 장비 -' + tn] : [])].join(', ');
       if (!yes(`${OPSD.who}(${OPSD.whoOk}) 에게 우편을 보낼까?\n${title}\n${desc || '(공지만)'}`)) return true;
-      await tuneSend(oUrl('mail/' + netKey(OPSD.who)), 'POST', { at: Date.now(), by: AUTH.id, title, msg, give, take });
+      await tuneSend(oUrl('mail/' + netKey(OPSD.who)), 'POST', { at: Date.now(), by: AUTH.id, title, msg, give, take }); mcLog({ kind: '우편', target: (OPSD.target === 'main' ? '정식' : 'test'), summary: OPSD.who + ' 에게 · ' + (title || '(제목 없음)') + ' · ' + (desc || '공지만') });
       OPSD.sent = null; await window.opsAct('ops:mails'); return say('우편을 보냈다 ✓ · 그 사람이 접속하면 바로 적용된다'), true;
     }
     if (cmd === 'mails') { const j = await tuneGet(oUrl('mail/' + netKey(OPSD.who))); OPSD.sent = Object.keys(j || {}).map(id => Object.assign({ id }, j[id])).sort((a, b) => b.at - a.at).slice(0, 20); devRender(); return true; }
-    if (cmd === 'mailcancel') { if (!yes('아직 안 받은 이 우편을 취소할까?')) return true; await tuneSend(oUrl('mail/' + netKey(OPSD.who) + '/' + arg), 'DELETE'); await window.opsAct('ops:mails'); return say('우편을 취소했다'), true; }
+    if (cmd === 'mailcancel') { if (!yes('아직 안 받은 이 우편을 취소할까?')) return true; await tuneSend(oUrl('mail/' + netKey(OPSD.who) + '/' + arg), 'DELETE'); mcLog({ kind: '우편', target: (OPSD.target === 'main' ? '정식' : 'test'), summary: OPSD.who + ' 우편 취소' }); await window.opsAct('ops:mails'); return say('우편을 취소했다'), true; }
     if (cmd === 'online') {
       const ol = await tuneGet(oUrl('online')); OPSD.online = Object.keys(ol || {}).map(id => Object.assign({ id: decodeURIComponent(id) }, ol[id])).sort((a, b) => (b.t || 0) - (a.t || 0));
       const pt = await tuneGet(oUrl('party')).catch(() => null); OPSD.party = Object.keys(pt || {}).map(id => ({ id, m: Object.keys((pt[id] || {}).m || {}).map(k => Object.assign({ id: k }, pt[id].m[k])) })).filter(p => p.m.length);
