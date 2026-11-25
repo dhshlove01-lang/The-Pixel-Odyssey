@@ -9112,8 +9112,9 @@ function drawFx(c) {
       c.restore();
     } else if (f.k === 'band') {   // a chain sweep crossing the whole room
       const L = G.map.arenaL || 0, R = G.map.arenaR || G.map.w; c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = `rgba(${f.col},${0.6 * (1 - pr)})`; c.fillRect(L, f.y - 6, R - L, 12); c.restore();
-    } else if (f.k === 'ring') {
-      c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(${f.col},${1 - pr})`; c.lineWidth = 3 * (1 - pr); c.beginPath(); c.arc(f.x, f.y, f.R * pr, 0, 6.283); c.stroke(); c.restore();
+    } else if (f.k === 'ring') {   // 6차 배치: arc 한 줄 -> 도트 충격파 띠 (분노 링·종울림 파동)
+      if (ringDot(c, { x: f.x, y: f.y, col: f.col, band: 16, alpha: Math.max(0, 1 - pr) }, f.R * pr, 16, false)) { }
+      else { c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(${f.col},${1 - pr})`; c.lineWidth = 3 * (1 - pr); c.beginPath(); c.arc(f.x, f.y, f.R * pr, 0, 6.283); c.stroke(); c.restore(); }
     } else if (f.k === 'retburst') {   // 2026-11-24: 귀환 도착 — 사방으로 열리는 금빛 고리 세 겹 + 서는 빛기둥 + 흰 중심
       const fade = Math.max(0, 1 - pr), punch = Math.max(0, 1 - pr * 3.4);
       c.save(); c.globalCompositeOperation = 'lighter';
@@ -20386,7 +20387,7 @@ function tgdBox(c, x, y, w, h, frame, alpha) {
 function ringDot(c, h, R, band, dashed) {
   const cv0 = tgdCanvas('ring', h.col, Math.floor(G.t * 12));
   if (!cv0 || !(R > 2)) return false;
-  const chunk = Math.max(14, Math.round(Math.min(96, Math.max(24, band * 2.2))));
+  const chunk = Math.max(12, Math.min(96, Math.round(2 * Math.PI * R / 48), Math.round(band * 1.6)));   // 작은 링도 각지지 않게 조각을 잘게
   const n = Math.max(8, Math.ceil(2 * Math.PI * R / chunk));
   const step = 2 * Math.PI / n;
   const fi = Math.floor(G.t * 12) % 4, cv = tgdCanvas('ring', h.col, fi);
