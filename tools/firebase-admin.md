@@ -17,6 +17,7 @@ Firebase 콘솔 → 프로젝트 → **Realtime Database** → **규칙** 탭
 | `tuning_log` (정식 적용 기록) | 관리자 3명만 | 관리자 3명만 |
 | `admin_log` (모든 관리자 변경 내역: test 수치·정식 적용·공지·이벤트·우편) | 관리자 3명만 | 관리자 3명만 |
 | `local_tuning`, `local_tuning_log` | 이 PC 테스트용 (local_acct/admin0215) | |
+| `bossrec` · `dev_bossrec` (보스전 기록: 전투력·DPS·받은 피해·결과 — 2026-11-25 추가, 지금은 test 만 씀) | 관리자 3명만 | 로그인한 누구나 새 기록 추가만 (고치기·지우기 불가) |
 
 ## 2. 관리자 계정 만들기 (규칙 게시 후 **바로**)
 게임(정식이든 test 든 같은 계정)에서 **회원가입** → 아이디 `admin0215`·`admin2016`·`admin2017` 각각, 비밀번호는 정한 것.

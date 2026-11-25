@@ -376,6 +376,20 @@
     "local_admin_log": {
       ".read": "auth != null && (root.child('local_acct/admin0215/uid').val() === auth.uid || root.child('local_acct/admin2016/uid').val() === auth.uid || root.child('local_acct/admin2017/uid').val() === auth.uid)",
       ".write": "auth != null && (root.child('local_acct/admin0215/uid').val() === auth.uid || root.child('local_acct/admin2016/uid').val() === auth.uid || root.child('local_acct/admin2017/uid').val() === auth.uid)"
+    },
+    "bossrec": {
+      ".read": "auth != null && (root.child('acct/admin0215/uid').val() === auth.uid || root.child('acct/admin2016/uid').val() === auth.uid || root.child('acct/admin2017/uid').val() === auth.uid)",
+      "$rid": {
+        ".write": "auth != null && !data.exists()",
+        ".validate": "newData.hasChildren(['at', 'ch', 'by']) && newData.child('by').isString() && newData.child('ch').isNumber()"
+      }
+    },
+    "dev_bossrec": {
+      ".read": "auth != null && (root.child('acct/admin0215/uid').val() === auth.uid || root.child('acct/admin2016/uid').val() === auth.uid || root.child('acct/admin2017/uid').val() === auth.uid)",
+      "$rid": {
+        ".write": "auth != null && !data.exists()",
+        ".validate": "newData.hasChildren(['at', 'ch', 'by']) && newData.child('by').isString() && newData.child('ch').isNumber()"
+      }
     }
   }
 }

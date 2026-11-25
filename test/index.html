@@ -25665,7 +25665,8 @@ const MC_TABS = [['quick', '⚡', '빠른 도구'], ['me', '🧑', '내 캐릭�
 MC_TABS.splice(3, 0, ['combat', '⚔', '전투']);
 MC_TABS.splice(6, 0, ['sound', '🔊', '음향']);
 MC_TABS.push(['log', '📜', '내역']);
-MC_TABS.splice(MC_TABS.length - 2, 0, ['guide', '📖', '가이드']);   // 2026-11-25 (user): 가이드 30개 글 고치기
+MC_TABS.splice(MC_TABS.length - 2, 0, ['guide', '📖', '가이드']);
+MC_TABS.splice(MC_TABS.length - 2, 0, ['bai', '📊', 'DPS']);   // 2026-11-25 (user): 보스 권장 전투력·DPS (AI 시뮬레이션 + 사람 기록)   // 2026-11-25 (user): 가이드 30개 글 고치기
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const nChanged = () => Object.keys(tuneDiff(TUNE.cur)).length;
 function tuneRow(d) {
@@ -25831,7 +25832,7 @@ async function mcLoadLog() {
 }
 devHtml = function () {
   const s = G.save, inGame = G.scene === 'play' && !!s, n = nChanged(), tab = DEV.tab;
-  const body = tab === 'log' ? mcLogHtml() : tab === 'sound' ? mcSound() : tab === 'combat' ? mcCombat() : tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip() : tab === 'ops' ? (window.mcOps ? window.mcOps(inGame) : '') : tab === 'guide' ? (window.mcGuideHtml ? window.mcGuideHtml() : '')
+  const body = tab === 'log' ? mcLogHtml() : tab === 'sound' ? mcSound() : tab === 'combat' ? mcCombat() : tab === 'quick' ? mcQuick(inGame) : tab === 'me' ? mcMe(inGame) : tab === 'boss' ? mcBoss() : tab === 'ship' ? mcShip() : tab === 'ops' ? (window.mcOps ? window.mcOps(inGame) : '') : tab === 'guide' ? (window.mcGuideHtml ? window.mcGuideHtml() : '') : tab === 'bai' ? (window.mcBaiHtml ? window.mcBaiHtml() : '')
     : tuneTools() + tuneSecs(TUNE.defs.filter(d => d.g === tab));
   return `<div class="mch"><b>마스터 콘솔</b><span>test 서버 · F9 닫기</span><button class="mcclose" data-ma="close">✕</button></div>
     <nav class="mctabs">${MC_TABS.map(([id, ic, t]) => `<button data-ma="tab:${id}" class="${tab === id ? 'on' : ''}"><i>${ic}</i>${t}</button>`).join('')}</nav>
