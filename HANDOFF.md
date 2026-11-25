@@ -18,7 +18,13 @@
 - 검증용 네트워크: 이 계정의 환경 `The-Pixel-Odyssey`(Firebase DB·로그인·github.io 허용)를 고르면 Claude 가 규칙·실사이트를 직접 확인할 수 있다. 관리자 쓰기 확인은 사용자가 직접(비밀번호는 Claude 가 모른다).
 - 새 전투 기능을 만들면 `mcSkT`/`mcStT` 처럼 `tuneAdd` 로 등록하고 ⚔ 전투 탭(g: `combatSk`·`combatSt`·`combat`)에 뜨게 한다.
 - 사용자 지시(계속 지킬 것): ①모든 새 기능을 마스터 콘솔에도(`CLAUDE.md`) ②UI 는 가장 쓰기 쉽게 ③수정은 test 먼저, "정식 배포" 때만 promote ④작업마다 커밋·푸시(main 직접 푸시 허락됨) ⑤비밀번호는 저장소에 적지 않는다.
-- 관리자 = `admin0215`. Firebase 규칙은 `tools/firebase-rules.json` 이 전체본(48경로) — 사용자가 2026-11-25 게시 완료. 로그인 없이 검증: 공개 읽기(tuning·notice·event) 200, 아무나 쓰기 7곳 401, tuning_log·mail 읽기 401, 기존 경로 그대로.
+- 관리자 = `admin0215`·`admin2016`·`admin2017` (2016·2017 은 261125-1410 에서 추가 — 사용자가 규칙 재게시 + 두 아이디 회원가입 필요). Firebase 규칙은 `tools/firebase-rules.json` 이 전체본(48경로) — 사용자가 2026-11-25 게시 완료. 로그인 없이 검증: 공개 읽기(tuning·notice·event) 200, 아무나 쓰기 7곳 401, tuning_log·mail 읽기 401, 기존 경로 그대로.
+
+### 261125-1410  보스 클리어 창 404 정리 + 관리자 2명 추가   (대상: `test/index.html` · `tools/firebase-rules.json` · `tools/firebase-admin.md`)
+- **보스 클리어 창** (원래 파일: 보스 처치 연출 조각, `CLEAR_IMG` / `drawClearPop`): 없는 그림 `assets/ui/boss_clear_screen.png` 를 매번 요청해 404 가 나던 것 → `const CLEAR_IMG = { bad: true }` 로 요청을 없애고, 이미 있던 코드로 그린 도트 창(금테·BOSS CLEAR·이름·처치 시간·다음 안내)을 정식 디자인으로 쓴다. 사용자 확인: "1번(요청만 지우기)".
+- **관리자 3명**: `MC_ADMIN_IDS = ['admin0215', 'admin2016', 'admin2017']`, 규칙의 관리자 조건을 세 계정 중 하나(`acct/<id>/uid` OR, local_ 도 같게) 19곳. 서버 확인 시 admin2016·2017 은 아직 미가입.
+- 검증(로컬): 보스방 7곳 404 **0**(전에는 boss_clear_screen 1개), `pageerror 0`, 규칙 JSON 유효.
+- `GAME_VER '261125-1410'`, `test/version.json` 동기. 정식은 1400.
 
 ### 261125-1400 정식 배포 (마스터 콘솔 2·3단계 — 운영 탭 받는 쪽 + 전투 수치)   (대상: `index.html` · `version.json`)
 - `tools/deploy.py promote` — 정식 = test 1400. 정식에는 관리자 창이 없고(IS_DEV_BUILD false), 공지·이벤트·우편 받기(`notice`·`event`·`mail/{id}`)와 전투 수치(`tuning`)만 돈다.
