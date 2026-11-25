@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1750';
+const GAME_VER = '261125-1810';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16263,12 +16263,20 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125i',   // 2026-11-25 스물네 번째 패치(GAME_VER '261125-1750'): 사용자 피드백 묶음 6
+  id: '261125j',   // 2026-11-25 스물다섯 번째 패치(GAME_VER '261125-1810'): 묶음 6 보완
   title: '패치 노트',
   sub: '29장 월식이 화면을 삼키고, 거꾸로 나가던 보스 스킬을 바로잡았다',
   versions: [
     {
-      ver: '261125-1750', date: '2026-11-25', name: '월식의 어둠 · 스킬 방향 · 야영지 포탈', cur: 1,
+      ver: '261125-1810', date: '2026-11-25', name: '보스 스킬은 선명하게 · 전조만 반투명', cur: 1,
+      items: [
+        { t: '보스', h: '피할 수 있는 보스 스킬은 선명하게', p: '반투명은 바닥 경고·조준선·! 같은 전조에만 적용된다. 실제로 날아오고 터지는 스킬 그림은 다시 선명하게 보인다.' },
+        { t: '보스', h: '맵 전체를 덮는 피할 수 없는 스킬은 흐리게', p: '경기장 대부분을 덮는 스킬 그림(20장 화빙 양분 충격파 등)은 반투명하게 그려 캐릭터와 보스가 가려지지 않는다.' },
+        { t: '보스', h: '프레임마다 뜨던 바닥 효과', p: '그림의 프레임마다 바닥선 높이가 다른 효과(20장 화빙 양분 충격파 등)가 모든 프레임에서 바닥에 붙는다.' },
+      ],
+    },
+    {
+      ver: '261125-1750', date: '2026-11-25', name: '월식의 어둠 · 스킬 방향 · 야영지 포탈',
       items: [
         { t: '보스', h: '29장: 달이 삼켜질수록 화면이 어두워진다', p: '보름달이 검은 원에 덮여 갈수록 검투장이 붉은 어둠에 잠기고, 개기일식 직전에 가장 어둡다. 월식이 끝나면 천천히 밝아진다. 바닥 경고와 전조는 어둠 위에 그대로 보인다.' },
         { t: '보스', h: '거꾸로 나가던 보스 스킬 11가지를 바로잡았다', p: '보스가 왼쪽을 볼 때 그림이 반대로 뒤집혀 보스 쪽으로 날아가던 스킬: 15장 도깨비불 대포, 21장 별빛 단검 부채·일식 연사, 22장 부러진 날개 폭풍, 23장 거울 파편 사격, 24장 까마귀 떼, 26장 모래 폭풍·시계바늘 베기, 29장 핏빛 초승달(붉은 참격과 파란 초승달 탄 모두), 30장 성운의 손.' },
@@ -26578,7 +26586,7 @@ setInterval(() => {   // 재도전 버튼: 퇴장 버튼이 보일 때, 단 보�
   if (box && tr && gm && ex.classList.contains('on')) { const top = Math.round(tr.getBoundingClientRect().bottom - gm.getBoundingClientRect().top + 6) + 'px'; if (box.style.top !== top) box.style.top = top; }
 }, 150);
 
-/* ---- 보스 전조 진하기: 그리는 동안만 globalAlpha 에 TG_ALPHA 를 곱한다 (save/restore·가산 합성은 그대로 동작) ---- */
+/* ---- 보스 전조 진하기: 경고 모양(tg9Shape — 옛 보스 경고도 이것으로 그린다)·'!' 표시·조준선을 그리는 동안만 globalAlpha 에 TG_ALPHA 를 곱한다 ---- */
 let TG_ALPHA = 0.5;   // let: 마스터 콘솔
 const FB5_GA = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'globalAlpha');
 function tgFaint(fn) {
@@ -26589,7 +26597,7 @@ function tgFaint(fn) {
     try { return fn.call(this, c, ...a); } finally { delete c.globalAlpha; FB5_GA.set.call(c, prev); }
   };
 }
-drawHaz = tgFaint(drawHaz); drawAims = tgFaint(drawAims); drawTelegraphs = tgFaint(drawTelegraphs);
+tg9Shape = tgFaint(tg9Shape); tg9Badge = tgFaint(tg9Badge); drawAims = tgFaint(drawAims);   // 2026-11-25 (user): 전조(경고 모양·! 표시·조준선)만 — 스킬 그림(vfx9)과 실제 공격은 선명하게
 
 /* ---- 보스방 순간이동 발판(9장): ↑ 로만 ---- */
 function arenaPadNear() {
@@ -26659,26 +26667,31 @@ vfx9 = function (id, slot, x, y, o) { const v = _fb6vfx9(id, slot, x, y, o); if 
 
 /* ---- 2026-11-25 (user): 바닥 효과가 떠 보이던 것 — 바닥(GROUND)에 바닥 기준(anchor bottom)으로 놓는 4프레임 스트립은
    그림 아래의 투명 여백만큼 내려서 그린다(그림마다 한 번 재서 기억). 공중 탄(바닥에서 12px 넘게 위)은 그대로. ---- */
-function img9BottomGap(im) {
-  if (im.gap9 != null) return im.gap9;
+function img9BottomGap(im) {   // 프레임마다 아래 투명 여백(파일 px) — 프레임마다 바닥선 높이가 다른 그림이 있다(20장 화빙 양분: 108/52/12/84)
+  if (im.gap9) return im.gap9;
+  const fw = Math.floor(im.naturalWidth / 4), fh = im.naturalHeight, out = [0, 0, 0, 0];
   try {
-    const fw = Math.floor(im.naturalWidth / 4), fh = im.naturalHeight, cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = fh;
+    const cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = fh;
     const x = cv.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, cv.width, fh).data;
-    let best = fh;
-    for (let k = 0; k < 4; k++) { let g = fh; for (let y = fh - 1; y >= 0; y--) { let hit = false; for (let i = k * fw; i < (k + 1) * fw; i++) if (d[(y * cv.width + i) * 4 + 3] > 40) { hit = true; break; } if (hit) { g = fh - 1 - y; break; } } best = Math.min(best, g); }
-    im.gap9 = best >= fh ? 0 : best;
-  } catch (e) { im.gap9 = 0; }
-  return im.gap9;
+    for (let k = 0; k < 4; k++) { let g = 0; for (let y = fh - 1; y >= 0; y--) { let hit = false; for (let i = k * fw; i < (k + 1) * fw; i++) if (d[(y * cv.width + i) * 4 + 3] > 40) { hit = true; break; } if (hit) { g = fh - 1 - y; break; } } out[k] = g; }
+  } catch (e) { }
+  return (im.gap9 = out);
 }
+const vfx9Frame = v => v.fixed != null ? v.fixed : v.loop ? Math.floor(v.t / v.step) % 4 : Math.min(3, (v.from || 0) + Math.floor(v.t / v.step));   // vfx9Draw 와 같은 계산
+/* 2026-11-25 (user): 맵 전체를 덮어 피할 수 없는 그림(그려지는 폭이 경기장의 70% 이상)은 WIDE9_ALPHA 로 흐리게, 피할 수 있는 스킬 그림은 선명하게 */
+let WIDE9_ALPHA = 0.5, WIDE9_K = 0.7;   // let: 마스터 콘솔
 const _fb6vfx9Draw = vfx9Draw;
 vfx9Draw = function (c) {
-  const L = G.vfx9 || [], moved = [];
+  const L = G.vfx9 || [], moved = [], faded = [];
+  const aw = G.map && G.map.arenaL != null && G.map.arenaR != null ? G.map.arenaR - G.map.arenaL : W;
+  for (const v of L) if (Math.round(v.w) >= aw * WIDE9_K && WIDE9_ALPHA < 0.999) { faded.push([v, v.alpha]); v.alpha *= WIDE9_ALPHA; }
   for (const v of L) {
     if (v.anchor !== 'bottom' || !img9Ready(v.img) || Math.abs(v.y - GROUND) > 12 || v.noSnap) continue;
-    const fw = Math.floor(v.img.naturalWidth / 4), g = img9BottomGap(v.img) * Math.round(v.w) / fw;
-    if (g >= 4) { const dy = Math.min(g, 60) - Math.max(0, v.y - GROUND); if (dy > 0) { v.y += dy; moved.push([v, dy]); } }
+    const fw = Math.floor(v.img.naturalWidth / 4), f = clamp(vfx9Frame(v), 0, 3), g = img9BottomGap(v.img)[f] * Math.round(v.w) / fw;
+    const dy = g - Math.max(0, v.y - GROUND); if (dy >= 2) { v.y += dy; moved.push([v, dy]); }
   }
-  try { return _fb6vfx9Draw(c); } finally { for (const [v, dy] of moved) v.y -= dy; }
+  try { return _fb6vfx9Draw(c); } finally { for (const [v, dy] of moved) v.y -= dy; for (const [v, a] of faded) v.alpha = a; }
 };
+tuneAdd({ k: 'wide9A', g: 'boss', sec: '모든 보스', n: '맵 전체 스킬 그림 진하기', help: '경기장 폭의 70% 이상을 덮는 피할 수 없는 스킬 그림의 불투명도 (피할 수 있는 스킬은 항상 선명)', get: () => WIDE9_ALPHA, set: v => { WIDE9_ALPHA = v; }, min: 10, max: 100, step: 5, pct: true });
 </script>
 </body></html>
