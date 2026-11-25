@@ -135,12 +135,12 @@ const INJECT = () => {
   async function one(n, ch) {
     const p = await b.newPage({ viewport: { width: 1280, height: 720 } }); const errs = []; p.on('pageerror', e => errs.push(e.message));
     await p.goto('http://127.0.0.1:8765/test/index.html'); await p.waitForTimeout(1800);
-    await p.evaluate(INJECT); if (SPEC) await p.evaluate(sp => { window.__spec = sp; }, SPEC); if (OVER) await p.evaluate(o => { window.__over = o; tuneApply(o); }, OVER);
+    await p.evaluate(INJECT); if (SPEC) await p.evaluate(sp => { window.__spec = sp; }, SPEC); if (OVER) await p.evaluate(o => { window.__over = o; TUNE.dirtyLocal = true; tuneLoad = async () => { }; tuneApply(o); }, OVER);
     const info = await p.evaluate(([n, ch]) => {
       const { s, P } = hardSpec(n, ch);
       for (const k in TUT) s.flags['tut_' + k] = 1; s.seenCh = {}; for (let i = 1; i <= 30; i++) s.seenCh[i] = 1;
       for (let i = 1; i < n; i++) s.flags['boss_b' + i] = 1;
-      startGame(s, false); const A = acctSeen(); if (A) for (const k in TUT) A['tut_' + k] = 1;
+      startGame(s, false); if (window.__over) tuneApply(window.__over); const A = acctSeen(); if (A) for (const k in TUT) A['tut_' + k] = 1;
       refreshStats(); const st = G.stats;
       /* 반지(10·20장, 5% × 10번 ≈ 40%): 낀 경우와 안 낀 경우의 공격·전투력·체력 비율을 기록 → 결과에 40% 만큼 섞는다 */
       const rc = [10, 20].filter(c => c < n).pop(); let ring = null;
