@@ -24,6 +24,10 @@
 - UI 는 "가장 쓰기 쉽게": 한국어 이름 + 한 줄 설명(help) + 슬라이더·숫자칸 + 기본값 표시. 정식 서버에 영향 주는 버튼은 확인 창을 띄운다.
 - 관리자 아이디 `admin0215` · `admin2016` · `admin2017` (`MC_ADMIN_IDS`, 규칙도 이 셋). 서버 규칙 전체: `tools/firebase-rules.json`, 설정 순서: `tools/firebase-admin.md`. 비밀번호는 저장소에 절대 적지 않는다.
 
+## 가이드 (2026-11-25 사용자 지시: 글만 있는 가이드 금지)
+- 가이드는 `TUT` 에 등록하고 **반드시 실제 게임 그림**을 붙인다: `tools/guide_shots.js` 의 `SHOTS` 에 장면을 더해 `node tools/guide_shots.js <id>` → `python3 tools/guide_webp.py` → `assets/ui/guide/<id>.webp`.
+- 글은 짧게, 키는 `keys` 로. 처음 그 상황이 올 때 한 번 뜨고(`tutPlay`), ? 가이드북에 남는다.
+
 ## 그 밖에
 - **이 저장소의 `test/index.html` 이 원본이다.** 원본 PC 의 조각 파일·`build.py` 는 2026-11-25 은퇴했다 — 쓰지도, 돌리지도 않는다(돌리면 옛 코드로 덮인다).
 - 고친 내역은 `HANDOFF.md` "작업 기록" 맨 위에 적는다(무엇을·왜·어디(함수/블록)·검증).

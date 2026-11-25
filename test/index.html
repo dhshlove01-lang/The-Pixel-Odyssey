@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1600';
+const GAME_VER = '261125-1630';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -5864,7 +5864,7 @@ function writeSave() {
 function deleteSlot(i) { const st = storeNow(); st.slots[i] = null; writeStore(st); }
 function newSave(ch) {
   const s = {
-    v: 3, xpV3: 1, char: ch, level: 1, xp: 0, gold: 60, stones: 6, potions: 3, scrolls: 1, tp: 0, traits: {}, equip: {}, slotE: {}, items: [], mats: { inherit: 0, alch: 0, pot: 0, qual: 0, free: 0 }, nextUid: 1,
+    v: 3, xpV3: 1, tpL1: 1, char: ch, level: 1, xp: 0, gold: 60, stones: 6, potions: 3, scrolls: 1, tp: 1, traits: {}, equip: {}, slotE: {}, items: [], mats: { inherit: 0, alch: 0, pot: 0, qual: 0, free: 0 }, nextUid: 1,
     quests: {}, lore: {}, flags: {}, map: 'camp', time: 0, kills: 0, deaths: 0, enh: 0, seenCh: { 1: 1 },
   };
   for (const k of SLOTS) { s.slotE[k] = { e: 0, T: 0, gauge: 0 }; s.equip[k] = makeItem(k, ch, 0, 1, s); }   // plain starting kit
@@ -8056,7 +8056,7 @@ function netLeave(keepalive) {
   NET.map = null; NET.scope = null; NET.others = {}; NET.mirror = { live: null, raid: null };
 }
 addEventListener('pagehide', () => netLeave(true));
-document.addEventListener('visibilitychange', () => { if (document.hidden) netLeave(true); else if (G.scene === 'play' && G.mapId) netEnterMap(G.mapId); });
+/* 2026-11-25 (user: 온라인 게임 — 창을 내려도 멈추면 안 된다): 창을 내려도 맵을 나가지 않는다 (예전: 숨기면 netLeave, 돌아오면 netEnterMap) */
 /* who else is here right now (fresh records only), and who leads the fight */
 function netMembers() {
   const live = NET.mirror.live || {}, out = [];
@@ -16261,10 +16261,23 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125f',   // 2026-11-25 스물한 번째 패치(GAME_VER '261125-1230'): 특성 창 남은 포인트를 위로
+  id: '261125g',   // 2026-11-25 스물두 번째 패치(GAME_VER '261125-1630'): 사용자 피드백 9가지
   title: '패치 노트',
-  sub: '특성 창에서 남은 포인트가 스크롤 없이 바로 보인다',
+  sub: '가이드가 그림으로 바뀌고, 창을 내려도 게임이 멈추지 않는다',
   versions: [
+    {
+      ver: '261125-1630', date: '2026-11-25', name: '가이드 그림 · 창 밖에서도 진행 · 맵 정리', cur: 1,
+      items: [
+        { t: 'UI', h: '가이드가 실제 게임 그림과 함께 뜬다', p: '모든 가이드(이동·공격·전조·가드·줄·이동 기술·궁극기·지도·연고·보스전)에 실제 화면 그림을 넣었다. ↑ 로 말 걸고 줍기(물망초 같은 퀘스트 물건), 특성 찍기, 쁘띠, 깬 보스로 순간이동 가이드가 새로 생겼다. ? 버튼 가이드북에서 다시 볼 수 있다.' },
+        { t: '시스템', h: '창을 내려도 게임이 그대로 진행된다', p: '다른 창으로 가거나 내려 두어도 버프·재사용 대기·몬스터·파티 접속이 멈추지 않는다. 게임 안에서 Alt 조합 키가 브라우저 메뉴로 넘어가지 않게 막았다.' },
+        { t: '시스템', h: '특성 포인트를 1레벨부터 1점', p: '만렙 150점으로 다섯째 특성까지 15단계를 채울 수 있다. 이미 있던 캐릭터도 1점을 더 받았다.' },
+        { t: '시스템', h: '쁘띠는 처음 얻을 때 바로 따라온다', p: '3장까지 기다리지 않는다. 보스를 처음 쓰러뜨려 쁘띠를 얻으면 바로 따라다니고 안내가 뜬다.' },
+        { t: '맵', h: '보스 앞 사냥터 리젠 · 야영지 보스 문 정리', p: '앞 사냥터에서 걸어 들어온 보스 앞 방은 한 번 깬 뒤 일반 사냥터처럼 다시 몬스터가 나온다. 이동 창으로 바로 들어오면 한 번만 채운다. 야영지의 보스 문은 없앴다 — 깬 보스는 M 전체 지도에서 바로 간다.' },
+        { t: '맵', h: '몬스터가 맵 오른쪽에 몰리던 것을 고쳤다', p: '잡몹과 정예가 맵 전체에 고르게 나온다.' },
+        { t: '이야기', h: '보스를 깬 장의 네스토르', p: '보스를 쓰러뜨린 뒤 네스토르가 다음 장으로 먼저 가 버리던 것을 고쳤다. 그 장 야영지에서 보고하면 클리어 화면이 뜬다.' },
+        { t: '연출', h: '29장 달 · 초승달 검기', p: '29장 월식 달이 배경 하늘의 달과 정확히 겹친다. 왼쪽으로 날아가는 초승달 검기가 뒤집혀 보이던 것을 고쳤다.' },
+      ],
+    },
     {
       ver: '261125-1230', date: '2026-11-25', name: '특성 창 정리', cur: 1,
       items: [
@@ -19747,21 +19760,25 @@ loadMap = function (id, ...rest) {
    State: G.save.flags['tut_<id>'] = 1 (every save and the cloud copy already carry flags).
    The card and the book hold the world still through G.ui.tut (see the step() patch); both are plain DOM.
    assets/ui/ui_tutorial_panel.png is the window skin only: with no file the plain panel colours show. */
-const TUT = {
-  move:  { n: 1,  t: '이동과 점프',       keys: ['left', 'right', 'jump'], body: '← → 로 걷고 Space로 뛴다. 아래 방향을 누른 채 점프하면 얇은 발판을 빠져나간다.' },
-  atk:   { n: 2,  t: '스킬 공격',         keys: ['z', 'x', 'c'],           body: 'Z는 기본 공격(누르고 있으면 연속), X·C는 스킬이다. 레벨이 오르면 A·S·D 기술이 더 열린다. 재사용 시간이 돌아오면 다시 쓴다.' },
-  dodge: { n: 3,  t: '전조를 보고 피한다', keys: ['jump', 'guard'],         body: '바닥에 깔리는 붉은 띠와 기둥은 곧 공격이 떨어질 자리다. 그 밖으로 빠지거나, 맞기 직전에 가드로 막는다.' },
-  guard: { n: 4,  t: '가드',              keys: ['guard'],                 body: '공격이 닿기 직전에 누르면 피해를 받지 않고, 때린 상대를 잠깐 기절시킨다.' },
-  rope:  { n: 5,  t: '줄 타기',            keys: ['up', 'down', 'jump'],     body: '줄 앞에서 위 방향으로 잡고, 위·아래로 오르내린다. 점프로 뛰어내린다.' },
-  shift: { n: 6,  t: '이동 기술',          keys: ['shift'],                 body: '4장에서 배운다. 구르거나 파고들어 공격을 흘린다.' },
-  pet:   { n: 7,  t: '쁘띠 펫',            keys: [],                        body: '3장에서 만난다. 따라다니며 떨어진 물건을 줍고, 10초마다 한 번 때린다.' },
-  ult:   { n: 8,  t: '궁극기',             keys: ['kv'],                    body: '30레벨에 열린다. 누르면 화면 안의 모두에게 큰 일격을 날린다. 쓰는 동안은 맞지 않는다.' },
-  wm:    { n: 9,  t: '전체 지도',           keys: ['m_worldmap'],            body: 'M으로 연다. 장마다 지역과 기록석을 보여 주고, 야영지에 있을 때는 열린 장으로 바로 이동할 수 있다.' },
-  pot:   { n: 10, t: '연고와 귀환',          keys: ['pot', 'scroll'],         body: '1은 치유 연고, 2는 귀환 주문서다. 둘 다 야영지 행상에게서 산다.' },
-  boss:  { n: 11, t: '보스전',             keys: ['guard', 'jump'],         body: '보스는 큰 기술 전에 바닥에 자리를 표시한다. 표시를 보고 비키고, 막을 수 있는 것은 가드로 받아낸다.' },
+const TUT = {   /* 2026-11-25 (user): 가이드는 실제 게임 화면 그림 + 짧은 글. 그림은 assets/ui/guide/<id>.webp (tools/guide_shots.js 로 다시 찍는다) */
+  move:     { n: 1,  t: '이동과 점프',         keys: ['left', 'right', 'jump'], body: '← → 로 걷고 Space 로 뛴다. ↓ 를 누른 채 점프하면 얇은 발판 아래로 내려간다.' },
+  atk:      { n: 2,  t: '공격과 스킬',         keys: ['z', 'x', 'c'],           body: 'Z 기본 공격(누르고 있으면 연속) · X·C 스킬. 레벨이 오르면 A·S·D 기술이 열린다.' },
+  dodge:    { n: 3,  t: '전조를 보고 피한다',   keys: ['jump', 'guard'],         body: '바닥에 붉은 띠·기둥이 깔리면 곧 공격이 떨어진다. 그 밖으로 빠지거나 가드로 받는다.' },
+  interact: { n: 4,  t: '↑ 로 말 걸고 줍기',     keys: ['up'],                    body: '사람·물건 위에 ↑ 표시가 뜨면 위 방향키. 말 걸기, 퀘스트 물건 줍기(물망초 같은 것), 포탈 들어가기, 기록 읽기 모두 ↑ 하나로.' },
+  trait:    { n: 5,  t: '특성 찍기',           keys: ['m_traits'],              body: '레벨마다 특성 포인트 1점(1레벨부터). T 로 특성 창을 열고 「올리기」. 기술마다 15단계, 5·10·15단계에서 기술이 크게 바뀐다.' },
+  guard:    { n: 6,  t: '가드',               keys: ['guard'],                 body: '공격이 닿기 직전에 누르면 피해 없이 막고 상대를 잠깐 기절시킨다.' },
+  rope:     { n: 7,  t: '줄 타기',             keys: ['up', 'down', 'jump'],     body: '줄 앞에서 ↑ 로 잡고 ↑·↓ 로 오르내린다. Space 로 뛰어내린다.' },
+  shift:    { n: 8,  t: '이동 기술',           keys: ['shift'],                 body: '4장에서 배운다. 직업마다 질주·이단 도약·집중 같은 기술이 Shift 에 붙는다.' },
+  pet:      { n: 9,  t: '쁘띠',               keys: ['m_gear'],                body: '보스를 처음 쓰러뜨리면 그 보스의 쁘띠를 얻는다. 쁘띠는 따라다니며 떨어진 물건을 주워 오고 10초마다 한 번 때린다. I 창 → 쁘띠 도감에서 바꾼다.' },
+  travel:   { n: 10, t: '깬 보스로 순간이동',    keys: ['m_worldmap'],            body: '한 번 쓰러뜨린 보스는 M 전체 지도에서 그 장을 골라 바로 보스방으로 간다. 야영지의 보스 문은 없다.' },
+  ult:      { n: 11, t: '궁극기',             keys: ['kv'],                    body: '30레벨에 열린다. 게이지가 차면 V. 쓰는 동안은 맞지 않는다.' },
+  wm:       { n: 12, t: '전체 지도',           keys: ['m_worldmap'],            body: 'M 으로 연다. 장마다 지역을 보여 주고, 야영지에 있을 때는 열린 장으로 바로 간다.' },
+  pot:      { n: 13, t: '연고와 귀환',          keys: ['pot', 'scroll'],         body: '1 치유 연고 · 2 귀환 주문서. 둘 다 야영지 행상에게서 산다.' },
+  boss:     { n: 14, t: '보스전',             keys: ['guard', 'jump'],         body: '보스는 큰 기술 전에 바닥에 자리를 표시한다. 표시를 보고 비키고, 막을 수 있는 것은 가드로 받는다.' },
 };
-const TUT_ORDER = ['move', 'atk', 'dodge', 'guard', 'rope', 'shift', 'pet', 'ult', 'wm', 'pot', 'boss'];
-const TUT_FIRST = ['move', 'atk', 'dodge'];      // played once, when chapter 1 starts
+const TUT_ORDER = ['move', 'atk', 'dodge', 'interact', 'trait', 'guard', 'rope', 'shift', 'pet', 'travel', 'ult', 'wm', 'pot', 'boss'];
+const TUT_FIRST = ['move', 'atk', 'dodge', 'interact', 'trait'];      // played once, when chapter 1 starts
+const tutImg = id => `<img class="tci" src="${ASSET9}ui/guide/${id}.webp?v=${GAME_VER}" alt="" onerror="this.remove()">`;
 let TUTQ = [], TUTCUR = null, TUTTAB = 'guide', TUTSEL = null;
 
 /* 2026-11-23 (user): guide cards, one-line hints and the 새 소식 window are once per ID, not once per character. The marks live
@@ -19794,7 +19811,7 @@ function tutShow(id, queue) {
   TUTQ = queue && queue.length ? queue : [id]; TUTCUR = id; if (tutBookOpen()) toggleTutBook(false);
   const i = TUTQ.indexOf(id), total = TUTQ.length;
   tutOverlay('tutCard').innerHTML = `<div class="tcp"><div class="tch"><b class="tcn">${d.n}</b><span>${d.t}</span>${total > 1 ? `<small>${i + 1} / ${total}</small>` : ''}</div>
-    <p class="tct">${d.body}</p><div class="tck">${tutChips(d.keys)}</div>
+    ${tutImg(id)}<p class="tct">${d.body}</p><div class="tck">${tutChips(d.keys)}</div>
     <div class="tcf"><button type="button" class="tcb2" data-tut="skip">건너뛰기</button><button type="button" class="tcb1" data-tut="next">${i + 1 < total ? '다음 ▸' : '알겠다'}</button></div></div>`;
   document.getElementById('tutCard').classList.add('on');
   G.ui.tut = true; tutMark(id); sfx('click');
@@ -19833,7 +19850,7 @@ function tutBookHtml() {
   const list = TUT_ORDER.map(id => { const t = TUT[id], on = tutSeen(id); return `<button type="button" class="tbi${on ? '' : ' off'}${id === sel ? ' sel' : ''}" data-tutid="${id}"${on ? '' : ' disabled'}><b>${on ? t.n : '·'}</b><span>${on ? t.t : '아직'}</span></button>`; }).join('');
   const d = sel ? TUT[sel] : null;
   const body = d
-    ? `<h4>${d.t}</h4><div class="tck">${tutChips(d.keys)}</div><p>${d.body}</p><div class="tbf"><button type="button" class="tcb1" data-tutplay="${sel}">다시 보기</button></div>`
+    ? `<h4>${d.t}</h4><p>${d.body}</p><div class="tck">${tutChips(d.keys)}</div>${tutImg(sel)}<div class="tbf"><button type="button" class="tcb1" data-tutplay="${sel}">다시 보기</button></div>`
     : '<p class="tbnone">아직 열린 가이드가 없다. 1장을 시작하면 첫 세 가지가 열린다.</p>';
   return head + `<div class="tbb"><div class="tbl">${list}</div><div class="tbd">${body}</div></div>`;
 }
@@ -19878,11 +19895,13 @@ document.head.insertAdjacentHTML('beforeend', `<style>
 .hbtn.ico svg{display:none}
 #tutCard{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,3,6,.74);z-index:26}
 #tutCard.on{display:flex}
-#tutCard .tcp{width:calc(var(--u)*560);max-width:92%;box-sizing:border-box;padding:calc(var(--u)*2) calc(var(--u)*6);background:#16141d padding-box;border:calc(var(--u)*46) solid #4a3a22;border-image:url(assets/ui/ui_tutorial_panel.png) 72 fill stretch;image-rendering:pixelated;box-shadow:0 12px 48px #000}
+#tutCard .tcp{width:calc(var(--u)*680);max-width:92%;box-sizing:border-box;padding:calc(var(--u)*2) calc(var(--u)*6);background:#16141d padding-box;border:calc(var(--u)*46) solid #4a3a22;border-image:url(assets/ui/ui_tutorial_panel.png) 72 fill stretch;image-rendering:pixelated;box-shadow:0 12px 48px #000}
 #tutCard .tch{display:flex;align-items:center;gap:calc(var(--u)*8);font-family:var(--font-display);font-weight:700;font-size:max(12px,calc(var(--u)*18));color:#f0e2c4}
 #tutCard .tch .tcn{display:inline-flex;align-items:center;justify-content:center;min-width:calc(var(--u)*20);height:calc(var(--u)*20);border:1px solid #b8933f;color:#ffe6a8;font-size:max(9px,calc(var(--u)*12))}
 #tutCard .tch small{margin-left:auto;color:#b8ab90;font-family:var(--font-ui);font-weight:500;font-size:max(9px,calc(var(--u)*11))}
-#tutCard .tct{margin:calc(var(--u)*12) 0 0;font-size:max(10px,calc(var(--u)*14));line-height:1.6;color:#e6dcc6}
+#tutBook .tbd{overflow-y:auto;min-height:0}#tutBook .tbd .tci{max-height:calc(var(--u)*190);width:auto;max-width:100%;object-fit:contain}
+#tutCard .tci,#tutBook .tci{display:block;width:100%;height:auto;margin:calc(var(--u)*10) 0 0;border:1px solid #6a5430;image-rendering:auto;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+#tutCard .tct{margin:calc(var(--u)*10) 0 0;font-size:max(10px,calc(var(--u)*14));line-height:1.6;color:#e6dcc6}
 .tck{display:flex;flex-wrap:wrap;gap:calc(var(--u)*5);margin-top:calc(var(--u)*12)}
 .tck kbd{font-family:var(--font-ui);background:#1c2030;border:1px solid #4a4f66;color:#ffe6a8;font-weight:700;padding:calc(var(--u)*2) calc(var(--u)*7);font-size:max(9px,calc(var(--u)*12))}
 #tutCard .tcf{display:flex;justify-content:flex-end;gap:calc(var(--u)*6);margin-top:calc(var(--u)*16)}
@@ -22019,7 +22038,7 @@ function devAct(a) {
   if (a === 'warp') { const id = $('#dvMap').value; if (!MAPS[id]) return; closePanel(); G.ui.dialog = null; loadMap(id); return devMsg(MAPS[id].name + '(으)로 이동'); }
   if (a === 'story') { const n = DEV.ch; for (const q of QUEST_ORDER) { if (QUESTS[q].ch >= n) break; s.quests[q].s = 3; } for (let c = 1; c < n; c++) { const A = MAPS[CHAPTERS[c].arena]; if (A && A.boss) s.flags['boss_' + A.boss] = 1; for (const g of CHAPTERS[c].gates || []) s.flags['gate_' + g] = 1; } writeSave(); if (typeof updateHud === 'function') updateHud(true); return devMsg((n - 1) + '장까지 끝낸 것으로 했다'); }
   if (a === 'heal') { p.hp = p.mhp; return devMsg('HP를 채웠다'); }
-  if (a === 'lv') { const L = Math.max(1, Math.min(MAX_LEVEL, Math.round(+$('#dvLv').value || 1))); let spent = 0; for (const t of TRAITS[s.char]) for (let i = 0; i < (s.traits[t.id] || 0); i++) spent += t.ranks[i].cost; s.level = L; s.xp = 0; s.tp = Math.max(0, L - 1 - spent); refreshStats(); p.hp = p.mhp; buildSkills(); writeSave(); updateHud(true); return devMsg('레벨 ' + L + ' · 특성 포인트 ' + s.tp); }
+  if (a === 'lv') { const L = Math.max(1, Math.min(MAX_LEVEL, Math.round(+$('#dvLv').value || 1))); let spent = 0; for (const t of TRAITS[s.char]) for (let i = 0; i < (s.traits[t.id] || 0); i++) spent += t.ranks[i].cost; s.level = L; s.xp = 0; s.tp = Math.max(0, L - spent); refreshStats(); p.hp = p.mhp; buildSkills(); writeSave(); updateHud(true); return devMsg('레벨 ' + L + ' · 특성 포인트 ' + s.tp); }
   if (a === 'tp') { s.tp += 10; writeSave(); return devMsg('특성 포인트 +10'); }
   if (a === 'gold') { s.gold += 1e6; writeSave(); updateHud(true); return devMsg('골드 +1,000,000'); }
   if (a === 'alch') { s.mats.qual = (s.mats.qual || 0) + 10; s.mats.pot = (s.mats.pot || 0) + 10; writeSave(); return devMsg('품질석·잠재석 +10'); }
@@ -24549,7 +24568,7 @@ const TR_BAL = (() => {
   const step = i => (i < 5 ? 1 : i < 10 ? 2 : 3);            // cost of rank i+1
   const upto = r => Array.from({ length: r }, (_, i) => step(i)).reduce((a, b) => a + b, 0);
   const dmgOf = r => (r >= 4 ? 15 : 0) + (r >= 5 ? 15 : 0) + (r >= 7 ? 20 : 0) + (r >= 9 ? 25 : 0) + (r > 10 ? 6 * (Math.min(r, 14) - 10) : 0) + (r >= 15 ? 25 : 0);
-  return { tpMax: MAX_LEVEL - 1, perTrait: upto(15), allSix: upto(15) * 6, oldDmg10: dmgOf(10), oldDmg15: dmgOf(15), freshDmg15: 5 * 15 + 25,
+  return { tpMax: MAX_LEVEL, perTrait: upto(15), allSix: upto(15) * 6,   /* 2026-11-25 (user): Lv1 부터 1점 → 만렙 150점 */ oldDmg10: dmgOf(10), oldDmg15: dmgOf(15), freshDmg15: 5 * 15 + 25,
     rows: [0, 5, 10, 11, 12, 13, 14, 15].map(r => ({ rank: r, cost: upto(r), oldDmg: dmgOf(r), tier: trTier(r) })) };
 })();
 /* 카드에 보여줄 "지금까지 이 특성으로 오른 수치" — 정의(랭크 문구)와 실제 적용식(tDmg·tCd·traitRank)을 그대로 따라 계산한다 */
@@ -26394,5 +26413,55 @@ loadMap = function (id, ...rest) {
   G.gateMode = to && to.gate && walked && gateCleared(id) ? 'regen' : 'once';
   return r;
 };
+
+/* ============ 2026-11-25 사용자 피드백 묶음 2 — 창 밖에서도 게임이 그대로 돈다 ============
+   브라우저는 창을 내리면 requestAnimationFrame 을 멈추고 타이머도 1초 이상으로 늦춘다. 그래서 숨어 있는 동안은
+   Web Worker 의 타이머(덜 늦춰진다)로 깨어나서, 실제로 흐른 시간만큼 step() 을 돌린다(그리기는 안 함). 몬스터·보스·버프·쿨타임·멀티 전부 진행.
+   한 번에 최대 5초(300 step)까지 따라잡고, 다시 보이면 원래 루프(frame)가 이어받는다. 소리는 창을 내리면 꺼진 채로 둔다. */
+(function bgRun() {
+  let last = performance.now(), wk = null;
+  const tick = () => {
+    const now = performance.now();
+    if (!document.hidden) { last = now; return; }
+    const dt = Math.min(5, (now - last) / 1000); last = now;
+    const n = Math.min(300, Math.round(dt * (G.devSpeed || 1) / STEP));
+    for (let i = 0; i < n; i++) { try { step(); } catch (e) { console.warn('[bg step]', e); break; } }
+  };
+  try { wk = new Worker(URL.createObjectURL(new Blob(['let t=null;onmessage=e=>{clearInterval(t);t=null;if(e.data)t=setInterval(()=>postMessage(0),50)}'], { type: 'text/javascript' }))); wk.onmessage = tick; } catch (e) { wk = null; }
+  let iv = null;
+  const sync = () => { last = performance.now(); if (wk) wk.postMessage(document.hidden ? 1 : 0); else { clearInterval(iv); iv = document.hidden ? setInterval(tick, 50) : null; } };
+  document.addEventListener('visibilitychange', sync); sync();
+  window.BG_RUN = { worker: !!wk, tick };
+})();
+/* Alt 조합: 브라우저 메뉴·창 메뉴로 넘어가지 않게 게임 안에서는 막는다 (Alt+Tab·Alt+F4 처럼 운영체제가 먼저 잡는 키는 못 막는다) */
+for (const ev of ['keydown', 'keyup']) addEventListener(ev, e => {
+  if (!(e.altKey || e.key === 'Alt')) return;
+  const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  if (e.key === 'F4' || e.key === 'Tab') return;
+  e.preventDefault();
+}, true);
+
+/* ============ 2026-11-25 사용자 피드백 묶음 3 — 보스를 깬 장의 네스토르 ============
+   [S6-4] 때문에 보스 퀘스트가 '보고 전(s=2)'이어도 다음 장으로 넘어간 것으로 봐서, 네스토르(hal)가 다음 장 야영지로 가 버리고
+   거기서 앞 장 클리어 화면이 떴다. 보스 퀘스트를 보고하기 전에는 네스토르가 그 장 야영지에 남는다(보고하면 클리어 화면 → 다음 장). */
+function pendingBossCh() { if (!G.save) return 0; for (const id of QUEST_ORDER) { const Q = QUESTS[id]; if (Q.type === 'boss' && qs(id) === 2) return Q.ch; } return 0; }
+const nestorCh = () => pendingBossCh() || storyChapter();
+const _fb3visibleNpcs = visibleNpcs;
+visibleNpcs = function () {
+  const a = _fb3visibleNpcs().filter(n => n.id !== 'hal'), hal = (G.map.npcs || []).find(n => n.id === 'hal');
+  return hal && G.map.ch === nestorCh() ? a.concat([hal]) : a;
+};
+
+/* ============ 2026-11-25 사용자 피드백 묶음 4 — 쁘띠는 처음 얻을 때 · 깬 보스 순간이동 안내 · 특성 포인트 Lv1부터 ============ */
+setInterval(() => {
+  const s = G.save; if (!s || G.scene !== 'play') return;
+  if (!s.tpL1) { s.tpL1 = 1; s.tp = (s.tp || 0) + 1; writeSave(); toast('특성 포인트가 1레벨부터 1점으로 바뀌었다 · 특성 포인트 +1', 'gold'); }   // 기존 캐릭터 한 번
+  const free = !G.ui.dialog && !G.ui.cine && !G.ui.tut && !G.ui.intro && !G.ui.ending && !G.ui.cut && !G.boss;
+  if (!s.flags.pet && Object.keys(s.pets || {}).length) { s.flags.pet = true; if (typeof G.pet !== 'undefined') G.pet = null; writeSave(); }
+  if (!free) return;
+  if (s.flags.pet && !tutSeen('pet')) { tutPlay(['pet']); return; }
+  if (G.map && G.map.safe && Object.keys(s.flags).some(k => /^boss_b\d+$/.test(k)) && !tutSeen('travel')) { tutPlay(['travel']); return; }
+  if (s.level >= 2 && !tutSeen('trait')) { tutPlay(['trait']); return; }   // 1장 처음 묶음을 건너뛴 캐릭터
+}, 1500);
 </script>
 </body></html>
