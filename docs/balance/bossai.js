@@ -10,7 +10,8 @@
           피할 곳이 없으면 가드, 안전하면 보스를 향해 공격·스킬. 맞은 피해는 기록하고 체력은 다시 채워 끝까지 싸운다(죽지 않음). */
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
-const CHS = process.argv.slice(2).map(Number).filter(Boolean);
+const ARGS = process.argv.slice(2), TI = ARGS.indexOf('--tune'), OVER = TI >= 0 ? JSON.parse(fs.readFileSync(ARGS[TI + 1], 'utf8')) : null, OUTI = ARGS.indexOf('--out');
+const CHS = ARGS.filter((a, i) => !(TI >= 0 && i === TI + 1) && !(OUTI >= 0 && i === OUTI + 1)).map(Number).filter(Boolean);
 const LIST = CHS.length ? CHS : Array.from({ length: 30 }, (_, i) => i + 1);
 const CLASSES = ['theron', 'kallisto', 'lykos', 'mage'];
 const SPEED = 4;
@@ -40,7 +41,8 @@ const INJECT = () => {
     s.tp = pts; s.potions = 0; s.scrolls = 0;
     /* 보스 트로피(영구 공격력%·치명타 피해): 앞 보스 전부 초회 토벌·타임어택, 노히트는 5장 이상 아래 보스만 (스펙이 앞선 뒤 다시 잡은 것으로) */
     s.troph = {}; for (let i = 1; i < n; i++) s.troph['b' + i] = { k: 3, best: 1, c: 1, t: 1, n: i <= n - 5 ? 1 : 0 };
-    s.pets = { b1: 1 }; s.pet = 'b1';   // 1장 보스 쁘띠(확정)
+    /* 쁘띠 도감(기대값, 사용자 선택): 1장 쁘띠는 확정, 앞 보스는 각 10번 잡았다고 보고 1-0.95^10 ≈ 40% → 앞 보스 수 × 0.4 마리 */
+    s.pets = { b1: 1 }; s.pet = 'b1'; const np = Math.round(0.4 * Math.max(0, n - 2)); for (let i = 2; i < 2 + np; i++) s.pets['b' + i] = 1;
     return { s, P };
   };
   /* ---- AI ---- */
@@ -79,9 +81,12 @@ const INJECT = () => {
   }
   /* A·S·D·V 는 다른 동작 중이 아닐 때만 나간다(skillInput) — 준비된 스킬이 있으면 그 틱에는 Z·X·C 를 누르지 않고 스킬부터 */
   function attack(p, ult) {
+    AI.skip = AI.skip || {};
+    if (AI.tried && (p.cd[AI.tried] || 0) <= 0 && !p.act && !G.ult) AI.skip[AI.tried] = G.t + 3;   // 눌렀는데 안 나간 스킬(대상 없음 등)은 3초 건너뛴다
+    AI.tried = null;
     if (!p.act && !(p.cast > 0)) {
-      const ready = (ult ? ['kv'] : []).concat(['ka', 'ks', 'kd']).find(k => (p.cd[k] || 0) <= 0 && skillUnlocked(SK_KEYS[k], G.save.level));
-      if (ready) { IN.press[ready] = true; if (ready === 'kv') AI.ult = false; return; }
+      const ready = (ult ? ['kv'] : []).concat(['ka', 'ks', 'kd']).find(k => (p.cd[k] || 0) <= 0 && !(AI.skip[k] > G.t) && skillUnlocked(SK_KEYS[k], G.save.level));
+      if (ready) { IN.press[ready] = true; AI.tried = ready; if (ready === 'kv') AI.ult = false; return; }
     }
     IN.down.z = true; if (p.cd.x <= 0) IN.down.x = true; else if (p.cd.c <= 0) IN.down.c = true;
   }
@@ -119,19 +124,26 @@ const INJECT = () => {
 
 (async () => {
   const b = await chromium.launch();
-  const out = [], file = path.join(__dirname, 'bossai_261125.json');
+  const out = [], file = OUTI >= 0 ? ARGS[OUTI + 1] : path.join(__dirname, 'bossai_261125.json');
   const prev = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
   async function one(n, ch) {
     const p = await b.newPage({ viewport: { width: 1280, height: 720 } }); const errs = []; p.on('pageerror', e => errs.push(e.message));
     await p.goto('http://127.0.0.1:8765/test/index.html'); await p.waitForTimeout(1800);
-    await p.evaluate(INJECT);
+    await p.evaluate(INJECT); if (OVER) await p.evaluate(o => { window.__over = o; tuneApply(o); }, OVER);
     const info = await p.evaluate(([n, ch]) => {
       const { s, P } = hardSpec(n, ch);
       for (const k in TUT) s.flags['tut_' + k] = 1; s.seenCh = {}; for (let i = 1; i <= 30; i++) s.seenCh[i] = 1;
       for (let i = 1; i < n; i++) s.flags['boss_b' + i] = 1;
       startGame(s, false); const A = acctSeen(); if (A) for (const k in TUT) A['tut_' + k] = 1;
       refreshStats(); const st = G.stats;
-      return { lv: s.level, e: P.e, uniq: P.uniq, leg: P.leg, q3: P.q3, cp: Math.round(st.cp), atk: Math.round(st.atk), hp: Math.round(st.hp), def: Math.round(st.def), crit: st.crit, critDmg: st.critDmg };
+      /* 반지(10·20장, 5% × 10번 ≈ 40%): 낀 경우와 안 낀 경우의 공격·전투력·체력 비율을 기록 → 결과에 40% 만큼 섞는다 */
+      const rc = [10, 20].filter(c => c < n).pop(); let ring = null;
+      if (rc && typeof makeRing === 'function') { const off = x => x.atk * (1 + Math.min(100, x.crit) / 100 * (CRIT_MULT - 1 + (x.critDmg || 0) / 100)) * (1 + (x.bossDmg || 0) / 100) * (1 + (x.pen || 0) / 300) * (1 + (x.aspd || 0) / 100);
+        const s2 = JSON.parse(JSON.stringify(s)); s2.equip.acc1 = makeRing(rc, s2); s2.slotE.acc1 = { e: Math.min(15, (s.slotE.weapon || {}).e || 0), T: 0, gauge: 0 };
+        const a = calcStats(s), b2 = calcStats(s2); ring = { ch: rc, off: off(b2) / off(a), cp: b2.cp / a.cp, hp: b2.hp / a.hp }; }
+      if (window.__over) { tuneApply(window.__over); refreshStats(); }
+      const st2 = G.stats;
+      return { ring, pets: Object.keys(s.pets).length, lv: s.level, e: P.e, uniq: P.uniq, leg: P.leg, q3: P.q3, cp: Math.round(st2.cp), atk: Math.round(st2.atk), hp: Math.round(st2.hp), def: Math.round(st2.def), crit: st2.crit, critDmg: st2.critDmg };
     }, [n, ch]);
     // 1) 허수아비 (보스 방어력)
     const dummy = async (secs, ult) => {

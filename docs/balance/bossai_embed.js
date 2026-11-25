@@ -4,7 +4,8 @@ const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 const src = fs.readFileSync(path.join(__dirname, 'bossai.js'), 'utf8');
 const injSrc = src.slice(src.indexOf('const INJECT = () => {') + 'const INJECT = '.length, src.indexOf('\n};\n', src.indexOf('const INJECT')) + 2);
-const rows = JSON.parse(fs.readFileSync(path.join(__dirname, 'bossai_261125.json'), 'utf8'));
+const IN = process.argv[2] || path.join(__dirname, 'bossai_261125.json'), PRE = process.argv[3] ? JSON.parse(fs.readFileSync(process.argv[3], 'utf8')) : {};   // 입력 결과 · 그 결과를 잴 때 쓴 관리자 값
+const rows = JSON.parse(fs.readFileSync(IN, 'utf8'));
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage();
   await p.goto('http://127.0.0.1:8765/test/index.html'); await p.waitForTimeout(1800);
@@ -18,7 +19,7 @@ const rows = JSON.parse(fs.readFileSync(path.join(__dirname, 'bossai_261125.json
     return out;
   }, rows);
   const T = {};
-  for (const r of rows) { if (r.err) continue; (T[r.n] = T[r.n] || {})[r.ch] = { cp: r.cp, hp: r.hp, off: offs[r.n + ':' + r.ch], sus: r.dpsSus, ult: r.dpsUlt, bdps: r.bossDps, dtps: r.dtps, bhp: r.bossHp }; }
+  for (const r of rows) { if (r.err) continue; (T[r.n] = T[r.n] || {})[r.ch] = { cp: r.cp, hp: r.hp, off: Math.round(offs[r.n + ':' + r.ch] * (PRE['st:' + r.ch + ':atk'] || 1)), sus: r.dpsSus, ult: r.dpsUlt, bdps: r.bossDps, dtps: r.dtps, bhp: r.bossHp, hm: PRE['b:b' + r.n + ':hp'] || 1, am: PRE['st:' + r.ch + ':atk'] || 1 }; }
   fs.writeFileSync(path.join(__dirname, 'bossai_table.json'), JSON.stringify(T));
   fs.writeFileSync(path.join(__dirname, 'bossai_oldrec.json'), JSON.stringify(offs._old));
   console.log('chapters', Object.keys(T).length);
