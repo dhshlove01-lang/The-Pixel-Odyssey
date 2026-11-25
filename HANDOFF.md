@@ -30,7 +30,7 @@
   - `bell_arc.png` 256×96 — 1장 종울림 지면 아치 4겹
 - **코드** — `TGSP`/`beamDot` 뒤에 **TGD 블록** 추가: `tgdImg`(프리로드) · `tgdCanvas`(프레임·색별 틴트 캐시, getImageData 로 회색조×위험색, file:// 는 source-atop 폴백) · `tgdPat` · `tgdFill` · `tgdBox`(9-slice) · `ringDot`(원주에 띠 조각 타일) · `tgEdge`(차오르는 2px 점선).
   - `drawHaz`: warm = 안개+빗금+`haz_box`(0.55), active = `haz_fill`(0.7)+`haz_box`(1.0), ring = `ringDot`(웜은 점선 링). 셋 다 그림이 없으면 예전 캔버스 연출로 폴백. ※웜 장판은 `_drawHaz9`(15186)가 `tg9Shape` 로 먼저 그리므로 실제 화면은 tg9 그림 + 이 채움이다.
-  - `tgspShape`: **평면 반투명 `fillRect` 전부 제거**, 차오르는 경계만 `tgEdge` 점선으로. (8장 응시·12장 가스처럼 화면 절반을 덮던 반투명 사각형이 사라진 원인)
+  - `tgspShape`: **평면 반투명 `fillRect` 전부 제거**. `ground_zone`·`box` 는 `telegraph_hatch` 도트 빗금(0.18+0.12p)만 깔고 차오르는 경계는 `tgEdge` 점선, `vertical_beam`·`dash_line`·`aim_ray` 는 면 채움 없이 점선 경계만. (8장 응시·12장 가스처럼 화면 절반을 덮던 반투명 사각형이 사라진 원인)
   - `drawBossExtras`: pool 타원+보케 → `pool_glow`, lane 띠+텍스트 → `lane_bats`(가로 타일). 텍스트는 Galmuri 13px 로.
   - `TELE_DRAW.bell`: 동심 타원 3개 → `bell_arc`(512px 폭, 아래 기준).
   - `drawFx` `k:'ring'`(분노 링·종울림 파동): arc 한 줄 → `ringDot`(band 16, alpha 1-pr).

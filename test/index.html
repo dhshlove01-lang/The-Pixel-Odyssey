@@ -15159,9 +15159,10 @@ function tg9Shape(c, t, p, blink, pal) {
     if (t.width > 24 && !t.arc) { c.fillStyle = `rgba(${pal.fill},${fillA * 0.5})`; for (const a of t.angles) { c.save(); c.translate(t.x, t.y); c.rotate(a); c.fillRect(0, -t.width / 2, Math.round(L), Math.round(t.width)); c.restore(); } }
   } else if (t.kind === 'box') {   // anything else (a ledge, a floating zone): same look on its own rectangle
     const x0 = snap2(t.x), y0 = snap2(t.y), w = snap2(t.width), h = snap2(t.height);
-    c.fillStyle = `rgba(${pal.fill},${fillA * 0.45})`; c.fillRect(x0, y0, w, h);
-    const fh = snap2(h * p); c.fillStyle = `rgba(${pal.fill},${fillA})`; c.fillRect(x0, y0 + h - fh, w, fh);
-    c.strokeStyle = blink ? '#FFFFFF' : pal.stroke; c.setLineDash([6, 4]); c.strokeRect(x0 + 1, y0 + 1, w - 2, h - 2); c.setLineDash([]);
+    tgdFill(c, 'hatch', pal.fill, fi, 0.18 + 0.12 * p, x0, y0, w, h);   // 6차: 반투명 단색 -> 도트 빗금 타일
+    const fh = snap2(h * p);
+    tgEdge(c, pal.fill, x0, snap2(y0 + h - fh), w, 2);
+    if (!tgspDraw(c, 'box', fi, x0, y0, w, h, tone)) tgspDraw(c, 'ground_zone', fi, x0, y0, w, h, tone);
   }
 }
 function tg9Badge(c, x, y, danger, blink, p, pal) {
@@ -20486,7 +20487,7 @@ function tgspShape(c, t, p, blink, pal) {
   } else {
     /* ground_zone: 바닥선(gy)에 붙는 띠. x 는 중심, 위험 높이 h 가 gy 위로 h 만큼. */
     const x0 = snap2(t.x - t.width / 2), w = snap2(t.width), h = snap2(t.height), y0 = snap2(gy - h);
-    c.fillStyle = `rgba(${pal.fill},${fillA * 0.45})`; c.fillRect(x0, y0, w, h);
+    tgdFill(c, 'hatch', pal.fill, fi, 0.18 + 0.12 * p, x0, y0, w, h);   // 6차: 반투명 단색 -> 도트 빗금 타일
     const fh = snap2(h * p);
     tgEdge(c, pal.fill, x0, snap2(gy - fh), w, 2);
     tgspDraw(c, 'ground_zone', fi, x0, y0, w, h, tone);
