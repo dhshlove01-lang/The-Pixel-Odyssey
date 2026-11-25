@@ -1,0 +1,1062 @@
+[
+ {
+  "n": 1,
+  "ch": "theron",
+  "ring": null,
+  "pets": 1,
+  "lv": 8,
+  "e": 1,
+  "uniq": 0,
+  "leg": 0,
+  "q3": 0,
+  "cp": 774,
+  "atk": 40,
+  "hp": 368,
+  "def": 29,
+  "crit": 13.94,
+  "critDmg": 0,
+  "dpsSus": 142,
+  "dpsUlt": 144,
+  "bossHp": 7211,
+  "bossDps": 101,
+  "dtps": 18,
+  "hits": 20,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 60.2,
+  "killSec": 71,
+  "errs": []
+ },
+ {
+  "n": 1,
+  "ch": "kallisto",
+  "ring": null,
+  "pets": 1,
+  "lv": 8,
+  "e": 1,
+  "uniq": 0,
+  "leg": 0,
+  "q3": 0,
+  "cp": 739,
+  "atk": 44,
+  "hp": 295,
+  "def": 25,
+  "crit": 13.239999999999998,
+  "critDmg": 0,
+  "dpsSus": 72,
+  "dpsUlt": 79,
+  "bossHp": 7211,
+  "bossDps": 51,
+  "dtps": 20,
+  "hits": 19,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 61.5,
+  "killSec": 141,
+  "errs": []
+ },
+ {
+  "n": 1,
+  "ch": "lykos",
+  "ring": null,
+  "pets": 1,
+  "lv": 8,
+  "e": 1,
+  "uniq": 0,
+  "leg": 0,
+  "q3": 0,
+  "cp": 714,
+  "atk": 41,
+  "hp": 286,
+  "def": 24,
+  "crit": 17.34,
+  "critDmg": 0,
+  "dpsSus": 168,
+  "dpsUlt": 156,
+  "bossHp": 7211,
+  "bossDps": 94,
+  "dtps": 24,
+  "hits": 22,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 61,
+  "killSec": 77,
+  "errs": []
+ },
+ {
+  "n": 1,
+  "ch": "mage",
+  "ring": null,
+  "pets": 1,
+  "lv": 8,
+  "e": 1,
+  "uniq": 0,
+  "leg": 0,
+  "q3": 0,
+  "cp": 716,
+  "atk": 42,
+  "hp": 271,
+  "def": 27,
+  "crit": 12.04,
+  "critDmg": 0,
+  "dpsSus": 178,
+  "dpsUlt": 162,
+  "bossHp": 7211,
+  "bossDps": 114,
+  "dtps": 18,
+  "hits": 20,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 60.2,
+  "killSec": 63,
+  "errs": []
+ },
+ {
+  "n": 2,
+  "ch": "theron",
+  "ring": null,
+  "pets": 1,
+  "lv": 14,
+  "e": 3,
+  "uniq": 0,
+  "leg": 0,
+  "q3": 0,
+  "cp": 1360,
+  "atk": 65,
+  "hp": 604,
+  "def": 53,
+  "crit": 19.564,
+  "critDmg": 2,
+  "dpsSus": 239,
+  "dpsUlt": 258,
+  "bossHp": 8961,
+  "bossDps": 204,
+  "dtps": 12,
+  "hits": 6,
+  "guards": 0,
+  "killed": true,
+  "fightSec": 44,
+  "killSec": 44,
+  "errs": []
+ },
+ {
+  "n": 2,
+  "ch": "kallisto",
+  "ring": null,
+  "pets": 1,
+  "lv": 14,
+  "e": 3,
+  "uniq": 0,
+  "leg": 0,
+  "q3": 0,
+  "cp": 1265,
+  "atk": 65,
+  "hp": 483,
+  "def": 46,
+  "crit": 22.464,
+  "critDmg": 2,
+  "dpsSus": 126,
+  "dpsUlt": 122,
+  "bossHp": 8961,
+  "bossDps": 67,
+  "dtps": 9,
+  "hits": 7,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 61.5,
+  "killSec": 134,
+  "errs": []
+ },
+ {
+  "n": 2,
+  "ch": "lykos",
+  "ring": null,
+  "pets": 1,
+  "lv": 14,
+  "e": 3,
+  "uniq": 0,
+  "leg": 0,
+  "q3": 0,
+  "cp": 1421,
+  "atk": 79,
+  "hp": 468,
+  "def": 44,
+  "crit": 22.564,
+  "critDmg": 16.8,
+  "dpsSus": 362,
+  "dpsUlt": 351,
+  "bossHp": 8961,
+  "bossDps": 137,
+  "dtps": 16,
+  "hits": 11,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 60.5,
+  "killSec": 65,
+  "errs": []
+ },
+ {
+  "n": 2,
+  "ch": "mage",
+  "ring": null,
+  "pets": 1,
+  "lv": 14,
+  "e": 3,
+  "uniq": 0,
+  "leg": 0,
+  "q3": 0,
+  "cp": 1325,
+  "atk": 70,
+  "hp": 444,
+  "def": 50,
+  "crit": 19.564,
+  "critDmg": 21.1,
+  "dpsSus": 290,
+  "dpsUlt": 295,
+  "bossHp": 8961,
+  "bossDps": 132,
+  "dtps": 6,
+  "hits": 6,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 61.6,
+  "killSec": 68,
+  "errs": []
+ },
+ {
+  "n": 3,
+  "ch": "theron",
+  "ring": null,
+  "pets": 1,
+  "lv": 21,
+  "e": 6,
+  "uniq": 6,
+  "leg": 0,
+  "q3": 0,
+  "cp": 3490,
+  "atk": 156,
+  "hp": 1188,
+  "def": 118,
+  "crit": 43.14,
+  "critDmg": 4,
+  "dpsSus": 717,
+  "dpsUlt": 734,
+  "bossHp": 26208,
+  "bossDps": 522,
+  "dtps": 37,
+  "hits": 14,
+  "guards": 0,
+  "killed": true,
+  "fightSec": 50.2,
+  "killSec": 50,
+  "errs": []
+ },
+ {
+  "n": 3,
+  "ch": "kallisto",
+  "ring": null,
+  "pets": 1,
+  "lv": 21,
+  "e": 6,
+  "uniq": 6,
+  "leg": 0,
+  "q3": 0,
+  "cp": 2958,
+  "atk": 128,
+  "hp": 950,
+  "def": 103,
+  "crit": 49.34,
+  "critDmg": 4,
+  "dpsSus": 504,
+  "dpsUlt": 447,
+  "bossHp": 26208,
+  "bossDps": 267,
+  "dtps": 34,
+  "hits": 15,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 61.6,
+  "killSec": 98,
+  "errs": []
+ },
+ {
+  "n": 3,
+  "ch": "lykos",
+  "ring": null,
+  "pets": 1,
+  "lv": 21,
+  "e": 6,
+  "uniq": 6,
+  "leg": 0,
+  "q3": 0,
+  "cp": 2877,
+  "atk": 127,
+  "hp": 922,
+  "def": 98,
+  "crit": 47.44,
+  "critDmg": 11.8,
+  "dpsSus": 715,
+  "dpsUlt": 716,
+  "bossHp": 26208,
+  "bossDps": 311,
+  "dtps": 36,
+  "hits": 17,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 60.4,
+  "killSec": 84,
+  "errs": []
+ },
+ {
+  "n": 3,
+  "ch": "mage",
+  "ring": null,
+  "pets": 1,
+  "lv": 21,
+  "e": 6,
+  "uniq": 6,
+  "leg": 0,
+  "q3": 0,
+  "cp": 3106,
+  "atk": 138,
+  "hp": 874,
+  "def": 111,
+  "crit": 45.24,
+  "critDmg": 22.5,
+  "dpsSus": 683,
+  "dpsUlt": 667,
+  "bossHp": 26208,
+  "bossDps": 306,
+  "dtps": 12,
+  "hits": 8,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 60.3,
+  "killSec": 86,
+  "errs": []
+ },
+ {
+  "n": 4,
+  "ch": "theron",
+  "ring": null,
+  "pets": 2,
+  "lv": 26,
+  "e": 7,
+  "uniq": 6,
+  "leg": 0,
+  "q3": 0,
+  "cp": 5076,
+  "atk": 218,
+  "hp": 1533,
+  "def": 160,
+  "crit": 56.8,
+  "critDmg": 6,
+  "dpsSus": 1144,
+  "dpsUlt": 1122,
+  "bossHp": 36077,
+  "bossDps": 579,
+  "dtps": 37,
+  "hits": 32,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 60.3,
+  "killSec": 62,
+  "errs": []
+ },
+ {
+  "n": 4,
+  "ch": "kallisto",
+  "ring": null,
+  "pets": 2,
+  "lv": 26,
+  "e": 7,
+  "uniq": 6,
+  "leg": 0,
+  "q3": 0,
+  "cp": 4468,
+  "atk": 196,
+  "hp": 1227,
+  "def": 139,
+  "crit": 42.5,
+  "critDmg": 32.4,
+  "dpsSus": 1163,
+  "dpsUlt": 930,
+  "bossHp": 36077,
+  "bossDps": 533,
+  "dtps": 30,
+  "hits": 21,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 60,
+  "killSec": 68,
+  "errs": []
+ },
+ {
+  "n": 4,
+  "ch": "lykos",
+  "ring": null,
+  "pets": 2,
+  "lv": 26,
+  "e": 7,
+  "uniq": 6,
+  "leg": 0,
+  "q3": 0,
+  "cp": 4299,
+  "atk": 201,
+  "hp": 1190,
+  "def": 132,
+  "crit": 45.5,
+  "critDmg": 6,
+  "dpsSus": 1100,
+  "dpsUlt": 1100,
+  "bossHp": 36077,
+  "bossDps": 436,
+  "dtps": 51,
+  "hits": 38,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 60.3,
+  "killSec": 83,
+  "errs": []
+ },
+ {
+  "n": 4,
+  "ch": "mage",
+  "ring": null,
+  "pets": 2,
+  "lv": 26,
+  "e": 7,
+  "uniq": 6,
+  "leg": 0,
+  "q3": 0,
+  "cp": 4185,
+  "atk": 178,
+  "hp": 1129,
+  "def": 150,
+  "crit": 51.6,
+  "critDmg": 13.3,
+  "dpsSus": 860,
+  "dpsUlt": 935,
+  "bossHp": 36077,
+  "bossDps": 384,
+  "dtps": 15,
+  "hits": 15,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 61.8,
+  "killSec": 94,
+  "errs": []
+ },
+ {
+  "n": 5,
+  "ch": "theron",
+  "ring": null,
+  "pets": 2,
+  "lv": 31,
+  "e": 8,
+  "uniq": 6,
+  "leg": 0,
+  "q3": 0,
+  "cp": 5749,
+  "atk": 212,
+  "hp": 1913,
+  "def": 207,
+  "crit": 51.26,
+  "critDmg": 26.5,
+  "dpsSus": 1018,
+  "dpsUlt": 1119,
+  "bossHp": 86606,
+  "bossDps": 867,
+  "dtps": 69,
+  "hits": 19,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 61.6,
+  "killSec": 100,
+  "errs": []
+ },
+ {
+  "n": 5,
+  "ch": "kallisto",
+  "ring": null,
+  "pets": 2,
+  "lv": 31,
+  "e": 8,
+  "uniq": 6,
+  "leg": 0,
+  "q3": 0,
+  "cp": 6219,
+  "atk": 240,
+  "hp": 1530,
+  "def": 180,
+  "crit": 49.96,
+  "critDmg": 47.9,
+  "dpsSus": 1551,
+  "dpsUlt": 1358,
+  "bossHp": 86606,
+  "bossDps": 972,
+  "dtps": 87,
+  "hits": 23,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 61.2,
+  "killSec": 89,
+  "errs": []
+ },
+ {
+  "n": 5,
+  "ch": "lykos",
+  "ring": null,
+  "pets": 2,
+  "lv": 31,
+  "e": 8,
+  "uniq": 6,
+  "leg": 0,
+  "q3": 0,
+  "cp": 5410,
+  "atk": 204,
+  "hp": 1484,
+  "def": 171,
+  "crit": 57.56,
+  "critDmg": 26.6,
+  "dpsSus": 1345,
+  "dpsUlt": 1291,
+  "bossHp": 86606,
+  "bossDps": 786,
+  "dtps": 62,
+  "hits": 15,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 61.3,
+  "killSec": 110,
+  "errs": []
+ },
+ {
+  "n": 5,
+  "ch": "mage",
+  "ring": null,
+  "pets": 2,
+  "lv": 31,
+  "e": 8,
+  "uniq": 6,
+  "leg": 0,
+  "q3": 0,
+  "cp": 5368,
+  "atk": 222,
+  "hp": 1408,
+  "def": 194,
+  "crit": 53.86,
+  "critDmg": 8,
+  "dpsSus": 1149,
+  "dpsUlt": 1390,
+  "bossHp": 86606,
+  "bossDps": 414,
+  "dtps": 74,
+  "hits": 22,
+  "guards": 0,
+  "killed": false,
+  "fightSec": 60.1,
+  "killSec": 209,
+  "errs": []
+ },
+ {
+  "n": 6,
+  "ch": "theron",
+  "err": "page.waitForTimeout: Target page, context or browser has been closed"
+ },
+ {
+  "n": 6,
+  "ch": "kallisto",
+  "err": "page.waitForTimeout: Target page, context or browser has been closed"
+ },
+ {
+  "n": 6,
+  "ch": "lykos",
+  "err": "page.waitForTimeout: Target page, context or browser has been closed"
+ },
+ {
+  "n": 6,
+  "ch": "mage",
+  "err": "page.waitForTimeout: Target page, context or browser has been closed"
+ },
+ {
+  "n": 7,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 7,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 7,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 7,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 8,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 8,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 8,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 8,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 9,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 9,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 9,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 9,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 10,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 10,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 10,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 10,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 11,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 11,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 11,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 11,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 12,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 12,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 12,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 12,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 13,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 13,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 13,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 13,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 14,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 14,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 14,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 14,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 15,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 15,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 15,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 15,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 16,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 16,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 16,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 16,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 17,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 17,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 17,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 17,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 18,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 18,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 18,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 18,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 19,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 19,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 19,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 19,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 20,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 20,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 20,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 20,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 21,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 21,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 21,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 21,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 22,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 22,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 22,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 22,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 23,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 23,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 23,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 23,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 24,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 24,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 24,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 24,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 25,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 25,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 25,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 25,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 26,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 26,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 26,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 26,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 27,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 27,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 27,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 27,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 28,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 28,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 28,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 28,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 29,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 29,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 29,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 29,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 30,
+  "ch": "theron",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 30,
+  "ch": "kallisto",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 30,
+  "ch": "lykos",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ },
+ {
+  "n": 30,
+  "ch": "mage",
+  "err": "browser.newPage: Target page, context or browser has been closed"
+ }
+]
