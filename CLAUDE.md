@@ -1,6 +1,6 @@
 # The Pixel Odyssey — Claude 작업 규칙
 
-먼저 `HANDOFF.md`("옮길 것" 맨 위 항목부터)와 `ART_STYLE.md` 를 읽는다.
+먼저 `HANDOFF.md`(맨 위 "지금 진행 중" 과 최근 기록)와 `ART_STYLE.md` 를 읽는다.
 
 ## 서버 두 개
 - **정식**: `index.html` · `version.json` · `assets/` — 실제 유저가 하는 게임.
@@ -24,5 +24,6 @@
 - 관리자 아이디 `admin0215` · `admin2016` · `admin2017` (`MC_ADMIN_IDS`, 규칙도 이 셋). 서버 규칙 전체: `tools/firebase-rules.json`, 설정 순서: `tools/firebase-admin.md`. 비밀번호는 저장소에 절대 적지 않는다.
 
 ## 그 밖에
-- 결과물 html 을 직접 고치므로, 고친 내역은 `HANDOFF.md` "옮길 것" 맨 위에 적는다(원본 PC 의 조각 파일로 옮기기 위함).
+- **이 저장소의 `test/index.html` 이 원본이다.** 원본 PC 의 조각 파일·`build.py` 는 2026-11-25 은퇴했다 — 쓰지도, 돌리지도 않는다(돌리면 옛 코드로 덮인다).
+- 고친 내역은 `HANDOFF.md` "작업 기록" 맨 위에 적는다(무엇을·왜·어디(함수/블록)·검증).
 - 작업이 끝날 때마다 커밋하고 GitHub 에 푸시한다. 다른 Claude 가 이어서 작업한다.
