@@ -12,6 +12,19 @@
 
 ## 옮길 것
 
+### 261125-1230  test 서버 관리자 권한 복구 + test 먼저 배포 규칙 + 특성 창 남은 포인트 위로   (대상: `test/index.html` · `test/version.json` · 새 `tools/deploy.py` · 새 `CLAUDE.md`. **정식 `index.html` 은 그대로 261125-1200**)
+지시: 사용자 2026-11-25 "test 서버 들어가도 기존 서버랑 똑같다 — 테스트 전용 권한·테스트 캐릭터가 사라짐", "특성창 남은 포인트가 스크롤 내려야 보임".
+
+- **test 권한이 사라진 원인** — 6차 배치(`3aaf661`)부터 `cp index.html test/index.html` 로 test 를 정식과 바이트 동일하게 만들면서, test 에만 있던 두 줄이 지워졌다:
+  `<meta name="robots" content="noindex">`(머리) · `<script>window.DEV_TOOLS = 1;</script>`(`<body>` 바로 뒤). 이 플래그가 `IS_DEV_BUILD` 를 켜야 F9 관리자 창, 서버 `dev_` 경로(`dbPath`), 로컬 `dev-` 세이브 키(`DEVK`)가 동작한다. 그래서 test 에 들어가도 정식 세이브가 보이고 관리자 창이 없었다. 두 줄을 복구했다(test 캐릭터는 `dev_` 데이터에 그대로 남아 있으므로 다시 보인다).
+  - 원본 PC 의 `build.py` 는 dev.html 을 만들 때 이 두 줄을 넣는다(5차 이전 test 와 같은 모양). **원본 소스에는 옮길 코드 없음** — 규칙만 지키면 된다.
+- **배포 규칙 바꿈** — 수정은 test 에만 → 사용자가 test 에서 확인 → "정식 배포" 할 때만 `python3 tools/deploy.py promote`(두 줄 빼고 `index.html`·`version.json`·바뀐 `test/assets` 를 정식으로). `check` 는 두 줄 유무·test 가 앞서 있는지·정식에 안 간 그림 수를 보고. 규칙은 `CLAUDE.md` 에도 적었다.
+- **특성 창 남은 포인트** (원래 파일: 특성 창 6카드판 `traitsHtml` 재정의 — 배너 "특성 창: 여섯 카드 + 카드마다 \"누적\" 줄", 같은 블록의 `<style>`)
+  - 맨 아래 `.tfoot`(남은 포인트 · 특성 초기화)를 없애고 합계 줄 `.tsum` 을 `.tsum.tsum6` flex 로: 왼쪽 `.tsl` 합계, 오른쪽 `.tsr` 「남은 포인트 **N**」+ `특성 초기화 (무료)` 버튼(`data-reset` 그대로, 위임 핸들러 13456 그대로 동작). 안 쓰게 된 `const total` 삭제.
+  - 같은 `<style>` 끝에 여백 축소: `#pBox:has(.t6c) .tsum6` margin, `.tcols.t6c` gap 8u, `.tcard.t6` padding 6u/10u, `.rks .rk` padding 1u, `max-height:440px` 에서 더 줄임.
+  - 측정(헤드리스 크로뮴): 고치기 전 1280×720 에서 `#pBox` 가 50px 넘쳐 남은 포인트가 화면 밖(아래 729px). 고친 뒤 4캐릭터(테론·칼리스토·리코스·마법사) × 1280×720 / 844×390 모두 넘침 0, 남은 포인트 y≈185(PC)/72(휴대폰). 올리기·초기화 클릭 정상, `pageerror 0`.
+  - `GAME_VER '261125-1230'`, `NEWS.id '261125f'` + `versions[0]` 카드 1항목, `test/version.json` = `{"v": "261125-1230"}`. 정식은 1200 그대로(사용자가 "정식 배포" 하면 promote).
+
 ### 261125-1200  8차(최종) 배치 · 3막(21~30장) 스킬 VFX 60장 도트화 + 벡터 탄·안내 라벨 도트화   (대상: `assets/vfx/boss_21~30` 60장 · `index.html` / `test/index.html` 의 `dotLabel`·`PROJ_DRAW` 8종·`drawProjs` 기본탄 분기·`PIXB` 신규 5종+`orbPixelCanvas`·`drawPixb` 옵션)   
 지시서: 2026-11-25 10:29 예약 배치 "8차(최종) 배치: 3막 VFX 60장·남은 탄환 도트화·배포·메일 발송".
 
