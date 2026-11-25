@@ -4,16 +4,16 @@
 
 ## 서버 두 개
 - **정식**: `index.html` · `version.json` · `assets/` — 실제 유저가 하는 게임.
-- **test**: `test/index.html` · `test/version.json` · `test/assets/` — 사용자가 먼저 확인하는 곳.
-  - test 페이지에만 있는 두 줄이 **관리자 창(F9)** 과 **test 전용 세이브**(서버 `dev_` 경로, 로컬 `dev-` 키)를 켠다:
-    `<meta name="robots" content="noindex">` · `<script>window.DEV_TOOLS = 1;</script>`
-  - **`cp index.html test/index.html` 금지.** 이 두 줄이 지워져 test 권한·캐릭터가 사라진다(2026-11-25 6차 배치에서 실제로 생긴 사고).
+- **test**: `test/index.html` · `test/version.json` — 사용자가 먼저 확인하는 곳. **그림·소리는 정식과 같은 `assets/` 를 쓴다**(`<base href="../">`, 2026-11-25 `test/assets/` 사본 삭제).
+  - test 페이지에만 있는 줄(`tools/deploy.py` 의 `TEST_ONLY`): `<meta name="robots" content="noindex">` · `<base href="../">` · `<script>window.DEV_TOOLS = 1;</script>`(관리자 창 F9 + test 전용 세이브: 서버 `dev_` 경로, 로컬 `dev-` 키) · `fetch('test/version.json…')`.
+  - **`cp index.html test/index.html` 금지.** 이 줄들이 지워져 test 권한·캐릭터가 사라진다(2026-11-25 6차 배치에서 실제로 생긴 사고). 정식을 test 로 가져와야 하면 `deploy.py pull-main`.
 
 ## 수정 → 배포 순서 (2026-11-25 사용자 지시)
-1. 수정은 **test 에만** 한다 (`test/index.html`, 새 그림은 `test/assets/`). `GAME_VER` · `NEWS` 카드 · `test/version.json` 을 올린다.
-2. 헤드리스 크로뮴으로 test 페이지 확인 (`pageerror 0`).
+1. 코드 수정은 **test 에만** 한다 (`test/index.html`). `GAME_VER` · `NEWS` 카드 · `test/version.json` 을 올린다.
+   - 새 그림·소리는 **`assets/` 에 새 이름으로** 넣는다(정식 코드가 아직 안 부르니 정식엔 영향 없음). 정식이 쓰는 파일을 바꿀 땐 **덮어쓰지 말고** `…_v2.png` 같은 새 이름 + test 코드가 새 이름을 부르게. `test/assets/` 는 만들지 않는다(`deploy.py check` 가 막는다).
+2. 헤드리스 크로뮴으로 test 페이지 확인 (`pageerror 0`, 404 0).
 3. `python3 tools/deploy.py check` → 커밋 → 푸시. 사용자가 test 에서 확인한다.
-4. 사용자가 **"정식 배포"** 라고 할 때만 `python3 tools/deploy.py promote` (두 줄 빼고 정식으로 복사) → 커밋 → 푸시.
+4. 사용자가 **"정식 배포"** 라고 할 때만 `python3 tools/deploy.py promote` (test 전용 줄 빼고 정식으로 복사) → 커밋 → 푸시.
 
 ## 마스터 콘솔 (관리자 창, test 서버 F9) — 새 기능은 반드시 여기에도 (2026-11-25 사용자 지시)
 - 코드: `test/index.html` 맨 끝 "마스터 콘솔" 블록. 수치는 `tuneAdd({ k, g, sec, n, help, get, set, min, max, step, u | pct })` 한 줄로 등록한다.

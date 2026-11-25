@@ -14,11 +14,24 @@
 
 ### ▶ 지금 진행 중 (다른 계정·다른 Claude 가 이어받을 곳) — 2026-11-25
 - 마스터 콘솔 1·2단계 끝. 2단계(261125-1330)는 **test 에만** — 사용자가 "정식 배포" 하면 `tools/deploy.py promote`.
-- 정식 = test = **261125-1500** (2026-11-25 정식 배포 완료: 1430 장비·반지·스토리 해금 + 1500 🔊 음향). 다음 작업은 사용자 지시 대기. 정식 = test (test 전용 두 줄만 다름). 다음 작업은 사용자 지시 대기.
+- 정식 = **261125-1500**, test = **261125-1510** (test 가 정식 assets/ 를 같이 쓰게 바꾼 것뿐 — 정식에 옮길 코드 없음).
+- **원본 PC 로 옮기기**: 원본 PC 의 Claude 에게 `tools/원본PC_옮기기_프롬프트.md` 의 프롬프트를 붙여넣으면 된다. 끝나기 전엔 원본 PC 에서 build.py 로 덮어쓰지 말 것.
+- git 기록 정리(.git 약 300MB)는 **원본 PC 옮기기가 끝난 뒤에** — 옮길 때 예전 커밋을 git show 로 봐야 한다.
+- 사용자가 나중에 하기로 한 것: 도트 그림체 남은 4가지(아래 8차 배치 "남은 것"), 새 소리 파일 추가. 정식 = test (test 전용 두 줄만 다름). 다음 작업은 사용자 지시 대기.
 - 검증용 네트워크: 이 계정의 환경 `The-Pixel-Odyssey`(Firebase DB·로그인·github.io 허용)를 고르면 Claude 가 규칙·실사이트를 직접 확인할 수 있다. 관리자 쓰기 확인은 사용자가 직접(비밀번호는 Claude 가 모른다).
 - 새 전투 기능을 만들면 `mcSkT`/`mcStT` 처럼 `tuneAdd` 로 등록하고 ⚔ 전투 탭(g: `combatSk`·`combatSt`·`combat`)에 뜨게 한다.
 - 사용자 지시(계속 지킬 것): ①모든 새 기능을 마스터 콘솔에도(`CLAUDE.md`) ②UI 는 가장 쓰기 쉽게 ③수정은 test 먼저, "정식 배포" 때만 promote ④작업마다 커밋·푸시(main 직접 푸시 허락됨) ⑤비밀번호는 저장소에 적지 않는다.
 - 관리자 = `admin0215`·`admin2016`·`admin2017` (2016·2017 은 261125-1410 에서 추가 — 사용자가 규칙 재게시 + 두 아이디 회원가입 필요). Firebase 규칙은 `tools/firebase-rules.json` 이 전체본(48경로) — 사용자가 2026-11-25 게시 완료. 로그인 없이 검증: 공개 읽기(tuning·notice·event) 200, 아무나 쓰기 7곳 401, tuning_log·mail 읽기 401, 기존 경로 그대로.
+
+### 261125-1510  test 가 정식 assets/ 를 같이 쓴다 — test/assets 사본(약 142MB, 1,237개) 삭제   (대상: `test/index.html` · `tools/deploy.py` · `CLAUDE.md` · `test/assets/` 삭제)
+지시: 사용자 2026-11-25 "하면 좋은 작업 2번(저장소 용량 줄이기)".
+- `test/assets/` 는 `assets/` 와 파일이 전부 같았다(assets 에만 `dot/ART_STYLE_REF_b17.png`). 지우고 test 페이지 머리에 `<base href="../">` 를 넣어 모든 상대 경로(그림·소리·assets/js·폰트)가 정식 `assets/` 를 가리키게 했다.
+- `<base>` 때문에 test 의 업데이트 확인 `fetch('version.json…')` 은 `fetch('test/version.json…')` 로 (게임 안에서 assets 말고 상대 경로를 쓰는 곳은 이것 하나뿐이었다).
+- `tools/deploy.py` 를 test 전용 줄 목록(`TEST_ONLY`: noindex+base · DEV_TOOLS · test/version.json) 방식으로 바꿨다. `to_main` 은 예전 test 모양도 알아본다. `promote` 는 이제 그림을 복사하지 않는다. `check` 는 `test/assets/` 가 다시 생기면 막는다.
+- **새 규칙**: 새 그림·소리는 `assets/` 에 새 이름으로(정식 코드가 아직 안 부름). 정식이 쓰는 파일은 덮어쓰지 말고 `_v2` 같은 새 이름. (CLAUDE.md)
+- 원본 PC 의 build.py 가 `test/assets` 로 복사하던 부분도 바꿔야 한다 → `tools/원본PC_옮기기_프롬프트.md` 4번.
+- 검증(로컬 헤드리스): `/test/` 에서 그림 요청 627개 전부 `/assets/…`, `/test/` 아래로 가는 요청은 페이지와 `test/version.json` 뿐, 보스방 7곳 시트 ok, 404 0, `pageerror 0`, `document.baseURI` = 루트.
+- `GAME_VER '261125-1510'`(test 만, 열려 있던 test 페이지가 새로 고쳐지게), 정식은 1500 그대로.
 
 ### 261125-1500  마스터 콘솔 4단계 — 🔊 음향 탭: 효과음 69가지 크기·다른 소리로 바꾸기 + 장마다 사냥터·보스전 배경음 고르기   (대상: `test/index.html`)
 지시: 사용자 2026-11-25 "각 모션·맵·이펙트·효과음 등 모든 음향을 바꿀 수 있게".

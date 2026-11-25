@@ -1,4 +1,5 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="robots" content="noindex">
+<base href="../">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/spr/ec97f9389b185f.png">
 <link rel="apple-touch-icon" href="assets/spr/73ca7d5e983972.png">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0}</style></head><body><script>window.DEV_TOOLS = 1;</script>
@@ -692,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-1500';
+const GAME_VER = '261125-1510';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -18348,7 +18349,7 @@ ult9Draw = function (c, over) {
 const UPD = { shown: false, left: 5 };
 function updCheck() {
   if (UPD.shown || location.protocol === 'file:' || !window.fetch) return;
-  fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => {
+  fetch('test/version.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => {
     if (j && typeof j.v === 'string' && j.v > GAME_VER) updShow(j.v);   // stamps are yymmdd-hhmm: later is larger
   }).catch(() => { });
 }
