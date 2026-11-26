@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261126-1200';
+const GAME_VER = '261126-1400';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -16303,12 +16303,20 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261126a',   // 2026-11-26 서른한 번째 패치(GAME_VER '261126-1200'): 묶음 12 보스 스킬은 전조 자리로 · 스킬 그림 선명하게
+  id: '261126b',   // 2026-11-26 서른두 번째 패치(GAME_VER '261126-1400'): 묶음 13 타격 이펙트
   title: '패치 노트',
-  sub: '보스 스킬은 전조가 그린 자리로만 나가고, 스킬 그림이 선명해졌다',
+  sub: '타격 이펙트가 맞은 자리에서, 직업마다 다른 모양으로 터진다',
   versions: [
     {
-      ver: '261126-1200', date: '2026-11-26', name: '전조가 곧 스킬 자리', cur: 1,
+      ver: '261126-1400', date: '2026-11-26', name: '손맛: 새 타격 이펙트', cur: 1,
+      items: [
+        { t: '전투', h: '맞은 자리에서 터지는 타격 이펙트', p: '칼이 닿은 곳, 화살이 꽂힌 곳에서 터진다. 한 점에 고정되지 않고 매번 모양·각도·크기가 조금씩 다르며, 파편이 공격 방향으로 튄다.' },
+        { t: '전투', h: '직업마다 다른 타격', p: '전사는 호박색 굵은 베기 자국, 도적은 보라 칼자국 2~3개가 잇달아, 궁수는 금빛 꽂히는 자국, 마법사는 보라 마력 파열과 고리.' },
+        { t: '전투', h: '치명타는 확실하게', p: '치명타는 더 큰 별빛과 고리가 터지고 화면이 흔들리며 잠깐 멈춘다.' },
+      ],
+    },
+    {
+      ver: '261126-1200', date: '2026-11-26', name: '전조가 곧 스킬 자리',
       items: [
         { t: '보스', h: '보스 스킬이 전조 자리로만 나간다', p: '전조가 뜬 뒤 내가 움직여도 스킬이 따라오지 않는다. 점프 중에 공중에 뜬 전조는 그 높이로 날아가고, 내려와 피하면 머리 위로 지나간다. 날아가는 그림 스킬 15개(초승달·단검 부채·깃털·해골탄 등)는 전조 띠 높이 그대로 또는 조준선 방향으로 날아간다. 2장 부적·9장 하트 탄·12장 키메라 연격·17장 만검우도 전조가 가리킨 곳으로만 나간다.' },
         { t: '보스', h: '보스 스킬 그림이 선명해졌다', p: '보스 스킬 그림을 빛처럼 겹쳐 그리던 것을 꽉 찬 그림으로 바꿨다. 배경이 비쳐 보이지 않고, 박쥐 떼·먹물·까마귀·검은 조류·월식처럼 어두운 스킬도 잘 보인다. 반투명은 바닥 경고·조준선 같은 전조와 맵 전체를 덮는 피할 수 없는 그림에만 남는다.' },
@@ -27363,6 +27371,120 @@ vfx9Draw = function (c) {
   try { return _fb12vfx9Draw(c); } finally { for (const v of keep) v.add = true; }
 };
 tuneAdd({ k: 'vfx9Solid', g: 'boss', sec: '모든 보스', n: '보스 스킬 그림 꽉 차게', help: '1 = 스킬 그림을 꽉 차게 덮어 그린다(배경이 비치지 않는다) · 0 = 예전처럼 빛처럼 더해 그린다(반투명하게 보인다). 전조는 따로 \'보스 전조 진하기\'', get: () => VFX9_SOLID, set: v => { VFX9_SOLID = v ? 1 : 0; }, min: 0, max: 1, step: 1, u: '' });
+
+/* ============ 2026-11-26 묶음 13 — 타격 이펙트: 맞은 자리 · 매번 다르게 · 방향 파편 · 직업별 모양 · 치명타 ============
+   사용자: "타격할 때 타격 이펙트가 고정된 위치에서만 뜨니까 너무 밋밋하다" → "다 해줘, 이펙트 색과 모양 크기 변경해서 사용".
+   예전 hitFx: 몹 가슴 한 점(가운데에서 내 쪽으로 최대 20px)에 같은 스파크 + 같은 별빛 그림, 크기·각도 고정.
+   1) 맞은 자리: 근접 = 공격 판정과 몸이 겹친 곳 안의 아무 곳, 탄 = 탄이 닿은 곳, 그 밖 = 나를 향한 몸 쪽. 발·머리 끝은 뺀다.
+   2) 매번 다르게: 스파크 모양(seed) · 각도 · 크기를 매번 무작위로.
+   3) 방향: 스파크의 긴 빛줄기와 파편이 공격 방향(휘두른 쪽 · 탄이 날아온 쪽)으로 튄다.
+   4) 직업별 모양(지금 있는 그림을 색·모양·크기만 바꿔): 전사 = 호박색 굵은 베기 자국(별빛을 길게 늘여 기울임),
+      도적 = 보라 칼자국 2~3개가 잇달아, 궁수 = 금·초록 꽂히는 자국(화살 방향으로 납작하게), 마법사 = 보라 마력 파열(번개 파열 + 고리).
+   5) 치명타: 더 큰 별빛 + 큰 고리 + 화면 흔들림 + 조금 더 긴 멈춤.
+   수치는 마스터 콘솔 ⚔ 전투 '타격 이펙트' (HIT13). */
+const HIT13 = { on: 1, spread: 0.7, rot: 25, vari: 0.2, size: 1, debris: 6, critShake: 6, critStop: 0.075, cls: 1 };
+let HIT13_CTX = null;
+const _h13melee = meleeHit;
+meleeHit = function (r, mult, o) { const prev = HIT13_CTX; HIT13_CTX = { r, dir: G.player.face }; try { return _h13melee(r, mult, o); } finally { HIT13_CTX = prev; } };
+const H13_RGB = { theron: '255,170,70', lykos: '200,140,255', kallisto: '235,220,90', mage: '170,120,255' };
+const H13_PAL = () => ({ theron: PAL.theron, lykos: PAL.lykos, kallisto: PAL.gold, mage: PAL.mage });
+function hit13Point(e) {
+  const hb = hurtbox(e), p = G.player, top = hb.y + hb.h * 0.15, bot = hb.y + hb.h * 0.8, C = HIT13_CTX, k = HIT13.spread;
+  const jit = (a, b) => (a + b) / 2 + (Math.random() - 0.5) * (b - a) * k;
+  if (C && C.r) {   // 근접: 판정 상자와 몸이 겹친 곳
+    const r = C.r, x0 = Math.max(r.x, hb.x), x1 = Math.min(r.x + r.w, hb.x + hb.w);
+    let y0 = Math.max(r.y, top), y1 = Math.min(r.y + r.h, bot); if (y1 < y0) { y0 = top; y1 = bot; }
+    const ax = x1 > x0 ? jit(x0, x1) : (C.dir > 0 ? hb.x + hb.w * 0.3 : hb.x + hb.w * 0.7);
+    return { x: ax, y: jit(y0, y1), a: (C.dir > 0 ? 0 : Math.PI) + rnd(-0.55, 0.3) * (C.dir > 0 ? 1 : -1), melee: 1 };
+  }
+  let q = null, bd = 1e9;   // 탄: 그 몹에 가장 가까운 내 탄
+  for (const z of G.projs || []) { if (z.from !== 'p') continue; const d = Math.hypot(z.x - e.x, z.y - (hb.y + hb.h / 2)); if (d < bd && d < Math.max(hb.w, hb.h) + 50) { bd = d; q = z; } }
+  if (q) { const a = Math.atan2(q.vy || 0, q.vx || (q.x < e.x ? 1 : -1)); return { x: clamp(q.x + rnd(-6, 6), hb.x + 4, hb.x + hb.w - 4), y: clamp(q.y + rnd(-6, 6), top, bot), a, shot: 1 }; }
+  const dir = sgn(e.x - p.x) || 1;   // 그 밖(스킬 장판 등): 나를 향한 쪽
+  return { x: dir > 0 ? hb.x + hb.w * rnd(0.2, 0.2 + 0.4 * k) : hb.x + hb.w * rnd(0.8 - 0.4 * k, 0.8), y: jit(top, bot), a: (dir > 0 ? 0 : Math.PI) + rnd(-0.35, 0.35) };
+}
+/* 별빛 그림(hit_normal/hit_crit)을 직업 색으로 다시 칠한 사본: 밝기 → 직업 색 단계 */
+const H13_TINT = {};
+function hit13Img(n, ch) {
+  const key = n + ':' + ch; if (H13_TINT[key]) return H13_TINT[key];
+  const im = vfxImg(n); if (!im || im.bad || !im.complete || !im.naturalWidth) return null;
+  const cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight;
+  const x = cv.getContext('2d'); x.drawImage(im, 0, 0);
+  try {
+    const d = x.getImageData(0, 0, cv.width, cv.height), A = d.data, P = (H13_PAL()[ch] || PAL.theron).map(h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]);
+    for (let i = 0; i < A.length; i += 4) { if (!A[i + 3]) continue; const l = (A[i] * 0.3 + A[i + 1] * 0.55 + A[i + 2] * 0.15) / 255, c = P[Math.min(P.length - 1, Math.round(Math.pow(l, 0.8) * (P.length - 1)))]; A[i] = c[0]; A[i + 1] = c[1]; A[i + 2] = c[2]; }
+    x.putImageData(d, 0, 0);
+  } catch (er) { }
+  return (H13_TINT[key] = cv);
+}
+const H13Q = [];
+function hit13Strip(n, ch, x, y, o) { if (H13Q.length > 24) return; H13Q.push(Object.assign({ n, ch, x, y, t: -(o.delay || 0), dur: VFX_LIFE[n] || 0.2, s: 1, sx: 1, sy: 1, rot: 0, flip: false }, o)); }
+const _h13drawStrips = drawVfxStrips;
+drawVfxStrips = function (c) {
+  _h13drawStrips(c);
+  if (!H13Q.length) return;
+  c.save(); c.imageSmoothingEnabled = false;
+  for (let i = H13Q.length - 1; i >= 0; i--) {
+    const q = H13Q[i]; q.t += 1 / 60; if (q.t >= q.dur) { H13Q.splice(i, 1); continue; } if (q.t < 0) continue;
+    const im = hit13Img(q.n, q.ch); if (!im) continue;
+    const fw = im.width / 4, fh = im.height, f = Math.min(3, Math.floor(q.t / q.dur * 4));
+    c.save(); c.translate(Math.round(q.x), Math.round(q.y)); c.rotate(q.rot); c.scale((q.flip ? -1 : 1) * q.s * q.sx, q.s * q.sy);
+    c.drawImage(im, f * fw, 0, fw, fh, -fw / 2, -fh / 2, fw, fh); c.restore();
+  }
+  c.restore();
+};
+/* 스파크(pixelfx)를 크기를 골라 작은 층에 직접 — 무작위 모양(seed)·방향(aim)·기울기(angle) */
+function hit13Pfx(name, x, y, sc, a, pal, o) {
+  if (typeof PFX === 'undefined' || !PFX.fx[name]) return;
+  if (G.pfx.length >= PFX_MAX) { const old = G.pfx.findIndex(e => !e.follow); if (old >= 0) G.pfx.splice(old, 1); else return; }
+  sc = Math.max(0.25, Math.min(0.95, Math.round(sc * 20) / 20));
+  const S = PFX_S * sc, flip = Math.cos(a) < 0, la = flip ? Math.atan2(Math.sin(a), -Math.cos(a)) : a, h = (o && o.height != null) ? o.height : 20;
+  const fx = PFX.core.createFx(PFX.fx[name], Object.assign({ palette: pal, seed: 1 + Math.floor(Math.random() * 997), aim: la, height: h }, o || {}, { x: x / S, y: (y + h * S * 0.8) / S, flip, angle: rnd(-1, 1) * HIT13.rot * Math.PI / 180 * 0.5 }));
+  G.pfx.push({ fx, sc, small: true, name });
+}
+function hit13Debris(x, y, a, n, col, sp) {
+  for (let i = 0; i < n; i++) { const b = a + rnd(-0.6, 0.6), v = rnd(0.5, 1) * sp; addPart({ x, y, vx: Math.cos(b) * v, vy: Math.sin(b) * v - rnd(20, 90), g: 700, life: rnd(0.22, 0.45), r: rnd(1.2, 2.4), col, glow: 1 }); }
+}
+const _h13hitFx = hitFx;
+hitFx = function (e, crit, o) {
+  if (!HIT13.on) return _h13hitFx(e, crit, o);
+  if (o && o.dot) return;
+  const now = G.t;
+  if (crit) { if (now - (G.critFxT || 0) < 0.18) return; G.critFxT = now; }
+  else { if (now - (e.sparkT || 0) < 0.09) return; e.sparkT = now; }
+  const prevB = G.fxBasic; if (o && o.basic !== undefined) G.fxBasic = o.basic;
+  try {
+    const ch = (G.save && G.save.char) || 'theron', P = hit13Point(e), pal = H13_PAL()[ch] || PAL.theron, rgb = H13_RGB[ch] || '255,220,150';
+    const basic = typeof fxBasicNow === 'function' && fxBasicNow(), V = () => 1 + rnd(-1, 1) * HIT13.vari, Z = HIT13.size * (basic ? 0.7 : 1), rotJ = () => rnd(-1, 1) * HIT13.rot * Math.PI / 180;
+    const cls = HIT13.cls ? ch : 'none';
+    hit13Pfx(crit ? 'impacts/crit-hit' : 'impacts/hit-spark', P.x, P.y, PFX_SMALL * Z * V() * (cls === 'lykos' ? 0.8 : 1), P.a, pal);
+    if (cls === 'theron') {          // 굵은 베기 자국
+      hit13Strip(crit ? 'hit_crit' : 'hit_normal', ch, P.x, P.y, { s: (crit ? 1.05 : 0.95) * Z * V(), sx: 1.7, sy: 0.55, rot: P.a + (P.melee ? rnd(-0.9, 0.9) : 0) + rotJ() });
+    } else if (cls === 'lykos') {    // 짧은 칼자국 2~3개가 잇달아
+      const n = crit ? 3 : 2 + (Math.random() < 0.5 ? 1 : 0);
+      for (let i = 0; i < n; i++) hit13Strip('hit_normal', ch, P.x + rnd(-14, 14), P.y + rnd(-14, 14), { s: 0.6 * Z * V(), sx: 1.5, sy: 0.4, rot: rnd(-1.2, 1.2) + (i % 2 ? 1.5 : 0), delay: i * 0.045 });
+      if (crit) hit13Strip('hit_crit', ch, P.x, P.y, { s: 1.0 * Z * V(), rot: rotJ() });
+    } else if (cls === 'kallisto') { // 꽂히는 자국: 화살 방향으로 납작하게
+      hit13Strip(crit ? 'hit_crit' : 'hit_normal', ch, P.x, P.y, { s: (crit ? 0.85 : 0.8) * Z * V(), sx: 1.35, sy: 0.5, rot: P.a + rotJ() * 0.4 });
+    } else if (cls === 'mage') {     // 마력 파열 + 고리
+      hit13Strip(crit ? 'hit_crit' : 'hit_normal', ch, P.x, P.y, { s: (crit ? 0.95 : 0.85) * Z * V(), rot: Math.random() * 6.283 });
+      hit13Pfx('lightning/zap-hit', P.x, P.y, 0.35 * Z * V(), P.a, pal, { height: 0 });
+      G.fx.push({ k: 'ring', x: P.x, y: P.y, t: 0, dur: 0.2, R: (crit ? 40 : 24) * Z, col: rgb });
+    } else hit13Strip(crit ? 'hit_crit' : 'hit_normal', ch, P.x, P.y, { s: (crit ? 1.15 : 1) * Z * V(), rot: rotJ(), flip: Math.cos(P.a) < 0 });
+    hit13Debris(P.x, P.y, P.a, Math.round(HIT13.debris * (crit ? 2 : 1) * (basic ? 0.6 : 1)), rgb, crit ? 360 : 240);
+    if (crit) { G.fx.push({ k: 'ring', x: P.x, y: P.y, t: 0, dur: 0.28, R: 56 * Z, col: rgb }); shake(HIT13.critShake); G.hitstop = Math.max(G.hitstop || 0, HIT13.critStop); }
+  } finally { G.fxBasic = prevB; }
+};
+const _h13t = (k, n, help, key, min, max, step, u, pct) => tuneAdd(Object.assign({ k, g: 'combat', sec: '타격 이펙트', n, help, get: () => HIT13[key], set: v => { HIT13[key] = v; }, min, max, step }, pct ? { pct: true } : { u }));
+_h13t('hit13On', '새 타격 이펙트 켜기', '1 = 맞은 자리·직업별 모양·방향 파편 · 0 = 예전(가슴 한 점의 같은 스파크)', 'on', 0, 1, 1, '');
+_h13t('hit13Cls', '직업별 타격 모양', '1 = 전사 베기 자국 · 도적 칼자국 2~3개 · 궁수 꽂히는 자국 · 마법사 마력 파열 · 0 = 모두 같은 별빛', 'cls', 0, 1, 1, '');
+_h13t('hit13Spread', '맞은 자리 흩어짐', '공격이 몸에 닿은 범위 안에서 얼마나 넓게 흩어져 뜨는지 (0 = 그 범위 가운데)', 'spread', 0, 100, 5, '', true);
+_h13t('hit13Rot', '각도 변화', '매번 기울어지는 각도의 최대값 (도)', 'rot', 0, 60, 1, '°');
+_h13t('hit13Var', '크기 변화', '매번 커지고 작아지는 정도 (±)', 'vari', 0, 50, 1, '', true);
+_h13t('hit13Size', '타격 이펙트 크기', '모든 타격 이펙트의 크기 배율', 'size', 0.5, 2, 0.05, '×');
+_h13t('hit13Debris', '파편 수', '한 번 맞을 때 공격 방향으로 튀는 파편 수 (치명타는 2배)', 'debris', 0, 20, 1, '개');
+_h13t('hit13CritShake', '치명타 화면 흔들림', '치명타일 때 화면 흔들림 세기', 'critShake', 0, 15, 0.5, '');
+_h13t('hit13CritStop', '치명타 멈춤', '치명타일 때 화면이 잠깐 멈추는 시간 (초)', 'critStop', 0, 0.15, 0.005, '초');
 
 </script>
 </body></html>
