@@ -693,7 +693,7 @@ button{font-family:inherit;color:inherit}
 <script src="assets/js/pfx.js?v=261123-2104"></script>
 <script src="assets/js/act3_data.js?v=261123-2104"></script>
 <script>
-const GAME_VER = '261125-2200';
+const GAME_VER = '261126-1200';
 'use strict';
 /* ============ DATA: constants, gear, classes, traits, chapter-1 content ============
    Chapters 2-10 live in 11_chapters.js and are generated from compact definitions. */
@@ -11162,7 +11162,7 @@ BOSS_EXT.golem_b = {
 /* ======== 2 shrine maiden: wavering talismans + seals on the ledges / spirit orbs + foxfire pillars ======== */
 BOSS_EXT.miko_a = {
   start(b) { b.st = 'x_miko_a'; b.el = 0; b.n = 0; winding(b, wind(b, 0.95, 0.85)); sfx('charge'); b.vx = 0;
-    const p = G.player; aimLine(b.x, b.y - b.h * 0.6, p.x, p.y - 36, b.tele.dur);
+    const p = G.player; aimLine(b.x, b.y - b.h * 0.6, p.x, p.y - 36, b.tele.dur); b.mAng = Math.atan2((p.y - 36) - (b.y - b.h * 0.6), p.x - b.x);   // 2026-11-26: 부적은 이 조준선 방향으로 (시전 때 다시 조준하지 않는다)
     ledges().forEach(pl => addHaz({ src: b, ledge: pl, x: pl.x, y: pl.y - 20, w: pl.w, h: 24, warn: b.tele.dur, act: 7, dmg: bdmg(b, 'trap'), col: '150,255,210', pat: 'seal', sound: false,
       onHit: (pp) => { pp.silT = 3; toast('봉인 부적을 밟았다 · 3초 동안 기술 봉인', 'bad'); } }));
   },
@@ -11170,8 +11170,8 @@ BOSS_EXT.miko_a = {
     b.vx = 0; b.el += dt; const d0 = b.tele ? b.tele.dur : b.d0, n = b.phase >= 2 ? 7 : 5;
     if (b.tele && b.el >= b.tele.dur) { b.d0 = b.tele.dur; striking(b); }
     if (!b.tele) while (b.n < n && b.el >= d0 + b.n * 0.13) {
-      const p = G.player, a = Math.atan2((p.y - 36) - (b.y - b.h * 0.6), p.x - b.x) + (b.n - (n - 1) / 2) * 0.14;
-      proj({ from: 'm', src: b, kind: 'ptag', x: b.x + b.face * 30, y: b.y - b.h * 0.6, vx: Math.cos(a) * 270, vy: Math.sin(a) * 270, w: 22, h: 26, dmg: bdmg(b, 'tag'), maxDist: 1500, life: 5, kb: 180, sine: { a: 34, f: 7 }, homeT: 0.7, aim: true, glow: 1 });
+      const p = G.player, a = (b.mAng != null ? b.mAng : Math.atan2((p.y - 36) - (b.y - b.h * 0.6), p.x - b.x)) + (b.n - (n - 1) / 2) * 0.14;
+      proj({ from: 'm', src: b, kind: 'ptag', x: b.x + b.face * 30, y: b.y - b.h * 0.6, vx: Math.cos(a) * 270, vy: Math.sin(a) * 270, w: 22, h: 26, dmg: bdmg(b, 'tag'), maxDist: 1500, life: 5, kb: 180, sine: { a: 34, f: 7 }, aim: true, glow: 1 });
       b.n++; sfx('throw');
     }
     if (b.n >= n && b.el > d0 + 1.2) bossRecover(b, 0.6);
@@ -11616,7 +11616,7 @@ BOSS_EXT.succ_a = {
     const p = G.player; b.el += dt; b.vx = 0;
     if (b.tele && b.el >= b.tele.dur) { striking(b);
       for (const da of b.phase >= 2 ? [-0.25, 0.25] : [0]) proj({ from: 'm', src: b, kind: 'pcres', x: b.x, y: b.y - b.h * 0.6, vx: Math.cos(b.ang + da) * 460, vy: Math.sin(b.ang + da) * 460, w: 34, h: 40, dmg: bdmg(b, 'cres'), maxDist: 99999, life: 4, kb: 220, ret: 1.1, sine: { a: 30, f: 4 }, glow: 1, aim: true });
-      for (let i = 0; i < 3; i++) after(0.35 + i * 0.25, () => { if (!alive(b)) return; const a = Math.atan2((G.player.y - 36) - (b.y - b.h * 0.6), G.player.x - b.x) + rnd(-0.15, 0.15); proj({ from: 'm', src: b, kind: 'pheart', x: b.x, y: b.y - b.h * 0.6, vx: Math.cos(a) * 230, vy: Math.sin(a) * 230, w: 26, h: 24, dmg: bdmg(b, 'heart2'), maxDist: 1600, life: 5, kb: 80, homeT: 1.2, glow: 1, sleep: 1.8 }); });
+      for (let i = 0; i < 3; i++) after(0.35 + i * 0.25, () => { if (!alive(b)) return; const a = b.ang + rnd(-0.15, 0.15); proj({ from: 'm', src: b, kind: 'pheart', x: b.x, y: b.y - b.h * 0.6, vx: Math.cos(a) * 230, vy: Math.sin(a) * 230, w: 26, h: 24, dmg: bdmg(b, 'heart2'), maxDist: 1600, life: 5, kb: 80, glow: 1, sleep: 1.8 }); });
       sfx('orb'); }
     if (b.el > 2.6) bossRecover(b, 0.6);
   },
@@ -15778,7 +15778,7 @@ reg9('b12', {
       cast(b, S) { S.hop = -1; },
       castTick(b, S, dt, k) {   // three leaps: each one moves the boss and claws where it lands
         const hop = Math.min(2, Math.floor(k * 3)), kk = k * 3 - hop;
-        if (hop !== S.hop) { S.hop = hop; S.from = b.x; S.to = clampX(hop === 0 ? S.tx - S.face * 60 : G.player.x - S.face * 50, b.w / 2 + 6); S.bodyCd = 0; }
+        if (hop !== S.hop) { S.hop = hop; S.from = b.x; S.to = clampX(S.tx - S.face * [60, 160, 60][hop], b.w / 2 + 6);   /* 2026-11-26: 세 번 다 전조 띠 끝(S.tx) 둘레에 — 시전 중 플레이어를 다시 쫓지 않는다 */ S.bodyCd = 0; }
         b.x = lerp(S.from, S.to, 1 - (1 - kk) * (1 - kk)); b.yOff = -Math.sin(kk * Math.PI) * 60;
         if (kk > 0.75 && !S['c' + hop]) { S['c' + hop] = 1; b.yOff = 0; const x = b.x + S.face * 70; groundHaz(b, x, 150, { h: 120, warn: 0, act: 0.15, dmg: dmg9(b, 24), hid9: true, pat: 'v9', kb: 300, up: 200 }); fx9(b, 2, x, GROUND + 6, 190, {}); sfx('slash'); shake(4); }
       },
@@ -16001,7 +16001,7 @@ reg9('b17', {
       tele(b, S) { zone9(b, S, b.x, 280, 140, { tone: 'danger' }); } },
     { name: '만검우(萬劍雨)', tel: 0.9, dmg: 40, mt: [2, 1], mc: [[2, 3]], mr: [[0, 2]], ct: 0.8, rt: 0.6,
       tele(b, S) { const p = G.player; S.xs = [-3, -2, -1, 0, 1, 2, 3].map(i => clampX(p.x + i * 95, 40)); S.xs.forEach((x, i) => col9(b, S, x, 56, { delay: Math.abs(i - 3) * 0.1, haz: { onFire: () => fall9(b, 'pswd', x, 4) } })); },
-      vfx: 5, vpos: () => [G.player.x, GROUND + 10], vo: { w: 300, flip: false } },
+      vfx: 5, vpos: (b, S) => [S.xs[3], GROUND + 10], vo: { w: 300, flip: false } },   // 2026-11-26: 전조 가운데(전조가 뜬 순간의 플레이어 자리) — 시전 때 플레이어 자리로 옮기지 않는다
   ],
 });
 
@@ -16303,12 +16303,19 @@ for (const id in BOSSES) { const d = BOSSES[id]; if (d.ch >= 11 && !d.def9) { d.
    코드 이름 없이 게임 내용과 확률·수치만 적는다. 지난 패치(1135·1040·0915)를 빠짐없이 함께 싣는다.
    To announce the next update: add a version card at the top of NEWS.versions and change NEWS.id. ============ */
 const NEWS = {
-  id: '261125o',   // 2026-11-25 서른 번째 패치(GAME_VER '261125-2200'): 묶음 11 권장 전투력(AI 시뮬레이션)·보스전 DPS
+  id: '261126a',   // 2026-11-26 서른한 번째 패치(GAME_VER '261126-1200'): 묶음 12 보스 스킬은 전조 자리로 · 스킬 그림 선명하게
   title: '패치 노트',
-  sub: '29장 월식이 화면을 삼키고, 거꾸로 나가던 보스 스킬을 바로잡았다',
+  sub: '보스 스킬은 전조가 그린 자리로만 나가고, 스킬 그림이 선명해졌다',
   versions: [
     {
-      ver: '261125-2200', date: '2026-11-25', name: '권장 전투력 다시 재기', cur: 1,
+      ver: '261126-1200', date: '2026-11-26', name: '전조가 곧 스킬 자리', cur: 1,
+      items: [
+        { t: '보스', h: '보스 스킬이 전조 자리로만 나간다', p: '전조가 뜬 뒤 내가 움직여도 스킬이 따라오지 않는다. 점프 중에 공중에 뜬 전조는 그 높이로 날아가고, 내려와 피하면 머리 위로 지나간다. 날아가는 그림 스킬 15개(초승달·단검 부채·깃털·해골탄 등)는 전조 띠 높이 그대로 또는 조준선 방향으로 날아간다. 2장 부적·9장 하트 탄·12장 키메라 연격·17장 만검우도 전조가 가리킨 곳으로만 나간다.' },
+        { t: '보스', h: '보스 스킬 그림이 선명해졌다', p: '보스 스킬 그림을 빛처럼 겹쳐 그리던 것을 꽉 찬 그림으로 바꿨다. 배경이 비쳐 보이지 않고, 박쥐 떼·먹물·까마귀·검은 조류·월식처럼 어두운 스킬도 잘 보인다. 반투명은 바닥 경고·조준선 같은 전조와 맵 전체를 덮는 피할 수 없는 그림에만 남는다.' },
+      ],
+    },
+    {
+      ver: '261125-2200', date: '2026-11-25', name: '권장 전투력 다시 재기',
       items: [
         { t: '보스', h: '권장 전투력을 실제 전투로 다시 쟀다', p: '네 직업이 그 장까지 모을 수 있는 장비로 30장 보스를 모두 직접 싸워 보고, 그 결과로 보스마다 권장 전투력을 새로 정했다. 치유 연고로 버티는 것까지 넣었다.' },
       ],
@@ -26819,6 +26826,20 @@ updateWorld = function (rdt) {
   try { fb7Tick(rdt * (G.timeScale || 1)); } catch (e) { console.warn('[fb7]', e); }
   return r;
 };
+/* 2026-11-26: 이 스킬이 전조 때 그린 줄(tg9) — tele 동안 생긴 전조는 그 스킬(S.tgs)에 묶인다 */
+const _fb12tg9 = tg9;
+tg9 = function (o) { const t = _fb12tg9(o), b = G.boss; if (b && b.s9 && b.s9.k === 'tele') (b.s9.tgs = b.s9.tgs || []).push(t); return t; };
+function fb12Aim(S, v) {
+  const L = S.tgs || [];
+  const d = L.find(t => t.kind === 'dash_line');
+  if (d) return { yAt: () => d.y, dir: sgn(d.targetX - d.x) || S.face || 1, slope: 0 };
+  const r = L.find(t => t.kind === 'aim_ray' && t.angles && t.angles.length);
+  if (!r) return null;
+  const as = r.angles.map(a => Math.atan2(Math.sin(a), Math.cos(a))), mn = Math.min(...as), mx = Math.max(...as);
+  if (mx - mn > 1.9 || r.arc) return { yAt: () => r.y, dir: S.face || 1, slope: 0 };   // 사방으로 퍼지는 탄·포물선: 쏘는 높이로 가로로
+  const a = as.reduce((s, x) => s + x, 0) / as.length, c = Math.cos(a), dir = c < 0 ? -1 : 1, slope = clamp(Math.tan(a), -1.2, 1.2);
+  return { yAt: x => r.y + (x - r.x) * slope, dir, slope };
+}
 function fb7Tick(dt) {
   const b = G.boss, S = b && b.s9, mode = S && FB7[b.id] && FB7[b.id][S.idx];
   if (mode && S && !S.v && S.k !== 'tele') {   // 그림을 시전 안에서 따로 만든 스킬(16장 해일): 이 스킬 동안 새로 생긴 그림을 이어받는다
@@ -26827,7 +26848,7 @@ function fb7Tick(dt) {
   if (mode && !G.cine && !G.death && S.v) {   // 그림이 있을 때만 (그림 없이 탄만 지우면 보이지 않는 판정이 된다)
     const F = S.fb7 || (S.fb7 = { n: 0, vx: 0, dmg: 0, kb: 200 });
     for (const q of G.projs) if (q.src === b && !q.dead && !q.fb7) {   // 이 스킬이 쏜 작은 탄: 속도·피해만 가져오고 없앤다
-      q.fb7 = 1; q.dead = true; F.n++; F.vx += Math.abs(q.vx || 0); F.dmg = Math.max(F.dmg, q.dmg || 0); F.kb = q.kb || F.kb; }
+      q.fb7 = 1; q.dead = true; F.n++; F.vx += Math.hypot(q.vx || 0, q.vy || 0);   /* 2026-11-26: 탄의 빠르기(방향과 상관없이) — 시전 때 조준한 방향이 그림 속도를 바꾸지 않게 */ F.dmg = Math.max(F.dmg, q.dmg || 0); F.kb = q.kb || F.kb; }
     G.projs = G.projs.filter(q => !(q.fb7 && q.dead));
     const v = S.v;
     if (v && !v.mv && (S.k !== 'tele')) {
@@ -26835,8 +26856,12 @@ function fb7Tick(dt) {
       v.noClamp = true;
       if (mode === 'fly') {
         v.loop = false; v.life = 6; v.noSnap = true; v.follow = null;
-        const hb = vfx9HitBox(v), P = G.player;   // 시전 순간 플레이어 몸 높이로 (바닥 아래로는 안 내려간다)
-        if (hb) { const want = P.y - P.h / 2, mid = (hb.y0 + hb.y1) / 2; let dy = want - mid; if (hb.y1 + dy > GROUND) dy = GROUND - hb.y1; v.y += dy; }
+        /* 2026-11-26 (user): "전조는 점프한 공중에 떴는데 스킬은 바닥에 내려온 나한테 날아온다" — 시전 순간 플레이어 높이로 옮기던 것을
+           전조가 그린 줄 그대로로: 띠(dash_line) = 그 띠 높이, 조준선(aim_ray) = 쏘는 곳에서 가운데 조준선 방향으로 날아간다.
+           전조가 없을 때만 전조가 뜬 순간(S.py)의 플레이어 높이. 바닥 아래로는 안 내려간다. */
+        const P = G.player, A = fb12Aim(S, v);
+        if (A && A.slope != null) { v.mv.dir = A.dir; v.mv.slope = A.slope; }
+        v.mv.want = A ? A.yAt : () => (S.py != null ? S.py : P.y) - P.h / 2;   // 그림이 아직 안 읽혔으면 읽힌 첫 순간에 맞춘다 (아래)
       }
     }
   }
@@ -26844,8 +26869,11 @@ function fb7Tick(dt) {
     const M = v.mv; if (!M) continue;
     const F = M.F; M.dmg = Math.max(M.dmg, F.dmg || 0) || dmg9(M.src, 20); M.sp = F.n ? F.vx / F.n : 380;
     if (M.mode === 'fly') {
+      if (M.want) { const hb0 = vfx9HitBox(v); if (hb0) { const mid = (hb0.y0 + hb0.y1) / 2; let dy = M.want(v.x) - mid; if (hb0.y1 + dy > GROUND) dy = GROUND - hb0.y1; v.y += dy; M.want = null; } }
       if (v.fixed == null && v.t >= v.step * 2) v.fixed = 2;   // 날아가는 동안은 가장 큰 프레임으로
-      v.x += M.dir * Math.max(200, M.sp) * FB7_SPEED * dt * (typeof BOSS_PACE === 'number' ? BOSS_PACE : 1);
+      const ddx = M.dir * Math.max(200, M.sp) * FB7_SPEED * dt * (typeof BOSS_PACE === 'number' ? BOSS_PACE : 1);
+      v.x += ddx;
+      if (M.slope) { v.y += ddx * M.slope; const hb2 = vfx9HitBox(v); if (hb2 && hb2.y1 > GROUND) { v.y -= hb2.y1 - GROUND; M.slope = 0; } }   // 조준선 방향 그대로 (바닥에 닿으면 바닥을 따라)
       const L = G.map.arenaL != null ? G.map.arenaL : 0, R = G.map.arenaR != null ? G.map.arenaR : G.map.w;
       if ((M.dir < 0 && v.x + v.w / 2 < L - 40) || (M.dir > 0 && v.x - v.w / 2 > R + 40)) { if (v.life > v.t) v.life = v.t; }
     }
@@ -27320,6 +27348,21 @@ if (IS_DEV_BUILD) {
     } catch (er) { devMsg('사람 기록 읽기 실패 · ' + er.message); }
   }, true);
 }
+
+/* ============ 2026-11-26 묶음 12 — 보스 스킬 그림 선명하게 ============
+   사용자: "보스 스킬들이 너무 투명해. 전조만 투명해져야 되는데 스킬 자체가 투명해서 피하기 힘들고 안 보인다".
+   원인: vfx9 스트립(보스 스킬 그림 162장)이 기본으로 'lighter'(빛 더하기)로 그려져 배경이 비치고, 어두운 그림(박쥐 떼·먹물·까마귀·검은 조류·월식 등 12장)은
+   더하기에서 거의 사라졌다. 그림은 모두 바탕이 투명한 PNG 라 덮어 그려도 네모가 생기지 않는다.
+   → 그리는 동안만 add 를 끈다(VFX9_SOLID). 전조(tg9Shape·조준선 50%)와 맵 전체 그림(WIDE9_ALPHA)은 그대로. 마스터 콘솔 👹 '보스 스킬 그림 꽉 차게'. */
+let VFX9_SOLID = 1;   // let: 마스터 콘솔 (1 = 꽉 찬 그림, 0 = 예전처럼 빛 더하기)
+const _fb12vfx9Draw = vfx9Draw;
+vfx9Draw = function (c) {
+  if (!VFX9_SOLID) return _fb12vfx9Draw(c);
+  const L = G.vfx9 || [], keep = [];
+  for (const v of L) if (v.add && !v.glowOnly) { keep.push(v); v.add = false; }
+  try { return _fb12vfx9Draw(c); } finally { for (const v of keep) v.add = true; }
+};
+tuneAdd({ k: 'vfx9Solid', g: 'boss', sec: '모든 보스', n: '보스 스킬 그림 꽉 차게', help: '1 = 스킬 그림을 꽉 차게 덮어 그린다(배경이 비치지 않는다) · 0 = 예전처럼 빛처럼 더해 그린다(반투명하게 보인다). 전조는 따로 \'보스 전조 진하기\'', get: () => VFX9_SOLID, set: v => { VFX9_SOLID = v ? 1 : 0; }, min: 0, max: 1, step: 1, u: '' });
 
 </script>
 </body></html>
