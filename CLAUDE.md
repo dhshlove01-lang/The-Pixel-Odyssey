@@ -33,3 +33,4 @@
 - **이 저장소의 `test/index.html` 이 원본이다.** 원본 PC 의 조각 파일·`build.py` 는 2026-11-25 은퇴했다 — 쓰지도, 돌리지도 않는다(돌리면 옛 코드로 덮인다).
 - 고친 내역은 `HANDOFF.md` "작업 기록" 맨 위에 적는다(무엇을·왜·어디(함수/블록)·검증).
 - 작업이 끝날 때마다 커밋하고 GitHub 에 푸시한다. 다른 Claude 가 이어서 작업한다.
+- 로고 디자인 스킬 `.claude/skills/logo-design` (2026-11-27 사용자 요청 — 어느 기기·클라우드 세션에서도 바로 쓰게). 출처 github.com/kaankiziltug/logo-design-skill (MIT, `SOURCE_COMMIT` 에 커밋), 그대로 복사한 것이라 고치지 않는다. 업데이트는 새로 받아 폴더째 바꾼다.
